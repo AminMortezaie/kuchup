@@ -1,0 +1,230 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "726778f7e1a4",
+  "session_id": "b59f9178-bf8b-4192-99ae-8f340a3e742f",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T18:50:13.912878Z",
+  "branch": "main",
+  "checkpoints_count": 11,
+  "save_step_count": 9,
+  "files_touched": [
+    ".env.example",
+    "docs/README.md",
+    "docs/operations/ec2-panel.md",
+    "docs/operations/email.md",
+    "docs/operations/seo-indexing.md",
+    "homepage/app/[slug]/page.tsx",
+    "homepage/app/how-it-works/page.tsx",
+    "homepage/app/layout.tsx",
+    "homepage/app/mcp/page.tsx",
+    "homepage/app/pricing/page.tsx",
+    "homepage/components/CountryCatalogPanel.tsx",
+    "homepage/components/Hero.tsx",
+    "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/_next/static/chunks/app/[slug]/page-370f38fcad57f2d2.js",
+    "relocation_jobs/static/homepage/_next/static/chunks/app/page-ce6076d2d966b482.js",
+    "relocation_jobs/static/homepage/_next/static/css/e7433d80ad6865ae.css",
+    "relocation_jobs/static/homepage/_next/static/pfZGO_G5e9ZwW__fsv2F0/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/pfZGO_G5e9ZwW__fsv2F0/_ssgManifest.js",
+    "relocation_jobs/static/homepage/how-it-works.html",
+    "relocation_jobs/static/homepage/how-it-works.txt",
+    "relocation_jobs/static/homepage/index.html",
+    "relocation_jobs/static/homepage/index.txt",
+    "relocation_jobs/static/homepage/mcp.html",
+    "relocation_jobs/static/homepage/mcp.txt",
+    "relocation_jobs/static/homepage/pricing.html",
+    "relocation_jobs/static/homepage/pricing.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.html",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.html",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.html",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.html",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.html",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.txt",
+    "relocation_jobs/web/server.py",
+    "tests/web/test_public_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "4a65d62c3b99",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 147190,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1586816,
+    "output_tokens": 17860,
+    "api_call_count": 9
+  },
+  "session_metrics": {
+    "duration_ms": 10586696,
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T18:50:13.902926Z",
+    "agent_lines": 688,
+    "agent_removed": 279,
+    "human_added": 191,
+    "human_modified": 19,
+    "human_removed": 0,
+    "total_committed": 898,
+    "total_lines_changed": 1177,
+    "agent_percentage": 82.15802888700084,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 3214,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "kuchup.com-audit/ACTION-PLAN.md": 103,
+        "kuchup.com-audit/FULL-AUDIT-REPORT.md": 144,
+        "kuchup.com-audit/audit-data.json": 294,
+        "kuchup.com-audit/findings/backlinks.md": 35,
+        "kuchup.com-audit/findings/content.md": 65,
+        "kuchup.com-audit/findings/geo.md": 53,
+        "kuchup.com-audit/findings/performance.md": 41,
+        "kuchup.com-audit/findings/schema.md": 45,
+        "kuchup.com-audit/findings/sitemap.md": 42,
+        "kuchup.com-audit/findings/sxo.md": 54,
+        "kuchup.com-audit/findings/technical.md": 69,
+        "kuchup.com-audit/findings/visual.md": 42,
+        "kuchup.com-audit/raw/agentux.help": 11,
+        "kuchup.com-audit/raw/backlinks-auth.txt": 13,
+        "kuchup.com-audit/raw/commoncrawl.json": 22,
+        "kuchup.com-audit/raw/content-quality-germany.json": 16,
+        "kuchup.com-audit/raw/content-quality-home.json": 16,
+        "kuchup.com-audit/raw/content-quality-how.json": 16,
+        "kuchup.com-audit/raw/content-quality-pricing.json": 16,
+        "kuchup.com-audit/raw/content-quality.err": 13,
+        "kuchup.com-audit/raw/drift-history.txt": 9,
+        "kuchup.com-audit/raw/google-auth.txt": 22,
+        "kuchup.com-audit/raw/homepage-render.json": 52,
+        "kuchup.com-audit/raw/homepage-signals.json": 79,
+        "kuchup.com-audit/raw/homepage.headers": 15,
+        "kuchup.com-audit/raw/homepage.html": 1,
+        "kuchup.com-audit/raw/homepage.meta": 1,
+        "kuchup.com-audit/raw/llms.status": 1,
+        "kuchup.com-audit/raw/pages-crawl.json": 508,
+        "kuchup.com-audit/raw/pages/apply.html": 263,
+        "kuchup.com-audit/raw/pages/home.html": 2,
+        "kuchup.com-audit/raw/pages/how-it-works.html": 2,
+        "kuchup.com-audit/raw/pages/mcp.html": 2,
+        "kuchup.com-audit/raw/pages/panel.html": 626,
+        "kuchup.com-audit/raw/pages/pricing.html": 2,
+        "kuchup.com-audit/raw/pages/relocation-jobs-germany.html": 2,
+        "kuchup.com-audit/raw/pages/relocation-jobs-ireland.html": 2,
+        "kuchup.com-audit/raw/pages/relocation-jobs-netherlands.html": 2,
+        "kuchup.com-audit/raw/pages/relocation-jobs-portugal.html": 2,
+        "kuchup.com-audit/raw/pages/relocation-jobs-uk.html": 2,
+        "kuchup.com-audit/raw/pagespeed-desktop.json": 23,
+        "kuchup.com-audit/raw/pagespeed-mobile.json": 23,
+        "kuchup.com-audit/raw/parse-home.json": 291,
+        "kuchup.com-audit/raw/parse_html.help": 11,
+        "kuchup.com-audit/raw/preload.help": 11,
+        "kuchup.com-audit/raw/robots.status": 1,
+        "kuchup.com-audit/raw/robots.txt": 10,
+        "kuchup.com-audit/raw/schema-detect.err": 3,
+        "kuchup.com-audit/raw/sitemap-discovery.json": 61,
+        "kuchup.com-audit/raw/sitemap-urls.json": 11,
+        "kuchup.com-audit/raw/sitemap.xml": 30,
+        "kuchup.com-audit/raw/visual.json": 22,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3305,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3305,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3305,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3313,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3313,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3318,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 167,
+      "user_lines_removed": 19,
+      "agent_lines_added": 3318,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "relocation_jobs/static/llms.txt": 32,
+        "relocation_jobs/web/server.py": 75,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/web/test_public_api.py": 32
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/web/server.py": 19
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 4103,
+      "agent_lines_removed": 298,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
