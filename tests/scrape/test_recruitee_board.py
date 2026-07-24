@@ -50,3 +50,29 @@ async def test_fetch_ats_board_dispatches_recruitee():
     async with httpx.AsyncClient() as client:
         jobs = await fetch_ats_board(client, company)
     assert jobs[0]["title"] == "Backend Developer"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_fetch_recruitee_board_custom_domain():
+    payload = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    board_url = "https://jobs.idealo.com/"
+    respx.get(recruitee_offers_api_url(board_url)).mock(
+        return_value=Response(200, json=payload),
+    )
+    import httpx
+
+    async with httpx.AsyncClient() as client:
+        jobs = await fetch_recruitee_board(client, board_url, {})
+    assert len(jobs) == 2
+    assert jobs[0]["title"] == "Backend Developer"
+
+
+def test_recruitee_offers_api_url_custom_domain():
+    assert recruitee_offers_api_url("https://jobs.idealo.com/l/en/jobs") == (
+        "https://jobs.idealo.com/api/offers/"
+    )
+    assert recruitee_offers_api_url("acme") == "https://acme.recruitee.com/api/offers/"
+    assert recruitee_offers_api_url("https://acme.recruitee.com/") == (
+        "https://acme.recruitee.com/api/offers/"
+    )

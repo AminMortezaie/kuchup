@@ -20,3 +20,15 @@ def test_apply_known_ats_override_fixes_cached_recruitee_for_wolt():
     apply_known_ats_override(company)
     assert company["ats_type"] == "greenhouse"
     assert company["ats_url"] == "https://boards.greenhouse.io/wolt"
+
+
+def test_apply_known_ats_override_sets_idealo_recruitee_custom_domain():
+    company = {
+        "name": "idealo Internet",
+        "careers_url": "https://jobs.idealo.com/l/en/jobs",
+        "ats_type": "generic",
+        "ats_url": "",
+    }
+    apply_known_ats_override(company)
+    assert company["ats_type"] == "recruitee"
+    assert company["ats_url"] == "https://jobs.idealo.com/"

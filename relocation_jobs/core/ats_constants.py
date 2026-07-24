@@ -136,6 +136,7 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "Redcare - Dusseldorf":  ("smartrecruiters", "https://api.smartrecruiters.com/v1/companies/Redcare-Pharmacy/postings"),
     "Wolt":                  ("greenhouse",    "https://boards.greenhouse.io/wolt"),
     "Mobile.de":             ("hibob",         "https://mobilede.careers.hibob.com/jobs"),
+    "idealo Internet":       ("recruitee",     "https://jobs.idealo.com/"),
 }
 
 FORCE_KNOWN_ATS = frozenset({
@@ -145,6 +146,7 @@ FORCE_KNOWN_ATS = frozenset({
     "Highsnobiety", "ToolTime", "Vimcar", "Wolt", "Mobile.de",
     "ASML", "Atlassian", "Booking.com", "C Teleport", "Elements", "EPAM",
     "EVBox", "Just Eat Takeaway.com", "TomTom", "ZooStation",
+    "idealo Internet",
 })
 
 try:

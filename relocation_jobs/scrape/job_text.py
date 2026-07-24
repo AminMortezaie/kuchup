@@ -12,6 +12,7 @@ from relocation_jobs.scrape.boards.greenhouse import (
     greenhouse_job_ids_from_url,
 )
 from relocation_jobs.scrape.boards.hibob import fetch_hibob_job_detail as hibob_job_detail_fetch
+from relocation_jobs.scrape.boards.recruitee import recruitee_offers_api_url
 from relocation_jobs.scrape.boards.smartrecruiters import (
     smartrecruiters_job_ad_html,
     smartrecruiters_location_text,
@@ -93,13 +94,16 @@ def fetch_lever_job_text(url: str) -> str:
 
 
 def fetch_recruitee_job_detail(url: str) -> JobFetchResult:
-    match = re.search(r"([a-z0-9-]+)\.recruitee\.com/o/([a-z0-9-]+)", url, re.I)
+    match = re.search(r"https?://([^/]+)/o/([a-z0-9-]+)", url, re.I)
     if not match:
         return _empty_fetch()
-    company, offer_slug = match.group(1), match.group(2)
+    host, offer_slug = match.group(1).lower(), match.group(2)
+    offers_api = recruitee_offers_api_url(f"https://{host}/")
+    if not offers_api:
+        return _empty_fetch()
     try:
         response = requests.get(
-            f"https://{company}.recruitee.com/api/offers/",
+            offers_api,
             headers=HEADERS,
             timeout=10,
         )
@@ -108,7 +112,7 @@ def fetch_recruitee_job_detail(url: str) -> JobFetchResult:
             if offer.get("slug") != offer_slug:
                 continue
             detail = requests.get(
-                f"https://{company}.recruitee.com/api/offers/{offer['id']}",
+                f"{offers_api.rstrip('/')}/{offer['id']}",
                 headers=HEADERS,
                 timeout=10,
             )
