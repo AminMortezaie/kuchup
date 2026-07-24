@@ -1,0 +1,11 @@
+usage: parse_html.py [-h] [--url URL] [--json] [file]
+
+Parse HTML for SEO analysis
+
+positional arguments:
+  file           HTML file to parse
+
+options:
+  -h, --help     show this help message and exit
+  --url, -u URL  Base URL for resolving links
+  --json, -j     Output as JSON

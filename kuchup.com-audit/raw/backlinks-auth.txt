@@ -1,0 +1,13 @@
+Backlink Tier: 0 -- Basic (Common Crawl + Verify only)
+
+  [MISSING] Moz Link Explorer API
+         No Moz API key found. Set MOZ_API_KEY environment variable or add 'moz_api_key' to /Users/amin/.config/claude-seo/backlinks-api.json
+         Sign up free at https://moz.com/products/api
+  [MISSING] Bing Webmaster Tools API
+         No Bing Webmaster API key found. Set BING_WEBMASTER_API_KEY environment variable or add 'bing_api_key' to /Users/amin/.config/claude-seo/backlinks-api.json
+         Get free key at https://www.bing.com/webmasters
+  [OK] Common Crawl Web Graph
+         Cached domains: 0
+  [OK] Backlink Verification Crawler
+
+Tip: Add Moz API key for DA/PA and spam scoring. Free at https://moz.com/products/api (2,500 rows/month)

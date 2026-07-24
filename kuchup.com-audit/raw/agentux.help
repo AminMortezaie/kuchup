@@ -1,0 +1,11 @@
+usage: agent_ux_check.py [-h] [--timeout-ms TIMEOUT_MS] [--json] url
+
+Agent-friendly page auditor (semantic HTML + a11y tree)
+
+positional arguments:
+  url
+
+options:
+  -h, --help            show this help message and exit
+  --timeout-ms TIMEOUT_MS
+  --json

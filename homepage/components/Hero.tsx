@@ -19,7 +19,7 @@ export function Hero() {
             id="hero-heading"
             className="hero-enter hero-enter-delay-1 mt-3 text-fluid-hero text-text-primary"
           >
-            All your opportunities, in one place
+            Visa-sponsored software jobs in Europe — in one place
           </h1>
 
           <p className="hero-enter hero-enter-delay-2 hero-lede">

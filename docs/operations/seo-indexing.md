@@ -5,14 +5,27 @@ How to get kuchup.com found on Google.
 ## Prerequisites
 
 - Domain `kuchup.com` is live and serving the public homepage
+- Preferred host is **apex** `https://kuchup.com` (`www` must 301 to apex)
 - `robots.txt` at `https://kuchup.com/robots.txt` allows indexing
-- `sitemap.xml` at `https://kuchup.com/sitemap.xml` is up to date
+- `sitemap.xml` at `https://kuchup.com/sitemap.xml` is up to date (includes `<lastmod>`)
 - Marketing pages deployed (see [ec2-panel.md](ec2-panel.md))
+
+## After an SEO / marketing deploy
+
+1. Confirm host consolidation:
+   - `curl -sI https://www.kuchup.com/` → `301` with `Location: https://kuchup.com/...`
+2. Spot-check head tags on `/` and one country page:
+   - `rel="canonical"` points at apex
+   - `og:image` absolute URL returns 200
+   - `/favicon.ico` returns 200
+3. Confirm marketing HTML is cacheable (`Cache-Control` is not `no-store` on `/`)
+4. Re-submit `https://kuchup.com/sitemap.xml` in Google Search Console
+5. Request indexing for key URLs (URL inspection)
 
 ## Google Search Console setup
 
 1. Go to <https://search.google.com/search-console>
-2. Add property: **URL prefix** `https://kuchup.com`
+2. Add property: **URL prefix** `https://kuchup.com` (apex only after www redirects)
 3. Verify ownership — choose any method:
    - **DNS TXT record** (recommended): add the TXT record in your DNS provider (Cloudflare).
    - **HTML file**: Google provides a file; drop it into `relocation_jobs/static/` and re-deploy.

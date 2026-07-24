@@ -1,0 +1,294 @@
+{
+  "summary": {
+    "health_score": 60,
+    "business_type": "SaaS / jobs marketplace (visa-sponsored software roles, Europe)",
+    "audited_at": "2026-07-22",
+    "url": "https://kuchup.com/",
+    "top_findings": [
+      "www and apex both return 200 without consolidation",
+      "No rel=canonical on any public page",
+      "Homepage H1 undersells visa/relocation keywords in the title",
+      "Missing og:image and favicon (404)",
+      "Schema gaps: no SearchAction, SoftwareApplication, or JobPosting"
+    ],
+    "quick_wins": [
+      "301 www → apex (or reverse) in Cloudflare/Caddy",
+      "Add self-referencing canonicals sitewide",
+      "Ship og:image + favicon/apple-touch icons",
+      "Rewrite homepage H1 for sponsorship intent",
+      "Add sitemap lastmod + visible Updated dates on country pages"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 62,
+      "what_works": [
+        "HTTPS with HTTP→HTTPS on apex",
+        "Valid robots.txt + sitemap.xml (9 URLs)",
+        "SSR / non-SPA HTML",
+        "App routes disallowed in robots"
+      ],
+      "findings": [
+        {
+          "title": "www and apex both live",
+          "severity": "Critical",
+          "description": "https://kuchup.com/ and https://www.kuchup.com/ both return 200 without redirect, splitting signals.",
+          "recommendation": "301 the non-preferred host to the preferred host; align absolute links and Search Console."
+        },
+        {
+          "title": "Missing canonical tags",
+          "severity": "High",
+          "description": "No link rel=canonical on crawled marketing pages.",
+          "recommendation": "Add self-referencing canonicals on the chosen host for every indexable URL."
+        },
+        {
+          "title": "Cache-Control: no-store on HTML",
+          "severity": "High",
+          "description": "Public HTML is uncacheable, hurting repeat TTFB/LCP headroom.",
+          "recommendation": "Use short TTL or SWR for marketing HTML; reserve no-store for authenticated surfaces."
+        },
+        {
+          "title": "Missing security headers",
+          "severity": "Medium",
+          "description": "HSTS, CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy absent on homepage responses.",
+          "recommendation": "Add headers via Cloudflare or Caddy."
+        },
+        {
+          "title": "Favicon 404",
+          "severity": "Low",
+          "description": "/favicon.ico, /favicon.svg, /apple-touch-icon.png return 404.",
+          "recommendation": "Publish a favicon set and reference it in HTML."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 68,
+      "what_works": [
+        "Strong unique titles on country pages",
+        "Honest sponsorship FAQs",
+        "High QRG quality scores (91–93) with low AI-pattern noise"
+      ],
+      "findings": [
+        {
+          "title": "Homepage H1/title mismatch",
+          "severity": "High",
+          "description": "Title targets visa-sponsored software roles; H1 is generic brand voice.",
+          "recommendation": "Rewrite H1 to include visa/relocation/software outcome language."
+        },
+        {
+          "title": "Thin pricing and how-it-works pages",
+          "severity": "High",
+          "description": "Pricing ~153 words; How it Works ~249 words.",
+          "recommendation": "Expand with substantive unique copy (plans, limits, eligibility, workflow detail)."
+        },
+        {
+          "title": "Brand naming split",
+          "severity": "Medium",
+          "description": "UI uses KUCHUP; titles/schema often Relocation Jobs.",
+          "recommendation": "Pick primary entity name; keep the other as alternateName consistently."
+        },
+        {
+          "title": "Country pages need live inventory",
+          "severity": "Medium",
+          "description": "SERP consensus is guide+jobs; pages are FAQ-heavy guides.",
+          "recommendation": "Surface live role counts and sample jobs above the fold."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 65,
+      "what_works": [
+        "Unique titles and meta descriptions on sitemap pages",
+        "Clear H2/H3 structure on homepage",
+        "index, follow robots meta on marketing pages"
+      ],
+      "findings": [
+        {
+          "title": "Missing og:image",
+          "severity": "High",
+          "description": "og:title and og:description exist but og:image is null; /og.png 404.",
+          "recommendation": "Add a 1200×630 social image and og:image absolute URL."
+        },
+        {
+          "title": "Meta descriptions overlong",
+          "severity": "Medium",
+          "description": "Several descriptions are 165–215 characters and will truncate in SERPs.",
+          "recommendation": "Tighten to ~150–160 characters with primary benefit first."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 55,
+      "what_works": [
+        "Organization + WebSite JSON-LD on homepage",
+        "Valid FAQPage markup on MCP and country pages"
+      ],
+      "findings": [
+        {
+          "title": "No WebSite SearchAction",
+          "severity": "High",
+          "description": "WebSite node lacks potentialAction search.",
+          "recommendation": "Add SearchAction targeting the public board/search URL."
+        },
+        {
+          "title": "Missing SoftwareApplication / JobPosting",
+          "severity": "Medium",
+          "description": "Product is a software app/jobs board but schema does not declare it.",
+          "recommendation": "Add SoftwareApplication on product pages; JobPosting/ItemList for public roles when accurate."
+        },
+        {
+          "title": "FAQPage Google rich results retired",
+          "severity": "Info",
+          "description": "FAQ rich results retired for all sites May 7, 2026.",
+          "recommendation": "Keep for UX/citability if useful; do not add FAQPage for Google SERP benefit."
+        }
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 60,
+      "what_works": [
+        "SSR, light homepage (no img tags), fast apex TTFB in curl (~0.27s)",
+        "No console errors in render"
+      ],
+      "findings": [
+        {
+          "title": "PSI/CrUX data unavailable",
+          "severity": "Medium",
+          "description": "Anonymous PSI rate-limited; no Google API credentials for CrUX.",
+          "recommendation": "Configure GOOGLE_API_KEY and re-run pagespeed/CrUX checks."
+        },
+        {
+          "title": "Uncacheable HTML",
+          "severity": "High",
+          "description": "Cache-Control no-store on public documents.",
+          "recommendation": "Enable caching for marketing HTML."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 48,
+      "what_works": [
+        "SSR accessibility for AI crawlers",
+        "Question/answer blocks on country pages"
+      ],
+      "findings": [
+        {
+          "title": "llms.txt missing",
+          "severity": "Medium",
+          "description": "/llms.txt returns 404.",
+          "recommendation": "Optional: publish llms.txt summarizing product and canonical URLs."
+        },
+        {
+          "title": "Weak entity/authority signals",
+          "severity": "High",
+          "description": "Only GitHub sameAs; domain absent from Common Crawl graph.",
+          "recommendation": "Expand sameAs, publish methodology, pursue citations/PR."
+        },
+        {
+          "title": "Low multi-modal content",
+          "severity": "Medium",
+          "description": "Almost no images, charts, or video.",
+          "recommendation": "Add product screenshots and simple visa/process diagrams."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 35,
+      "what_works": [
+        "No missing-alt debt on content images (none present)"
+      ],
+      "findings": [
+        {
+          "title": "No content images or OG asset",
+          "severity": "High",
+          "description": "Homepage img_count=0; social/favicon assets 404.",
+          "recommendation": "Ship OG image, favicon, and at least one product UI screenshot."
+        }
+      ]
+    },
+    {
+      "name": "SXO",
+      "score": 58,
+      "what_works": [
+        "Search-first UX with clear Find roles CTA",
+        "Country URLs closer to SERP guide pattern"
+      ],
+      "findings": [
+        {
+          "title": "Homepage page-type mismatch vs sponsorship SERPs",
+          "severity": "High",
+          "description": "SERP consensus is guide+jobs index; homepage is product landing.",
+          "recommendation": "Add sponsorship snapshot section on home or push SEO weight to country hubs with live jobs."
+        }
+      ]
+    },
+    {
+      "name": "Backlinks / Authority",
+      "score": 28,
+      "what_works": [],
+      "findings": [
+        {
+          "title": "Domain not in Common Crawl rankings",
+          "severity": "High",
+          "description": "kuchup.com missing from cc-main-2026-jan-feb-mar graph.",
+          "recommendation": "Earn external citations; re-check after indexing/PR; add Moz/Bing keys for ongoing tracking."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Critical Fixes",
+        "timeframe": "Week 1",
+        "items": [
+          "301 www↔apex host consolidation",
+          "Self-referencing canonicals",
+          "og:image + favicon set",
+          "Remove no-store on public HTML"
+        ]
+      },
+      {
+        "name": "Phase 2: High-Impact Improvements",
+        "timeframe": "Weeks 2-3",
+        "items": [
+          "Homepage H1 rewrite",
+          "Country pages: live jobs above fold",
+          "Schema: SearchAction, SoftwareApplication, breadcrumbs, JobPosting",
+          "Expand pricing + how-it-works",
+          "Security headers"
+        ]
+      },
+      {
+        "name": "Phase 3: Content & Authority",
+        "timeframe": "Month 2",
+        "items": [
+          "About/methodology + sameAs expansion",
+          "Optional llms.txt",
+          "Digital PR / launch links",
+          "Drift baseline capture"
+        ]
+      },
+      {
+        "name": "Phase 4: Monitoring & Iteration",
+        "timeframe": "Ongoing",
+        "items": [
+          "Google API + GSC/GA4",
+          "IndexNow on publish",
+          "Quarterly re-audit"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

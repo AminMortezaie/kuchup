@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /panel
+Disallow: /remote
+Disallow: /admin
+Disallow: /apply
+Disallow: /company
+Disallow: /api/
+
+Sitemap: https://kuchup.com/sitemap.xml

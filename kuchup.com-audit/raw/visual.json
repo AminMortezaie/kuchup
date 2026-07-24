@@ -1,0 +1,22 @@
+{
+  "url": "https://kuchup.com",
+  "above_fold": {
+    "h1_visible": true,
+    "cta_visible": false,
+    "hero_image": null
+  },
+  "mobile": {
+    "viewport_meta": true,
+    "horizontal_scroll": false,
+    "touch_targets_ok": true
+  },
+  "layout": {
+    "overlapping_elements": [],
+    "text_overflow": []
+  },
+  "fonts": {
+    "base_size": 16,
+    "readable": true
+  },
+  "error": null
+}

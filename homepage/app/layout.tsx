@@ -16,14 +16,21 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE = "https://kuchup.com";
+const OG_IMAGE = `${SITE}/og-default.png`;
+const LOGO = `${SITE}/static/icons/kuchup-bird.png`;
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kuchup.com"),
+  metadataBase: new URL(SITE),
   title: {
     template: "%s | Relocation Jobs",
     default: "Relocation Jobs | Visa-Sponsored Software Roles in Europe",
   },
   description:
-    "Find visa-sponsored software engineering roles in Europe. Search relocation-friendly openings in Germany, Netherlands, UK, Portugal, and Ireland. Track applications and tailor your CV with Claude or Cursor via MCP.",
+    "Find visa-sponsored software jobs in Europe. Search relocation-friendly roles in Germany, Netherlands, UK, Portugal, and Ireland — then track and tailor applications.",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [{ url: "/static/icons/kuchup-bird.svg", type: "image/svg+xml" }],
     apple: [{ url: "/static/icons/apple-touch-icon.png" }],
@@ -32,16 +39,25 @@ export const metadata: Metadata = {
     title: "Relocation Jobs",
     description:
       "Find visa-sponsored engineering roles in Europe — before they're gone.",
-    url: "https://kuchup.com/",
+    url: `${SITE}/`,
     siteName: "Relocation Jobs",
     type: "website",
     locale: "en_GB",
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Kuchup — visa-sponsored software jobs in Europe",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Relocation Jobs",
     description:
       "Find visa-sponsored engineering roles in Europe — before they're gone.",
+    images: [OG_IMAGE],
   },
   robots: {
     index: true,
@@ -61,7 +77,8 @@ export default function RootLayout({
         "@type": "Organization",
         name: "Relocation Jobs",
         alternateName: "KUCHUP",
-        url: "https://kuchup.com/",
+        url: `${SITE}/`,
+        logo: LOGO,
         description:
           "Curated visa-sponsored software engineering roles across Europe.",
         sameAs: ["https://github.com/AminMortezaie/relocation-jobs"],
@@ -69,9 +86,33 @@ export default function RootLayout({
       {
         "@type": "WebSite",
         name: "Relocation Jobs",
-        url: "https://kuchup.com/",
+        url: `${SITE}/`,
         description:
           "Find visa-sponsored software engineering roles in Germany, Netherlands, UK, Portugal, and Ireland.",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${SITE}/?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "Kuchup",
+        alternateName: "Relocation Jobs",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url: `${SITE}/`,
+        description:
+          "Search and track visa-sponsored software engineering roles in Europe; tailor applications with Claude or Cursor via MCP.",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+          description: "Public preview is free; full board access coming soon.",
+        },
       },
     ],
   };

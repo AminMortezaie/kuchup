@@ -31,6 +31,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | MCP apply assistant (Claude Desktop, v0) | [reference/mcp-application.md](reference/mcp-application.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
 | **Production panel (EC2, kuchup.com)** | [operations/ec2-panel.md](operations/ec2-panel.md) |
+| Domain email (`@kuchup.com`) | [operations/email.md](operations/email.md) |
 | Agent commands cheat sheet | [CLAUDE.md](../CLAUDE.md) |
 
 ---
@@ -63,6 +64,7 @@ docs/
   operations/
     aws-postgres.md           AWS EC2 Postgres
     ec2-panel.md              Panel on EC2, kuchup.com, Caddy
+    email.md                  Domain email via Cloudflare Email Routing
   archive/                    historical handoffs — read only if debugging old work
     v2-bugfix-handoff.md
     v2-coding-verdict.md
@@ -107,6 +109,7 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 |-----|---------|
 | [operations/aws-postgres.md](operations/aws-postgres.md) | AWS Postgres migration and day-to-day ops |
 | [operations/ec2-panel.md](operations/ec2-panel.md) | EC2 deploy, kuchup.com, Caddy, Cloudflare lock-down |
+| [operations/email.md](operations/email.md) | `@kuchup.com` via Cloudflare Email Routing + Gmail Send as |
 | `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
 
