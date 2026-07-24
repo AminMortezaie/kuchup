@@ -1,0 +1,25 @@
+/plugin marketplace add AgriciDaniel/claude-seo
+/plugin install claude-seo@agricidaniel-claude-seo
+/seo setup
+
+---
+
+/seo audit https://kuchup.com
+
+---
+
+create a plan to solve this seo problems.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+review what you did and tell me all the problems was resolved or not?
+
+---
+
+okay deployed you can test now.

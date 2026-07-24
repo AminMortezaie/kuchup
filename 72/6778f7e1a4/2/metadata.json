@@ -1,9 +1,12 @@
 {
   "cli_version": "0.8.42",
   "checkpoint_id": "726778f7e1a4",
+  "session_id": "72b49012-302e-41a7-a013-7d0cda08e547",
   "strategy": "manual-commit",
+  "created_at": "2026-07-24T18:50:13.816604Z",
   "branch": "main",
-  "checkpoints_count": 13,
+  "checkpoints_count": 6,
+  "save_step_count": 5,
   "files_touched": [
     ".env.example",
     "docs/README.md",
@@ -122,34 +125,132 @@
     "relocation_jobs/web/server.py",
     "tests/web/test_public_api.py"
   ],
-  "sessions": [
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "a7574b0afdfe",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 482140,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5505280,
+    "output_tokens": 46165,
+    "api_call_count": 5
+  },
+  "skill_events_version": 1,
+  "skill_events": [
     {
-      "metadata": "/72/6778f7e1a4/0/metadata.json",
-      "transcript": "/72/6778f7e1a4/0/full.jsonl",
-      "compact_transcript": "/72/6778f7e1a4/0/transcript.jsonl",
-      "content_hash": "/72/6778f7e1a4/0/content_hash.txt",
-      "prompt": "/72/6778f7e1a4/0/prompt.txt"
+      "id": "prompt-skill-cursor-plugin-2026-07-22T14:18:25.845038Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "plugin"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "65f457498fbd",
+      "timestamp": "2026-07-22T14:18:25.845038Z",
+      "native": {
+        "command": "/plugin"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/plugin",
+        "default_collapsed": true
+      }
     },
     {
-      "metadata": "/72/6778f7e1a4/1/metadata.json",
-      "transcript": "/72/6778f7e1a4/1/full.jsonl",
-      "compact_transcript": "/72/6778f7e1a4/1/transcript.jsonl",
-      "content_hash": "/72/6778f7e1a4/1/content_hash.txt",
-      "prompt": "/72/6778f7e1a4/1/prompt.txt"
-    },
-    {
-      "metadata": "/72/6778f7e1a4/2/metadata.json",
-      "transcript": "/72/6778f7e1a4/2/full.jsonl",
-      "compact_transcript": "/72/6778f7e1a4/2/transcript.jsonl",
-      "content_hash": "/72/6778f7e1a4/2/content_hash.txt",
-      "prompt": "/72/6778f7e1a4/2/prompt.txt"
+      "id": "prompt-skill-cursor-seo-2026-07-22T14:24:18.44022Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "seo"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "b863b8cb3767",
+      "timestamp": "2026-07-22T14:24:18.44022Z",
+      "native": {
+        "command": "/seo"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/seo",
+        "default_collapsed": true
+      }
     }
   ],
-  "token_usage": {
-    "input_tokens": 641157,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 6096000,
-    "output_tokens": 59650,
-    "api_call_count": 8
-  }
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T18:50:13.786528Z",
+    "agent_lines": 4005,
+    "agent_removed": 298,
+    "human_added": 114,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 4119,
+    "total_lines_changed": 4417,
+    "agent_percentage": 97.41906271224813,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3305,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3318,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 4103,
+      "agent_lines_removed": 298,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 4103,
+      "agent_lines_removed": 298,
+      "user_added_per_file": {
+        "docs/operations/email.md": 16,
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
 }
