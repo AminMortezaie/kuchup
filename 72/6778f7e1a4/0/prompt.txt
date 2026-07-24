@@ -1,0 +1,20 @@
+we need to add a comprehensive plan based on the skills we have to register new users using their account and the tunnel would be just google acoount
+
+create a complete plan for it based on the skills we have.
+
+---
+
+1C, 2C
+
+---
+
+No, it's a bigger problem here, which is, uh, about showing, uh, the related positions and the, uh, job opportunities to the users. When we want to do all the, uh, registrations for the users just by Google authentication, we need to have a struct... structured plan to handle these users to just, uh, see what what the opportunities can be available for them. For example, we don't want to show all the opportunities to each user. Just log in here, and it should be completely personalized. We have another plan for this, and you can find out in our documents that we we have planned this using Amazon SQS to, you know, propagate some opportunities to the users based on the plan they have. For example, we have a paid plan for the users to just show some opportunities and also using the MCP is based on the plan they have. For example, they have a limited request on free tire. And, also, all these things are completely and closely tied to the user's, you know, plans on the, you know, absolutely... it's about the money. You you don't want to show the users all the opportunities when they comes they come to our website. So it's a bit tough, so we need to have some, you know, tactics for this
+
+---
+
+i just opened an account on NOWPayments and we can have their service on our website.
+
+you can also mention this on your plan to add this later.
+about your questions::
+
+i'm okay with 1D 2B
