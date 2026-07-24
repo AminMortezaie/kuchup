@@ -1,0 +1,104 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "726778f7e1a4",
+  "session_id": "6d3ebdab-87d1-4fd0-b286-dd1dee5031ac",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T18:50:13.634379Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "kuchup.com-audit/raw/commoncrawl.err",
+    "kuchup.com-audit/raw/commoncrawl.json",
+    "kuchup.com-audit/raw/content-quality.err",
+    "kuchup.com-audit/raw/content-quality.json",
+    "kuchup.com-audit/raw/pages-crawl.json",
+    "kuchup.com-audit/raw/pages/apply.html",
+    "kuchup.com-audit/raw/pages/home.html",
+    "kuchup.com-audit/raw/pages/how-it-works.html",
+    "kuchup.com-audit/raw/pages/mcp.html",
+    "kuchup.com-audit/raw/pages/panel.html",
+    "kuchup.com-audit/raw/pages/pricing.html",
+    "kuchup.com-audit/raw/pages/relocation-jobs-germany.html",
+    "kuchup.com-audit/raw/pages/relocation-jobs-ireland.html",
+    "kuchup.com-audit/raw/pages/relocation-jobs-netherlands.html",
+    "kuchup.com-audit/raw/pages/relocation-jobs-portugal.html",
+    "kuchup.com-audit/raw/pages/relocation-jobs-uk.html",
+    "kuchup.com-audit/raw/pagespeed-desktop.err",
+    "kuchup.com-audit/raw/pagespeed-desktop.json",
+    "kuchup.com-audit/raw/pagespeed-mobile.err",
+    "kuchup.com-audit/raw/pagespeed-mobile.json",
+    "kuchup.com-audit/raw/schema-detect.err",
+    "kuchup.com-audit/raw/schema-detect.json",
+    "kuchup.com-audit/raw/screenshot-desktop.err",
+    "kuchup.com-audit/raw/screenshot-desktop.json",
+    "kuchup.com-audit/raw/screenshot-mobile.err",
+    "kuchup.com-audit/raw/screenshot-mobile.json",
+    "kuchup.com-audit/raw/visual.err",
+    "kuchup.com-audit/raw/visual.json"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "7e42efc99442",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 61337,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 256640,
+    "output_tokens": 4771,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 12505992,
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T18:50:13.628836Z",
+    "agent_lines": 1499,
+    "agent_removed": 0,
+    "human_added": 2301,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3800,
+    "total_lines_changed": 4098,
+    "agent_percentage": 36.57881893606638,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 318,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "kuchup.com-audit/raw/backlinks-auth.txt": 13,
+        "kuchup.com-audit/raw/drift-history.txt": 9,
+        "kuchup.com-audit/raw/google-auth.txt": 22,
+        "kuchup.com-audit/raw/homepage-render.json": 52,
+        "kuchup.com-audit/raw/homepage-signals.json": 79,
+        "kuchup.com-audit/raw/homepage.headers": 15,
+        "kuchup.com-audit/raw/homepage.html": 1,
+        "kuchup.com-audit/raw/homepage.meta": 1,
+        "kuchup.com-audit/raw/llms.status": 1,
+        "kuchup.com-audit/raw/robots.status": 1,
+        "kuchup.com-audit/raw/robots.txt": 10,
+        "kuchup.com-audit/raw/sitemap-discovery.json": 61,
+        "kuchup.com-audit/raw/sitemap-urls.json": 11,
+        "kuchup.com-audit/raw/sitemap.xml": 30,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 34,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1815,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "kuchup.com-audit/raw/commoncrawl.json": 22,
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
