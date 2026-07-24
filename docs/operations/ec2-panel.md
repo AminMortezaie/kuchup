@@ -80,6 +80,8 @@ Point the domain at the Elastic IP from `aws-postgres.env`:
 | A | `www` | `<ELASTIC_IP>` | same |
 | A | `mcp` | `<ELASTIC_IP>` | same (remote MCP for Claude / Cursor) |
 
+Domain email (`hello@` / `support@`) uses Cloudflare Email Routing — see [email.md](email.md). Do not orange-proxy MX or mail TXT records.
+
 Caddy in `deploy/ec2/Caddyfile` requests Let's Encrypt certs for `kuchup.com`, `www.kuchup.com`, and `mcp.kuchup.com`. The panel and MCP are **not** served on the raw Elastic IP — use the domain only.
 
 **Claude remote connectors** reach `mcp.kuchup.com` from Anthropic’s cloud (not the user’s phone). If the security group is locked to Cloudflare only, that is enough when the orange cloud proxies MCP. If you later lock origin beyond Cloudflare, also allowlist [Anthropic egress ranges](https://platform.claude.com/docs/en/api/ip-addresses).

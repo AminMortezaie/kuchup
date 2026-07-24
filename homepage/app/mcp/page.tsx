@@ -64,14 +64,30 @@ const FAQ_ITEMS = [
 export const metadata: Metadata = {
   title: "MCP for Claude and Cursor",
   description:
-    "Connect Kuchup’s MCP server to Claude or Cursor to tailor CVs for visa-sponsored software roles. Load job context from the catalog, run a gated reframe pipeline, and keep PDFs in your workspace — without auto-apply.",
+    "Connect Kuchup MCP to Claude or Cursor to tailor CVs for visa-sponsored software roles — gated reframe, workspace PDFs, no auto-apply.",
+  alternates: { canonical: "/mcp" },
   openGraph: {
     title: "MCP for Claude and Cursor | Relocation Jobs",
     description:
-      "Claude MCP and Cursor MCP for job applications: queue roles, reframe your CV with approval checkpoints, and render PDFs in Kuchup.",
+      "Queue roles, reframe your CV with approval checkpoints, and render PDFs in Kuchup via Claude or Cursor MCP.",
     url: "https://kuchup.com/mcp",
     siteName: "Relocation Jobs",
     type: "website",
+    images: [
+      {
+        url: "https://kuchup.com/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "Kuchup MCP for Claude and Cursor",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MCP for Claude and Cursor | Relocation Jobs",
+    description:
+      "Queue roles, reframe your CV with approval checkpoints, and render PDFs in Kuchup via Claude or Cursor MCP.",
+    images: ["https://kuchup.com/og-default.png"],
   },
 };
 

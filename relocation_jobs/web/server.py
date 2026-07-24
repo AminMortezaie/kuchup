@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
+from pathlib import Path
 
 from flask import Flask, Response, redirect, request, send_from_directory
 
@@ -21,6 +23,10 @@ except ImportError:
 ROOT = PROJECT_ROOT
 STATIC = STATIC_DIR
 HOMEPAGE_STATIC = STATIC / "homepage"
+
+MARKETING_CACHE = "public, max-age=300, stale-while-revalidate=86400"
+ICON_CACHE = "public, max-age=86400"
+PRIVATE_CACHE = "no-store"
 
 FIXED_MARKETING_PATHS = (
     "/",
@@ -77,6 +83,30 @@ def public_marketing_paths() -> tuple[str, ...]:
     )
     return FIXED_MARKETING_PATHS + country_paths
 
+
+def _mtime_lastmod(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def _sitemap_lastmod(path: str) -> str | None:
+    if path == "/":
+        return _mtime_lastmod(HOMEPAGE_STATIC / "index.html")
+    segment = path.strip("/")
+    return _mtime_lastmod(HOMEPAGE_STATIC / f"{segment}.html")
+
+
+def _favicon_candidates() -> tuple[Path, ...]:
+    return (
+        STATIC / "icons" / "favicon.ico",
+        HOMEPAGE_STATIC / "favicon.ico",
+        STATIC / "icons" / "kuchup-bird.png",
+        HOMEPAGE_STATIC / "static" / "icons" / "kuchup-bird.png",
+        STATIC / "icons" / "apple-touch-icon.png",
+    )
+
+
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.secret_key = os.environ.get("PANEL_SECRET_KEY", "").strip() or "dev-fallback-key"
 _bootstrapped = False
@@ -105,23 +135,26 @@ def _ensure_bootstrapped():
 
 
 @app.after_request
-def _static_no_cache(response):
-    if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "no-store"
+def _static_cache_control(response):
+    path = request.path
+    if path.startswith("/static/icons/"):
+        response.headers["Cache-Control"] = ICON_CACHE
+    elif path.startswith("/static/"):
+        response.headers["Cache-Control"] = PRIVATE_CACHE
     return response
 
 
 @app.route("/admin")
 def admin_page():
     resp = send_from_directory(STATIC, "admin.html")
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
     return resp
 
 
 @app.route("/apply")
 def apply_page():
     resp = send_from_directory(STATIC, "apply.html")
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
     return resp
 
 
@@ -133,7 +166,7 @@ def app_page():
 @app.route("/company/<country>/<path:company_slug>")
 def company_workspace_page(country, company_slug):
     resp = send_from_directory(STATIC, "company.html")
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
     return resp
 
 
@@ -143,7 +176,7 @@ def public_home_page():
         resp = send_from_directory(HOMEPAGE_STATIC, "index.html")
     else:
         resp = send_from_directory(STATIC, "public.html")
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = MARKETING_CACHE
     return resp
 
 
@@ -159,8 +192,27 @@ def homepage_next_assets(asset_path):
 def homepage_icon():
     if (HOMEPAGE_STATIC / "icon.svg").is_file():
         resp = send_from_directory(HOMEPAGE_STATIC, "icon.svg")
-        resp.headers["Cache-Control"] = "public, max-age=86400"
+        resp.headers["Cache-Control"] = ICON_CACHE
         return resp
+    return Response(status=404)
+
+
+@app.route("/og-default.png")
+def homepage_og_image():
+    if (HOMEPAGE_STATIC / "og-default.png").is_file():
+        resp = send_from_directory(HOMEPAGE_STATIC, "og-default.png")
+        resp.headers["Cache-Control"] = ICON_CACHE
+        return resp
+    return Response(status=404)
+
+
+@app.route("/favicon.ico")
+def favicon_ico():
+    for candidate in _favicon_candidates():
+        if candidate.is_file():
+            resp = send_from_directory(candidate.parent, candidate.name)
+            resp.headers["Cache-Control"] = ICON_CACHE
+            return resp
     return Response(status=404)
 
 
@@ -171,7 +223,7 @@ def homepage_brand_assets(asset_path):
     if not str(target).startswith(str(brand_dir.resolve())) or not target.is_file():
         return Response(status=404)
     resp = send_from_directory(brand_dir, asset_path)
-    resp.headers["Cache-Control"] = "public, max-age=86400"
+    resp.headers["Cache-Control"] = ICON_CACHE
     return resp
 
 
@@ -179,7 +231,7 @@ def homepage_brand_assets(asset_path):
 @app.route("/remote")
 def panel_page():
     resp = send_from_directory(STATIC, "index.html")
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
     return resp
 
 
@@ -203,17 +255,32 @@ def robots_txt():
     return Response(body, mimetype="text/plain")
 
 
+@app.route("/llms.txt")
+def llms_txt():
+    path = STATIC / "llms.txt"
+    if path.is_file():
+        resp = send_from_directory(STATIC, "llms.txt")
+        resp.headers["Cache-Control"] = MARKETING_CACHE
+        resp.mimetype = "text/plain"
+        return resp
+    return Response(status=404)
+
+
 @app.route("/sitemap.xml")
 def sitemap_xml():
     public_site_url = _public_site_url()
-    urls = "\n".join(
-        f"  <url>\n    <loc>{public_site_url}{path}</loc>\n  </url>"
-        for path in public_marketing_paths()
-    )
+    entries: list[str] = []
+    for path in public_marketing_paths():
+        lastmod = _sitemap_lastmod(path)
+        lines = [f"  <url>", f"    <loc>{public_site_url}{path}</loc>"]
+        if lastmod:
+            lines.append(f"    <lastmod>{lastmod}</lastmod>")
+        lines.append("  </url>")
+        entries.append("\n".join(lines))
     body = "\n".join((
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-        urls,
+        *entries,
         "</urlset>",
         "",
     ))
@@ -232,13 +299,11 @@ def _is_marketing_path(path: str) -> bool:
     return _country_html_exists(country_key)
 
 
-# Marketing route catch-all — must be the final route so Flask matches
-# all explicit routes (panel, admin, robots, sitemap, api/*, etc.) first.
 def _marketing_404():
     not_found = HOMEPAGE_STATIC / "404.html"
     if not_found.is_file():
         resp = send_from_directory(HOMEPAGE_STATIC, "404.html")
-        resp.headers["Cache-Control"] = "no-store"
+        resp.headers["Cache-Control"] = PRIVATE_CACHE
         resp.status_code = 404
         return resp
     return Response(status=404)
@@ -255,5 +320,5 @@ def marketing_page(slug: str):
     if not index.is_file():
         return _marketing_404()
     resp = send_from_directory(HOMEPAGE_STATIC, filename)
-    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Cache-Control"] = MARKETING_CACHE
     return resp

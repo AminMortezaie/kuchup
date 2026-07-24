@@ -1,0 +1,32 @@
+# Kuchup (Relocation Jobs)
+
+> Curated visa-sponsored software engineering roles across Europe, with application tracking and Claude/Cursor MCP for CV prep.
+
+## Product
+
+- Public preview search on https://kuchup.com/ (no sign-in)
+- Country guides for Germany, Netherlands, UK, Portugal, and Ireland
+- Full board and company workspaces behind sign-in (not for indexing)
+- MCP server for gated CV reframe — you submit applications yourself
+
+## Canonical pages
+
+- https://kuchup.com/
+- https://kuchup.com/how-it-works
+- https://kuchup.com/pricing
+- https://kuchup.com/mcp
+- https://kuchup.com/relocation-jobs-germany
+- https://kuchup.com/relocation-jobs-netherlands
+- https://kuchup.com/relocation-jobs-uk
+- https://kuchup.com/relocation-jobs-portugal
+- https://kuchup.com/relocation-jobs-ireland
+
+## Notes
+
+- Catalog refreshes from company career pages about every six hours
+- Sponsorship signals are heuristics; always confirm the live job description
+- Private app surfaces (/panel, /apply, /api/) are disallowed in robots.txt
+
+## Optional
+
+- GitHub: https://github.com/AminMortezaie/relocation-jobs

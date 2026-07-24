@@ -37,15 +37,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const label = countryLabel(country)!;
   const content = COUNTRY_PAGES[country];
   const title = `Visa Sponsorship for Software Jobs in ${label}`;
+  const path = `/relocation-jobs-${country}`;
+  const description =
+    content.metaDescription.length > 158
+      ? `${content.metaDescription.slice(0, 155).trim()}…`
+      : content.metaDescription;
   return {
     title,
-    description: content.metaDescription,
+    description,
+    alternates: { canonical: path },
     openGraph: {
       title: `${title} | Relocation Jobs`,
-      description: content.metaDescription,
-      url: `https://kuchup.com/relocation-jobs-${country}`,
+      description,
+      url: `https://kuchup.com${path}`,
       siteName: "Relocation Jobs",
       type: "website",
+      images: [
+        {
+          url: "https://kuchup.com/og-default.png",
+          width: 1200,
+          height: 630,
+          alt: `Visa-sponsored software jobs in ${label}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | Relocation Jobs`,
+      description,
+      images: ["https://kuchup.com/og-default.png"],
     },
   };
 }
@@ -75,12 +95,34 @@ export default async function CountryJobsPage({ params }: PageProps) {
       },
     })),
   };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://kuchup.com/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: `Visa sponsorship in ${label}`,
+        item: `https://kuchup.com/relocation-jobs-${country}`,
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
         <Header />

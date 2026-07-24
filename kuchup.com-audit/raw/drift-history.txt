@@ -1,0 +1,9 @@
+
+No baselines found for https://kuchup.com/.
+Run `python scripts/drift_baseline.py <url>` to capture the first baseline.
+{
+  "url": "https://kuchup.com/",
+  "baselines": [],
+  "comparisons": [],
+  "note": "No database found. Run `drift baseline` first."
+}

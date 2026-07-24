@@ -1,0 +1,11 @@
+usage: preload_check.py [-h] [--json] url
+
+Audit Speculation Rules, bfcache, prerender, and LCP preload signals on a
+single URL.
+
+positional arguments:
+  url
+
+options:
+  -h, --help  show this help message and exit
+  --json

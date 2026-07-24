@@ -159,6 +159,51 @@ def test_public_seo_endpoints_are_available(v2_client):
     body = sitemap.get_data(as_text=True)
     assert "<loc>https://kuchup.com/</loc>" in body
     assert "<loc>https://kuchup.com/mcp</loc>" in body
+    assert "<lastmod>" in body
+
+    llms = v2_client.get("/llms.txt")
+    assert llms.status_code == 200
+    assert "kuchup.com" in llms.get_data(as_text=True).lower()
+
+    favicon = v2_client.get("/favicon.ico")
+    assert favicon.status_code == 200
+    assert "public" in (favicon.headers.get("Cache-Control") or "")
+
+
+def test_og_default_image_is_served(v2_client, monkeypatch, tmp_path):
+    from relocation_jobs.web import server as web_server
+
+    html_dir = tmp_path / "homepage"
+    html_dir.mkdir()
+    (html_dir / "og-default.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    monkeypatch.setattr(web_server, "HOMEPAGE_STATIC", html_dir)
+
+    og = v2_client.get("/og-default.png")
+    assert og.status_code == 200
+    assert "public" in (og.headers.get("Cache-Control") or "")
+
+
+def test_marketing_and_panel_cache_headers(v2_client, monkeypatch, tmp_path):
+    from relocation_jobs.web import server as web_server
+
+    html_dir = tmp_path / "homepage"
+    html_dir.mkdir()
+    (html_dir / "index.html").write_text("<html>home</html>", encoding="utf-8")
+    (html_dir / "pricing.html").write_text("<html>pricing</html>", encoding="utf-8")
+    monkeypatch.setattr(web_server, "HOMEPAGE_STATIC", html_dir)
+
+    home = v2_client.get("/")
+    assert home.status_code == 200
+    assert "no-store" not in (home.headers.get("Cache-Control") or "")
+    assert "max-age=300" in (home.headers.get("Cache-Control") or "")
+
+    pricing = v2_client.get("/pricing")
+    assert pricing.status_code == 200
+    assert "max-age=300" in (pricing.headers.get("Cache-Control") or "")
+
+    panel = v2_client.get("/panel")
+    assert panel.status_code == 200
+    assert panel.headers.get("Cache-Control") == "no-store"
 
 
 def test_mcp_marketing_path_serves_when_html_exists(v2_client, monkeypatch, tmp_path):
