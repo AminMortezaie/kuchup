@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b170d0181c92",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/scrape/boards/recruitee.py",
+    "relocation_jobs/scrape/job_text.py",
+    "tests/core/test_ats_constants.py",
+    "tests/scrape/test_recruitee_board.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b1/70d0181c92/0/metadata.json",
+      "transcript": "/b1/70d0181c92/0/full.jsonl",
+      "compact_transcript": "/b1/70d0181c92/0/transcript.jsonl",
+      "content_hash": "/b1/70d0181c92/0/content_hash.txt",
+      "prompt": "/b1/70d0181c92/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 23931,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1300864,
+    "output_tokens": 7623,
+    "api_call_count": 2
+  }
+}

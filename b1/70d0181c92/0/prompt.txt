@@ -1,0 +1,21 @@
+problem in fetching idealo intenet on board find the problem there.
+
+---
+
+want their ats type
+
+---
+
+ok where is is?
+
+---
+
+find it on internet
+
+---
+
+ok set for it with their real ats url
+
+---
+
+restart the local server to apply the changes
