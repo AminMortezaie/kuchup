@@ -1,8 +1,8 @@
 # Documentation
 
-**Last updated:** 2026-07-13
+**Last updated:** 2026-08-05
 
-All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage only.
+All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage only. Repo map (apps vs domains): [apps/README.md](../apps/README.md).
 
 ---
 
@@ -11,6 +11,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | I want to… | Read |
 |------------|------|
 | Install and run the panel | [README](../README.md) |
+| Find apps vs domains (repo map) | [apps/README.md](../apps/README.md) · [architecture.md](reference/architecture.md#repo-map) |
 | Set up for development | [contributing.md](contributing.md) |
 | Understand code layout & data flow | [reference/architecture.md](reference/architecture.md) |
 | Change Python in `relocation_jobs/` | [reference/rules.md](reference/rules.md) |
@@ -19,6 +20,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Board performance / read-model design (proposal) | [reference/board-read-model-proposal.md](reference/board-read-model-proposal.md) |
 | Fetch pipeline queue / Kafka placement (proposal) | [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md) |
 | Multi-user scaling — SQS broker, DB pool, board projection (proposal) | [reference/multi-user-scaling-proposal.md](reference/multi-user-scaling-proposal.md) |
+| Entitlements — Google auth, plans, MCP quotas, personalized board (in progress) | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
 | Full SPA UI modernization (proposal) | [reference/full-spa-ui-modernization-proposal.md](reference/full-spa-ui-modernization-proposal.md) |
 | Single-company fetch modal session (why it felt flaky) | [reference/fetch-panel-session.md](reference/fetch-panel-session.md) |
 | Catalog vs per-user tracking (design) | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
@@ -31,7 +33,9 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | MCP apply assistant (Claude Desktop, v0) | [reference/mcp-application.md](reference/mcp-application.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
 | **Production panel (EC2, kuchup.com)** | [operations/ec2-panel.md](operations/ec2-panel.md) |
+| **Production monitoring (Grafana Cloud)** | [operations/monitoring.md](operations/monitoring.md) |
 | Domain email (`@kuchup.com`) | [operations/email.md](operations/email.md) |
+| **SQS opportunity refresh queue** | [operations/sqs-opportunity-refresh.md](operations/sqs-opportunity-refresh.md) |
 | Agent commands cheat sheet | [CLAUDE.md](../CLAUDE.md) |
 
 ---
@@ -64,6 +68,7 @@ docs/
   operations/
     aws-postgres.md           AWS EC2 Postgres
     ec2-panel.md              Panel on EC2, kuchup.com, Caddy
+    monitoring.md             Grafana Cloud Free + Alloy
     email.md                  Domain email via Cloudflare Email Routing
   archive/                    historical handoffs — read only if debugging old work
     v2-bugfix-handoff.md
@@ -109,6 +114,7 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 |-----|---------|
 | [operations/aws-postgres.md](operations/aws-postgres.md) | AWS Postgres migration and day-to-day ops |
 | [operations/ec2-panel.md](operations/ec2-panel.md) | EC2 deploy, kuchup.com, Caddy, Cloudflare lock-down |
+| [operations/monitoring.md](operations/monitoring.md) | Grafana Cloud Free, Alloy, `/api/health`, alerts |
 | [operations/email.md](operations/email.md) | `@kuchup.com` via Cloudflare Email Routing + Gmail Send as |
 | `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
 | `scripts/ec2_redis.sh` | Redis on EC2 |

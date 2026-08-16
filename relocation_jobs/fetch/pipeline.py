@@ -9,6 +9,7 @@ from relocation_jobs.fetch.ports import (
     OnCompanyResult,
     OnReview,
 )
+from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 from relocation_jobs.scrape.board import fetch_ats_board
 from relocation_jobs.scrape.company import process_company
 from relocation_jobs.scrape.enrich import enrich_jobs
@@ -28,6 +29,7 @@ async def fetch_and_persist_company(
     review_mode: bool = False,
     on_review: OnReview = None,
     on_company_result: OnCompanyResult = None,
+    refresh_opportunities: bool = True,
 ) -> tuple[str, int]:
     company = get_company(country_key, company_name)
     if company is None:
@@ -71,7 +73,7 @@ async def fetch_and_persist_company(
             on_company_result=on_company_result,
         )
 
-    return await fetch_service.fetch_company(
+    result = await fetch_service.fetch_company(
         client,
         company,
         1,
@@ -84,3 +86,6 @@ async def fetch_and_persist_company(
         enrich_concurrency=enrich_concurrency,
         fetch_run_id=fetch_run_id,
     )
+    if refresh_opportunities:
+        enqueue_country_opportunity_refresh(country_key)
+    return result

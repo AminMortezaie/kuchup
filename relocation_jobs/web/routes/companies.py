@@ -10,6 +10,8 @@ from relocation_jobs.core.paths import country_archive_filename, supported_count
 from relocation_jobs.catalog.repo import get_company
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import start_company_fetch
+from relocation_jobs.users.entitlements import plan_is_full_access
+from relocation_jobs.users.repo import get_user_by_id
 from relocation_jobs.web import deps
 
 
@@ -338,6 +340,12 @@ def register(app):
                     "Set PANEL_COMPANY_FETCH_ENABLED=1 or PANEL_SCRAPE_ENABLED=1."
                 ),
             }), 503
+
+        user = get_user_by_id(g.user_id)
+        if not user or not plan_is_full_access(user.get("plan"), user_id=g.user_id):
+            return jsonify({
+                "error": "Company fetch is available on Full Access. Upgrade to refresh boards on demand.",
+            }), 403
 
         if not HTTPX_AVAILABLE:
             return jsonify({

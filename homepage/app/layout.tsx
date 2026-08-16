@@ -111,7 +111,7 @@ export default function RootLayout({
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
-          description: "Public preview is free; full board access coming soon.",
+          description: "Public preview is free; signed-in Free includes a board company cap and MCP daily quota.",
         },
       },
     ],

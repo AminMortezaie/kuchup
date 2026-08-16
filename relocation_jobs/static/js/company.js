@@ -89,6 +89,14 @@ function showLogin() {
   const content = $("companyContent");
   if (content) content.hidden = true;
   $("companyLoginPanel").hidden = false;
+  const params = new URLSearchParams(window.location.search);
+  const err = $("companyLoginError");
+  if (err) err.textContent = params.get("error") || "";
+  const link = $("companyGoogleSignIn");
+  if (link) {
+    const next = `${window.location.pathname}${window.location.search || ""}`;
+    link.href = `/api/auth/google?next=${encodeURIComponent(next || "/panel")}`;
+  }
 }
 
 function showApp() {
@@ -162,9 +170,9 @@ function renderPositionList() {
     const parts = [];
     if (withCv) parts.push(`${withCv} tailored CV`);
     if (withCl) parts.push(`${withCl} cover letter`);
-    hint.textContent = parts.length
+    hint.innerHTML = parts.length
       ? `${parts.join(" · ")} across ${positions.length} roles.`
-      : "No tailored CVs or cover letters yet — use Claude Desktop MCP after marking roles looking to apply.";
+      : 'No tailored CVs or cover letters yet — <a href="/apply?tab=connect">Connect MCP</a> (Claude or Cursor), mark roles looking to apply on the board, then generate docs. <a href="/mcp">How it works</a>.';
   }
 
   list.innerHTML = positions.map((position) => {
@@ -763,6 +771,10 @@ async function refreshPositionsAfterRender() {
 
 async function rerenderPdf() {
   if (!selectedKey) return;
+  if (!savedTexContent.trim() && !texEditing) {
+    showError("No LaTeX yet — connect MCP to save tailored tex, then re-render.");
+    return;
+  }
   const btn = $("companyRenderBtn");
   const saveBtn = $("companyTexSaveBtn");
   const editBtn = $("companyTexEditBtn");
@@ -812,31 +824,6 @@ async function refreshAuth() {
   return true;
 }
 
-async function submitLogin(event) {
-  event.preventDefault();
-  $("companyLoginError").textContent = "";
-  const username = $("companyLoginUsername").value.trim();
-  const password = $("companyLoginPassword").value;
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      $("companyLoginError").textContent = data.error || "Sign in failed";
-      return;
-    }
-    $("companyLoginPassword").value = "";
-    showApp();
-    await loadWorkspace();
-  } catch {
-    $("companyLoginError").textContent = "Network error";
-  }
-}
-
 async function logout() {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
   clearDetail();
@@ -845,7 +832,6 @@ async function logout() {
 }
 
 function bindEvents() {
-  $("companyLoginForm")?.addEventListener("submit", submitLogin);
   $("companyLogoutBtn")?.addEventListener("click", logout);
   $("companyJdToggleBtn")?.addEventListener("click", toggleJobDescription);
   $("companyJdFetchBtn")?.addEventListener("click", fetchJobDescription);

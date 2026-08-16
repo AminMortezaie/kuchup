@@ -11,6 +11,30 @@ Company lists come from [relocate.me](https://relocate.me). Each employer’s AT
 
 ---
 
+## Repo map (one product, one repo)
+
+```
+apps/                 deployables — panel, fetch-worker, opportunity-worker, mcp
+relocation_jobs/      domains — catalog, positions, panel, fetch, scrape, users, …
+frontend/             React board widget → relocation_jobs/static/dist/
+homepage/             marketing (Next.js; same-origin /api/public/*)
+scripts/              ops helpers + Docker entry paths
+docs/                 documentation
+tests/                pytest (mirrors relocation_jobs/ domains)
+```
+
+| I want to… | Go here |
+|------------|---------|
+| Run the panel | `python3 apps/panel/run.py` (or `scripts/panel_server.py`) |
+| Run a worker | `apps/fetch-worker/`, `apps/opportunity-worker/` |
+| Run MCP | `apps/mcp/run.py` (stdio) / `apps/mcp/run_http.py` |
+| Change domain logic | `relocation_jobs/<domain>/` |
+| Full app list | [`apps/README.md`](apps/README.md) |
+
+Do **not** split into multi-repo: panel, workers, and MCP share Postgres, `core/`, and migrations.
+
+---
+
 ## Features
 
 | Area | What you get |
@@ -35,11 +59,12 @@ python3 -m playwright install chromium
 cp .env.example .env
 # Set DATABASE_URL at minimum (local Postgres is fastest for dev)
 
-PANEL_SCRAPE_ENABLED=1 python3 scripts/panel_server.py
+PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 # → http://127.0.0.1:5051
+# (Docker / ops still use scripts/panel_server.py)
 ```
 
-On first startup the app creates the Postgres schema and bootstraps an admin from `PANEL_ADMIN_USER` / `PANEL_ADMIN_PASSWORD`. If no password is set, a random one is printed to the terminal.
+On first startup the app creates the Postgres schema. Sign in with **Google** (`GOOGLE_CLIENT_*`). Accounts listed in `PANEL_ADMIN_EMAILS` become admins. Set `PANEL_ALLOW_REGISTER=1` to allow new Google users to self-register.
 
 After editing React UI: `cd frontend && npm run build` → `relocation_jobs/static/dist/board.js`. Hard refresh (`Cmd+Shift+R`) after JS/CSS changes.
 
@@ -54,11 +79,15 @@ Copy `.env.example` → `.env`. Real hosts/passwords stay in gitignored `.env` /
 | `DATABASE_URL` | **Required.** Postgres (local or AWS EC2) |
 | `REDIS_URL` | Optional country-label cache (`scripts/ec2_redis.sh`); Postgres fallback when unset |
 | `PANEL_SECRET_KEY` | Flask session signing |
-| `PANEL_ADMIN_USER` / `PANEL_ADMIN_PASSWORD` | Bootstrap admin on first run |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth (required for sign-in) |
+| `GOOGLE_REDIRECT_URI` | Optional callback override |
+| `PANEL_ADMIN_EMAILS` | Comma-separated Google emails granted admin |
+| `PANEL_ADMIN_USER` | Legacy username for scheduler user resolution |
 | `PANEL_SCRAPE_ENABLED` | `1` locally for country + company fetch; `0` on slim production panel |
 | `PANEL_COMPANY_FETCH_ENABLED` | `1` on EC2 panel for board **Fetch jobs** without enabling country scrape |
 | `PANEL_DATA_DIR` | Local data dir for `custom_cities.json` (default `data/`) |
-| `PANEL_ALLOW_REGISTER` | Self-service registration after first user |
+| `PANEL_ALLOW_REGISTER` | Self-service Google registration after first user |
+| `PANEL_PUBLIC_BASE_URL` | Panel URL used by MCP “Continue with Google” |
 | `MCP_USERNAME` / `MCP_USER_ID` | Panel user for Claude Desktop MCP (default `admin`) |
 | `MCP_LATEX_CMD` | LaTeX compiler for PDF (default `tectonic`) |
 
@@ -72,10 +101,10 @@ AWS Postgres: `./scripts/aws_postgres_migrate.sh sync-sg` after your public IP c
 ### Web panel
 
 ```bash
-PANEL_SCRAPE_ENABLED=1 python3 scripts/panel_server.py   # → :5051
+PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py   # → :5051
 ```
 
-Sign in → select a **single country** → **Fetch** (admin) to scrape. Board: `GET /api/board` (pagination → search → sort/filters). Aggregate stats: admin page / `GET /api/admin/panel-stats` (board only returns lightweight `user_stats`).
+Sign in with Google → select a **single country** → **Fetch** (admin) to scrape. Board: `GET /api/board` (pagination → search → sort/filters). Aggregate stats: admin page / `GET /api/admin/panel-stats` (board only returns lightweight `user_stats`).
 
 Re-scrapes **merge by URL** — fetch dates and tracking are preserved. Jobs gone from an ATS stay as catalog orphans and reappear if you still have tracking.
 
@@ -85,7 +114,7 @@ Re-scrapes **merge by URL** — fetch dates and tracking are preserved. Jobs gon
 | `/apply` | Profile, pipeline prompts, **master resumes**, **project masters** (LaTeX + optional PDF) |
 | `/company/<country>/<slug>` | Positions, tailored CV / cover letter, PDF preview, re-render |
 
-**Claude Desktop MCP:** `python3 scripts/mcp_server.py` — job context, application queue, masters, project masters, tailored tex/PDF, cover letters, `mark_applied`, add company/position. See [mcp-application.md](docs/reference/mcp-application.md).
+**Claude Desktop MCP:** `python3 apps/mcp/run.py` — job context, application queue, masters, project masters, tailored tex/PDF, cover letters, `mark_applied`, add company/position. See [mcp-application.md](docs/reference/mcp-application.md).
 
 ### Build company lists
 
@@ -110,12 +139,6 @@ python3 scripts/scrape_jobs.py --all
 
 First run per company: detect + cache ATS. Later runs hit the ATS API directly.
 
-### Reset password
-
-```bash
-python3 scripts/reset_password.py <username>
-```
-
 ---
 
 ## Architecture
@@ -138,7 +161,12 @@ relocate.me
 | `companies/*.json` | Git archive only — not read at runtime |
 | `data/custom_cities.json` | User-added cities (`PANEL_DATA_DIR`) |
 
-### Package layout (`relocation_jobs/`)
+### Apps (`apps/`) vs domains (`relocation_jobs/`)
+
+| Kind | Location | Role |
+|------|----------|------|
+| **Apps** | [`apps/`](apps/) | How you run it — panel, fetch-worker, opportunity-worker, mcp |
+| **Domains** | [`relocation_jobs/`](relocation_jobs/) | Business logic — catalog, positions, fetch, scrape, … |
 
 ```
 catalog/      Postgres company + job reads/writes
@@ -146,17 +174,18 @@ positions/    Apply, reject, not-for-me, pin, looking-to-apply
 panel/        Board flatten, pagination, filters, stats
 fetch/        In-process asyncio country + company fetch
 scrape/       ATS boards, merge, enrich, relevance
+opportunities/ Personalized board + SQS refresh
 mcp/          Claude Desktop MCP — masters, projects, tex → PDF
 web/          Flask server + routes
 companies/    Company CRUD
-users/        Users, applied history
+users/        Users, applied history, entitlements
 admin/        Dashboard aggregates
 core/         db, auth, ATS constants, detection
 db/           Migrations bootstrap
 static/       UI (+ dist/board.js from frontend/)
 ```
 
-**Layer rule:** SQL only in `*/repo.py`. Details: [architecture.md](docs/reference/architecture.md) · [rules.md](docs/reference/rules.md).
+**Layer rule:** SQL only in `*/repo.py`. Details: [architecture.md](docs/reference/architecture.md) · [rules.md](docs/reference/rules.md) · [apps/README.md](apps/README.md).
 
 ### Board API
 

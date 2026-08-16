@@ -452,6 +452,15 @@ function CompanyCard({ company, ui }) {
             ))}
           </>
         ) : null}
+        {!isCollapsed && Number(company.jobs_hidden_count) > 0 ? (
+          <div className="position-card position-card-upgrade">
+            <p className="empty-hint text-sm">
+              +{company.jobs_hidden_count} more role{company.jobs_hidden_count === 1 ? "" : "s"}
+              {" "}waiting. A new role costs 1 credit after you act on a shown role.{" "}
+              <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.
+            </p>
+          </div>
+        ) : null}
         {!isCollapsed && rolesTruncatable ? (
           <ExpandRolesBtn
             hiddenCount={rolesHiddenCount}

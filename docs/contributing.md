@@ -1,6 +1,6 @@
 # Contributing
 
-**Last updated:** 2026-06-26
+**Last updated:** 2026-08-05
 
 Developer setup and where to work. Product usage: [README](../README.md). Doc index: [README.md](README.md).
 
@@ -25,12 +25,13 @@ relocate.me → build_companies.py → Postgres catalog
 ## Current architecture
 
 | Layer | Status | Location |
-|-------|--------|----------|
+|------|--------|----------|
+| **Apps (deployables)** | Discoverable entries | [`apps/`](../apps/) — see [apps/README.md](../apps/README.md) |
 | **v2 application spine** | **Active — code here** | `relocation_jobs/` |
 | **v1** | Reference only; do not extend | legacy paths under `relocation_jobs/` |
 | **Static UI** | Shared | `relocation_jobs/static/` + `frontend/` |
 | **Postgres** | AWS EC2 Docker (Frankfurt) | `DATABASE_URL` in `.env` |
-| **Production panel** | Render (still v1 entry) | `render.yaml`, port 5050 in prod |
+| **Production panel** | EC2 kuchup.com | [operations/ec2-panel.md](operations/ec2-panel.md) |
 
 Local dev uses v2 on **5051**. More detail: [reference/architecture.md](reference/architecture.md).
 
@@ -42,10 +43,10 @@ Local dev uses v2 on **5051**. More detail: [reference/architecture.md](referenc
 pip install -r requirements-dev.txt
 python3 -m playwright install chromium
 cp .env.example .env
-# Set DATABASE_URL, PANEL_SECRET_KEY, PANEL_ADMIN_USER, PANEL_ADMIN_PASSWORD
+# Set DATABASE_URL, PANEL_SECRET_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, PANEL_ADMIN_EMAILS
 # (use <ELASTIC_IP> from gitignored aws-postgres.env — never commit real hosts/passwords)
 
-PANEL_SCRAPE_ENABLED=1 python3 scripts/panel_server.py
+PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 # → http://127.0.0.1:5051
 
 pytest tests -o addopts=
@@ -53,7 +54,7 @@ pytest tests -o addopts=
 
 | Panel | Port | Entry |
 |-------|------|-------|
-| **v2 (dev)** | 5051 | `scripts/panel_server.py` |
+| **v2 (dev)** | 5051 | `apps/panel/run.py` (or `scripts/panel_server.py`) |
 | v1 (legacy) | 5050 | `python3 -m relocation_jobs.panel_server` |
 
 After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run build`.
@@ -62,7 +63,24 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 
 ## Where to code
 
-### v2 domains (`relocation_jobs/`)
+### Repo map
+
+| Kind | Location | Role |
+|------|----------|------|
+| **Apps (deployables)** | [`apps/`](../apps/) | How you run it — see [apps/README.md](../apps/README.md) |
+| **Domains** | `relocation_jobs/` | Business logic (below) |
+| **Ops scripts** | `scripts/` | Deploy helpers + Docker entry paths |
+| **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel JS, React board, marketing |
+
+```
+apps/panel/run.py              Flask panel
+apps/fetch-worker/run.py       Scheduled country scrape
+apps/opportunity-worker/run.py SQS opportunity refresh
+apps/mcp/run.py                Claude Desktop MCP (stdio)
+apps/mcp/run_http.py           HTTP MCP + OAuth
+```
+
+### Domains (`relocation_jobs/`)
 
 ```
 catalog/      Postgres company + job reads/writes (repo.py)
@@ -71,7 +89,8 @@ panel/        flatten_companies, paginated board, stats, filters
 fetch/        Country + single-company fetch (in-process asyncio)
 scrape/       ATS boards, merge, enrich, relevance
 companies/    Company CRUD orchestration
-users/        User history, applied dates
+users/        User history, applied dates, entitlements
+opportunities/ Personalized board + queue matching
 mcp/          Claude Desktop MCP — application prep, tex → PDF (v0)
 admin/        Dashboard aggregates
 web/          Flask server, routes, deps

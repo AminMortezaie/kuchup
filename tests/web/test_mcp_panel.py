@@ -270,19 +270,26 @@ def test_mcp_routes_require_auth(v2_client):
     assert v2_client.post("/api/mcp/project-masters/x/render").status_code == 401
 
 
-def test_mcp_profile_isolated_per_user(v2_auth_client, auth_client):
+def test_mcp_profile_isolated_per_user(v2_auth_client, client, db):
+    from relocation_jobs.users.repo import create_user
+
     v2_auth_client.put(
         "/api/mcp/profile",
         json={"full_name": "Admin User", "email": "admin@example.com"},
     )
 
-    register = auth_client.post(
-        "/api/auth/register",
-        json={"username": "otheruser", "password": "otherpass123"},
+    other_user = create_user(
+        "otheruser",
+        email="otheruser@example.com",
+        google_sub="test-sub-otheruser",
     )
-    assert register.status_code == 200
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = other_user["id"]
+        sess["username"] = other_user["username"]
+        sess.permanent = True
 
-    other = auth_client.get("/api/mcp/profile")
+    other = client.get("/api/mcp/profile")
     assert other.status_code == 200
     assert other.get_json()["profile"]["full_name"] == ""
 

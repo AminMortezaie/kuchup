@@ -13,19 +13,27 @@ from relocation_jobs.mcp.context import reset_current_user_id, set_current_user_
 from relocation_jobs.mcp.oauth_provider import KuchupOAuthProvider, complete_login_redirect
 from relocation_jobs.mcp.types import ApplicationProfile
 from relocation_jobs.users.repo import create_user
-from tests.helpers.passwords import hash_test_password
 
 
 @pytest.fixture
 def two_users(db):
-    from relocation_jobs.users.repo import get_user_by_username
+    from relocation_jobs.users.repo import create_user, get_user_by_username
 
     admin = get_user_by_username("admin")
     if admin is None:
-        admin = create_user("admin", hash_test_password("adminpass123"))
+        admin = create_user(
+            "admin",
+            is_admin=True,
+            email="admin@example.com",
+            google_sub="test-sub-admin",
+        )
     other = get_user_by_username("other")
     if other is None:
-        other = create_user("other", hash_test_password("otherpass123"))
+        other = create_user(
+            "other",
+            email="other@example.com",
+            google_sub="test-sub-other",
+        )
     service.save_application_profile(
         ApplicationProfile(full_name="Admin Person"),
         user_id=int(admin["id"]),

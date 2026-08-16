@@ -175,6 +175,14 @@ def get_connection():
     return _RetryConnection(_acquire_thread_connection(), thread_owned=True)
 
 
+def ping_postgres() -> bool:
+    try:
+        get_connection().execute("SELECT 1")
+        return True
+    except Exception:
+        return False
+
+
 @contextmanager
 def db_read():
     """Scoped DB read — per-thread connection for worker threads."""
@@ -250,8 +258,15 @@ def init_db(*, force: bool = False) -> None:
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL,
-                created_at TEXT NOT NULL
+                google_sub TEXT UNIQUE,
+                email TEXT UNIQUE,
+                display_name TEXT,
+                plan TEXT NOT NULL DEFAULT 'free',
+                plan_updated_at TEXT,
+                mcp_quota_date TEXT,
+                mcp_quota_used INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                is_admin INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS job_tracking (

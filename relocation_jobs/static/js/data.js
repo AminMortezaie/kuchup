@@ -37,7 +37,9 @@ export async function loadCountries() {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = params.get("country");
   const saved = localStorage.getItem(panelStorageKey("country"));
-  const pick = [fromUrl, saved].find((id) => id && countries.some((c) => c.id === id));
+  const targets = state.preferences?.target_countries || state.boardMeta?.target_countries || [];
+  const preferredTarget = targets.find((id) => countries.some((c) => c.id === id));
+  const pick = [fromUrl, saved, preferredTarget].find((id) => id && countries.some((c) => c.id === id));
   if (pick) {
     sel.value = pick;
     if (fromUrl) localStorage.setItem(panelStorageKey("country"), fromUrl);

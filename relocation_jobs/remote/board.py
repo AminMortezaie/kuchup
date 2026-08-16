@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from relocation_jobs.opportunities.types import BoardOpportunityScope
 from relocation_jobs.panel.board import (
     DEFAULT_BOARD_PAGE_SIZE,
     MAX_BOARD_PAGE_SIZE,
@@ -26,6 +27,7 @@ def load_remote_board_page(
     panel_flags: dict | None = None,
     count_total: bool = False,
     sort: str | None = "newest",
+    opportunity_scope: BoardOpportunityScope | None = None,
 ) -> tuple[list[dict], list[dict], int, int | None, bool]:
     flags = dict(panel_flags or {})
     flags["visa_only"] = False
@@ -41,4 +43,5 @@ def load_remote_board_page(
         count_total=count_total,
         sort=sort,
         catalog_kind=CATALOG_KIND_REMOTE,
+        opportunity_scope=opportunity_scope,
     )

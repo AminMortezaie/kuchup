@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { CountryCatalogPanel } from "@/components/CountryCatalogPanel";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { COUNTRY_LABELS, countryLabel, countryLinks } from "@/lib/countries";
+import { MARKETING_COUNTRY_KEYS, countryLabel, countryLinks } from "@/lib/countries";
 import { COUNTRY_PAGES } from "@/lib/country-pages";
 import { countrySnapshot } from "@/lib/country-snapshots";
 
@@ -19,11 +19,11 @@ function countryKeyFromSlug(slug: string): string | null {
     return null;
   }
   const key = slug.slice(prefix.length);
-  return key && countryLabel(key) && COUNTRY_PAGES[key] ? key : null;
+  return key && COUNTRY_PAGES[key] ? key : null;
 }
 
 export function generateStaticParams() {
-  return Object.keys(COUNTRY_LABELS).map((country) => ({
+  return MARKETING_COUNTRY_KEYS.map((country) => ({
     slug: `relocation-jobs-${country}`,
   }));
 }

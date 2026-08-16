@@ -11,7 +11,7 @@ const STEPS = [
   },
   {
     title: "Sign in to unlock tracking",
-    body: "Once you sign in, the full board is available: company-level tracking, per-user state for every role, apply/reject/not-for-me buckets, and a company workspace to store CVs and application documents.",
+    body: "Once you sign in, you get a preference-matched board with company-level tracking, per-user apply/reject/not-for-me state, and a company workspace for CVs and documents. Free accounts include a company cap; Full Access removes it when paid plans launch.",
   },
   {
     title: "Tailor your CV per job",

@@ -7,9 +7,9 @@ const PREVIEW_ITEMS = [
 ] as const;
 
 const WORKSPACE_ITEMS = [
-  "Open the full company board",
+  "Open a preference-matched company board",
   "Track personal application status",
-  "Connect Claude or Cursor via Kuchup MCP",
+  "Connect Claude or Cursor via Kuchup MCP (quota on Free)",
   "Keep role-specific CV and cover-letter PDFs",
 ] as const;
 

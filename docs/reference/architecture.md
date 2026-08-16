@@ -1,8 +1,31 @@
 # Architecture
 
-**Last updated:** 2026-06-26
+**Last updated:** 2026-08-05
 
 v2 layout and data flow. Setup: [contributing.md](../contributing.md). Board details: [board.md](board.md). Catalog vs user state: [catalog-pattern.md](catalog-pattern.md).
+
+---
+
+## Repo map
+
+One product in one repo. **Apps** are how you run it; **domains** are where logic lives. Do not split multi-repo while panel, workers, and MCP share Postgres and `core/`.
+
+| Kind | Location | Role |
+|------|----------|------|
+| **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, opportunity-worker, mcp |
+| **Domains** | [`relocation_jobs/`](../../relocation_jobs/) | Domain packages (catalog, fetch, scrape, …) |
+| **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
+| **UI** | `static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
+
+```
+apps/panel/run.py
+apps/fetch-worker/run.py
+apps/opportunity-worker/run.py
+apps/mcp/run.py          # stdio
+apps/mcp/run_http.py     # HTTP + OAuth
+```
+
+Full table: [apps/README.md](../../apps/README.md).
 
 ---
 
@@ -33,7 +56,13 @@ relocation_jobs/
 ├── fetch/        country_runner, runner — in-process asyncio fetch
 ├── scrape/       boards/, merge, enrich, aggregator_* 
 ├── companies/    company CRUD
-├── users/        history, applied
+├── users/        history, applied, entitlements
+├── opportunities/ sticky company match + reconcile
+├── broadcast/     freemium job peek / capacity
+├── credits/       promotional/purchased wallet grants + immutable ledger
+├── payments/      checkout providers, signed notifications, reconciliation
+├── async_jobs/    typed SQS enqueue/dispatch
+├── positions/     job tracking status (applied/seen/…)
 ├── mcp/          Claude Desktop MCP: application prep, tex → PDF (v0)
 ├── admin/        dashboard aggregates
 ├── web/          server, routes, deps

@@ -55,6 +55,11 @@ const FAQ_ITEMS = [
       "Application profile, master resumes, project masters, and tailored documents are stored per user in Postgres. Nothing sensitive is committed to the public repository. Access to MCP requires your account (OAuth or a personal API token from Connect MCP).",
   },
   {
+    question: "Are there rate limits on MCP?",
+    answer:
+      "Yes. Free accounts get 20 MCP write/render requests per day (saves and PDF renders). Full Access raises that limit when paid plans launch. Remaining quota appears on Connect MCP after you sign in.",
+  },
+  {
     question: "Will it submit applications for me?",
     answer:
       "No. Kuchup prepares tailored CVs and cover letters and updates tracking when you ask. You review the PDF and submit on the employer’s site yourself.",
@@ -124,7 +129,7 @@ export default function McpPage() {
             leave tailored PDFs in your workspace — ready for you to send.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button as="a" href="/apply" variant="primary">
+            <Button as="a" href="/apply?tab=connect" variant="primary">
               Connect in workspace
             </Button>
             <Button as="a" href="/how-it-works" variant="secondary">
@@ -184,14 +189,16 @@ export default function McpPage() {
                 <strong className="font-semibold text-text-primary">
                   Connect MCP
                 </strong>{" "}
-                on the Application data page after you sign in.
+                on the Application data page after you sign in. Free accounts
+                include 20 MCP write/render requests per day; remaining quota is
+                shown on Connect MCP.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-text-secondary">
                 Power users can also run a local stdio MCP server against their
                 own account for Claude Desktop on a laptop.
               </p>
-              <Button as="a" href="/apply" variant="secondary" className="mt-5">
-                Open Application data
+              <Button as="a" href="/apply?tab=connect" variant="secondary" className="mt-5">
+                Open Connect MCP
               </Button>
             </Card>
           </section>

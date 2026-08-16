@@ -16,8 +16,9 @@
 | Remote MCP (OAuth + Streamable HTTP) | `relocation-mcp` | 127.0.0.1:10001 |
 | Fetch worker (scheduler) | `relocation-fetch-worker` | — |
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
+| Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker only needs Postgres; it runs country scrapes every **6 hours** (sequential countries, concurrency **4**). Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`.
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker only needs Postgres; it runs country scrapes every **6 hours** (sequential countries, concurrency **4**). Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
 
 ---
 
@@ -30,7 +31,8 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 ./scripts/ec2_app_deploy.sh deploy --force   # rebuild panel + worker even if hashes match
 ./scripts/ec2_app_deploy.sh prune            # dangling images + trim BuildKit cache (disk recovery)
 ./scripts/ec2_app_deploy.sh open-sg          # one-shot: open SG 80/443 to 0.0.0.0/0 (manual)
-./scripts/ec2_app_deploy.sh status           # containers + health check + worker logs
+./scripts/ec2_app_deploy.sh status           # doctor: disk/RAM, containers, /api/health, verdict
+./scripts/ec2_app_deploy.sh logs panel 100   # docker logs (panel|caddy|mcp|worker|alloy|all)
 ./scripts/ec2_app_deploy.sh worker-logs      # follow fetch scheduler logs
 ```
 
@@ -41,11 +43,11 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 3. Prunes **dangling images only** (`docker image prune -f`) — never BuildKit cache.
 4. Hashes panel/worker inputs on EC2 (Dockerfiles, requirements, entrypoints, `relocation_jobs/` excluding bind-mounted `static/`). Skips `docker build` when the hash matches and the tagged image already exists.
 5. Recreates panel + worker containers (static files are bind-mounted into the panel, so CSS/homepage updates apply without a panel image rebuild).
-6. Recreates Caddy and runs health checks.
+6. Recreates Caddy, starts Alloy when Grafana Cloud env is set, and runs health checks.
 
 `deploy` does **not** call `open-sg`. After Cloudflare origin lock-down, reopening `0.0.0.0/0` on every deploy would undo the SG lockdown — run `open-sg` only when you intentionally want world-open 80/443.
 
-**Disk (8G root):** each rebuild can leave the previous panel/worker image dangling (~GB). `deploy` prunes dangling images before and after builds so old+new layers do not stack, but **keeps BuildKit cache** (pip / tectonic / Playwright). Use `prune` alone only when the box is tight; it trims builder cache while keeping ~8GB of recent cache warm. Routine deploys should not need `prune` if disk is healthy. If prune still cannot free enough headroom, grow the EBS volume.
+**Disk (root EBS):** each rebuild can leave the previous panel/worker image dangling (~GB). `deploy` prunes dangling images before and after builds so old+new layers do not stack, but **keeps BuildKit cache** (pip / tectonic / Playwright). Use `prune` alone only when the box is tight; it trims builder cache while keeping recent cache warm. Routine deploys should not need `prune` if disk is healthy. If prune still cannot free enough headroom, grow the EBS volume. Prefer keeping root usage well under ~80% — full disk has caused host hangs (`no space left on device`).
 
 **DB safety:** prune never runs `docker volume prune`, `docker system prune --volumes`, or anything that stops/removes container `pg`. Postgres data is in named volume `pgdata`. Each prune asserts `pg` is running and `pgdata` exists before and after; it aborts if either check fails.
 
@@ -167,8 +169,28 @@ dig +short kuchup.com A                     # Cloudflare IPs when proxied
 Health checks after lock-down: use the domain, not the Elastic IP:
 
 ```bash
-curl -sf https://kuchup.com/api/auth/status
+curl -sf https://kuchup.com/api/health
 ```
+
+---
+
+## Incident: Cloudflare 522 / host hung
+
+Cloudflare **522** means the origin timed out or refused — not an application 5xx.
+
+```bash
+./scripts/ec2_app_deploy.sh status
+./scripts/ec2_app_deploy.sh logs caddy 100
+./scripts/ec2_app_deploy.sh logs panel 100
+```
+
+| `status` observation | Likely layer |
+|----------------------|--------------|
+| Panel localhost **200**, domain fail | Cloudflare ↔ Caddy / SG |
+| Panel localhost fail / Exited | Panel or Caddy down |
+| Up but hang / SSH banner timeout | Host wedged (disk or memory) |
+
+Known causes: Docker filling the root volume; fetch-worker memory pressure (no swap). Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
 
 ---
 
@@ -178,7 +200,8 @@ Set via `ec2_app_deploy.sh` (from local `.env` / `aws-postgres.env`):
 
 - `DATABASE_URL` → `172.17.0.1:5432`
 - `REDIS_URL` → `172.17.0.1:6379`
-- `PANEL_SECRET_KEY`, `PANEL_ADMIN_PASSWORD`
+- `PANEL_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PANEL_ADMIN_EMAILS`
+- Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (starts Alloy)
 
 Do not commit production secrets. Rotate `PANEL_SECRET_KEY` to a long random value in `.env` before deploy if still using the placeholder.
 
@@ -199,6 +222,7 @@ docker logs relocation-caddy --tail 50
 
 ## Related
 
+- [monitoring.md](monitoring.md) — Grafana Cloud Free, Alloy, alerts, 522 runbook
 - [aws-postgres.md](aws-postgres.md) — Postgres on EC2
 - `scripts/ec2_redis.sh` — Redis on EC2
 - [board-read-model-proposal.md](../reference/board-read-model-proposal.md) — board performance (still the main latency fix)

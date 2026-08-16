@@ -3,7 +3,11 @@ from __future__ import annotations
 import os
 
 from relocation_jobs.core.db import _normalize_url, _utc_now, db_read, db_transaction, get_connection
-from relocation_jobs.core.migrations import _ensure_users_admin_column
+from relocation_jobs.core.migrations import (
+    _ensure_users_admin_column,
+    _ensure_users_entitlements,
+    _ensure_users_google_auth,
+)
 
 
 def _empty_status_history() -> dict[str, list]:
@@ -185,47 +189,237 @@ def user_count() -> int:
     return int((row or {}).get("n", 0))
 
 
-def create_user(username: str, password_hash: str, *, is_admin: bool = False) -> dict:
-    username = username.strip()
-    if not username:
-        raise ValueError("Username is required")
+def _username_base_from_email(email: str) -> str:
+    local = email.split("@", 1)[0].strip().lower()
+    cleaned = "".join(ch for ch in local if ch.isalnum() or ch in "._-")
+    return (cleaned or "user")[:40]
+
+
+def allocate_username(base: str) -> str:
+    base = (base or "user").strip() or "user"
+    if not get_user_by_username(base):
+        return base
+    for index in range(2, 1000):
+        candidate = f"{base}{index}"
+        if not get_user_by_username(candidate):
+            return candidate
+    raise ValueError("Could not allocate username")
+
+
+def create_google_user(
+    *,
+    google_sub: str,
+    email: str,
+    display_name: str = "",
+    username: str | None = None,
+    is_admin: bool = False,
+    plan: str = "free",
+) -> dict:
+    email = email.strip().lower()
+    google_sub = google_sub.strip()
+    if not email or not google_sub:
+        raise ValueError("Google subject and email are required")
+    username = allocate_username(username or _username_base_from_email(email))
     now = _utc_now()
     admin_flag = 1 if is_admin else 0
+    plan_value = (plan or "free").strip() or "free"
     with db_transaction() as conn:
         row = conn.execute(
             """
-            INSERT INTO users (username, password_hash, created_at, is_admin)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO users (
+                username, google_sub, email, display_name, plan, created_at, is_admin
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (username, password_hash, now, admin_flag),
+            (username, google_sub, email, display_name.strip(), plan_value, now, admin_flag),
         ).fetchone()
         user_id = int(row["id"])
     return {
         "id": user_id,
         "username": username,
+        "email": email,
+        "google_sub": google_sub,
+        "display_name": display_name.strip(),
+        "plan": plan_value,
         "created_at": now,
         "is_admin": bool(is_admin),
     }
+
+
+def create_user(
+    username: str,
+    password_hash: str | None = None,
+    *,
+    is_admin: bool = False,
+    email: str | None = None,
+    google_sub: str | None = None,
+    display_name: str = "",
+    plan: str = "free",
+) -> dict:
+    del password_hash
+    username = username.strip()
+    if not username:
+        raise ValueError("Username is required")
+    email_value = (email or f"{username}@example.com").strip().lower()
+    sub_value = (google_sub or f"local-{username}").strip()
+    return create_google_user(
+        google_sub=sub_value,
+        email=email_value,
+        display_name=display_name or username,
+        username=username,
+        is_admin=is_admin,
+        plan=plan,
+    )
 
 
 def get_user_by_username(username: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, username, password_hash, created_at
+            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
             FROM users WHERE LOWER(username) = LOWER(%s)
             """,
             (username.strip(),),
         ).fetchone()
-    return row or None
+    if not row:
+        return None
+    data = dict(row)
+    data["is_admin"] = bool(data.get("is_admin"))
+    data["plan"] = data.get("plan") or "free"
+    return data
+
+
+def get_user_by_google_sub(google_sub: str) -> dict | None:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
+            FROM users WHERE google_sub = %s
+            """,
+            (google_sub.strip(),),
+        ).fetchone()
+    if not row:
+        return None
+    data = dict(row)
+    data["is_admin"] = bool(data.get("is_admin"))
+    data["plan"] = data.get("plan") or "free"
+    return data
+
+
+def get_user_by_email(email: str) -> dict | None:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
+            FROM users WHERE LOWER(email) = LOWER(%s)
+            """,
+            (email.strip(),),
+        ).fetchone()
+    if not row:
+        return None
+    data = dict(row)
+    data["is_admin"] = bool(data.get("is_admin"))
+    data["plan"] = data.get("plan") or "free"
+    return data
+
+
+def set_user_admin(user_id: int, is_admin: bool) -> None:
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET is_admin = %s WHERE id = %s",
+            (1 if is_admin else 0, user_id),
+        )
+
+
+def update_user_plan(user_id: int, plan: str) -> bool:
+    now = _utc_now()
+    with db_transaction() as conn:
+        cur = conn.execute(
+            "UPDATE users SET plan = %s, plan_updated_at = %s WHERE id = %s",
+            (plan, now, user_id),
+        )
+        return cur.rowcount > 0
+
+
+def update_user_mcp_quota(user_id: int, *, quota_date: str, quota_used: int) -> None:
+    with db_transaction() as conn:
+        conn.execute(
+            """
+            UPDATE users
+            SET mcp_quota_date = %s, mcp_quota_used = %s
+            WHERE id = %s
+            """,
+            (quota_date, quota_used, user_id),
+        )
+
+
+def touch_google_profile(
+    user_id: int,
+    *,
+    google_sub: str,
+    email: str,
+    display_name: str,
+) -> None:
+    with db_transaction() as conn:
+        conn.execute(
+            """
+            UPDATE users
+            SET google_sub = %s, email = %s, display_name = %s
+            WHERE id = %s
+            """,
+            (google_sub, email.strip().lower(), display_name.strip(), user_id),
+        )
+
+
+def login_or_register_google_user(
+    *,
+    google_sub: str,
+    email: str,
+    display_name: str = "",
+    allow_new: bool = True,
+    is_admin: bool = False,
+) -> dict:
+    existing = get_user_by_google_sub(google_sub)
+    if existing is None:
+        existing = get_user_by_email(email)
+        if existing is not None:
+            touch_google_profile(
+                int(existing["id"]),
+                google_sub=google_sub,
+                email=email,
+                display_name=display_name or existing.get("display_name") or "",
+            )
+            existing = get_user_by_id(int(existing["id"]))
+    if existing is None:
+        if not allow_new:
+            raise ValueError("Registration is disabled")
+        existing = create_google_user(
+            google_sub=google_sub,
+            email=email,
+            display_name=display_name,
+            is_admin=is_admin,
+        )
+    elif is_admin and not existing.get("is_admin"):
+        set_user_admin(int(existing["id"]), True)
+        existing = get_user_by_id(int(existing["id"]))
+    assert existing is not None
+    return existing
 
 
 def resolve_scheduler_user_id() -> int:
+    with db_read() as conn:
+        row = conn.execute(
+            "SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1"
+        ).fetchone()
+    if row:
+        return int(row["id"])
     admin_name = os.environ.get("PANEL_ADMIN_USER", "admin").strip() or "admin"
     user = get_user_by_username(admin_name)
     if not user:
-        raise LookupError(f"Scheduler admin user not found: {admin_name}")
+        raise LookupError(
+            "Scheduler admin user not found — sign in once with an email in PANEL_ADMIN_EMAILS"
+        )
     return int(user["id"])
 
 
@@ -233,22 +427,35 @@ def get_user_by_id(user_id: int) -> dict | None:
     with db_read() as conn:
         try:
             row = conn.execute(
-                "SELECT id, username, created_at, is_admin FROM users WHERE id = %s",
+                """
+                SELECT id, username, email, google_sub, display_name, plan,
+                       mcp_quota_date, mcp_quota_used, created_at, is_admin
+                FROM users WHERE id = %s
+                """,
                 (user_id,),
             ).fetchone()
         except Exception as exc:
-            if "is_admin" not in str(exc).lower():
+            message = str(exc).lower()
+            if "is_admin" not in message and "plan" not in message and "email" not in message and "mcp_quota" not in message:
                 raise
             with db_transaction() as migrate_conn:
                 _ensure_users_admin_column(migrate_conn)
+                _ensure_users_google_auth(migrate_conn)
+                _ensure_users_entitlements(migrate_conn)
             row = conn.execute(
-                "SELECT id, username, created_at, is_admin FROM users WHERE id = %s",
+                """
+                SELECT id, username, email, google_sub, display_name, plan,
+                       mcp_quota_date, mcp_quota_used, created_at, is_admin
+                FROM users WHERE id = %s
+                """,
                 (user_id,),
             ).fetchone()
     if not row:
         return None
     data = dict(row)
     data["is_admin"] = bool(data.get("is_admin"))
+    data["plan"] = data.get("plan") or "free"
+    data["mcp_quota_used"] = int(data.get("mcp_quota_used") or 0)
     return data
 
 
@@ -258,6 +465,12 @@ def is_user_admin(user_id: int) -> bool:
         return False
     if user.get("is_admin"):
         return True
+    email = (user.get("email") or "").strip().lower()
+    if email:
+        raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
+        emails = {part.strip().lower() for part in raw.split(",") if part.strip()}
+        if email in emails:
+            return True
     admin_name = os.environ.get("PANEL_ADMIN_USER", "admin").strip().lower() or "admin"
     return user.get("username", "").strip().lower() == admin_name
 
@@ -267,6 +480,8 @@ def list_users_with_stats() -> list[dict]:
         SELECT
             u.id,
             u.username,
+            u.email,
+            u.plan,
             u.created_at,
             u.is_admin,
             (SELECT COUNT(*) FROM job_tracking j WHERE j.user_id = u.id) AS tracking_rows,
@@ -291,14 +506,21 @@ def list_users_with_stats() -> list[dict]:
             rows = conn.execute(sql).fetchall()
     out: list[dict] = []
     admin_name = os.environ.get("PANEL_ADMIN_USER", "admin").strip().lower() or "admin"
+    raw_emails = os.environ.get("PANEL_ADMIN_EMAILS", "")
+    admin_emails = {part.strip().lower() for part in raw_emails.split(",") if part.strip()}
     for row in rows:
         username = (row.get("username") or "").strip()
+        email = (row.get("email") or "").strip().lower()
         out.append(
             {
                 "id": row["id"],
                 "username": username,
+                "email": email,
+                "plan": row.get("plan") or "free",
                 "created_at": row.get("created_at"),
-                "is_admin": bool(row.get("is_admin")) or username.lower() == admin_name,
+                "is_admin": bool(row.get("is_admin"))
+                or username.lower() == admin_name
+                or email in admin_emails,
                 "tracking_rows": int(row.get("tracking_rows") or 0),
                 "applied_positions": int(row.get("applied_positions") or 0),
                 "rejected_positions": int(row.get("rejected_positions") or 0),
@@ -327,15 +549,6 @@ def admin_tracking_totals() -> dict:
         "rejected_positions": int((row or {}).get("rejected_positions") or 0),
         "not_for_me_positions": int((row or {}).get("not_for_me_positions") or 0),
     }
-
-
-def update_user_password(username: str, password_hash: str) -> bool:
-    with db_transaction() as conn:
-        cur = conn.execute(
-            "UPDATE users SET password_hash = %s WHERE LOWER(username) = LOWER(%s)",
-            (password_hash, username.strip()),
-        )
-        return cur.rowcount > 0
 
 
 def rename_user(user_id: int, username: str) -> bool:

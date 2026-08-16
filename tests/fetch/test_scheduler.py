@@ -139,6 +139,22 @@ def test_resolve_scheduler_user_id(db):
 def test_resolve_scheduler_user_id_missing_user(monkeypatch):
     from relocation_jobs.users.repo import resolve_scheduler_user_id
 
+    class _FakeConn:
+        def execute(self, *_args, **_kwargs):
+            return self
+
+        def fetchone(self):
+            return None
+
+    class _FakeRead:
+        def __enter__(self):
+            return _FakeConn()
+
+        def __exit__(self, *_args):
+            return False
+
     monkeypatch.setenv("PANEL_ADMIN_USER", "no-such-admin")
-    with pytest.raises(LookupError, match="no-such-admin"):
+    monkeypatch.setattr("relocation_jobs.users.repo.db_read", lambda: _FakeRead())
+    monkeypatch.setattr("relocation_jobs.users.repo.get_user_by_username", lambda _name: None)
+    with pytest.raises(LookupError, match="PANEL_ADMIN_EMAILS|Scheduler admin"):
         resolve_scheduler_user_id()

@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Free public preview of visa-sponsored software roles in Europe. Full board, tracking, and MCP CV tools are in design — sign in for early access.",
+    "Start with 30 monthly credits, add non-expiring credit packs when needed, or choose Full Access for an uncapped matched board.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Pricing | Relocation Jobs",
     description:
-      "Free public preview today. Paid full-board access with workspaces and CV reframe tools is coming soon.",
+      "Free includes 30 monthly credits. Purchased credit packs never expire, and Full Access removes board caps.",
     url: "https://kuchup.com/pricing",
     siteName: "Relocation Jobs",
     type: "website",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pricing | Relocation Jobs",
     description:
-      "Free public preview today. Paid full-board access with workspaces and CV reframe tools is coming soon.",
+      "Free includes 30 monthly credits. Purchased credit packs never expire, and Full Access removes board caps.",
     images: ["https://kuchup.com/og-default.png"],
   },
 };
@@ -39,14 +39,14 @@ export default function PricingPage() {
     <div className="min-h-screen">
       <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
         <Header />
-        <main className="mx-auto mt-12 max-w-2xl">
+        <main className="mx-auto mt-12 max-w-4xl">
           <h1 className="text-fluid-hero text-text-primary">Plans & Pricing</h1>
           <p className="mt-4 text-base leading-relaxed text-text-secondary">
             Relocation Jobs (Kuchup) is a curation-first tracker for
-            visa-sponsored software engineering roles across Europe. The public
-            preview is free while we harden the full board, company workspaces,
-            and Claude/Cursor MCP pipeline. This page explains what you get
-            today, what is coming, and who the product is for.
+            visa-sponsored software engineering roles across Europe. Browse the
+            public preview without an account. Sign in for a preference-matched
+            board, tracking, workspaces, and MCP. Free includes monthly credits;
+            top up only when you need more matched roles.
           </p>
 
           <section className="mt-10" aria-labelledby="who-heading">
@@ -71,10 +71,10 @@ export default function PricingPage() {
             </p>
           </section>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
             <Card className="px-5 py-6">
               <h2 className="font-display text-xl font-bold text-text-primary">
-                Free Preview
+                Free
               </h2>
               <p className="mt-1 font-display text-2xl font-extrabold text-text-primary">
                 $0
@@ -83,14 +83,37 @@ export default function PricingPage() {
                 <li>Public catalog overview by country</li>
                 <li>Company preview cards and search</li>
                 <li>Country guides with visa context</li>
-                <li>No sign-in required for the homepage preview</li>
+                <li>10 sticky matched company slots</li>
+                <li>3 stable active roles per company</li>
+                <li>30 credits every UTC calendar month</li>
+                <li>Personal apply / reject / not-for-me tracking</li>
+                <li>MCP connect with 20 write/render requests per day</li>
               </ul>
-              <Button as="a" href="/" variant="primary" className="mt-6">
-                Browse preview
+              <Button as="a" href="/panel" variant="primary" className="mt-6">
+                Sign in with Google
               </Button>
             </Card>
 
             <Card className="px-5 py-6" accentBar>
+              <h2 className="font-display text-xl font-bold text-text-primary">
+                Credit packs
+              </h2>
+              <p className="mt-1 font-display text-2xl font-extrabold text-text-primary">
+                From $4.99
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-text-secondary">
+                <li>50, 150, or 400-credit packs</li>
+                <li>Purchased credits never expire</li>
+                <li>Free monthly credits are always used first</li>
+                <li>1 credit only when a new matched role is delivered</li>
+                <li>Tracking actions and failed deliveries stay free</li>
+              </ul>
+              <Button as="a" href="/panel?credits=1" variant="primary" className="mt-6">
+                Add credits
+              </Button>
+            </Card>
+
+            <Card className="px-5 py-6">
               <h2 className="font-display text-xl font-bold text-text-primary">
                 Full Access
               </h2>
@@ -98,15 +121,14 @@ export default function PricingPage() {
                 Coming soon
               </p>
               <ul className="mt-4 space-y-2 text-sm text-text-secondary">
-                <li>Full company board with refresh cadence</li>
-                <li>Per-user apply / reject / not-for-me tracking</li>
-                <li>Company workspace + documents</li>
-                <li>Claude / Cursor MCP for gated CV reframe</li>
-                <li>Cover letter and PDF render in your workspace</li>
+                <li>No Free company cap on your matched board</li>
+                <li>Higher MCP daily quota (hundreds of requests)</li>
+                <li>Free already includes workspace, documents, and MCP</li>
+                <li>Purchased credit balance remains on your account</li>
               </ul>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button as="a" href="/panel" variant="primary">
-                  Sign in for early access
+                  Sign in for Free access
                 </Button>
                 <Button as="a" href="/mcp" variant="secondary">
                   Explore MCP
@@ -120,16 +142,15 @@ export default function PricingPage() {
               id="limits-heading"
               className="font-display text-2xl font-semibold text-text-primary"
             >
-              Preview limits
+              What Free includes today
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-              The free preview is meant for market discovery: which countries
-              look active, which companies appear in the catalog, and how
-              sponsorship language shows up on career pages. Deep per-role
-              tracking, private documents, and the MCP reframe flow require an
-              account. Paid packaging for full board access is still being
-              designed; early signed-in users are intended to be grandfathered
-              when plans launch.
+              After Google sign-in, new accounts start on Free. Your board is
+              filtered to the countries you choose and capped at 10 matched
+              companies with 3 stable active roles each. You receive 30
+              promotional credits each UTC month. A credit is spent only when a
+              replacement role is successfully delivered; purchased credits
+              never expire. MCP keeps a separate daily anti-abuse quota.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
               Catalog data refreshes from company career pages about every six
@@ -150,8 +171,10 @@ export default function PricingPage() {
               Connecting Claude or Cursor via Kuchup MCP is part of the signed-in
               workspace path. The agent can load job context you pin, run a
               gated CV reframe with your approval, and leave tailored LaTeX/PDFs
-              in the company workspace. Kuchup never auto-applies — you review
-              and submit on the employer site yourself. See{" "}
+              in the company workspace. Free accounts share a daily MCP quota;
+              remaining usage appears on Connect MCP after you sign in. Kuchup
+              never auto-applies — you review and submit on the employer site
+              yourself. See{" "}
               <a href="/mcp" className="font-medium text-text-primary underline-offset-2 hover:underline">
                 MCP for Claude and Cursor
               </a>{" "}
@@ -160,8 +183,8 @@ export default function PricingPage() {
           </section>
 
           <p className="mt-8 text-center text-xs text-text-muted">
-            Pricing details will be announced when the full access plan launches.
-            Current signed-in users get grandfathered access where possible.
+            Credits are usage units with no cash or redemption value. Full Access
+            pricing will be announced separately.
           </p>
         </main>
         <Footer />

@@ -5,12 +5,14 @@ import math
 from flask import g, jsonify, request
 
 from relocation_jobs.core.auth import login_required
+from relocation_jobs.opportunities.service import board_scope_meta, resolve_board_opportunity_scope
 from relocation_jobs.panel.board import (
     DEFAULT_BOARD_PAGE_SIZE,
     MAX_BOARD_PAGE_SIZE,
     load_catalog_board_page,
 )
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
+from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_RELOCATION,
     board_page_payload,
@@ -65,6 +67,14 @@ def register(app):
         if sort not in ("newest", "name"):
             sort = "newest"
 
+        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
+        panel_flags = _panel_flags()
+        requested_hide_empty = panel_flags["hide_empty"]
+        # Free assignments can preserve a previously shown role after it leaves
+        # the live catalog. Keep the company through flattening so broadcast can
+        # re-inject that stable assignment before the final empty check.
+        if opportunity_scope.plan == "free":
+            panel_flags["hide_empty"] = False
         companies, file_meta, fetch_problem_count, total_visible, has_more = load_catalog_board_page(
             scope["country_key"],
             ats_type=scope["ats_type"],
@@ -73,11 +83,26 @@ def register(app):
             visible_offset=visible_offset,
             limit=page_size,
             search=search,
-            panel_flags=_panel_flags(),
+            panel_flags=panel_flags,
             count_total=(page == 1),
             sort=sort,
             catalog_kind=CATALOG_KIND_RELOCATION,
+            opportunity_scope=opportunity_scope,
         )
+        companies = apply_capacity_to_board_page(g.user_id, companies)
+        if opportunity_scope.plan == "free" and requested_hide_empty:
+            before_empty_filter = len(companies)
+            companies = [
+                company
+                for company in companies
+                if company.get("jobs")
+                or (
+                    panel_flags.get("position_rejected_only")
+                    and company.get("rejected_jobs")
+                )
+            ]
+            total_visible = max(0, total_visible - (before_empty_filter - len(companies)))
+        capacity_meta = capacity_meta_for_user(g.user_id).as_dict()
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
             user_id=g.user_id,
@@ -102,6 +127,8 @@ def register(app):
                 "total_pages": total_pages,
                 "has_more": has_more,
                 "sort": sort,
+                **board_scope_meta(opportunity_scope),
+                **capacity_meta,
             },
             user_stats=compute_user_board_stats(
                 user_id=g.user_id,

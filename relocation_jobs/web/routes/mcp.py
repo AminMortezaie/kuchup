@@ -14,6 +14,16 @@ from relocation_jobs.mcp import oauth_repo
 from relocation_jobs.mcp import service as mcp_service
 from relocation_jobs.mcp.oauth_provider import panel_display_base_url
 from relocation_jobs.mcp.types import ApplicationProfile
+from relocation_jobs.users.entitlements import entitlement_status
+
+
+def _quota_error_response(exc: PermissionError):
+    message = str(exc) or "MCP daily quota exceeded."
+    soft = (
+        f"{message} Higher limits will be available with Full Access when checkout launches. "
+        "Contact support or an admin for early access."
+    )
+    return jsonify({"error": soft, "code": "mcp_quota_exceeded"}), 429
 
 
 def register(app):
@@ -26,6 +36,7 @@ def register(app):
             "base_url": base,
             "mcp_url": mcp_url,
             "resource_url": mcp_url,
+            "entitlements": entitlement_status(g.user_id),
         })
 
     @app.get("/api/mcp/tokens")
@@ -104,6 +115,8 @@ def register(app):
                 label=label,
                 user_id=g.user_id,
             )
+        except PermissionError as exc:
+            return _quota_error_response(exc)
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify({"ok": True, **saved})
@@ -173,6 +186,8 @@ def register(app):
                 label=label,
                 user_id=g.user_id,
             )
+        except PermissionError as exc:
+            return _quota_error_response(exc)
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify({"ok": True, **saved})
@@ -337,7 +352,10 @@ def register(app):
     @app.post("/api/mcp/applications/<path:idempotency_key>/render")
     @login_required
     def api_mcp_application_render(idempotency_key: str):
-        result = mcp_service.render_application_pdf(idempotency_key, user_id=g.user_id)
+        try:
+            result = mcp_service.render_application_pdf(idempotency_key, user_id=g.user_id)
+        except PermissionError as exc:
+            return _quota_error_response(exc)
         if not result.ok:
             return jsonify({"ok": False, "error": result.log, **result.model_dump()}), 400
         return jsonify({"ok": True, **result.model_dump()})

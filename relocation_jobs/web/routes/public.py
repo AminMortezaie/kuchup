@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from flask import request
 
 from relocation_jobs.catalog.repo import (
@@ -13,6 +15,16 @@ from relocation_jobs.core.location_tags import country_label
 PREVIEW_LIMIT = 8
 PREVIEW_SEARCH_LIMIT = 24
 FEATURED_LIMIT = 3
+FEATURED_POOL = 24
+
+
+def _rotate_rows(rows: list[dict], limit: int) -> list[dict]:
+    if len(rows) <= limit:
+        return rows
+    # Hourly rotation so Find roles does not stick on the same three logos.
+    start = (int(time.time()) // 3600) % len(rows)
+    rotated = rows[start:] + rows[:start]
+    return rotated[:limit]
 
 
 def _preview_company(company: dict) -> dict:
@@ -76,18 +88,18 @@ def _featured_company_rows(
     homepage never shows an empty company strip.
     """
     rows = (
-        list_sponsored_catalog_companies(preferred_countries, limit=FEATURED_LIMIT)
+        list_sponsored_catalog_companies(preferred_countries, limit=FEATURED_POOL)
         if preferred_countries
         else []
     )
     if rows:
-        return rows, "country"
+        return _rotate_rows(rows, FEATURED_LIMIT), "country"
     widened = list_sponsored_catalog_companies(
-        catalog_countries, limit=FEATURED_LIMIT
+        catalog_countries, limit=FEATURED_POOL
     )
     if not widened:
         return [], ""
-    return widened, ("global" if specific_country else "country")
+    return _rotate_rows(widened, FEATURED_LIMIT), ("global" if specific_country else "country")
 
 
 def _public_overview_payload() -> dict:

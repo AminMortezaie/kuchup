@@ -45,7 +45,7 @@ export function Hero() {
               </p>
               <div className="hero-search-links">
                 <a href="/panel">
-                  Open the full board <span aria-hidden="true">→</span>
+                  Open the board <span aria-hidden="true">→</span>
                 </a>
                 <a href="/mcp">
                   Claude &amp; Cursor MCP <span aria-hidden="true">→</span>

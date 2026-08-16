@@ -7,11 +7,14 @@
 #   ./scripts/ec2_app_deploy.sh deploy --force    # rebuild both images even if hashes match
 #   ./scripts/ec2_app_deploy.sh prune             # free dangling images + trim builder cache
 #   ./scripts/ec2_app_deploy.sh open-sg           # open HTTP/HTTPS on security group (manual)
-#   ./scripts/ec2_app_deploy.sh status            # container + health check
-#   ./scripts/ec2_app_deploy.sh worker-logs       # tail fetch scheduler logs
+#   ./scripts/ec2_app_deploy.sh status            # doctor: containers, disk/RAM, health, verdict
+#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|alloy|all
+#   ./scripts/ec2_app_deploy.sh worker-logs       # tail fetch scheduler logs (alias)
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
-# Disk: 8G root fills from leftover panel/worker images; deploy prunes dangling
+# Optional Grafana Cloud (Alloy): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
+# GRAFANA_CLOUD_API_TOKEN in .env — see docs/operations/monitoring.md
+# Disk: root fills from leftover panel/worker images; deploy prunes dangling
 # images only. BuildKit cache is kept across deploys so tectonic/pip/playwright
 # layers are reused — never wiped mid/post-deploy (use `prune` for that).
 #
@@ -35,10 +38,14 @@ MCP_CONTAINER=relocation-mcp
 WORKER_IMAGE=relocation-fetch-worker:ec2
 WORKER_CONTAINER=relocation-fetch-worker
 CADDY_CONTAINER=relocation-caddy
+ALLOY_CONTAINER=relocation-alloy
+ALLOY_IMAGE="${ALLOY_IMAGE:-grafana/alloy:v1.8.3}"
 PANEL_PORT=10000
 MCP_PORT=10001
 MCP_PUBLIC_BASE_URL="${MCP_PUBLIC_BASE_URL:-https://mcp.kuchup.com}"
 FORCE_REBUILD="${FORCE_REBUILD:-0}"
+LOG_SERVICE=all
+LOG_FOLLOW=0
 
 log() { printf '[ec2-app] %s\n' "$*"; }
 die() { printf '[ec2-app] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -109,16 +116,88 @@ panel_secret() {
   openssl rand -hex 32
 }
 
-admin_password() {
+admin_emails() {
   if [[ -f "$ROOT/.env" ]]; then
-    local pass
-    pass="$(grep -E '^PANEL_ADMIN_PASSWORD=' "$ROOT/.env" | cut -d= -f2- || true)"
-    if [[ -n "$pass" && "$pass" != "change-me" ]]; then
-      printf '%s' "$pass"
+    local emails
+    emails="$(grep -E '^PANEL_ADMIN_EMAILS=' "$ROOT/.env" | cut -d= -f2- || true)"
+    if [[ -n "$emails" ]]; then
+      printf '%s' "$emails"
       return
     fi
   fi
-  printf '%s' "${PANEL_ADMIN_PASSWORD:-change-me}"
+  printf '%s' "${PANEL_ADMIN_EMAILS:-}"
+}
+
+google_client_id() {
+  printf '%s' "${GOOGLE_CLIENT_ID:-$(_dotenv_value GOOGLE_CLIENT_ID)}"
+}
+
+google_client_secret() {
+  printf '%s' "${GOOGLE_CLIENT_SECRET:-$(_dotenv_value GOOGLE_CLIENT_SECRET)}"
+}
+
+google_redirect_uri() {
+  printf '%s' "${GOOGLE_REDIRECT_URI:-$(_dotenv_value GOOGLE_REDIRECT_URI)}"
+}
+
+panel_allow_register() {
+  local value
+  value="${PANEL_ALLOW_REGISTER:-$(_dotenv_value PANEL_ALLOW_REGISTER)}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  case "$value" in
+    1|true|yes) printf '1' ;;
+    *) printf '0' ;;
+  esac
+}
+
+panel_public_base_url() {
+  local value
+  value="${PANEL_PUBLIC_BASE_URL:-$(_dotenv_value PANEL_PUBLIC_BASE_URL)}"
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+    return
+  fi
+  printf '%s' "https://kuchup.com"
+}
+
+_dotenv_value() {
+  local key="$1"
+  [[ -f "$ROOT/.env" ]] || return 0
+  grep -E "^${key}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true
+}
+
+grafana_cloud_configured() {
+  local url user token
+  url="${GRAFANA_CLOUD_PROMETHEUS_URL:-$(_dotenv_value GRAFANA_CLOUD_PROMETHEUS_URL)}"
+  user="${GRAFANA_CLOUD_PROMETHEUS_USER:-$(_dotenv_value GRAFANA_CLOUD_PROMETHEUS_USER)}"
+  token="${GRAFANA_CLOUD_API_TOKEN:-$(_dotenv_value GRAFANA_CLOUD_API_TOKEN)}"
+  [[ -n "$url" && -n "$user" && -n "$token" ]]
+}
+
+grafana_cloud_url() {
+  printf '%s' "${GRAFANA_CLOUD_PROMETHEUS_URL:-$(_dotenv_value GRAFANA_CLOUD_PROMETHEUS_URL)}"
+}
+
+grafana_cloud_user() {
+  printf '%s' "${GRAFANA_CLOUD_PROMETHEUS_USER:-$(_dotenv_value GRAFANA_CLOUD_PROMETHEUS_USER)}"
+}
+
+grafana_cloud_token() {
+  printf '%s' "${GRAFANA_CLOUD_API_TOKEN:-$(_dotenv_value GRAFANA_CLOUD_API_TOKEN)}"
+}
+
+container_for_log_service() {
+  case "$1" in
+    panel) printf '%s' "$PANEL_CONTAINER" ;;
+    caddy) printf '%s' "$CADDY_CONTAINER" ;;
+    mcp) printf '%s' "$MCP_CONTAINER" ;;
+    worker) printf '%s' "$WORKER_CONTAINER" ;;
+    alloy) printf '%s' "$ALLOY_CONTAINER" ;;
+    pg) printf '%s' "pg" ;;
+    redis) printf '%s' "relocation-redis" ;;
+    all) printf '%s' "" ;;
+    *) return 1 ;;
+  esac
 }
 
 # True when any path under $1 is newer than file $2, or $2 is missing.
@@ -358,11 +437,17 @@ image_needs_rebuild() {
 
 cmd_deploy() {
   load_state
-  local redis_pass db_url redis_url secret admin_pass
+  local redis_pass db_url redis_url secret admin_emails_value
+  local google_id google_secret google_redirect panel_public allow_register
   local panel_hash worker_hash
   redis_pass="$(redis_password)"
   secret="$(panel_secret)"
-  admin_pass="$(admin_password)"
+  admin_emails_value="$(admin_emails)"
+  google_id="$(google_client_id)"
+  google_secret="$(google_client_secret)"
+  google_redirect="$(google_redirect_uri)"
+  panel_public="$(panel_public_base_url)"
+  allow_register="$(panel_allow_register)"
   db_url="postgresql://${DB_USER:-relocation}:${DB_PASSWORD}@172.17.0.1:5432/${DB_NAME:-relocation_jobs}?sslmode=prefer"
   redis_url="redis://:${redis_pass}@172.17.0.1:6379/0"
 
@@ -401,8 +486,13 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e PANEL_DATA_DIR=/tmp/panel-data \\
   -e PANEL_SECRET_KEY='${secret}' \\
   -e PANEL_ADMIN_USER=admin \\
-  -e PANEL_ADMIN_PASSWORD='${admin_pass}' \\
-  -e PANEL_ALLOW_REGISTER=0 \\
+  -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
+  -e GOOGLE_CLIENT_ID='${google_id}' \\
+  -e GOOGLE_CLIENT_SECRET='${google_secret}' \\
+  -e GOOGLE_REDIRECT_URI='${google_redirect}' \\
+  -e PANEL_PUBLIC_BASE_URL='${panel_public}' \\
+  -e PANEL_ALLOW_REGISTER='${allow_register}' \\
+  -e SESSION_COOKIE_SECURE=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
   -e FETCH_SCHEDULE_CONCURRENCY=4 \\
@@ -458,7 +548,7 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
   -e PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90 \\
   -e PANEL_ADMIN_USER=admin \\
-  -e PANEL_ADMIN_PASSWORD='${admin_pass}' \\
+  -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
   -e DATABASE_URL='${db_url}' \\
   ${WORKER_IMAGE}
 EOF
@@ -476,27 +566,111 @@ docker run -d --name ${CADDY_CONTAINER} --restart unless-stopped \\
   caddy:2-alpine
 EOF
 
+  start_alloy_container
+
   # Dangling images only — keep BuildKit cache for the next deploy.
   remote_docker_prune "" "after deploy"
   # open-sg is intentional/manual — do not reopen 0.0.0.0/0 on every deploy.
   cmd_status
 }
 
+start_alloy_container() {
+  if ! grafana_cloud_configured; then
+    log "Alloy skipped — set GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER, GRAFANA_CLOUD_API_TOKEN in .env"
+    ssh_cmd "docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true" || true
+    return 0
+  fi
+  local url user token
+  url="$(grafana_cloud_url)"
+  user="$(grafana_cloud_user)"
+  token="$(grafana_cloud_token)"
+  log "Starting Grafana Alloy (remote_write to Grafana Cloud)..."
+  # cAdvisor needs privileged + host /sys and /var/lib/docker or container
+  # name/labels stay empty and dashboard panels show No data.
+  ssh_cmd bash -s <<EOF
+set -euo pipefail
+docker pull ${ALLOY_IMAGE}
+docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true
+docker run -d --name ${ALLOY_CONTAINER} --restart unless-stopped \\
+  --privileged \\
+  --pid=host \\
+  --add-host=host.docker.internal:host-gateway \\
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \\
+  -v /var/run:/var/run:ro \\
+  -v /sys:/sys:ro \\
+  -v /sys:/host/sys:ro \\
+  -v /proc:/host/proc:ro \\
+  -v /:/host/root:ro,rslave \\
+  -v /var/lib/docker/:/var/lib/docker:ro \\
+  -v ${REMOTE_DIR}/deploy/ec2/config.alloy:/etc/alloy/config.alloy:ro \\
+  -e GRAFANA_CLOUD_PROMETHEUS_URL='${url}' \\
+  -e GRAFANA_CLOUD_PROMETHEUS_USER='${user}' \\
+  -e GRAFANA_CLOUD_API_TOKEN='${token}' \\
+  -e HOSTNAME=kuchup-ec2 \\
+  ${ALLOY_IMAGE} run /etc/alloy/config.alloy \\
+    --storage.path=/tmp/alloy \\
+    --server.http.listen-addr=0.0.0.0:12345
+EOF
+}
+
+cmd_logs() {
+  load_state
+  local follow_flag="" svc containers c
+  [[ "$LOG_FOLLOW" == "1" ]] && follow_flag="-f"
+  if [[ "$LOG_SERVICE" == "all" ]]; then
+    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $ALLOY_CONTAINER"
+  else
+    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|alloy|pg|redis|all)"
+    containers="$c"
+  fi
+  for c in $containers; do
+    log "=== docker logs $c (tail ${TAIL_N}) ==="
+    # shellcheck disable=SC2086
+    ssh_cmd "docker logs $c --tail ${TAIL_N} ${follow_flag} 2>&1" || log "  ($c not running)"
+    [[ "$LOG_FOLLOW" == "1" ]] && break
+  done
+}
+
 cmd_status() {
   load_state
   local domain="${PANEL_DOMAIN:-kuchup.com}"
-  local panel_code domain_code ip_code mcp_code mcp_domain_code
+  local panel_code domain_code ip_code mcp_code mcp_domain_code verdict
+  local disk_line mem_line
 
-  ssh_cmd "docker ps --filter name=relocation- --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+  log "=== Host resources ==="
+  disk_line="$(ssh_cmd "df -h / | tail -1" 2>/dev/null || echo "?")"
+  mem_line="$(ssh_cmd "free -m | awk 'NR==2{printf \"Mem used=%sMi available=%sMi total=%sMi\", \$3, \$7, \$2}'" 2>/dev/null || echo "?")"
+  log "  disk: ${disk_line}"
+  log "  mem:  ${mem_line}"
+  ssh_cmd "uptime" 2>/dev/null || true
+  local usep
+  usep="$(ssh_cmd "df -P / | awk 'NR==2{gsub(/%/,\"\",\$5); print \$5}'" 2>/dev/null || echo 0)"
+  if [[ "$usep" =~ ^[0-9]+$ ]] && (( usep >= 85 )); then
+    log "  WARN: root disk ${usep}% used (>=85%)"
+  fi
+
+  log "=== Containers ==="
+  ssh_cmd "docker ps -a --filter name=relocation- --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+  ssh_cmd "docker ps -a --filter name=^pg\$ --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" || true
+  log "Restart / OOM:"
+  ssh_cmd bash -s <<'EOF' || true
+for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-alloy pg relocation-redis; do
+  docker inspect -f '{{.Name}} restart={{.RestartCount}} oom={{.State.OOMKilled}} exit={{.State.ExitCode}} status={{.State.Status}}' "$c" 2>/dev/null || true
+done
+EOF
+
+  log "Panel/Caddy log tails (20):"
+  ssh_cmd "docker logs ${PANEL_CONTAINER} --tail 20 2>&1" || log "  panel not running"
+  ssh_cmd "docker logs ${CADDY_CONTAINER} --tail 20 2>&1" || log "  caddy not running"
   log "Fetch worker logs (last 20 lines):"
   ssh_cmd "docker logs ${WORKER_CONTAINER} --tail 20 2>&1" || log "  worker not running"
 
   log "Panel health (localhost:${PANEL_PORT} on EC2):"
-  panel_code="$(ssh_cmd "curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1:${PANEL_PORT}/api/auth/status" 2>/dev/null || echo 000)"
+  panel_code="$(ssh_cmd "curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1:${PANEL_PORT}/api/health" 2>/dev/null || echo 000)"
   if [[ "$panel_code" == "200" ]]; then
-    log "  http://127.0.0.1:${PANEL_PORT}/api/auth/status -> ${panel_code} (OK)"
+    log "  http://127.0.0.1:${PANEL_PORT}/api/health -> ${panel_code} (OK)"
   else
-    log "  http://127.0.0.1:${PANEL_PORT}/api/auth/status -> ${panel_code} (FAILED)"
+    log "  http://127.0.0.1:${PANEL_PORT}/api/health -> ${panel_code} (FAILED)"
   fi
 
   log "MCP health (localhost:${MCP_PORT} on EC2):"
@@ -508,11 +682,11 @@ cmd_status() {
   fi
 
   log "Panel health (via domain):"
-  domain_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "https://${domain}/api/auth/status" 2>/dev/null || echo 000)"
+  domain_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "https://${domain}/api/health" 2>/dev/null || echo 000)"
   if [[ "$domain_code" == "200" ]]; then
-    log "  https://${domain}/api/auth/status -> ${domain_code} (OK)"
+    log "  https://${domain}/api/health -> ${domain_code} (OK)"
   else
-    log "  https://${domain}/api/auth/status -> ${domain_code} (check DNS/TLS if deploy just finished)"
+    log "  https://${domain}/api/health -> ${domain_code} (check DNS/TLS if deploy just finished)"
   fi
 
   log "MCP health (via domain):"
@@ -524,8 +698,19 @@ cmd_status() {
   fi
 
   log "Origin lock-down (Elastic IP, expect 404):"
-  ip_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://${ELASTIC_IP}/api/auth/status" 2>/dev/null || echo 000)"
-  log "  http://${ELASTIC_IP}/api/auth/status -> ${ip_code}"
+  ip_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://${ELASTIC_IP}/api/health" 2>/dev/null || echo 000)"
+  log "  http://${ELASTIC_IP}/api/health -> ${ip_code}"
+
+  if [[ "$panel_code" == "200" && "$domain_code" == "200" ]]; then
+    verdict=all_ok
+  elif [[ "$panel_code" == "200" && "$domain_code" != "200" ]]; then
+    verdict=origin_ok_cf_fail
+  elif [[ "$panel_code" != "200" ]]; then
+    verdict=panel_down
+  else
+    verdict=degraded
+  fi
+  log "=== Layer verdict: ${verdict} ==="
 }
 
 # Parse global flags then dispatch (--force may appear anywhere).
@@ -537,7 +722,11 @@ while [[ $# -gt 0 ]]; do
       FORCE_REBUILD=1
       shift
       ;;
-    sync|deploy|prune|open-sg|status|worker-logs)
+    -f|--follow)
+      LOG_FOLLOW=1
+      shift
+      ;;
+    sync|deploy|prune|open-sg|status|worker-logs|logs)
       ACTION="$1"
       shift
       ;;
@@ -545,8 +734,17 @@ while [[ $# -gt 0 ]]; do
       if [[ "$ACTION" == "worker-logs" && "$1" =~ ^[0-9]+$ ]]; then
         TAIL_N="$1"
         shift
+      elif [[ "$ACTION" == "logs" ]]; then
+        if [[ "$1" =~ ^[0-9]+$ ]]; then
+          TAIL_N="$1"
+        elif [[ "$1" == "-f" || "$1" == "--follow" ]]; then
+          LOG_FOLLOW=1
+        else
+          LOG_SERVICE="$1"
+        fi
+        shift
       else
-        die "Usage: $0 {sync|deploy|prune|open-sg|status|worker-logs} [--force]"
+        die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs} [--force]"
       fi
       ;;
   esac
@@ -558,9 +756,12 @@ case "$ACTION" in
   prune) cmd_prune ;;
   open-sg) cmd_open_sg ;;
   status) load_state; cmd_status ;;
+  logs) cmd_logs ;;
   worker-logs)
     load_state
-    ssh_cmd "docker logs ${WORKER_CONTAINER} --tail ${TAIL_N} -f 2>&1"
+    LOG_SERVICE=worker
+    LOG_FOLLOW=1
+    cmd_logs
     ;;
-  *) die "Usage: $0 {sync|deploy|prune|open-sg|status|worker-logs} [--force]" ;;
+  *) die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs} [--force]" ;;
 esac

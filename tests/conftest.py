@@ -15,21 +15,39 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 _SESSION_ENV_KEYS = (
     "PANEL_ADMIN_USER",
-    "PANEL_ADMIN_PASSWORD",
+    "PANEL_ADMIN_EMAILS",
     "PANEL_SECRET_KEY",
     "PANEL_ALLOW_REGISTER",
     "PANEL_SCRAPE_ENABLED",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
 )
+
+
+def _seed_admin_user() -> dict:
+    from relocation_jobs.users.repo import create_user, get_user_by_username
+
+    admin = get_user_by_username("admin")
+    if admin is not None:
+        return admin
+    return create_user(
+        "admin",
+        is_admin=True,
+        email="admin@example.com",
+        google_sub="test-sub-admin",
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _session_env():
     env_defaults = {
         "PANEL_ADMIN_USER": "admin",
-        "PANEL_ADMIN_PASSWORD": "adminpass123",
+        "PANEL_ADMIN_EMAILS": "admin@example.com",
         "PANEL_SECRET_KEY": "test-secret-key-fixed",
         "PANEL_ALLOW_REGISTER": "1",
         "PANEL_SCRAPE_ENABLED": "0",
+        "GOOGLE_CLIENT_ID": "test-google-client-id",
+        "GOOGLE_CLIENT_SECRET": "test-google-client-secret",
     }
     saved = {key: os.environ.get(key) for key in _SESSION_ENV_KEYS}
     for key, value in env_defaults.items():
@@ -46,14 +64,13 @@ def _session_env():
 @pytest.fixture(scope="session")
 def _session_postgres(_session_env):
     import relocation_jobs.core.db as core
-    from relocation_jobs.core.auth import bootstrap_admin
     from relocation_jobs.db import init_db
 
     saved_url = os.environ.get("DATABASE_URL")
     original_connect = core._connect_postgres
     fake = install_session_postgres_mock()
     init_db()
-    bootstrap_admin()
+    _seed_admin_user()
 
     yield fake
 
@@ -128,7 +145,6 @@ def tmp_data_dir(tmp_path, monkeypatch):
 
 @pytest.fixture
 def db(tmp_data_dir, _session_postgres, request):
-    import relocation_jobs.core.auth as auth_mod
     import relocation_jobs.core.db as core
 
     if _session_postgres.closed:
@@ -137,7 +153,7 @@ def db(tmp_data_dir, _session_postgres, request):
         from relocation_jobs.db import init_db
 
         init_db()
-        auth_mod.bootstrap_admin()
+        _seed_admin_user()
     elif request.node.get_closest_marker("fresh_db"):
         _session_postgres.clear_data()
     else:
@@ -146,7 +162,7 @@ def db(tmp_data_dir, _session_postgres, request):
     yield
     if request.node.get_closest_marker("fresh_db"):
         _session_postgres.clear_data()
-        auth_mod.bootstrap_admin()
+        _seed_admin_user()
     else:
         _session_postgres.clear_tracking()
 
@@ -158,9 +174,7 @@ def app(_session_postgres):
     import relocation_jobs.web.server as panel
 
     panel._bootstrapped = False
-    with patch("relocation_jobs.db.init_db"), patch(
-        "relocation_jobs.core.auth.bootstrap_admin"
-    ):
+    with patch("relocation_jobs.db.init_db"):
         panel.bootstrap_app()
     panel.app.config["TESTING"] = True
     yield panel.app
@@ -174,20 +188,15 @@ def client(app):
 
 @pytest.fixture
 def auth_client(client, db):
-    import relocation_jobs.core.auth as auth_mod
     import relocation_jobs.core.db as core
-    from relocation_jobs.users.repo import get_user_by_username
 
     core._pg_conn = core.get_connection()
-    if get_user_by_username("admin") is None:
-        auth_mod.bootstrap_admin()
+    admin = _seed_admin_user()
     with client.session_transaction() as sess:
         sess.clear()
-    resp = client.post(
-        "/api/auth/login",
-        json={"username": "admin", "password": "adminpass123"},
-    )
-    assert resp.status_code == 200
+        sess["user_id"] = admin["id"]
+        sess["username"] = admin["username"]
+        sess.permanent = True
     yield client
 
 
@@ -208,8 +217,7 @@ def v2_auth_client(auth_client):
 
 @pytest.fixture
 def sample_country_data():
-    path = FIXTURES / "country_uk_minimal.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads((FIXTURES / "country_uk_minimal.json").read_text())
 
 
 @pytest.fixture
@@ -231,9 +239,12 @@ def seeded_catalog_v2(db):
 @pytest.fixture
 def test_user(db):
     from relocation_jobs.users.repo import create_user
-    from tests.helpers.passwords import hash_test_password
 
-    return create_user("testuser", hash_test_password("testpass123"))
+    return create_user(
+        "testuser",
+        email="testuser@example.com",
+        google_sub="test-sub-testuser",
+    )
 
 
 @pytest.fixture

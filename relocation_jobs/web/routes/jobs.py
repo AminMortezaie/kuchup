@@ -5,9 +5,28 @@ from flask import g, jsonify, request
 from relocation_jobs.core.auth import login_required
 from relocation_jobs.panel.service import flatten_companies
 from relocation_jobs.panel.stats import compute_stats
+from relocation_jobs.broadcast.service import record_touch_and_maybe_reveal
+from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.web import deps
 from relocation_jobs.web.query import query_flags
 from relocation_jobs.web.validators import job_mutation_error, job_mutation_fields
+
+
+def _touch_reveal(country: str, company: str, result: dict, kind: str) -> dict:
+    try:
+        return record_touch_and_maybe_reveal(
+            g.user_id,
+            RevealEvent(
+                country=country,
+                company_name=company,
+                kind=kind,
+                job_url=(result.get("url") or "").strip(),
+                job_key=(result.get("idempotency_key") or "").strip(),
+                job_title=(result.get("title") or "").strip(),
+            ),
+        )
+    except LookupError:
+        return {}
 
 
 def register(app):
@@ -52,10 +71,10 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
-            result = deps.set_job_applied(
-                country, company, url, bool(body.get("applied", True)), user_id=g.user_id,
-            )
-            return jsonify({"ok": True, **result})
+            active = bool(body.get("applied", True))
+            result = deps.set_job_applied(country, company, url, active, user_id=g.user_id)
+            reveal = _touch_reveal(country, company, result, "applied") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -68,10 +87,10 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
-            result = deps.set_job_rejected(
-                country, company, url, bool(body.get("rejected", True)), user_id=g.user_id,
-            )
-            return jsonify({"ok": True, **result})
+            active = bool(body.get("rejected", True))
+            result = deps.set_job_rejected(country, company, url, active, user_id=g.user_id)
+            reveal = _touch_reveal(country, company, result, "rejected") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -85,7 +104,8 @@ def register(app):
         country, company, url = job_mutation_fields(body)
         try:
             result = deps.set_job_reapply(country, company, url, user_id=g.user_id)
-            return jsonify({"ok": True, **result})
+            reveal = _touch_reveal(country, company, result, "reapply")
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -123,11 +143,12 @@ def register(app):
         country, company, url = job_mutation_fields(body)
         linkedin_url = (body.get("linkedin_url") or body.get("referral_linkedin_url") or "").strip()
         try:
+            active = bool(body.get("waiting_referral", True))
             result = deps.set_job_waiting_referral(
-                country, company, url, bool(body.get("waiting_referral", True)),
-                user_id=g.user_id, linkedin_url=linkedin_url,
+                country, company, url, active, user_id=g.user_id, linkedin_url=linkedin_url,
             )
-            return jsonify({"ok": True, **result})
+            reveal = _touch_reveal(country, company, result, "waiting_referral") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
         except ValueError as e:
@@ -141,12 +162,14 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
+            active = bool(body.get("not_for_me", True))
             result = deps.set_job_not_for_me(
                 country, company, url, user_id=g.user_id,
-                not_for_me=bool(body.get("not_for_me", True)),
+                not_for_me=active,
                 reason=(body.get("reason") or "").strip() or None,
             )
-            return jsonify({"ok": True, **result})
+            reveal = _touch_reveal(country, company, result, "not_for_me") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -159,10 +182,12 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
+            active = bool(body.get("looking_to_apply", True))
             result = deps.set_job_looking_to_apply(
-                country, company, url, bool(body.get("looking_to_apply", True)), user_id=g.user_id,
+                country, company, url, active, user_id=g.user_id,
             )
-            return jsonify({"ok": True, **result})
+            reveal = _touch_reveal(country, company, result, "interested") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -175,10 +200,10 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
-            result = deps.set_job_seen(
-                country, company, url, bool(body.get("seen", True)), user_id=g.user_id,
-            )
-            return jsonify({"ok": True, **result})
+            active = bool(body.get("seen", True))
+            result = deps.set_job_seen(country, company, url, active, user_id=g.user_id)
+            reveal = _touch_reveal(country, company, result, "seen") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -191,9 +216,9 @@ def register(app):
             return err
         country, company, url = job_mutation_fields(body)
         try:
-            result = deps.set_job_pinned(
-                country, company, url, bool(body.get("pinned", True)), user_id=g.user_id,
-            )
-            return jsonify({"ok": True, **result})
+            active = bool(body.get("pinned", True))
+            result = deps.set_job_pinned(country, company, url, active, user_id=g.user_id)
+            reveal = _touch_reveal(country, company, result, "pinned") if active else {}
+            return jsonify({"ok": True, **result, "reveal": reveal})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404

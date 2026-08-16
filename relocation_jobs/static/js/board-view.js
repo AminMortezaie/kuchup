@@ -5,6 +5,7 @@ import { $ } from "./utils.js";
 import { getDisplayCompanies } from "./render.js";
 import { boardTotalPages } from "./board.js";
 import { publishBoardView } from "./board-sync.js";
+import { renderBoardScopeBanner } from "./board-scope.js";
 
 function paginationView(loading = false) {
   const pageSize = state.boardMeta?.page_size ?? 25;
@@ -20,10 +21,12 @@ function paginationView(loading = false) {
 
 export function syncBoardView({ loading = false, preserveContent = false } = {}) {
   const hideContent = loading && !preserveContent;
+  renderBoardScopeBanner(state.boardMeta || {});
   publishBoardView({
     loading: hideContent,
     pagination: paginationView(loading),
     companies: hideContent ? [] : getDisplayCompanies(),
+    meta: { ...(state.boardMeta || {}) },
     ui: {
       collapsed: [...state.collapsedCompanies],
       showNotForMe: [...state.showNotForMeCompanies],
@@ -31,9 +34,14 @@ export function syncBoardView({ loading = false, preserveContent = false } = {})
       fetchingCompanyKey: state.fetchingCompanyKey,
       serverFetchRunning: state.serverFetchRunning,
       scrapeEnabled: (
-        state.scrapeConfig?.company_fetch_enabled
-        ?? state.scrapeConfig?.scrape_enabled
-      ) !== false,
+        (state.scrapeConfig?.company_fetch_enabled
+          ?? state.scrapeConfig?.scrape_enabled) !== false
+        && (
+          Boolean(state.authState?.user?.is_admin)
+          || (state.boardMeta?.plan || "free") !== "free"
+        )
+      ),
+      plan: state.boardMeta?.plan || "free",
       positionRejectedOnly: Boolean($("positionRejectedOnly")?.checked),
       visaOnly: Boolean($("visaOnly")?.checked),
     },

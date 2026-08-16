@@ -105,6 +105,14 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "fetch_runs_table_v1", _ensure_fetch_runs_table)
     run_migration_once(conn, "fetch_runs_live_state_v1", _migrate_fetch_runs_live_state)
     run_migration_once(conn, "users_admin_column_v1", _ensure_users_admin_column)
+    run_migration_once(conn, "users_google_auth_v1", _ensure_users_google_auth)
+    run_migration_once(conn, "users_entitlements_v1", _ensure_users_entitlements)
+    run_migration_once(conn, "user_opportunities_v1", _ensure_user_opportunities_tables)
+    run_migration_once(conn, "user_preferences_confirmed_v1", _ensure_preferences_confirmed)
+    run_migration_once(conn, "user_opportunities_refreshed_at_v1", _ensure_opportunities_refreshed_at)
+    run_migration_once(conn, "user_opportunities_reveal_v1", _ensure_opportunity_reveal_columns)
+    run_migration_once(conn, "position_broadcast_assignments_v1", _ensure_position_broadcast_tables)
+    run_migration_once(conn, "credit_wallet_v1", _ensure_credit_wallet_tables)
     run_migration_once(conn, "mcp_tables_v1", _ensure_mcp_tables)
     run_migration_once(conn, "mcp_master_resumes_v2", _migrate_mcp_master_resumes_v2)
     run_migration_once(conn, "mcp_master_resumes_pdf_v1", _migrate_mcp_master_resumes_pdf_v1)
@@ -147,6 +155,214 @@ def _ensure_users_admin_column(conn) -> None:
     conn.execute(
         "UPDATE users SET is_admin = 1 WHERE LOWER(username) = LOWER(%s)",
         (admin_name,),
+    )
+
+
+def _ensure_users_google_auth(conn) -> None:
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free'")
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub
+        ON users (google_sub) WHERE google_sub IS NOT NULL
+        """
+    )
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email
+        ON users (email) WHERE email IS NOT NULL
+        """
+    )
+    try:
+        conn.execute("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS password_hash")
+    except Exception:
+        pass
+
+
+def _ensure_users_entitlements(conn) -> None:
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free'")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_updated_at TEXT")
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mcp_quota_date TEXT")
+    conn.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS mcp_quota_used INTEGER NOT NULL DEFAULT 0"
+    )
+
+
+def _ensure_user_opportunities_tables(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            target_countries_json TEXT NOT NULL DEFAULT '[]',
+            seniority TEXT NOT NULL DEFAULT '',
+            keywords_json TEXT NOT NULL DEFAULT '[]',
+            remote_ok INTEGER NOT NULL DEFAULT 0,
+            preferences_confirmed INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_opportunities (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            country TEXT NOT NULL,
+            company_name TEXT NOT NULL,
+            newest_fetched TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, country, company_name)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_user_opportunities_user_country
+        ON user_opportunities (user_id, country)
+        """
+    )
+
+
+def _ensure_preferences_confirmed(conn) -> None:
+    conn.execute(
+        """
+        ALTER TABLE user_preferences
+        ADD COLUMN IF NOT EXISTS preferences_confirmed INTEGER NOT NULL DEFAULT 0
+        """
+    )
+    conn.execute(
+        """
+        UPDATE user_preferences
+        SET preferences_confirmed = 1
+        WHERE preferences_confirmed = 0
+          AND COALESCE(target_countries_json, '[]') NOT IN ('[]', '')
+        """
+    )
+
+
+def _ensure_opportunities_refreshed_at(conn) -> None:
+    conn.execute(
+        """
+        ALTER TABLE user_preferences
+        ADD COLUMN IF NOT EXISTS opportunities_refreshed_at TEXT
+        """
+    )
+
+
+def _ensure_opportunity_reveal_columns(conn) -> None:
+    conn.execute(
+        """
+        ALTER TABLE user_opportunities
+        ADD COLUMN IF NOT EXISTS revealed_job_count INTEGER NOT NULL DEFAULT 0
+        """
+    )
+    conn.execute(
+        """
+        ALTER TABLE user_opportunities
+        ADD COLUMN IF NOT EXISTS engaged INTEGER NOT NULL DEFAULT 0
+        """
+    )
+
+
+def _ensure_position_broadcast_tables(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS position_broadcast_assignments (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            period_key TEXT NOT NULL,
+            country TEXT NOT NULL,
+            company_name TEXT NOT NULL,
+            job_key TEXT NOT NULL,
+            job_url TEXT NOT NULL,
+            job_title TEXT NOT NULL DEFAULT '',
+            assigned_at TEXT NOT NULL,
+            consumed_at TEXT,
+            action_kind TEXT,
+            PRIMARY KEY (user_id, period_key, country, company_name, job_key)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_position_broadcast_user_period
+        ON position_broadcast_assignments (user_id, period_key, consumed_at)
+        """
+    )
+
+
+def _ensure_credit_wallet_tables(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS credit_grants (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            kind TEXT NOT NULL,
+            source_key TEXT NOT NULL,
+            total_credits INTEGER NOT NULL,
+            remaining_credits INTEGER NOT NULL,
+            expires_at TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE (user_id, source_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_credit_grants_spend
+        ON credit_grants (user_id, expires_at, created_at);
+
+        CREATE TABLE IF NOT EXISTS credit_ledger (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            operation TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            balance_after INTEGER NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            UNIQUE (user_id, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_credit_ledger_user_created
+        ON credit_ledger (user_id, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS credit_usage_migrations (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            period_key TEXT NOT NULL,
+            migrated_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, period_key)
+        );
+
+        CREATE TABLE IF NOT EXISTS credit_orders (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            pack_key TEXT NOT NULL,
+            credits INTEGER NOT NULL,
+            price_minor INTEGER NOT NULL,
+            currency TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            status TEXT NOT NULL,
+            provider_order_id TEXT,
+            checkout_url TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            paid_at TEXT,
+            UNIQUE (provider, provider_order_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_credit_orders_user_created
+        ON credit_orders (user_id, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS payment_events (
+            id SERIAL PRIMARY KEY,
+            provider TEXT NOT NULL,
+            event_id TEXT NOT NULL,
+            provider_order_id TEXT,
+            payload_json TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            UNIQUE (provider, event_id)
+        )
+        """
     )
 
 

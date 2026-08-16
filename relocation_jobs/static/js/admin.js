@@ -3,7 +3,7 @@
 import { removeCountry } from "./api.js";
 import { initAdminWorker } from "./admin-worker.js";
 import { buildAdminStatsHtml } from "./stats-dashboard.js";
-import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge } from "./utils.js";
+import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge, toast } from "./utils.js";
 
 function skeletonRows(n = 4) {
   return Array(n).fill(0).map(() =>
@@ -83,7 +83,8 @@ function showLogin(message = "") {
   $("adminContent").classList.add("hidden");
   $("adminDenied").hidden = true;
   $("adminLoginPanel").hidden = false;
-  $("adminLoginError").textContent = message;
+  const params = new URLSearchParams(window.location.search);
+  $("adminLoginError").textContent = message || params.get("error") || "";
 }
 
 function showDenied() {
@@ -247,11 +248,20 @@ function renderUsers(data) {
       (user) => `
       <tr>
         ${adminCell(`${escapeHtml(user.username)}${user.is_admin ? ' <span class="admin-badge">admin</span>' : ""}`, "Username")}
+        ${adminCell(escapeHtml(user.plan || "free"), "Plan")}
         ${adminCell(formatTs(user.created_at), "Created")}
         ${adminCell(user.applied_positions, "Applied")}
         ${adminCell(user.rejected_positions, "Rejected")}
         ${adminCell(user.not_for_me_positions, "Not for me")}
-        ${adminCell(user.fetch_runs, "Fetches")}
+        ${adminCell(`
+          <label class="visually-hidden" for="plan-${user.id}">Plan for ${escapeHtml(user.username)}</label>
+          <select class="admin-plan-select" id="plan-${user.id}" data-user-id="${user.id}">
+            <option value="free" ${(user.plan || "free") === "free" ? "selected" : ""}>free</option>
+            <option value="full" ${user.plan === "full" ? "selected" : ""}>full</option>
+            <option value="grandfathered" ${user.plan === "grandfathered" ? "selected" : ""}>grandfathered</option>
+          </select>
+          <button type="button" class="secondary-btn admin-credit-grant" data-user-id="${user.id}">Grant credits</button>
+        `, "Set plan")}
       </tr>
     `
     )
@@ -264,14 +274,108 @@ function renderUsers(data) {
         <table class="admin-table admin-table--responsive">
           <thead>
             <tr>
-              <th>Username</th><th>Created</th><th>Applied</th><th>Rejected</th><th>Not for me</th><th>Fetches</th>
+              <th>Username</th><th>Plan</th><th>Created</th><th>Applied</th><th>Rejected</th><th>Not for me</th><th>Set plan</th>
             </tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="6">No users</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="7">No users</td></tr>'}</tbody>
         </table>
       </div>
     </section>
   `;
+  $("adminUsers")?.querySelectorAll(".admin-plan-select").forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      const userId = Number(sel.dataset.userId);
+      const plan = sel.value;
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/plan`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || `Failed (${res.status})`);
+        toast(`Plan set to ${plan}`);
+        await loadDashboard();
+      } catch (exc) {
+        toast(exc.message || "Could not update plan");
+        await loadDashboard();
+      }
+    });
+  });
+  $("adminUsers")?.querySelectorAll(".admin-credit-grant").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const credits = Number(window.prompt("Credits to grant:", "25"));
+      if (!Number.isInteger(credits) || credits <= 0) return;
+      const reason = (window.prompt("Reason for this adjustment:") || "").trim();
+      if (!reason) return;
+      try {
+        const res = await fetch(`/api/admin/users/${button.dataset.userId}/credits`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credits, reason }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || `Failed (${res.status})`);
+        toast(`Granted ${credits} credits`);
+      } catch (exc) {
+        toast(exc.message || "Could not grant credits");
+      }
+    });
+  });
+}
+
+function renderCreditOrders(data, audit) {
+  const mount = $("adminUsers");
+  if (!mount) return;
+  const rows = (data.orders || []).map((order) => `
+    <tr>
+      ${adminCell(order.id, "Order")}
+      ${adminCell(order.user_id, "User")}
+      ${adminCell(`${escapeHtml(order.pack_key)} · ${order.credits}`, "Pack")}
+      ${adminCell(escapeHtml(order.status), "Status")}
+      ${adminCell(formatTs(order.created_at), "Created")}
+      ${adminCell(`
+        <button type="button" class="secondary-btn admin-order-reconcile" data-order-id="${order.id}">Reconcile</button>
+        <button type="button" class="secondary-btn admin-order-revoke" data-order-id="${order.id}">Revoke unused</button>
+      `, "Actions")}
+    </tr>
+  `).join("");
+  mount.insertAdjacentHTML("beforeend", `
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Credit orders</h2>
+      <p class="hint">${audit.ok ? "Wallet audit healthy" : `${audit.invalid_grant_balances} invalid balances · ${audit.paid_orders_without_grants.length} paid orders missing grants`}</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--responsive">
+          <thead><tr><th>Order</th><th>User</th><th>Pack</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6">No credit orders</td></tr>'}</tbody>
+        </table>
+      </div>
+    </section>
+  `);
+  mount.querySelectorAll(".admin-order-reconcile").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await fetch(`/api/admin/credit-orders/${button.dataset.orderId}/reconcile`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      await loadDashboard();
+    });
+  });
+  mount.querySelectorAll(".admin-order-revoke").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const reason = (window.prompt("Reason for revoking unused credits:") || "").trim();
+      if (!reason) return;
+      await fetch(`/api/admin/credit-orders/${button.dataset.orderId}/revoke`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      await loadDashboard();
+    });
+  });
 }
 
 function renderFetchRuns(data) {
@@ -398,6 +502,11 @@ async function loadDashboard() {
   setLoadingProgress(80);
   renderCatalog(data.catalog);
   renderUsers(data.users);
+  const [creditOrders, creditAudit] = await Promise.all([
+    apiGet("/api/admin/credit-orders"),
+    apiGet("/api/admin/credits/audit"),
+  ]);
+  renderCreditOrders(creditOrders, creditAudit);
   renderNewJobs(
     await apiGet(
       `/api/admin/recent-jobs?limit=30&timezone=${encodeURIComponent(tz)}`,
@@ -445,42 +554,12 @@ async function refreshAuth() {
   return true;
 }
 
-async function submitLogin(event) {
-  event.preventDefault();
-  $("adminLoginError").textContent = "";
-  const username = $("adminLoginUsername").value.trim();
-  const password = $("adminLoginPassword").value;
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      $("adminLoginError").textContent = data.error || "Sign in failed";
-      return;
-    }
-    if (!data.user?.is_admin) {
-      showDenied();
-      return;
-    }
-    $("adminLoginPassword").value = "";
-    showAdmin();
-    await loadDashboard();
-  } catch {
-    $("adminLoginError").textContent = "Network error";
-  }
-}
-
 async function logout() {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
   showLogin();
 }
 
 async function init() {
-  $("adminLoginForm").addEventListener("submit", submitLogin);
   $("adminLogoutBtn").addEventListener("click", logout);
   $("adminRefreshBtn").addEventListener("click", async () => {
     try {

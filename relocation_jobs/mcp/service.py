@@ -6,6 +6,8 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
+from relocation_jobs.broadcast.service import record_touch_and_maybe_reveal
+from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.catalog.repo import (
     get_company,
     get_job_by_idempotency_key,
@@ -29,6 +31,7 @@ from relocation_jobs.core.db import _normalize_url
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from mcp.server.auth.middleware.auth_context import get_access_token
 
+from relocation_jobs.users.entitlements import consume_mcp_quota
 from relocation_jobs.users.repo import get_user_by_username
 from relocation_jobs.mcp import repo, render, validate
 from relocation_jobs.mcp.context import get_current_user_id
@@ -212,6 +215,10 @@ def resolve_user_id() -> int:
     if user is None:
         raise LookupError(f"MCP user not found: {username}")
     return int(user["id"])
+
+
+def _charge_mcp_quota(user_id: int) -> None:
+    consume_mcp_quota(user_id)
 
 
 def _tracking_row(
@@ -883,6 +890,7 @@ def save_master_resume(
     user_id: int | None = None,
 ) -> dict:
     uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
     return repo.save_master_resume(uid, slug, content, label=label)
 
 
@@ -965,6 +973,7 @@ def save_project_master(
     user_id: int | None = None,
 ) -> dict:
     uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
     return repo.save_project_master(uid, slug, content, label=label)
 
 
@@ -983,6 +992,7 @@ def save_tailored_tex_for_job(
     user_id: int | None = None,
 ) -> dict:
     uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
     ctx = get_job_context(country, company, url, user_id=uid)
     slug = repo.normalize_master_resume_slug(master_resume_slug)
     overwritten = ctx.has_tailored_tex
@@ -1057,6 +1067,7 @@ def render_tailored_pdf(
     user_id: int | None = None,
 ) -> RenderResult:
     uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
     ctx = get_job_context(country, company, url, user_id=uid)
 
     try:
@@ -1115,6 +1126,7 @@ def save_cover_letter_tex_for_job(
     user_id: int | None = None,
 ) -> dict:
     uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
     ctx = get_job_context(country, company, url, user_id=uid)
     if not content.strip():
         raise ValueError("LaTeX content cannot be empty")
@@ -1579,4 +1591,16 @@ def mark_job_applied(
         url=ctx.url,
         event="marked_applied" if applied else "marked_unapplied",
     )
+    if applied:
+        result["reveal"] = record_touch_and_maybe_reveal(
+            uid,
+            RevealEvent(
+                country=country,
+                company_name=company,
+                kind="applied",
+                job_url=ctx.url,
+                job_key=ctx.idempotency_key,
+                job_title=ctx.title,
+            ),
+        )
     return result

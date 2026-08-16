@@ -9,7 +9,8 @@ alwaysApply: true
 
 - **Code exploration:** before reading or changing code, use **`codebase-memory-mcp`** first (`codebase-memory` skill) — graph queries over broad Grep/file reads
 - **Code:** `relocation_jobs/` (domain folders: `catalog/`, `web/`, `fetch/`, `scrape/`, …)
-- **Local panel:** `PANEL_SCRAPE_ENABLED=1 python3 scripts/panel_server.py` (port **5051**)
+- **Local panel:** `PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py` (port **5051**; or `scripts/panel_server.py`)
+- **Apps vs domains:** [`apps/README.md`](../../apps/README.md) — deployables under `apps/`, logic under `relocation_jobs/`
 - **Board:** paginated `GET /api/board`; React pagination in `frontend/` → `npm run build`
 - **Tests:** `pytest tests -o addopts=`
 - **Postgres:** AWS EC2 Docker (not Neon)

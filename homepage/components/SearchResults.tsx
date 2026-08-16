@@ -228,7 +228,7 @@ export function SearchResults() {
       {!error && !loading && featuredCompanies.length === 0 ? (
         <div className="visa-results-minimal-empty">
           <span>No visa-positive companies are available right now.</span>
-          <a href={panelHref(filters)}>Browse the full board</a>
+          <a href={panelHref(filters)}>Open the board</a>
         </div>
       ) : null}
     </section>

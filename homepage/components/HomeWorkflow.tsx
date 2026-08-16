@@ -5,7 +5,7 @@ const STEPS = [
   },
   {
     title: "Save the roles that fit",
-    body: "Sign in when you want the full board, personal status tracking, and company workspaces.",
+    body: "Sign in for personal tracking, company workspaces, and a preference-matched board (Free plan includes a company cap).",
   },
   {
     title: "Prepare with MCP for one job at a time",

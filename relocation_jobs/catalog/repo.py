@@ -578,6 +578,75 @@ def list_country_company_stubs(country_key: str) -> list[dict]:
     ]
 
 
+def list_companies_for_opportunity_match(country_keys: list[str]) -> list[dict]:
+    keys = [key.strip().lower() for key in country_keys if (key or "").strip()]
+    if not keys:
+        return []
+    placeholders = ", ".join(["%s"] * len(keys))
+    with db_read() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                c.country,
+                c.name AS company_name,
+                COALESCE(MAX(mj.fetched), c.updated, '') AS newest_fetched,
+                COUNT(mj.id) AS open_job_count
+            FROM companies c
+            LEFT JOIN matching_jobs mj ON mj.company_id = c.id
+            WHERE c.country IN ({placeholders})
+            GROUP BY c.id, c.country, c.name, c.updated
+            ORDER BY newest_fetched DESC, c.name ASC
+            """,
+            tuple(keys),
+        ).fetchall()
+    return [
+        {
+            "country": (row.get("country") or "").strip().lower(),
+            "company_name": (row.get("company_name") or "").strip(),
+            "newest_fetched": (row.get("newest_fetched") or "").strip(),
+            "titles_blob": "",
+            "open_job_count": int(row.get("open_job_count") or 0),
+        }
+        for row in rows
+        if (row.get("company_name") or "").strip()
+    ]
+
+
+def list_jobs_for_company_keys(
+    company_keys: list[tuple[str, str]],
+) -> dict[tuple[str, str], list[dict]]:
+    keys = [
+        (country.strip().lower(), company_name.strip().lower())
+        for country, company_name in company_keys
+        if country.strip() and company_name.strip()
+    ]
+    if not keys:
+        return {}
+    clauses = " OR ".join(
+        ["(c.country = %s AND lower(c.name) = lower(%s))"] * len(keys)
+    )
+    params = tuple(value for pair in keys for value in pair)
+    with db_read() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT c.country, c.name AS company_name, mj.*
+            FROM companies c
+            JOIN matching_jobs mj ON mj.company_id = c.id
+            WHERE {clauses}
+            ORDER BY c.country, c.name, mj.fetched DESC, mj.title ASC
+            """,
+            params,
+        ).fetchall()
+    out: dict[tuple[str, str], list[dict]] = {key: [] for key in keys}
+    for row in rows:
+        key = (
+            (row.get("country") or "").strip().lower(),
+            (row.get("company_name") or "").strip().lower(),
+        )
+        out.setdefault(key, []).append(_job_row(row))
+    return out
+
+
 def get_company(country_key: str, company_name: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(

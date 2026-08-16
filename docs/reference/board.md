@@ -30,17 +30,20 @@ Remote boards: `remote-ok`, `remote-dxb`, `remote-joblet` (Remotedxb is not unde
 
 ```
 GET /api/board
-  → panel/board.load_catalog_board_page(catalog_kind=relocation)
+  → opportunities.service.resolve_board_opportunity_scope()  # admin bypass / user_opportunities
+  → panel/board.load_catalog_board_page(catalog_kind=relocation, opportunity_scope=…)
   → panel/service.flatten_companies_page()
       → catalog/repo.load_catalog_companies_page()   # DB batch, ORDER BY country, name
       → panel/flatten.flatten_company()              # per-user merge + filters
-  → web/routes/board.py                              # meta + user_stats
+  → web/routes/board.py                              # meta (+ opportunity fields) + user_stats
 
 GET /api/remote/board
+  → same opportunity scope
   → remote/board.load_remote_board_page()
   → same flatten path with catalog_kind=remote
 ```
 
+Non-admin users only see companies present in `user_opportunities` (see [entitlements-and-opportunities.md](entitlements-and-opportunities.md)). Admins bypass.
 Client:
 
 ```

@@ -33,7 +33,7 @@ import { fetchOneCompany, ensureFetchPolling, endSessionAndSettle } from "./scra
 import { fetchPanelState } from "./fetch-ui.js";
 import { openEditCareersDialog, openEditCompanyNameDialog, openEditCityDialog } from "./dialogs.js";
 import { saveCollapsedCompanies } from "./storage.js";
-import { logout, submitAuth, setLoginMode } from "./auth.js";
+import { logout } from "./auth.js";
 import { closeAllHeaderPopovers } from "./header.js";
 
 let atsScrollListener = null;
@@ -624,6 +624,15 @@ function bindJobsListEvents() {
       } else {
         patchJobOnBoard(detail.country, detail.company, detail.url, detail.idempotencyKey, detail.apiData);
       }
+      if (detail.apiData.reveal?.consumed) {
+        if (detail.apiData.reveal.expanded) {
+          toast("Action saved · one new role added for this company");
+        }
+        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+      } else if (detail.apiData.reveal?.reason === "credits_exhausted") {
+        toast("Status saved · add credits to receive the next matched role");
+        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+      }
     }
   });
 
@@ -893,11 +902,6 @@ function bindToolbarEvents() {
   $("logoutBtn").addEventListener("click", () => {
     closeAllHeaderPopovers();
     logout();
-  });
-  $("loginForm").addEventListener("submit", submitAuth);
-  $("toggleRegister").addEventListener("click", () => {
-    setLoginMode(state.loginMode === "register" ? "login" : "register");
-    $("loginError").textContent = "";
   });
 }
 

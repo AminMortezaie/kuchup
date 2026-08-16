@@ -7,6 +7,7 @@ from flask import g, jsonify, request
 from relocation_jobs.core.auth import login_required
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.catalog.locations import list_company_locations
+from relocation_jobs.opportunities.service import board_scope_meta, resolve_board_opportunity_scope
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
 from relocation_jobs.remote.board import (
     DEFAULT_BOARD_PAGE_SIZE,
@@ -72,6 +73,7 @@ def register(app):
         if sort not in ("newest", "name"):
             sort = "newest"
 
+        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
         companies, file_meta, fetch_problem_count, total_visible, has_more = load_remote_board_page(
             country_key,
             ats_type=scope["ats_type"],
@@ -83,6 +85,7 @@ def register(app):
             panel_flags=_panel_flags(),
             count_total=(page == 1),
             sort=sort,
+            opportunity_scope=opportunity_scope,
         )
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
@@ -108,6 +111,7 @@ def register(app):
                 "total_pages": total_pages,
                 "has_more": has_more,
                 "sort": sort,
+                **board_scope_meta(opportunity_scope),
             },
             user_stats=compute_user_board_stats(
                 user_id=g.user_id,

@@ -1,5 +1,3 @@
-"""Session-based authentication for the job panel."""
-
 from __future__ import annotations
 
 import os
@@ -7,23 +5,17 @@ import secrets
 from functools import wraps
 
 from flask import g, jsonify, session
-from werkzeug.security import check_password_hash, generate_password_hash
 
 from relocation_jobs.db import init_db
+from relocation_jobs.credits.service import wallet_status
+from relocation_jobs.opportunities.service import ensure_default_preferences
+from relocation_jobs.users.entitlements import entitlement_status
 from relocation_jobs.users.repo import (
-    create_user,
     get_user_by_id,
-    get_user_by_username,
     is_user_admin,
-    update_user_password,
+    login_or_register_google_user,
     user_count,
 )
-
-_PASSWORD_HASH_METHOD = "pbkdf2:sha256"
-
-
-def _hash_password(password: str) -> str:
-    return generate_password_hash(password, method=_PASSWORD_HASH_METHOD)
 
 
 def secret_key() -> str:
@@ -35,6 +27,11 @@ def secret_key() -> str:
 
 def allow_register() -> bool:
     return os.environ.get("PANEL_ALLOW_REGISTER", "").lower() in ("1", "true", "yes")
+
+
+def admin_emails() -> set[str]:
+    raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
+    return {part.strip().lower() for part in raw.split(",") if part.strip()}
 
 
 def login_user(user_id: int, username: str) -> None:
@@ -70,8 +67,12 @@ def auth_status() -> dict:
         "user": {
             "id": user["id"],
             "username": user["username"],
+            "email": user.get("email") or "",
             "is_admin": is_user_admin(user["id"]),
+            "plan": user.get("plan") or "free",
         },
+        "entitlements": entitlement_status(uid),
+        "credits": wallet_status(uid),
         "allow_register": allow_register(),
     }
 
@@ -101,65 +102,20 @@ def admin_required(view):
     return wrapped
 
 
-def authenticate(username: str, password: str) -> dict | None:
-    user = get_user_by_username(username)
-    if not user or not check_password_hash(user["password_hash"], password):
-        return None
-    return {"id": user["id"], "username": user["username"]}
-
-
-def register_user(username: str, password: str) -> dict:
-    username = username.strip()
-    if len(username) < 2:
-        raise ValueError("Username must be at least 2 characters")
-    if len(password) < 8:
-        raise ValueError("Password must be at least 8 characters")
-    if get_user_by_username(username):
-        raise ValueError("Username already taken")
-    if not allow_register() and user_count() > 0:
-        raise ValueError("Registration is disabled")
-    password_hash = _hash_password(password)
-    return create_user(username, password_hash)
-
-
-def _admin_credentials_from_env() -> tuple[str, str]:
-    username = os.environ.get("PANEL_ADMIN_USER", "admin").strip() or "admin"
-    password = os.environ.get("PANEL_ADMIN_PASSWORD", "").strip()
-    return username, password
-
-
-def sync_admin_password_from_env() -> bool:
-    """Apply PANEL_ADMIN_PASSWORD to the env-configured admin user."""
-    username, password = _admin_credentials_from_env()
-    if not password:
-        return False
-    if not get_user_by_username(username):
-        return False
-    return update_user_password(username, _hash_password(password))
-
-
-def bootstrap_admin() -> dict | None:
-    """
-    Create the first admin user from env.
-    When users already exist, sync PANEL_ADMIN_PASSWORD to PANEL_ADMIN_USER so
-    Render env updates take effect without a manual DB reset.
-    Returns the created user dict, or None if users already existed.
-    """
-    username, password = _admin_credentials_from_env()
-
-    if user_count() > 0:
-        if sync_admin_password_from_env():
-            print(f"Panel: synced admin password for '{username}' from env.")
-        return None
-
-    if not password:
-        password = secrets.token_urlsafe(12)
-        print(
-            f"Panel: created admin user '{username}' with generated password: {password}\n"
-            "Set PANEL_ADMIN_USER and PANEL_ADMIN_PASSWORD to control this on first run."
-        )
-
-    user = create_user(username, _hash_password(password), is_admin=True)
+def login_or_register_google(profile: dict) -> dict:
+    email = (profile.get("email") or "").strip().lower()
+    google_sub = (profile.get("google_sub") or "").strip()
+    display_name = (profile.get("display_name") or "").strip()
+    if not email or not google_sub:
+        raise ValueError("Google profile incomplete")
+    user = login_or_register_google_user(
+        google_sub=google_sub,
+        email=email,
+        display_name=display_name,
+        allow_new=allow_register() or user_count() == 0,
+        is_admin=email in admin_emails(),
+    )
+    ensure_default_preferences(int(user["id"]))
     return user
 
 
@@ -167,5 +123,7 @@ def init_auth(app) -> None:
     app.secret_key = secret_key()
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    secure = os.environ.get("SESSION_COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+    if secure:
+        app.config["SESSION_COOKIE_SECURE"] = True
     init_db()
-    bootstrap_admin()

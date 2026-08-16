@@ -5,6 +5,8 @@ from flask import g, jsonify, request
 from relocation_jobs.core.ats_constants import HTTPX_AVAILABLE
 from relocation_jobs.core.auth import admin_required
 from relocation_jobs.core.panel_flags import company_fetch_enabled, scrape_enabled
+from relocation_jobs.users.entitlements import set_plan
+from relocation_jobs.opportunities.service import refresh_user_opportunities
 from relocation_jobs.users.repo import list_users_with_stats
 from relocation_jobs.admin import service as admin_service
 from relocation_jobs.catalog.repo import get_catalog_overview
@@ -67,6 +69,26 @@ def register(app):
         except Exception as exc:
             app.logger.exception("admin users failed")
             return jsonify({"error": str(exc)}), 500
+
+    @app.patch("/api/admin/users/<int:user_id>/plan")
+    @admin_required
+    def api_admin_set_user_plan(user_id: int):
+        body = request.get_json(silent=True) or {}
+        plan = (body.get("plan") or "").strip()
+        try:
+            entitlements = set_plan(user_id, plan)
+            # Sync rematch immediately so Free→Full board caps apply without waiting on SQS.
+            refresh = refresh_user_opportunities(user_id)
+            return jsonify({
+                "ok": True,
+                "user_id": user_id,
+                "entitlements": entitlements,
+                "refresh": {"synced": True, **refresh},
+            })
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
 
     @app.get("/api/admin/fetch-runs")
     @admin_required

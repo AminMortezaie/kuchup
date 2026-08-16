@@ -5,7 +5,6 @@ import os
 import time
 
 from relocation_jobs.core.ats_constants import HTTPX_AVAILABLE, MAX_CONCURRENCY
-from relocation_jobs.core.auth import bootstrap_admin
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.db import init_db
 from relocation_jobs.users.repo import resolve_scheduler_user_id
@@ -59,7 +58,6 @@ def schedule_countries() -> tuple[str, ...]:
 
 def bootstrap_scheduler() -> None:
     init_db()
-    bootstrap_admin()
     configure_fetch_logging()
     fetch_repo.reap_orphan_running_fetch_runs()
     ensure_aggregator_seeds()

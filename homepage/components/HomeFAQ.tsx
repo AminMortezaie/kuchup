@@ -35,7 +35,7 @@ const QUESTIONS: readonly { question: string; answer: ReactNode }[] = [
   {
     question: "What can I use without signing in?",
     answer:
-      "You can search the public preview, explore supported countries, and inspect sample company results. Sign in to use the full board, personal tracking, company workspaces, MCP connect, and application documents.",
+      "You can search the public preview, explore supported countries, and inspect sample company results. Sign in for a preference-matched board (Free includes a company cap), personal tracking, company workspaces, MCP connect (daily quota on Free), and application documents.",
   },
 ];
 

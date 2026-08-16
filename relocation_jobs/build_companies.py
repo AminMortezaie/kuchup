@@ -35,6 +35,7 @@ from relocation_jobs.catalog.repo import load_country_catalog as load_country_ca
 from relocation_jobs.catalog.repo import sync_country_catalog as sync_country_catalog_db
 from relocation_jobs.core.paths import COUNTRY_ARCHIVE_FILENAMES, supported_countries
 from relocation_jobs.core.slug import slug_from_name
+from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 
 from playwright.sync_api import sync_playwright
 
@@ -368,6 +369,7 @@ def load_country(country: str) -> tuple[dict, str]:
 def save_country(country_key: str, data: dict) -> None:
     data["companies"] = sort_companies(data["companies"])
     sync_country_catalog_db(country_key, data)
+    enqueue_country_opportunity_refresh(country_key)
 
 
 def main() -> None:

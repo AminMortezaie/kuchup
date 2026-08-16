@@ -17,6 +17,9 @@ function showLogin() {
   const content = $("applyContent");
   if (content) content.hidden = true;
   $("applyLoginPanel").hidden = false;
+  const params = new URLSearchParams(window.location.search);
+  const err = $("applyLoginError");
+  if (err) err.textContent = params.get("error") || "";
 }
 
 function showApp() {
@@ -654,31 +657,6 @@ async function refreshAuth() {
   return true;
 }
 
-async function submitLogin(event) {
-  event.preventDefault();
-  $("applyLoginError").textContent = "";
-  const username = $("applyLoginUsername").value.trim();
-  const password = $("applyLoginPassword").value;
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      $("applyLoginError").textContent = data.error || "Sign in failed";
-      return;
-    }
-    $("applyLoginPassword").value = "";
-    showApp();
-    await loadData();
-  } catch {
-    $("applyLoginError").textContent = "Network error";
-  }
-}
-
 async function logout() {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
   clearMasterEditor();
@@ -692,6 +670,21 @@ async function loadConnectPanel() {
   const info = await api("/api/mcp/connect-info");
   const urlInput = $("applyMcpUrl");
   if (urlInput) urlInput.value = info.mcp_url || "";
+  const quota = $("applyMcpQuotaHint");
+  const ent = info.entitlements || {};
+  if (quota) {
+    if (ent.mcp_daily_limit == null) {
+      quota.textContent = "MCP write/render quota: unlimited on your plan.";
+    } else {
+      const remaining = ent.mcp_daily_remaining ?? 0;
+      const limit = ent.mcp_daily_limit;
+      const plan = ent.plan || "free";
+      quota.innerHTML =
+        `Free/Full MCP quota: <strong>${remaining}</strong> of ${limit} write/render requests left today (plan: ${escapeHtml(plan)}). `
+        + `Saving masters and rendering PDFs consume this budget. `
+        + `<a href="/pricing">See plans</a> · <a href="/mcp">How MCP works</a>`;
+    }
+  }
   await refreshTokenList();
 }
 
@@ -749,7 +742,6 @@ async function copyText(value, okMessage) {
 }
 
 function bindEvents() {
-  $("applyLoginForm")?.addEventListener("submit", submitLogin);
   $("applyLogoutBtn")?.addEventListener("click", logout);
   $("applyProfileForm")?.addEventListener("submit", saveProfile);
   $("applyPipelineAddBtn")?.addEventListener("click", addPipelinePrompt);
@@ -805,6 +797,10 @@ async function init() {
   if (await refreshAuth()) {
     try {
       await loadData();
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab === "connect" || tab === "masters" || tab === "projects" || tab === "profile") {
+        setTab(tab);
+      }
     } catch (err) {
       showError(err.message || "Failed to load application data");
     }

@@ -16,6 +16,7 @@ from relocation_jobs.users.repo import (
     load_job_tracking,
 )
 from relocation_jobs.mcp import repo as mcp_repo
+from relocation_jobs.opportunities.service import opportunity_company_key
 from relocation_jobs.panel.flatten import PanelContext, flatten_company, summarize_company_for_stats
 from relocation_jobs.panel.tracking import build_tracking_alias_index
 from relocation_jobs.panel.types import FlattenFilters
@@ -26,6 +27,13 @@ from relocation_jobs.shared.board_contract import (
     normalize_catalog_kind,
 )
 from relocation_jobs.shared.timestamps import normalize_ts_for_sort
+
+
+def _company_allowed_by_opportunities(filters: FlattenFilters, country_key: str, company: dict) -> bool:
+    if filters.opportunity_company_keys is None:
+        return True
+    key = opportunity_company_key(country_key, company.get("name") or "")
+    return key in filters.opportunity_company_keys
 
 
 def _board_activity_sort_key(row: dict) -> str:
@@ -220,6 +228,8 @@ def flatten_companies_for_stats(
         for company in data.get("companies", []):
             if company.get("fetch_problem"):
                 fetch_problem_count += 1
+            if not _company_allowed_by_opportunities(filters, key, company):
+                continue
             row = summarize_company_for_stats(
                 company,
                 country_key=key,
@@ -302,6 +312,8 @@ def _flatten_companies_page_streaming(
         for country_key, company in batch:
             if has_more:
                 break
+            if not _company_allowed_by_opportunities(filters, country_key, company):
+                continue
             label = country_label(country_key)
             row = flatten_company(
                 company,
@@ -357,6 +369,8 @@ def _flatten_companies_page_by_activity(
             continue
         label = country_label(key)
         for company in data.get("companies", []):
+            if not _company_allowed_by_opportunities(filters, key, company):
+                continue
             row = flatten_company(
                 company,
                 country_key=key,
@@ -383,11 +397,18 @@ def _country_keys_for_filters(filters: FlattenFilters) -> list[str]:
             return []
         if kind == CATALOG_KIND_RELOCATION and is_remote_country_key(key):
             return []
+        if filters.opportunity_country_keys is not None and key not in filters.opportunity_country_keys:
+            return []
         return [key]
     keys = sorted(supported_countries())
     if kind == CATALOG_KIND_REMOTE:
-        return [k for k in keys if is_remote_country_key(k)]
-    return [k for k in keys if not is_remote_country_key(k)]
+        keys = [k for k in keys if is_remote_country_key(k)]
+    else:
+        keys = [k for k in keys if not is_remote_country_key(k)]
+    if filters.opportunity_country_keys is not None:
+        allowed = filters.opportunity_country_keys
+        keys = [k for k in keys if k in allowed]
+    return keys
 
 
 def flatten_with_filters(filters: FlattenFilters) -> tuple[list[dict], list[dict], int]:
@@ -407,6 +428,8 @@ def flatten_with_filters(filters: FlattenFilters) -> tuple[list[dict], list[dict
         for company in data.get("companies", []):
             if company.get("fetch_problem"):
                 fetch_problem_count += 1
+            if not _company_allowed_by_opportunities(filters, key, company):
+                continue
             row = flatten_company(
                 company,
                 country_key=key,

@@ -1,14 +1,6 @@
 from __future__ import annotations
 
 
-def _login(client, username: str, password: str):
-    resp = client.post(
-        "/api/auth/login",
-        json={"username": username, "password": password},
-    )
-    assert resp.status_code == 200
-
-
 def test_remove_country_full_purge(v2_auth_client, seeded_catalog_v2, db):
     from relocation_jobs.core.db import db_read
     from relocation_jobs.core.job_identity import job_idempotency_key, stamp_job_identity
@@ -91,7 +83,11 @@ def test_remove_country_post_alias(v2_auth_client, seeded_catalog_v2, db):
 
 def test_remove_country_requires_admin(v2_client, test_user, seeded_catalog_v2, db):
     del db
-    _login(v2_client, "testuser", "testpass123")
+    with v2_client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = test_user["id"]
+        sess["username"] = test_user["username"]
+        sess.permanent = True
     resp = v2_client.delete("/api/countries/uk")
     assert resp.status_code == 403
     assert resp.get_json()["error"] == "Admin access required"

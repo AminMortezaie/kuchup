@@ -8,7 +8,12 @@ from pydantic import AnyHttpUrl
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
-from relocation_jobs.mcp.oauth_pages import oauth_health, oauth_login_get, oauth_login_post
+from relocation_jobs.mcp.oauth_pages import (
+    oauth_deny_get,
+    oauth_health,
+    oauth_login_get,
+    oauth_login_post,
+)
 from relocation_jobs.mcp.oauth_provider import KuchupOAuthProvider, mcp_resource_url, public_base_url
 from relocation_jobs.mcp.server import mcp as stdio_mcp
 
@@ -17,6 +22,10 @@ async def _oauth_login(request: Request) -> HTMLResponse | RedirectResponse:
     if request.method == "GET":
         return await oauth_login_get(request)
     return await oauth_login_post(request)
+
+
+async def _oauth_deny(request: Request) -> HTMLResponse:
+    return await oauth_deny_get(request)
 
 
 def _copy_tools(source: FastMCP, dest: FastMCP) -> None:
@@ -61,6 +70,7 @@ def build_http_mcp() -> FastMCP:
     )
     _copy_tools(stdio_mcp, http_mcp)
     http_mcp.custom_route("/oauth/login", methods=["GET", "POST"])(_oauth_login)
+    http_mcp.custom_route("/oauth/deny", methods=["GET"])(_oauth_deny)
     http_mcp.custom_route("/healthz", methods=["GET"])(oauth_health)
     return http_mcp
 

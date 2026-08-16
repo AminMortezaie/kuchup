@@ -328,19 +328,6 @@ class PositionCard extends HTMLElement {
     this._toast("Referral status cleared");
   }
 
-  async _markSeen() {
-    const job = this._job;
-    const country = (job.country || "").trim();
-    const company = (job.company || "").trim();
-    const url = (job.url || "").trim();
-    if (!country || country === "all" || !company || !url) return;
-    const data = await this._api(API.seen, {
-      country, company, url, seen: true,
-      ...(job.idempotency_key ? { idempotency_key: job.idempotency_key } : {}),
-    });
-    if (data) this._apply(data);
-  }
-
   // --- Render ---
 
   render() {
@@ -360,7 +347,10 @@ class PositionCard extends HTMLElement {
   }
 
   _titleRow(job) {
-    return `<div class="position-title-row"><a class="job-title" href="${escapeHtml(job.url || "")}" target="_blank" rel="noopener noreferrer">${escapeHtml(job.title || "")}</a>${this._cityBadge(job)}</div>`;
+    const unavailable = job.listing_unavailable
+      ? '<span class="badge seen" title="This role was previously shown to you but is no longer in the latest company fetch.">No longer in latest fetch</span>'
+      : "";
+    return `<div class="position-title-row"><a class="job-title" href="${escapeHtml(job.url || "")}" target="_blank" rel="noopener noreferrer">${escapeHtml(job.title || "")}</a>${this._cityBadge(job)}${unavailable}</div>`;
   }
 
   /** Location badge showing at most CITY_PREVIEW_LIMIT cities, with an
@@ -577,7 +567,10 @@ class PositionCard extends HTMLElement {
       return;
     }
 
-    if (t.closest(".job-title")) { e.stopPropagation(); void this._markSeen(); return; }
+    if (t.closest(".job-title")) {
+      e.stopPropagation();
+      return;
+    }
 
     if (t.closest(".pin-job-btn")) { e.stopPropagation(); void this._togglePin(); return; }
     if (t.closest(".applied-btn")) { e.stopPropagation(); void this._toggleApplied(); return; }
