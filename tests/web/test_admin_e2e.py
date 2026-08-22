@@ -5,6 +5,35 @@ from __future__ import annotations
 from pathlib import Path
 
 from relocation_jobs.core.paths import STATIC_DIR
+from relocation_jobs.users.repo import create_user
+
+
+def test_panel_hides_admin_nav_for_non_admins():
+    html = (Path(STATIC_DIR) / "index.html").read_text(encoding="utf-8")
+    css = (Path(STATIC_DIR) / "styles.css").read_text(encoding="utf-8")
+    auth_js = (Path(STATIC_DIR) / "js" / "auth.js").read_text(encoding="utf-8")
+    assert 'id="adminPanelBtn" hidden' in html
+    assert 'id="adminLink" hidden' in html
+    assert ".header-secondary-btn[hidden]" in css
+    assert ".user-dropdown-admin[hidden]" in css
+    assert "setAdminNavVisible(Boolean(user.is_admin))" in auth_js
+    assert "setAdminNavVisible(false)" in auth_js
+
+
+def test_auth_status_is_admin_false_for_regular_user(client, db):
+    user = create_user(
+        "regular-panel",
+        email="regular-panel@example.com",
+        google_sub="sub-regular-panel",
+    )
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = user["id"]
+        sess["username"] = user["username"]
+        sess.permanent = True
+    body = client.get("/api/auth/status").get_json()
+    assert body["authenticated"] is True
+    assert body["user"]["is_admin"] is False
 
 
 def test_admin_page_serves_cleanup_layout(v2_auth_client):

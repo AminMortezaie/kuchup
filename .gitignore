@@ -9,6 +9,8 @@ aws-postgres.env
 # SSH keys and local infra state (never commit real hosts/passwords)
 *.pem
 data/
+/companies/
+/kuchup.com-audit/
 .idea/
 .coverage
 .pytest_cache/

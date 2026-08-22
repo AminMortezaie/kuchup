@@ -40,7 +40,7 @@
         </a>
       </div>
       <h2>Sign in</h2>
-      <p class="hint">Your application profile, master resumes, and project masters are stored per user in the database.</p>
+      <p class="hint">Your application profile, master resumes, project masters, and interview notes are stored per user in the database.</p>
       <div class="login-error" id="applyLoginError"></div>
       <div class="login-actions">
         <a href="/panel" class="link-btn">Back to jobs</a>
@@ -68,7 +68,7 @@
             </span>
           </a>
           <h1 class="page-heading">Application data</h1>
-          <p class="admin-subtitle">Profile, master resumes, project masters, and remote MCP access</p>
+          <p class="admin-subtitle">Profile, master resumes, project masters, interview notes, and remote MCP access</p>
         </div>
         <div class="admin-header-actions">
           <a href="/panel" class="header-secondary-btn admin-nav-link">Job panel</a>
@@ -83,6 +83,7 @@
         <button type="button" class="apply-tab apply-tab--active" data-tab="profile" id="applyTabProfile">Profile</button>
         <button type="button" class="apply-tab" data-tab="masters" id="applyTabMasters">Master resumes</button>
         <button type="button" class="apply-tab" data-tab="projects" id="applyTabProjects">Projects</button>
+        <button type="button" class="apply-tab" data-tab="notes" id="applyTabNotes">Interview notes</button>
         <button type="button" class="apply-tab" data-tab="connect" id="applyTabConnect">Connect MCP</button>
       </nav>
 
@@ -225,6 +226,55 @@
         </div>
       </section>
 
+      <section class="admin-panel apply-panel" id="applyNotesPanel" hidden>
+        <h2 class="admin-panel-title">Interview notes</h2>
+        <p class="hint apply-hint">After you are invited to interview, write notes for that conversation — likely questions, stories from your resume and projects, what this company will probe. Download the PDF; over time the notes become a glossary across companies. They are not used to tailor resumes.</p>
+
+        <div class="apply-masters-layout">
+          <aside class="apply-master-list-wrap">
+            <div class="apply-master-list-header">
+              <span class="apply-master-list-title">Notes</span>
+              <button type="button" class="link-btn apply-new-master-btn" id="applyNewNoteBtn">+ New</button>
+            </div>
+            <ul class="apply-master-list" id="applyNoteList"></ul>
+          </aside>
+
+          <div class="apply-master-editor">
+            <div class="apply-master-meta">
+              <label for="applyNoteSlug">Slug</label>
+              <input type="text" id="applyNoteSlug" class="apply-master-slug-input" placeholder="adyen" spellcheck="false" />
+              <label for="applyNoteLabel">Label</label>
+              <input type="text" id="applyNoteLabel" placeholder="Adyen interview" />
+            </div>
+
+            <div class="apply-master-actions">
+              <button type="button" class="header-secondary-btn" id="applyNoteRenderBtn">Re-render PDF</button>
+              <a class="header-secondary-btn" id="applyNoteOpenPdf" href="#" target="_blank" rel="noopener noreferrer" hidden>Open PDF</a>
+              <a class="header-primary-btn" id="applyNoteDownloadPdf" href="#" download="interview.pdf" hidden>Download PDF</a>
+            </div>
+
+            <div class="apply-master-preview-grid">
+              <div class="apply-master-tex-panel">
+                <label for="applyNoteContent" class="apply-master-preview-label">LaTeX content</label>
+                <textarea id="applyNoteContent" class="apply-tex-editor" spellcheck="false" placeholder="\subsection*{Adyen interview}&#10;\begin{itemize}&#10;  \item …&#10;\end{itemize}"></textarea>
+              </div>
+              <div class="apply-master-pdf-panel">
+                <h3 class="apply-master-preview-label">PDF preview</h3>
+                <div class="apply-master-pdf-frame-wrap">
+                  <iframe id="applyNotePdfFrame" class="apply-master-pdf-frame" title="Interview notes PDF preview" hidden></iframe>
+                  <p id="applyNotePdfMissing" class="apply-master-pdf-missing" hidden>No PDF yet — click Re-render PDF.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="apply-form-actions">
+              <span class="apply-updated-at" id="applyNoteUpdated"></span>
+              <button type="button" class="header-primary-btn" id="applyNoteSaveBtn">Save notes</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="admin-panel apply-panel" id="applyConnectPanel" hidden>
         <h2 class="admin-panel-title">Connect Claude / Cursor</h2>
         <p class="hint apply-hint">Add this URL as a custom connector. Claude and Cursor open our login page — sign in with Google. Your data stays scoped to this account.</p>
@@ -260,6 +310,6 @@
 
   <div class="toast" id="applyToast"></div>
 
-  <script type="module" src="/static/js/apply.js?v=13"></script>
+  <script type="module" src="/static/js/apply.js?v=16"></script>
 </body>
 </html>

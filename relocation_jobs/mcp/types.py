@@ -23,7 +23,7 @@ class RenderResult(BaseSchema):
     pdf_filename: str = ""
 
 
-class MasterResumeSummary(BaseSchema):
+class SlugDocumentSummary(BaseSchema):
     slug: str
     label: str = ""
     updated_at: str = ""
@@ -31,12 +31,9 @@ class MasterResumeSummary(BaseSchema):
     pdf_filename: str = ""
 
 
-class ProjectMasterSummary(BaseSchema):
-    slug: str
-    label: str = ""
-    updated_at: str = ""
-    has_pdf: bool = False
-    pdf_filename: str = ""
+MasterResumeSummary = SlugDocumentSummary
+ProjectMasterSummary = SlugDocumentSummary
+InterviewNoteSummary = SlugDocumentSummary
 
 
 class ApplicationProfile(BaseSchema):

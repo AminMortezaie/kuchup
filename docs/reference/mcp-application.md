@@ -1,6 +1,6 @@
 # MCP application assistant (v0)
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-22
 
 Plan and reference for the `relocation_jobs/mcp/` domain: MCP tools that prepare tailored resume PDFs for jobs on the panel. v0 does **not** submit applications automatically and does **not** use the Claude API — Claude (or Cursor) does the resume reframing in chat; this app supplies data, validation, PDF rendering, and board state updates.
 
@@ -11,11 +11,11 @@ Transports:
 - **Remote (production):** Streamable HTTP + OAuth at `https://mcp.kuchup.com/mcp` — Claude custom connectors (including mobile) and Cursor.
 - **Local stdio:** `scripts/mcp_server.py` with `MCP_USERNAME` / `MCP_USER_ID` for Claude Desktop on a laptop.
 
-Use the panel **Application data** page at `/apply` to edit profile, pipeline prompts, masters, and **Connect MCP** (URL + optional API tokens).
+Use the panel **Application data** page at `/apply` to edit profile, pipeline prompts, masters, project masters, interview notes, and **Connect MCP** (URL + optional API tokens).
 
 Related: [architecture.md](architecture.md), [business-rules.md](business-rules.md), [contributing.md](../contributing.md).
 
-**Claude skill:** [`.claude/skills/mcp-resume-reframe/SKILL.md`](../../.claude/skills/mcp-resume-reframe/SKILL.md) — **interactive** gated reframe (one phase per turn, user approval), **add** 1–2 JD-mirror bullets then enforce a **skim budget** per role (trim with approval — dense 10–12 bullet walls cause HM skim rejection), `save_tailored_tex` after final sign-off; PDF render on the panel.
+**Claude skill (what Claude Desktop loads):** `dist/mcp-resume-reframe/` (gitignored package + zip). Interactive gated reframe (one phase per turn, user approval), **add** 1–2 JD-mirror bullets then enforce a **skim budget** per role, `save_tailored_tex` after final sign-off; PDF render on the panel. Project masters = reframe evidence. **Interview notes** are a later step after an invite (`list_interview_notes` / `get_interview_note` / `save_interview_note`) — prep for that conversation, not an input to tailoring.
 
 ---
 
@@ -57,7 +57,7 @@ relocation_jobs/mcp/
 
 ## Database schema
 
-Migrations: `mcp_tables_v1`, `mcp_master_resumes_v2`, `mcp_project_masters_v1`.
+Migrations: `mcp_tables_v1`, `mcp_master_resumes_v2`, `mcp_project_masters_v1`, `mcp_interview_notes_v1`.
 
 ### `mcp_master_resumes`
 
@@ -76,6 +76,21 @@ Migrations: `mcp_tables_v1`, `mcp_master_resumes_v2`, `mcp_project_masters_v1`.
 | `content` | LaTeX fragment (reframe evidence bank; insert-ready for a Projects block) |
 
 Project masters are **not** employment history and are **not** validated as employers/years. Agents load them during reframe for JD-aligned facts; dumping the full fragment into tailored `.tex` requires explicit user approval. The `/apply` Projects tab can **Re-render PDF** (fragments are wrapped in a minimal `\documentclass` for preview).
+
+### `mcp_interview_notes`
+
+| Column | Purpose |
+|--------|---------|
+| `user_id` + `slug` | PK — e.g. `adyen` |
+| `label` | Display name — e.g. `Adyen interview` |
+| `content` | LaTeX for **that** interview: likely questions, stories mapped to the submitted resume and projects, company/interviewer research |
+| `pdf_bytes`, `pdf_updated_at` | Rendered PDF for download |
+
+The `/apply` Interview notes tab uses the same list + editor + **Re-render PDF** flow as project masters. Fragments without `\documentclass` are wrapped for preview.
+
+**Purpose (product):** the user already tailored and submitted. They have been invited. Notes exist so they can **pass that interview**, then keep a glossary across companies. Ground notes in the resume, project masters, and JD. Secondary only: a note might later inform a master or a new tailored CV.
+
+Agents: use `list`/`get`/`save_interview_note` **after an invite**. Do not call them during reframe. Do not save skim-budget drops as notes. Do not paste notes into `save_tailored_tex`.
 
 ### `mcp_user_documents`
 
@@ -104,7 +119,9 @@ Migration: `mcp_cover_letter_v1`.
 | `get_master_resume` / `save_master_resume` | Read/write master tex by slug |
 | `list_project_masters` | All project master variants (LaTeX evidence) |
 | `get_project_master` / `save_project_master` | Read/write project LaTeX by slug |
-| `get_mcp_status` | Debug: MCP user + profile/resume/project presence + `pipeline_prompt_count` |
+| `list_interview_notes` | Interview-prep notes (after invite; glossary over time) |
+| `get_interview_note` / `save_interview_note` | Read/write notes for one company's interview — not a reframe input |
+| `get_mcp_status` | Debug: MCP user + profile/resume/project/interview-note presence + `pipeline_prompt_count` |
 | `get_application_profile` / `save_application_profile` | Profile fields; `pipeline` array on profile |
 | `get_reframe_pipeline` | Ordered pipeline prompts only (alias of profile.pipeline) |
 | `save_tailored_tex` | Requires `master_resume_slug`; overwrites prior tailored tex; queue membership not required |
@@ -126,7 +143,7 @@ MCP writes artifacts to Postgres; the panel reads them via HTTP (same user sessi
 
 | Panel surface | Purpose |
 |---------------|---------|
-| `/apply` | Profile, pipeline prompts, master resumes, project masters (setup) |
+| `/apply` | Profile, pipeline prompts, master resumes, project masters (reframe setup); interview notes (after invite) |
 | `/company/<country>/<company-slug>` | Per-company workspace: positions, CV / cover letter tex, PDF preview — see [company-workspace.md](company-workspace.md) |
 | Job board (phase 3) | CV/PDF and cover-letter badges; company name → workspace |
 
@@ -169,6 +186,8 @@ flowchart TD
 2. Save **project master(s)** (LaTeX fragments, e.g. `relocation-jobs`) — evidence bank for reframe, not CV employment rows.
 3. Save **application profile** (name, email, …).
 4. Add **five pipeline prompts** (one phase each) from [`.claude/skills/mcp-resume-reframe/pipeline-prompts.md`](../../.claude/skills/mcp-resume-reframe/pipeline-prompts.md). Each slot ends with a **go ahead?** checkpoint — do not use a single consolidated auto-run prompt.
+
+Interview notes are **not** part of this setup. Write them later, after an invite — see [Interview notes (after invite)](#interview-notes-after-invite).
 
 #### 1. Pick a position
 
@@ -348,6 +367,19 @@ Apply using the mcp-resume-reframe skill to the first job in my UK queue:
 3. Claude: bootstrap MCP → **one phase per turn** → user checkpoints → **add** mirror bullets then **skim-budget trim** with KEEP/DROP approval (never ship 10–12-bullet walls).
 4. After final acceptance: `save_tailored_tex` → optional `validate_tex`.
 5. Panel: **Re-render PDF** → upload manually → `mark_applied`.
+
+### Interview notes (after invite)
+
+After the tailored CV is submitted and the user is **invited**, write notes for that conversation — not another reframe.
+
+1. `get_job_context` for the JD + the tailored/master already used.
+2. `list_project_masters` / `get_project_master` only if stories need project depth.
+3. `list_interview_notes` — reuse useful material from earlier company interviews (the glossary).
+4. Draft notes for **this** invite: what they will probe, stories mapped to the resume, questions to ask, research, honest gaps.
+5. `save_interview_note(slug, content, label=...)` — slug like `adyen`.
+6. Panel: `/apply` → Notes → Re-render PDF → download.
+
+Do not call `save_tailored_tex`. Do not run the reframe pipeline.
 
 ---
 

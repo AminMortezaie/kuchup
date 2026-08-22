@@ -1,16 +1,8 @@
-/** Application data — profile + master resumes + project masters for MCP (per logged-in user). */
+/** Application data — profile + master resumes + project masters + interview notes for MCP (per logged-in user). */
 
-import { beginScreenLoad, endScreenLoad, setScreenLoadProgress } from "./screen-loader.js";
+import { createSlugDocumentEditor } from "./apply-documents.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
 
-let masterItems = [];
-let selectedSlug = "";
-let selectedHasPdf = false;
-let selectedPdfFilename = "resume.pdf";
-let projectItems = [];
-let selectedProjectSlug = "";
-let selectedProjectHasPdf = false;
-let selectedProjectPdfFilename = "project.pdf";
 const MAX_PIPELINE_PROMPTS = 5;
 
 function showLogin() {
@@ -62,6 +54,92 @@ async function api(path, options = {}) {
   return data;
 }
 
+const editorDeps = { api, showError, showToast };
+
+const masterEditor = createSlugDocumentEditor({
+  apiBase: "/api/mcp/master-resumes",
+  ids: {
+    list: "applyMasterList",
+    slug: "applyMasterSlug",
+    label: "applyMasterLabel",
+    content: "applyMasterContent",
+    updated: "applyMasterUpdated",
+    downloadPdf: "applyMasterDownloadPdf",
+    openPdf: "applyMasterOpenPdf",
+    pdfFrame: "applyMasterPdfFrame",
+    pdfMissing: "applyMasterPdfMissing",
+    renderBtn: "applyMasterRenderBtn",
+    saveBtn: "applyMasterSaveBtn",
+    newBtn: "applyNewMasterBtn",
+  },
+  copy: {
+    emptyList: "No master resumes yet — create one.",
+    slugRequired: "Slug is required (e.g. go, java, fullstack)",
+    contentRequired: "LaTeX content cannot be empty",
+    renderRequired: "Select or save a master resume before rendering PDF",
+    saveFailed: "Failed to save master resume",
+    renderFailed: "Failed to re-render PDF",
+  },
+  defaultPdfFilename: "resume.pdf",
+  ...editorDeps,
+});
+
+const projectEditor = createSlugDocumentEditor({
+  apiBase: "/api/mcp/project-masters",
+  ids: {
+    list: "applyProjectList",
+    slug: "applyProjectSlug",
+    label: "applyProjectLabel",
+    content: "applyProjectContent",
+    updated: "applyProjectUpdated",
+    downloadPdf: "applyProjectDownloadPdf",
+    openPdf: "applyProjectOpenPdf",
+    pdfFrame: "applyProjectPdfFrame",
+    pdfMissing: "applyProjectPdfMissing",
+    renderBtn: "applyProjectRenderBtn",
+    saveBtn: "applyProjectSaveBtn",
+    newBtn: "applyNewProjectBtn",
+  },
+  copy: {
+    emptyList: "No project masters yet — create one.",
+    slugRequired: "Slug is required (e.g. relocation-jobs)",
+    contentRequired: "Project content cannot be empty",
+    renderRequired: "Select or save a project master before rendering PDF",
+    saveFailed: "Failed to save project master",
+    renderFailed: "Failed to re-render PDF",
+  },
+  defaultPdfFilename: "project.pdf",
+  ...editorDeps,
+});
+
+const noteEditor = createSlugDocumentEditor({
+  apiBase: "/api/mcp/interview-notes",
+  ids: {
+    list: "applyNoteList",
+    slug: "applyNoteSlug",
+    label: "applyNoteLabel",
+    content: "applyNoteContent",
+    updated: "applyNoteUpdated",
+    downloadPdf: "applyNoteDownloadPdf",
+    openPdf: "applyNoteOpenPdf",
+    pdfFrame: "applyNotePdfFrame",
+    pdfMissing: "applyNotePdfMissing",
+    renderBtn: "applyNoteRenderBtn",
+    saveBtn: "applyNoteSaveBtn",
+    newBtn: "applyNewNoteBtn",
+  },
+  copy: {
+    emptyList: "No interview notes yet — create one.",
+    slugRequired: "Slug is required (e.g. adyen)",
+    contentRequired: "Interview notes cannot be empty",
+    renderRequired: "Select or save interview notes before rendering PDF",
+    saveFailed: "Failed to save interview notes",
+    renderFailed: "Failed to re-render PDF",
+  },
+  defaultPdfFilename: "interview.pdf",
+  ...editorDeps,
+});
+
 function setTab(tab) {
   for (const btn of document.querySelectorAll(".apply-tab")) {
     btn.classList.toggle("apply-tab--active", btn.dataset.tab === tab);
@@ -69,32 +147,21 @@ function setTab(tab) {
   const profile = $("applyProfilePanel");
   const masters = $("applyMastersPanel");
   const projects = $("applyProjectsPanel");
+  const notes = $("applyNotesPanel");
   const connect = $("applyConnectPanel");
   if (profile) profile.hidden = tab !== "profile";
   if (masters) masters.hidden = tab !== "masters";
   if (projects) projects.hidden = tab !== "projects";
+  if (notes) notes.hidden = tab !== "notes";
   if (connect) connect.hidden = tab !== "connect";
 
   if (tab === "connect") {
     loadConnectPanel().catch((err) => showError(err.message || "Failed to load MCP connect info"));
   }
 
-  // PDF iframes load while their panel is hidden (profile is the default tab).
-  // Re-set src after show so the browser PDF viewer gets the real viewport size.
-  if (tab === "masters" && selectedSlug) {
-    updateMasterPdfPreview({
-      slug: selectedSlug,
-      hasPdf: selectedHasPdf,
-      pdfFilename: selectedPdfFilename,
-    });
-  }
-  if (tab === "projects" && selectedProjectSlug) {
-    updateProjectPdfPreview({
-      slug: selectedProjectSlug,
-      hasPdf: selectedProjectHasPdf,
-      pdfFilename: selectedProjectPdfFilename,
-    });
-  }
+  if (tab === "masters") masterEditor.resyncPreview();
+  if (tab === "projects") projectEditor.resyncPreview();
+  if (tab === "notes") noteEditor.resyncPreview();
 }
 
 function fillProfileForm(profile) {
@@ -188,218 +255,6 @@ function profilePayload() {
   };
 }
 
-function masterPdfUrl(slug, { download = false } = {}) {
-  const params = new URLSearchParams();
-  if (download) params.set("download", "1");
-  else params.set("ts", String(Date.now()));
-  const query = params.toString();
-  return `/api/mcp/master-resumes/${encodeURIComponent(slug)}/pdf${query ? `?${query}` : ""}`;
-}
-
-function updateMasterPdfPreview({ slug, hasPdf, pdfFilename }) {
-  selectedHasPdf = Boolean(hasPdf);
-  selectedPdfFilename = pdfFilename || "resume.pdf";
-
-  const download = $("applyMasterDownloadPdf");
-  const openPdf = $("applyMasterOpenPdf");
-  if (download) {
-    download.href = slug ? masterPdfUrl(slug, { download: true }) : "#";
-    download.download = selectedPdfFilename;
-    download.hidden = !selectedHasPdf;
-  }
-  if (openPdf) {
-    openPdf.href = slug && selectedHasPdf ? masterPdfUrl(slug) : "#";
-    openPdf.hidden = !selectedHasPdf;
-  }
-
-  const pdfFrame = $("applyMasterPdfFrame");
-  const pdfMissing = $("applyMasterPdfMissing");
-  const renderBtn = $("applyMasterRenderBtn");
-
-  if (renderBtn) renderBtn.disabled = !slug;
-
-  if (selectedHasPdf && slug && pdfFrame) {
-    pdfFrame.hidden = false;
-    pdfFrame.src = masterPdfUrl(slug);
-    if (pdfMissing) pdfMissing.hidden = true;
-  } else {
-    if (pdfFrame) {
-      pdfFrame.removeAttribute("src");
-      pdfFrame.hidden = true;
-    }
-    if (pdfMissing) pdfMissing.hidden = false;
-  }
-}
-
-function renderMasterList() {
-  const list = $("applyMasterList");
-  if (!list) return;
-
-  if (!masterItems.length) {
-    list.innerHTML = `<li class="apply-master-empty">No master resumes yet — create one.</li>`;
-    return;
-  }
-
-  list.innerHTML = masterItems.map((item) => {
-    const label = (item.label || item.slug).trim();
-    const active = item.slug === selectedSlug ? " apply-master-item--active" : "";
-    const pdfBadge = item.has_pdf
-      ? '<span class="apply-master-item-badge apply-master-item-badge--pdf">PDF</span>'
-      : "";
-    return `<li><button type="button" class="apply-master-item${active}" data-slug="${escapeHtml(item.slug)}"><span class="apply-master-item-label">${escapeHtml(label)}${pdfBadge}</span><span class="apply-master-item-slug">${escapeHtml(item.slug)}</span></button></li>`;
-  }).join("");
-}
-
-function clearMasterEditor() {
-  selectedSlug = "";
-  selectedHasPdf = false;
-  selectedPdfFilename = "resume.pdf";
-  $("applyMasterSlug").value = "";
-  $("applyMasterLabel").value = "";
-  $("applyMasterContent").value = "";
-  $("applyMasterUpdated").textContent = "";
-  updateMasterPdfPreview({ slug: "", hasPdf: false });
-  const pdfMissing = $("applyMasterPdfMissing");
-  if (pdfMissing) pdfMissing.hidden = false;
-  renderMasterList();
-}
-
-async function loadMasterDetail(slug) {
-  selectedSlug = slug;
-  renderMasterList();
-  setLoadingProgress(20);
-  try {
-    const detail = await api(`/api/mcp/master-resumes/${encodeURIComponent(slug)}`);
-    $("applyMasterSlug").value = detail.slug || slug;
-    $("applyMasterLabel").value = detail.label || "";
-    $("applyMasterContent").value = detail.content || "";
-    const updatedParts = [];
-    if (detail.updated_at) updatedParts.push(`Updated ${detail.updated_at}`);
-    if (detail.pdf_updated_at) updatedParts.push(`PDF ${detail.pdf_updated_at}`);
-    $("applyMasterUpdated").textContent = updatedParts.join(" · ");
-    updateMasterPdfPreview({
-      slug: detail.slug || slug,
-      hasPdf: detail.has_pdf,
-      pdfFilename: detail.pdf_filename,
-    });
-  } finally {
-    finishLoadingProgress();
-  }
-}
-
-async function persistMaster() {
-  const slug = $("applyMasterSlug").value.trim();
-  const content = $("applyMasterContent").value;
-  if (!slug) {
-    throw new Error("Slug is required (e.g. go, java, fullstack)");
-  }
-  if (!content.trim()) {
-    throw new Error("LaTeX content cannot be empty");
-  }
-
-  const saved = await api(`/api/mcp/master-resumes/${encodeURIComponent(slug)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content,
-      label: $("applyMasterLabel").value.trim(),
-    }),
-  });
-  selectedSlug = saved.slug || slug;
-  const mastersData = await api("/api/mcp/master-resumes");
-  masterItems = mastersData.items || [];
-  renderMasterList();
-  $("applyMasterUpdated").textContent = saved.updated_at
-    ? `Updated ${saved.updated_at}`
-    : "";
-  return saved;
-}
-
-async function refreshMasterDetail(slug = selectedSlug) {
-  if (!slug) return null;
-  const detail = await api(`/api/mcp/master-resumes/${encodeURIComponent(slug)}`);
-  const updatedParts = [];
-  if (detail.updated_at) updatedParts.push(`Updated ${detail.updated_at}`);
-  if (detail.pdf_updated_at) updatedParts.push(`PDF ${detail.pdf_updated_at}`);
-  $("applyMasterUpdated").textContent = updatedParts.join(" · ");
-  updateMasterPdfPreview({
-    slug: detail.slug || slug,
-    hasPdf: detail.has_pdf,
-    pdfFilename: detail.pdf_filename,
-  });
-  return detail;
-}
-
-async function rerenderMasterPdf() {
-  const slug = $("applyMasterSlug").value.trim() || selectedSlug;
-  if (!slug) {
-    showError("Select or save a master resume before rendering PDF");
-    return;
-  }
-
-  const btn = $("applyMasterRenderBtn");
-  const saveBtn = $("applyMasterSaveBtn");
-  btn.disabled = true;
-  if (saveBtn) saveBtn.disabled = true;
-  showError("");
-  beginScreenLoad("Rendering PDF…");
-  setScreenLoadProgress(15);
-  const tick = window.setInterval(() => setScreenLoadProgress(88), 800);
-  try {
-    setScreenLoadProgress(20);
-    await persistMaster();
-    setScreenLoadProgress(35);
-    const result = await api(
-      `/api/mcp/master-resumes/${encodeURIComponent(selectedSlug)}/render`,
-      { method: "POST" },
-    );
-    setScreenLoadProgress(92);
-    if (!result.ok) {
-      throw new Error(result.error || result.log || "Render failed");
-    }
-    showToast("PDF re-rendered");
-    updateMasterPdfPreview({
-      slug: selectedSlug,
-      hasPdf: Boolean(result.pdf_stored),
-      pdfFilename: result.pdf_filename,
-    });
-    setScreenLoadProgress(96);
-    await refreshMasterDetail(selectedSlug);
-  } catch (err) {
-    showError(err.message || "Failed to re-render PDF");
-  } finally {
-    window.clearInterval(tick);
-    endScreenLoad();
-    btn.disabled = false;
-    if (saveBtn) saveBtn.disabled = false;
-  }
-}
-
-async function loadData() {
-  showError("");
-  setLoadingProgress(15);
-  try {
-    const [profileData, mastersData, projectsData] = await Promise.all([
-      api("/api/mcp/profile"),
-      api("/api/mcp/master-resumes"),
-      api("/api/mcp/project-masters"),
-    ]);
-    fillProfileForm(profileData.profile || {});
-    masterItems = mastersData.items || [];
-    projectItems = projectsData.items || [];
-    renderMasterList();
-    renderProjectList();
-    if (masterItems.length && !selectedSlug) {
-      await loadMasterDetail(masterItems[0].slug);
-    }
-    if (projectItems.length && !selectedProjectSlug) {
-      await loadProjectDetail(projectItems[0].slug);
-    }
-  } finally {
-    finishLoadingProgress();
-  }
-}
-
 async function saveProfile(event) {
   event.preventDefault();
   showError("");
@@ -419,231 +274,26 @@ async function saveProfile(event) {
   }
 }
 
-async function saveMaster() {
+async function loadData() {
   showError("");
-  const btn = $("applyMasterSaveBtn");
-  btn.disabled = true;
+  setLoadingProgress(15);
   try {
-    await persistMaster();
-    await refreshMasterDetail(selectedSlug);
-    showToast(`Saved ${selectedSlug}`);
-  } catch (err) {
-    showError(err.message || "Failed to save master resume");
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function startNewMaster() {
-  clearMasterEditor();
-  $("applyMasterSlug").focus();
-}
-
-function projectPdfUrl(slug, { download = false } = {}) {
-  const params = new URLSearchParams();
-  if (download) params.set("download", "1");
-  else params.set("ts", String(Date.now()));
-  const query = params.toString();
-  return `/api/mcp/project-masters/${encodeURIComponent(slug)}/pdf${query ? `?${query}` : ""}`;
-}
-
-function updateProjectPdfPreview({ slug, hasPdf, pdfFilename }) {
-  selectedProjectHasPdf = Boolean(hasPdf);
-  selectedProjectPdfFilename = pdfFilename || "project.pdf";
-
-  const download = $("applyProjectDownloadPdf");
-  const openPdf = $("applyProjectOpenPdf");
-  if (download) {
-    download.href = slug ? projectPdfUrl(slug, { download: true }) : "#";
-    download.download = selectedProjectPdfFilename;
-    download.hidden = !selectedProjectHasPdf;
-  }
-  if (openPdf) {
-    openPdf.href = slug && selectedProjectHasPdf ? projectPdfUrl(slug) : "#";
-    openPdf.hidden = !selectedProjectHasPdf;
-  }
-
-  const pdfFrame = $("applyProjectPdfFrame");
-  const pdfMissing = $("applyProjectPdfMissing");
-  const renderBtn = $("applyProjectRenderBtn");
-
-  if (renderBtn) renderBtn.disabled = !slug;
-
-  if (selectedProjectHasPdf && slug && pdfFrame) {
-    pdfFrame.hidden = false;
-    pdfFrame.src = projectPdfUrl(slug);
-    if (pdfMissing) pdfMissing.hidden = true;
-  } else {
-    if (pdfFrame) {
-      pdfFrame.removeAttribute("src");
-      pdfFrame.hidden = true;
-    }
-    if (pdfMissing) pdfMissing.hidden = false;
-  }
-}
-
-function renderProjectList() {
-  const list = $("applyProjectList");
-  if (!list) return;
-
-  if (!projectItems.length) {
-    list.innerHTML = `<li class="apply-master-empty">No project masters yet — create one.</li>`;
-    return;
-  }
-
-  list.innerHTML = projectItems.map((item) => {
-    const label = (item.label || item.slug).trim();
-    const active = item.slug === selectedProjectSlug ? " apply-master-item--active" : "";
-    const pdfBadge = item.has_pdf
-      ? '<span class="apply-master-item-badge apply-master-item-badge--pdf">PDF</span>'
-      : "";
-    return `<li><button type="button" class="apply-master-item${active}" data-slug="${escapeHtml(item.slug)}"><span class="apply-master-item-label">${escapeHtml(label)}${pdfBadge}</span><span class="apply-master-item-slug">${escapeHtml(item.slug)}</span></button></li>`;
-  }).join("");
-}
-
-function clearProjectEditor() {
-  selectedProjectSlug = "";
-  selectedProjectHasPdf = false;
-  selectedProjectPdfFilename = "project.pdf";
-  $("applyProjectSlug").value = "";
-  $("applyProjectLabel").value = "";
-  $("applyProjectContent").value = "";
-  $("applyProjectUpdated").textContent = "";
-  updateProjectPdfPreview({ slug: "", hasPdf: false });
-  const pdfMissing = $("applyProjectPdfMissing");
-  if (pdfMissing) pdfMissing.hidden = false;
-  renderProjectList();
-}
-
-async function loadProjectDetail(slug) {
-  selectedProjectSlug = slug;
-  renderProjectList();
-  setLoadingProgress(20);
-  try {
-    const detail = await api(`/api/mcp/project-masters/${encodeURIComponent(slug)}`);
-    $("applyProjectSlug").value = detail.slug || slug;
-    $("applyProjectLabel").value = detail.label || "";
-    $("applyProjectContent").value = detail.content || "";
-    const updatedParts = [];
-    if (detail.updated_at) updatedParts.push(`Updated ${detail.updated_at}`);
-    if (detail.pdf_updated_at) updatedParts.push(`PDF ${detail.pdf_updated_at}`);
-    $("applyProjectUpdated").textContent = updatedParts.join(" · ");
-    updateProjectPdfPreview({
-      slug: detail.slug || slug,
-      hasPdf: detail.has_pdf,
-      pdfFilename: detail.pdf_filename,
-    });
+    const [profileData, mastersData, projectsData, notesData] = await Promise.all([
+      api("/api/mcp/profile"),
+      api("/api/mcp/master-resumes"),
+      api("/api/mcp/project-masters"),
+      api("/api/mcp/interview-notes"),
+    ]);
+    fillProfileForm(profileData.profile || {});
+    masterEditor.replaceItems(mastersData.items || []);
+    projectEditor.replaceItems(projectsData.items || []);
+    noteEditor.replaceItems(notesData.items || []);
+    await masterEditor.loadFirstIfNeeded();
+    await projectEditor.loadFirstIfNeeded();
+    await noteEditor.loadFirstIfNeeded();
   } finally {
     finishLoadingProgress();
   }
-}
-
-async function persistProject() {
-  const slug = $("applyProjectSlug").value.trim();
-  const content = $("applyProjectContent").value;
-  if (!slug) {
-    throw new Error("Slug is required (e.g. relocation-jobs)");
-  }
-  if (!content.trim()) {
-    throw new Error("Project content cannot be empty");
-  }
-
-  const saved = await api(`/api/mcp/project-masters/${encodeURIComponent(slug)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content,
-      label: $("applyProjectLabel").value.trim(),
-    }),
-  });
-  selectedProjectSlug = saved.slug || slug;
-  const projectsData = await api("/api/mcp/project-masters");
-  projectItems = projectsData.items || [];
-  renderProjectList();
-  $("applyProjectUpdated").textContent = saved.updated_at
-    ? `Updated ${saved.updated_at}`
-    : "";
-  return saved;
-}
-
-async function refreshProjectDetail(slug = selectedProjectSlug) {
-  if (!slug) return null;
-  const detail = await api(`/api/mcp/project-masters/${encodeURIComponent(slug)}`);
-  const updatedParts = [];
-  if (detail.updated_at) updatedParts.push(`Updated ${detail.updated_at}`);
-  if (detail.pdf_updated_at) updatedParts.push(`PDF ${detail.pdf_updated_at}`);
-  $("applyProjectUpdated").textContent = updatedParts.join(" · ");
-  updateProjectPdfPreview({
-    slug: detail.slug || slug,
-    hasPdf: detail.has_pdf,
-    pdfFilename: detail.pdf_filename,
-  });
-  return detail;
-}
-
-async function rerenderProjectPdf() {
-  const slug = $("applyProjectSlug").value.trim() || selectedProjectSlug;
-  if (!slug) {
-    showError("Select or save a project master before rendering PDF");
-    return;
-  }
-
-  const btn = $("applyProjectRenderBtn");
-  const saveBtn = $("applyProjectSaveBtn");
-  btn.disabled = true;
-  if (saveBtn) saveBtn.disabled = true;
-  showError("");
-  beginScreenLoad("Rendering PDF…");
-  setScreenLoadProgress(15);
-  const tick = window.setInterval(() => setScreenLoadProgress(88), 800);
-  try {
-    setScreenLoadProgress(20);
-    await persistProject();
-    setScreenLoadProgress(35);
-    const result = await api(
-      `/api/mcp/project-masters/${encodeURIComponent(selectedProjectSlug)}/render`,
-      { method: "POST" },
-    );
-    setScreenLoadProgress(92);
-    if (!result.ok) {
-      throw new Error(result.error || result.log || "Render failed");
-    }
-    showToast("PDF re-rendered");
-    updateProjectPdfPreview({
-      slug: selectedProjectSlug,
-      hasPdf: Boolean(result.pdf_stored),
-      pdfFilename: result.pdf_filename,
-    });
-    setScreenLoadProgress(96);
-    await refreshProjectDetail(selectedProjectSlug);
-  } catch (err) {
-    showError(err.message || "Failed to re-render PDF");
-  } finally {
-    window.clearInterval(tick);
-    endScreenLoad();
-    btn.disabled = false;
-    if (saveBtn) saveBtn.disabled = false;
-  }
-}
-
-async function saveProject() {
-  showError("");
-  const btn = $("applyProjectSaveBtn");
-  btn.disabled = true;
-  try {
-    await persistProject();
-    await refreshProjectDetail(selectedProjectSlug);
-    showToast(`Saved ${selectedProjectSlug}`);
-  } catch (err) {
-    showError(err.message || "Failed to save project master");
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function startNewProject() {
-  clearProjectEditor();
-  $("applyProjectSlug").focus();
 }
 
 async function refreshAuth() {
@@ -659,10 +309,9 @@ async function refreshAuth() {
 
 async function logout() {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-  clearMasterEditor();
-  clearProjectEditor();
-  masterItems = [];
-  projectItems = [];
+  masterEditor.reset();
+  projectEditor.reset();
+  noteEditor.reset();
   showLogin();
 }
 
@@ -755,22 +404,9 @@ function bindEvents() {
     if (!moveBtn || moveBtn.disabled) return;
     movePipelinePrompt(Number(moveBtn.dataset.index), Number(moveBtn.dataset.dir));
   });
-  $("applyMasterSaveBtn")?.addEventListener("click", saveMaster);
-  $("applyMasterRenderBtn")?.addEventListener("click", rerenderMasterPdf);
-  $("applyNewMasterBtn")?.addEventListener("click", startNewMaster);
-  $("applyMasterList")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".apply-master-item");
-    if (!btn) return;
-    loadMasterDetail(btn.dataset.slug);
-  });
-  $("applyProjectSaveBtn")?.addEventListener("click", saveProject);
-  $("applyProjectRenderBtn")?.addEventListener("click", rerenderProjectPdf);
-  $("applyNewProjectBtn")?.addEventListener("click", startNewProject);
-  $("applyProjectList")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".apply-master-item");
-    if (!btn) return;
-    loadProjectDetail(btn.dataset.slug);
-  });
+  masterEditor.bind();
+  projectEditor.bind();
+  noteEditor.bind();
 
   for (const tabBtn of document.querySelectorAll(".apply-tab")) {
     tabBtn.addEventListener("click", () => setTab(tabBtn.dataset.tab));
@@ -798,7 +434,7 @@ async function init() {
     try {
       await loadData();
       const tab = new URLSearchParams(window.location.search).get("tab");
-      if (tab === "connect" || tab === "masters" || tab === "projects" || tab === "profile") {
+      if (tab === "connect" || tab === "masters" || tab === "projects" || tab === "notes" || tab === "profile") {
         setTab(tab);
       }
     } catch (err) {

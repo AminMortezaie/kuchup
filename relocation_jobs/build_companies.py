@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Discover careers URLs for companies in {country}_companies.json and sort the list.
+Discover careers URLs for companies in the Postgres catalog and sort the list.
 
 Sort order:
   1. City (A–Z)
@@ -33,7 +33,7 @@ from bs4 import BeautifulSoup
 
 from relocation_jobs.catalog.repo import load_country_catalog as load_country_catalog_db
 from relocation_jobs.catalog.repo import sync_country_catalog as sync_country_catalog_db
-from relocation_jobs.core.paths import COUNTRY_ARCHIVE_FILENAMES, supported_countries
+from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.core.slug import slug_from_name
 from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 
@@ -56,15 +56,11 @@ TIMEOUT_BUTTON_SETTLE = 2500
 TIMEOUT_BUTTON_CLICK = 5000
 
 COUNTRY_CLI_ALIASES = {
-    "germany": "germany_companies.json",
-    "de": "germany_companies.json",
-    "netherlands": "netherlands_companies.json",
-    "nl": "netherlands_companies.json",
-    "uk": "uk_companies.json",
-    "england": "uk_companies.json",
-    "united-kingdom": "uk_companies.json",
-    "portugal": "portugal_companies.json",  # add this
-    "pt": "portugal_companies.json",        # add this
+    "de": "germany",
+    "nl": "netherlands",
+    "england": "uk",
+    "united-kingdom": "uk",
+    "pt": "portugal",
 }
 
 CAREER_TEXT = re.compile(
@@ -348,11 +344,9 @@ def _resolve_country_key(country: str) -> str:
     known = supported_countries()
     if alias in known:
         return alias
-    filename = COUNTRY_CLI_ALIASES.get(alias)
-    if filename:
-        for key, name in COUNTRY_ARCHIVE_FILENAMES.items():
-            if name == filename:
-                return key
+    resolved = COUNTRY_CLI_ALIASES.get(alias)
+    if resolved and resolved in known:
+        return resolved
     raise SystemExit(
         f"Unknown country '{country}'. Use: {', '.join(sorted(known))}"
     )

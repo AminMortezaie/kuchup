@@ -2,7 +2,7 @@
 
 Visa- and relocation-focused job search for backend and software roles in Europe.
 
-Company lists come from [relocate.me](https://relocate.me). Each employer’s ATS is auto-detected; openings are scraped into a **shared Postgres catalog**. A multi-user Flask panel tracks applications. A **Claude Desktop MCP** pipeline prepares tailored LaTeX/PDF resumes and cover letters per position — with **project masters** as an evidence bank for reframing.
+Company lists come from [relocate.me](https://relocate.me). Each employer’s ATS is auto-detected; openings are scraped into a **shared Postgres catalog**. A multi-user Flask panel tracks applications. A **Claude Desktop MCP** pipeline prepares tailored LaTeX/PDF resumes and cover letters per position — with **project masters** as a reframe evidence bank. **Interview notes** are a later step: after an invite, per-company prep you store and download — not an input to tailoring.
 
 **Production:** [https://kuchup.com](https://kuchup.com) (AWS EC2 + Cloudflare)  
 **Countries:** Germany, Netherlands, UK, Portugal, plus custom countries (e.g. Armenia, Ireland) via the panel.
@@ -111,10 +111,10 @@ Re-scrapes **merge by URL** — fetch dates and tracking are preserved. Jobs gon
 | Path | Purpose |
 |------|---------|
 | `/` | Job board |
-| `/apply` | Profile, pipeline prompts, **master resumes**, **project masters** (LaTeX + optional PDF) |
+| `/apply` | Profile, pipeline prompts, **master resumes**, **project masters**, **interview notes** (LaTeX + optional PDF) |
 | `/company/<country>/<slug>` | Positions, tailored CV / cover letter, PDF preview, re-render |
 
-**Claude Desktop MCP:** `python3 apps/mcp/run.py` — job context, application queue, masters, project masters, tailored tex/PDF, cover letters, `mark_applied`, add company/position. See [mcp-application.md](docs/reference/mcp-application.md).
+**Claude Desktop MCP:** `python3 apps/mcp/run.py` — job context, application queue, masters, project masters, tailored tex/PDF, cover letters, `mark_applied`, add company/position. After an invite: interview notes (`list`/`get`/`save_interview_note`). See [mcp-application.md](docs/reference/mcp-application.md).
 
 ### Build company lists
 
@@ -158,7 +158,6 @@ relocate.me
 |-------|----------|
 | **Postgres** (`DATABASE_URL`) | Catalog, users, tracking, fetch runs, MCP artifacts (masters, projects, applications) |
 | **Redis** (`REDIS_URL`) | Optional country-label cache |
-| `companies/*.json` | Git archive only — not read at runtime |
 | `data/custom_cities.json` | User-added cities (`PANEL_DATA_DIR`) |
 
 ### Apps (`apps/`) vs domains (`relocation_jobs/`)

@@ -1,6 +1,7 @@
 from relocation_jobs.mcp.names import (
     application_cover_letter_pdf_filename,
     application_pdf_filename,
+    interview_note_pdf_filename,
     master_pdf_filename,
     project_pdf_filename,
 )
@@ -23,6 +24,16 @@ def test_project_pdf_filename():
         "jane_doe_project_relocation_jobs.pdf"
     )
     assert project_pdf_filename("", "relocation-jobs") == "project_relocation_jobs.pdf"
+
+
+def test_interview_note_pdf_filename():
+    assert interview_note_pdf_filename("Jane Marie Doe", "star") == (
+        "jane_doe_interview_star.pdf"
+    )
+    assert interview_note_pdf_filename("", "star") == "interview_star.pdf"
+    assert interview_note_pdf_filename("Madonna", "company-research") == (
+        "madonna_interview_company_research.pdf"
+    )
 
 
 def test_application_pdf_filename_uses_first_and_last_name():

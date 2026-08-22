@@ -69,5 +69,6 @@ def test_empty_opportunity_board_does_not_rematch_every_load(client, db, seeded_
 def test_auth_status_includes_entitlements(auth_client, db):
     status = auth_client.get("/api/auth/status").get_json()
     assert status["authenticated"] is True
+    assert status["user"]["is_admin"] is True
     assert "entitlements" in status
     assert status["entitlements"]["plan"] in ("free", "full", "grandfathered")

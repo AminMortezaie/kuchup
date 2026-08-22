@@ -13,6 +13,7 @@ from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.mcp import oauth_repo
 from relocation_jobs.mcp import service as mcp_service
 from relocation_jobs.mcp.oauth_provider import panel_display_base_url
+from relocation_jobs.mcp.ports import INTERVIEW_NOTE, MASTER_RESUME, PROJECT_MASTER, SlugDocumentKind
 from relocation_jobs.mcp.types import ApplicationProfile
 from relocation_jobs.users.entitlements import entitlement_status
 
@@ -24,6 +25,89 @@ def _quota_error_response(exc: PermissionError):
         "Contact support or an admin for early access."
     )
     return jsonify({"error": soft, "code": "mcp_quota_exceeded"}), 429
+
+
+def register_slug_document_routes(app, *, prefix: str, kind: SlugDocumentKind) -> None:
+    tag = prefix.strip("/").replace("/", "_").replace("-", "_")
+
+    @login_required
+    def api_list():
+        items = mcp_service.list_documents(kind, user_id=g.user_id)
+        return jsonify({"items": [item.model_dump() for item in items]})
+
+    @login_required
+    def api_get(slug):
+        try:
+            detail = mcp_service.get_document_detail(kind, slug, user_id=g.user_id)
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify(detail)
+
+    @login_required
+    def api_put(slug):
+        body = request.get_json(silent=True) or {}
+        content = body.get("content")
+        if content is None:
+            return jsonify({"error": "content is required"}), 400
+        label = (body.get("label") or "").strip()
+        try:
+            saved = mcp_service.save_document(
+                kind,
+                slug,
+                str(content),
+                label=label,
+                user_id=g.user_id,
+            )
+        except PermissionError as exc:
+            return _quota_error_response(exc)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify({"ok": True, **saved})
+
+    @login_required
+    def api_pdf(slug):
+        try:
+            pdf_bytes, filename = mcp_service.read_document_pdf_download(
+                kind,
+                slug,
+                user_id=g.user_id,
+            )
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        quoted = quote(filename)
+        download = request.args.get("download", "").strip().lower() in ("1", "true", "yes")
+        disposition = "attachment" if download else "inline"
+        headers = {
+            "Content-Disposition": (
+                f'{disposition}; filename="{filename}"; filename*=UTF-8\'\'{quoted}'
+            ),
+        }
+        return Response(pdf_bytes, mimetype="application/pdf", headers=headers)
+
+    @login_required
+    def api_render(slug):
+        try:
+            result = mcp_service.render_document_pdf(kind, slug, user_id=g.user_id)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        if not result.ok:
+            return jsonify({"ok": False, "error": result.log, **result.model_dump()}), 400
+        return jsonify({"ok": True, **result.model_dump()})
+
+    api_list.__name__ = f"{tag}_list"
+    api_get.__name__ = f"{tag}_get"
+    api_put.__name__ = f"{tag}_put"
+    api_pdf.__name__ = f"{tag}_pdf"
+    api_render.__name__ = f"{tag}_render"
+    app.add_url_rule(prefix, api_list.__name__, api_list, methods=["GET"])
+    app.add_url_rule(f"{prefix}/<slug>", api_get.__name__, api_get, methods=["GET"])
+    app.add_url_rule(f"{prefix}/<slug>", api_put.__name__, api_put, methods=["PUT"])
+    app.add_url_rule(f"{prefix}/<slug>/pdf", api_pdf.__name__, api_pdf, methods=["GET"])
+    app.add_url_rule(f"{prefix}/<slug>/render", api_render.__name__, api_render, methods=["POST"])
 
 
 def register(app):
@@ -83,147 +167,15 @@ def register(app):
         saved = mcp_service.save_application_profile(profile, user_id=g.user_id)
         return jsonify({"ok": True, **saved, "profile": profile.model_dump()})
 
-    @app.get("/api/mcp/master-resumes")
-    @login_required
-    def api_mcp_master_resumes_list():
-        items = mcp_service.list_master_resumes(user_id=g.user_id)
-        return jsonify({"items": [item.model_dump() for item in items]})
-
-    @app.get("/api/mcp/master-resumes/<slug>")
-    @login_required
-    def api_mcp_master_resume_get(slug):
-        try:
-            detail = mcp_service.get_master_resume_detail(slug, user_id=g.user_id)
-        except LookupError as exc:
-            return jsonify({"error": str(exc)}), 404
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        return jsonify(detail)
-
-    @app.put("/api/mcp/master-resumes/<slug>")
-    @login_required
-    def api_mcp_master_resume_put(slug):
-        body = request.get_json(silent=True) or {}
-        content = body.get("content")
-        if content is None:
-            return jsonify({"error": "content is required"}), 400
-        label = (body.get("label") or "").strip()
-        try:
-            saved = mcp_service.save_master_resume(
-                slug,
-                str(content),
-                label=label,
-                user_id=g.user_id,
-            )
-        except PermissionError as exc:
-            return _quota_error_response(exc)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        return jsonify({"ok": True, **saved})
-
-    @app.get("/api/mcp/master-resumes/<slug>/pdf")
-    @login_required
-    def api_mcp_master_resume_pdf(slug):
-        try:
-            pdf_bytes, filename = mcp_service.read_master_pdf_download(
-                slug,
-                user_id=g.user_id,
-            )
-        except LookupError as exc:
-            return jsonify({"error": str(exc)}), 404
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        quoted = quote(filename)
-        download = request.args.get("download", "").strip().lower() in ("1", "true", "yes")
-        disposition = "attachment" if download else "inline"
-        headers = {
-            "Content-Disposition": (
-                f'{disposition}; filename="{filename}"; filename*=UTF-8\'\'{quoted}'
-            ),
-        }
-        return Response(pdf_bytes, mimetype="application/pdf", headers=headers)
-
-    @app.post("/api/mcp/master-resumes/<slug>/render")
-    @login_required
-    def api_mcp_master_resume_render(slug):
-        try:
-            result = mcp_service.render_master_pdf(slug, user_id=g.user_id)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        if not result.ok:
-            return jsonify({"ok": False, "error": result.log, **result.model_dump()}), 400
-        return jsonify({"ok": True, **result.model_dump()})
-
-    @app.get("/api/mcp/project-masters")
-    @login_required
-    def api_mcp_project_masters_list():
-        items = mcp_service.list_project_masters(user_id=g.user_id)
-        return jsonify({"items": [item.model_dump() for item in items]})
-
-    @app.get("/api/mcp/project-masters/<slug>")
-    @login_required
-    def api_mcp_project_master_get(slug):
-        try:
-            detail = mcp_service.get_project_master_detail(slug, user_id=g.user_id)
-        except LookupError as exc:
-            return jsonify({"error": str(exc)}), 404
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        return jsonify(detail)
-
-    @app.put("/api/mcp/project-masters/<slug>")
-    @login_required
-    def api_mcp_project_master_put(slug):
-        body = request.get_json(silent=True) or {}
-        content = body.get("content")
-        if content is None:
-            return jsonify({"error": "content is required"}), 400
-        label = (body.get("label") or "").strip()
-        try:
-            saved = mcp_service.save_project_master(
-                slug,
-                str(content),
-                label=label,
-                user_id=g.user_id,
-            )
-        except PermissionError as exc:
-            return _quota_error_response(exc)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        return jsonify({"ok": True, **saved})
-
-    @app.get("/api/mcp/project-masters/<slug>/pdf")
-    @login_required
-    def api_mcp_project_master_pdf(slug):
-        try:
-            pdf_bytes, filename = mcp_service.read_project_pdf_download(
-                slug,
-                user_id=g.user_id,
-            )
-        except LookupError as exc:
-            return jsonify({"error": str(exc)}), 404
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        quoted = quote(filename)
-        download = request.args.get("download", "").strip().lower() in ("1", "true", "yes")
-        disposition = "attachment" if download else "inline"
-        headers = {
-            "Content-Disposition": (
-                f'{disposition}; filename="{filename}"; filename*=UTF-8\'\'{quoted}'
-            ),
-        }
-        return Response(pdf_bytes, mimetype="application/pdf", headers=headers)
-
-    @app.post("/api/mcp/project-masters/<slug>/render")
-    @login_required
-    def api_mcp_project_master_render(slug):
-        try:
-            result = mcp_service.render_project_pdf(slug, user_id=g.user_id)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        if not result.ok:
-            return jsonify({"ok": False, "error": result.log, **result.model_dump()}), 400
-        return jsonify({"ok": True, **result.model_dump()})
+    register_slug_document_routes(
+        app, prefix="/api/mcp/master-resumes", kind=MASTER_RESUME,
+    )
+    register_slug_document_routes(
+        app, prefix="/api/mcp/project-masters", kind=PROJECT_MASTER,
+    )
+    register_slug_document_routes(
+        app, prefix="/api/mcp/interview-notes", kind=INTERVIEW_NOTE,
+    )
 
     @app.get("/api/mcp/companies/<country>/<path:company>/applications")
     @login_required

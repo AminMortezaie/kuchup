@@ -40,7 +40,6 @@ Root cause is **burst parallel DB connections** (one per worker thread in `reloc
 - Schema: `init_db()` + `relocation_jobs/core/migrations.py` on startup.
 - Driver: `psycopg` in `relocation_jobs/core/db.py`.
 - Neon-specific today: `prepare_threshold=None` (pooler), keepalive tuning, idle ping every ~4.5 min.
-- Existing dump/migrate script: `scripts/migrate_sqlite_to_neon.py` — works with **any** Postgres URL despite the name.
 
 **No code changes required for cutover** — only connection string + infra. Optional doc/README updates after success.
 
@@ -293,7 +292,6 @@ Neon data is stale after cutover unless you re-dump from AWS back to Neon. Take 
 | `README.md` / `CLAUDE.md` | “Postgres on AWS” instead of “Neon required” |
 | `render.yaml` comment | `DATABASE_URL → AWS RDS` |
 | `relocation_jobs/core/db.py` | Comment only: `prepare_threshold=None` still fine on direct RDS |
-| `scripts/migrate_sqlite_to_neon.py` | Optional rename to `migrate_sqlite_to_postgres.py` (low priority) |
 
 **Do not commit secrets.** Never commit `.env`.
 
@@ -341,8 +339,7 @@ Longer-term code improvement (not part of infra migration): single writer queue 
 - [`CLAUDE.md`](../CLAUDE.md) — env vars, architecture  
 - [`.env.example`](../.env.example) — `DATABASE_URL` format  
 - [`render.yaml`](../render.yaml) — Render Frankfurt, `DATABASE_URL` sync false  
-- [`relocation_jobs/core/db.py`](../relocation_jobs/core/db.py) — connection + thread-local pool  
-- [v2-bugfix-handoff.md](../archive/v2-bugfix-handoff.md) — v2 fetch/review work (separate from DB migration)
+- [`relocation_jobs/core/db.py`](../relocation_jobs/core/db.py) — connection + thread-local pool
 
 ---
 

@@ -1,3 +1,0 @@
-usage: schema_generate.py [-h] [--indent INDENT] [--script-tag]
-                          {reservation,order,discussion,profile} ...
-schema_generate.py: error: argument kind: invalid choice: 'https://kuchup.com' (choose from 'reservation', 'order', 'discussion', 'profile')

@@ -95,13 +95,48 @@ def save_project_master(slug: str, content: str, label: str = "") -> str:
 
 
 @mcp.tool()
+def list_interview_notes() -> str:
+    """List interview-prep notes for the MCP user (slug, label, updated_at).
+
+    Use after the user is invited to an interview — not during resume tailoring.
+    Each note is prep for that conversation (questions, stories, research).
+    Over time the list is a glossary across companies. Master resumes and
+    project masters are the sources for tailored CVs; these notes are not.
+    """
+    items = service.list_interview_notes()
+    return _json([item.model_dump() for item in items])
+
+
+@mcp.tool()
+def get_interview_note(slug: str) -> str:
+    """Read one interview-prep note by slug (e.g. adyen).
+
+    Load when preparing for that company's interview, or to reuse earlier notes
+    for a similar role. Do not use as input to save_tailored_tex.
+    """
+    uid = service.resolve_user_id()
+    return mcp_repo.read_interview_note(uid, slug)
+
+
+@mcp.tool()
+def save_interview_note(slug: str, content: str, label: str = "") -> str:
+    """Create or update interview-prep notes for one invite (slug e.g. adyen).
+
+    Call after the user is invited and wants to prepare — not during reframe,
+    and not to store skim-budget drops from a tailored CV.
+    """
+    return _json(service.save_interview_note(slug, content, label=label))
+
+
+@mcp.tool()
 def get_mcp_status() -> str:
-    """Return MCP user identity and whether profile / master resumes / project masters exist (debug user mismatch)."""
+    """Return MCP user identity and whether profile / master resumes / project masters / interview notes exist (debug user mismatch)."""
     uid = service.resolve_user_id()
     user = get_user_by_id(uid) or {}
     profile = service.get_application_profile(user_id=uid)
     masters = service.list_master_resumes(user_id=uid)
     projects = service.list_project_masters(user_id=uid)
+    notes = service.list_interview_notes(user_id=uid)
     has_profile = any(
         getattr(profile, field, "")
         for field in (
@@ -124,6 +159,8 @@ def get_mcp_status() -> str:
         "master_resume_slugs": [item.slug for item in masters],
         "project_master_count": len(projects),
         "project_master_slugs": [item.slug for item in projects],
+        "interview_note_count": len(notes),
+        "interview_note_slugs": [item.slug for item in notes],
     })
 
 

@@ -536,7 +536,9 @@ a.admin-header-btn {
   text-decoration: none;
 }
 
-a.admin-header-btn[hidden] {
+.header-secondary-btn[hidden],
+a.admin-header-btn[hidden],
+.user-dropdown-admin[hidden] {
   display: none !important;
 }
 

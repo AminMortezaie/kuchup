@@ -161,5 +161,5 @@ Catalog seed pitfalls (why unrelated tests failed after board sort tests): [refe
 ## Known open items
 
 1. Render cutover to v2 entry ([reference/parity.md](reference/parity.md))
-2. SQL still in `users/history.py`, `users/applied.py` ([archive/v2-coding-verdict.md](archive/v2-coding-verdict.md))
+2. SQL still in `users/history.py`, `users/applied.py`
 3. Deep board pages rescan catalog from start (cursor pagination future work)

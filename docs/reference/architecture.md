@@ -79,7 +79,6 @@ relocation_jobs/
 | Store | Contents |
 |-------|----------|
 | **Postgres** (`DATABASE_URL`) | Catalog, users, tracking, fetch runs |
-| `companies/*.json` | Git archive only — not read at runtime |
 | `data/custom_cities.json` | User-added cities (`PANEL_DATA_DIR`) |
 
 ---

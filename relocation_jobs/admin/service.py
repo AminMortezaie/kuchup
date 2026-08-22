@@ -13,7 +13,7 @@ from relocation_jobs.core.ats_constants import (
     MAX_CONCURRENCY,
 )
 from relocation_jobs.core.location_tags import SUGGESTED_CITIES, all_country_labels, load_custom_cities, load_custom_countries
-from relocation_jobs.core.paths import COUNTRY_ARCHIVE_FILENAMES, country_archive_filename, data_dir, supported_countries
+from relocation_jobs.core.paths import country_archive_filename, data_dir, supported_countries
 from relocation_jobs.users.repo import list_users_with_stats, user_count
 from relocation_jobs.catalog.custom_countries import countries_use_redis
 from relocation_jobs.catalog.repo import get_catalog_overview

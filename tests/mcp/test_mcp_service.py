@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import os
 
+from relocation_jobs.core.db import db_transaction
 from relocation_jobs.mcp import repo as mcp_repo
 from relocation_jobs.mcp import service
+from relocation_jobs.mcp.ports import INTERVIEW_NOTE, MASTER_RESUME, PROJECT_MASTER
 from relocation_jobs.mcp.types import ApplicationProfile
 
 from tests.mcp.conftest import GO_MASTER_TEX, JAVA_MASTER_TEX
@@ -305,3 +307,72 @@ def test_project_master_invalid_slug(db):
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "required" in str(exc)
+
+
+def test_interview_note_round_trip(db):
+    saved = mcp_repo.save_interview_note(
+        1,
+        "STAR Stories!",
+        r"\subsection*{STAR}" "\nSituation, Task, Action, Result.",
+        label="STAR stories",
+    )
+    assert saved["slug"] == "star-stories"
+    assert saved["label"] == "STAR stories"
+
+    items = service.list_interview_notes(user_id=1)
+    assert {item.slug for item in items} == {"star-stories"}
+    assert items[0].label == "STAR stories"
+    assert items[0].pdf_filename == "interview_star_stories.pdf"
+
+    detail = service.get_interview_note_detail("star-stories", user_id=1)
+    assert "Situation" in detail["content"]
+    assert detail["slug"] == "star-stories"
+
+    body = mcp_repo.read_interview_note(1, "star-stories")
+    assert "Action, Result" in body
+    assert r"\subsection*" in body
+
+
+def test_interview_note_invalid_slug(db):
+    try:
+        mcp_repo.save_interview_note(1, "", "content")
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "required" in str(exc)
+
+
+def test_slug_document_kinds_share_contract(db):
+    cases = (
+        (MASTER_RESUME, r"\documentclass{article}\begin{document}Hi\end{document}"),
+        (PROJECT_MASTER, r"\subsection*{Demo}"),
+        (INTERVIEW_NOTE, r"\subsection*{STAR}"),
+    )
+    for kind, content in cases:
+        saved = mcp_repo.save_slug_document(
+            kind, 1, "contract-demo", content, label="Demo",
+        )
+        assert saved["slug"] == "contract-demo"
+
+        items = service.list_documents(kind, user_id=1)
+        assert any(item.slug == "contract-demo" for item in items)
+
+        detail = service.get_document_detail(kind, "contract-demo", user_id=1)
+        assert detail["label"] == "Demo"
+        assert detail["content"] == content
+
+        mcp_repo.save_slug_document_pdf(kind, 1, "contract-demo", b"%PDF-fake")
+        row = mcp_repo.get_slug_document_row(kind, 1, "contract-demo")
+        assert row["pdf_bytes"]
+
+        mcp_repo.save_slug_document(
+            kind, 1, "contract-demo", content + "\n%", label="Demo",
+        )
+        row = mcp_repo.get_slug_document_row(kind, 1, "contract-demo")
+        assert not row.get("pdf_bytes")
+
+        with db_transaction() as conn:
+            conn.execute(
+                f"DELETE FROM {kind.table} WHERE user_id = %s AND slug = %s",
+                (1, "contract-demo"),
+            )
+

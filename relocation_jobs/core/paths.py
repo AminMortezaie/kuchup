@@ -7,28 +7,20 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PACKAGE_DIR = PROJECT_ROOT / "relocation_jobs"
-COMPANIES_DIR = PROJECT_ROOT / "companies"
 STATIC_DIR = PACKAGE_DIR / "static"
+
 
 def supported_countries() -> frozenset[str]:
     from relocation_jobs.core.location_tags import supported_country_keys
 
     return supported_country_keys()
 
-# Legacy git-archive filenames (companies/*.json) — not read at runtime.
-COUNTRY_ARCHIVE_FILENAMES: dict[str, str] = {
-    "germany": "germany_companies.json",
-    "netherlands": "netherlands_companies.json",
-    "uk": "uk_companies.json",
-    "portugal": "portugal_companies.json",
-}
-
 
 def country_archive_filename(country_key: str) -> str:
     key = (country_key or "").strip().lower()
     if not key:
         return ""
-    return COUNTRY_ARCHIVE_FILENAMES.get(key, f"{key}_companies.json")
+    return f"{key}_companies.json"
 
 
 def data_dir() -> Path:

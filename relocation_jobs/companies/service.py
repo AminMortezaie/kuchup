@@ -26,7 +26,7 @@ from relocation_jobs.catalog.repo import (
     update_company_location,
     upsert_company as upsert_company_catalog,
 )
-from relocation_jobs.core.paths import COUNTRY_ARCHIVE_FILENAMES, supported_countries
+from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.positions import repo as positions_repo
 from relocation_jobs.core.job_identity import (
     job_idempotency_key,

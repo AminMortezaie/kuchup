@@ -38,8 +38,13 @@ from relocation_jobs.mcp.context import get_current_user_id
 from relocation_jobs.mcp.names import (
     application_cover_letter_pdf_filename,
     application_pdf_filename,
-    master_pdf_filename,
-    project_pdf_filename,
+)
+from relocation_jobs.mcp.ports import (
+    INTERVIEW_NOTE,
+    MASTER_RESUME,
+    PROJECT_MASTER,
+    SlugDocumentKind,
+    wrap_fragment_for_pdf,
 )
 from relocation_jobs.mcp.types import (
     AddCompanyResult,
@@ -51,11 +56,10 @@ from relocation_jobs.mcp.types import (
     CompanyApplicationsResponse,
     CompanyPositionApplication,
     JobContext,
-    MasterResumeSummary,
     PositionDescription,
-    ProjectMasterSummary,
     RenderResult,
     SavePositionDescriptionResult,
+    SlugDocumentSummary,
     SupportedCountry,
     UpdatePositionResult,
     ValidationResult,
@@ -252,35 +256,13 @@ def _application_cover_letter_pdf_filename(user_id: int, company: str) -> str:
     return application_cover_letter_pdf_filename(profile.full_name, company)
 
 
-def _master_pdf_filename(user_id: int, slug: str) -> str:
+def _document_pdf_filename(kind: SlugDocumentKind, user_id: int, slug: str) -> str:
     profile = get_application_profile(user_id=user_id)
-    return master_pdf_filename(profile.full_name, slug)
-
-
-def _project_pdf_filename(user_id: int, slug: str) -> str:
-    profile = get_application_profile(user_id=user_id)
-    return project_pdf_filename(profile.full_name, slug)
-
-
-_PROJECT_FRAGMENT_PREAMBLE = r"""\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\usepackage{xcolor}
-\pagestyle{empty}
-\begin{document}
-"""
+    return kind.pdf_filename(profile.full_name, slug)
 
 
 def wrap_project_fragment_for_pdf(content: str) -> str:
-    body = (content or "").strip()
-    if not body:
-        raise ValueError("project content is empty")
-    if r"\documentclass" in body:
-        return body
-    return f"{_PROJECT_FRAGMENT_PREAMBLE}{body}\n\\end{{document}}\n"
+    return wrap_fragment_for_pdf(content)
 
 
 def _resolve_master_slug(
@@ -803,30 +785,30 @@ def render_application_cover_letter_pdf(
     )
 
 
-def list_master_resumes(*, user_id: int | None = None) -> list[MasterResumeSummary]:
+def list_documents(
+    kind: SlugDocumentKind,
+    *,
+    user_id: int | None = None,
+) -> list[SlugDocumentSummary]:
     uid = user_id if user_id is not None else resolve_user_id()
-    items = repo.list_master_resumes(uid)
+    items = repo.list_slug_documents(kind, uid)
     return [
-        item.model_copy(update={"pdf_filename": _master_pdf_filename(uid, item.slug)})
+        item.model_copy(update={"pdf_filename": _document_pdf_filename(kind, uid, item.slug)})
         for item in items
     ]
 
 
-def get_application_profile(*, user_id: int | None = None) -> ApplicationProfile:
+def get_document_detail(
+    kind: SlugDocumentKind,
+    slug: str,
+    *,
+    user_id: int | None = None,
+) -> dict:
     uid = user_id if user_id is not None else resolve_user_id()
-    docs = repo.get_user_documents(uid)
-    if docs is None:
-        return ApplicationProfile()
-    raw = json.loads(docs.get("profile_json") or "{}")
-    return ApplicationProfile(**raw)
-
-
-def get_master_resume_detail(slug: str, *, user_id: int | None = None) -> dict:
-    uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_master_resume_slug(slug)
-    row = repo.get_master_resume_row(uid, slug)
+    key = repo.normalize_kind_slug(kind, slug)
+    row = repo.get_slug_document_row(kind, uid, slug)
     if row is None or not (row.get("content") or "").strip():
-        raise LookupError(f"Master resume not found: {key}")
+        raise LookupError(f"{kind.missing_label} not found: {key}")
     return {
         "slug": key,
         "label": (row.get("label") or "").strip(),
@@ -834,34 +816,37 @@ def get_master_resume_detail(slug: str, *, user_id: int | None = None) -> dict:
         "updated_at": (row.get("updated_at") or "").strip(),
         "has_pdf": bool(row.get("pdf_bytes")),
         "pdf_updated_at": (row.get("pdf_updated_at") or "").strip(),
-        "pdf_filename": _master_pdf_filename(uid, key),
+        "pdf_filename": _document_pdf_filename(kind, uid, key),
     }
 
 
-def read_master_pdf_download(
+def read_document_pdf_download(
+    kind: SlugDocumentKind,
     slug: str,
     *,
     user_id: int | None = None,
 ) -> tuple[bytes, str]:
     uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_master_resume_slug(slug)
-    pdf_bytes = repo.read_master_pdf_bytes(uid, key)
-    return pdf_bytes, _master_pdf_filename(uid, key)
+    key = repo.normalize_kind_slug(kind, slug)
+    pdf_bytes = repo.read_slug_document_pdf_bytes(kind, uid, key)
+    return pdf_bytes, _document_pdf_filename(kind, uid, key)
 
 
-def render_master_pdf(
+def render_document_pdf(
+    kind: SlugDocumentKind,
     slug: str,
     *,
     user_id: int | None = None,
 ) -> RenderResult:
     uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_master_resume_slug(slug)
+    key = repo.normalize_kind_slug(kind, slug)
     try:
-        tex = repo.read_master_resume(uid, key)
-    except LookupError as exc:
+        content = repo.read_slug_document(kind, uid, key)
+        tex = kind.tex_for_render(content)
+    except (LookupError, ValueError) as exc:
         return RenderResult(ok=False, log=str(exc))
 
-    pdf_filename = _master_pdf_filename(uid, key)
+    pdf_filename = _document_pdf_filename(kind, uid, key)
     basename = pdf_filename.removesuffix(".pdf")
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -872,7 +857,7 @@ def render_master_pdf(
             return RenderResult(ok=False, log=compiled.log)
 
         pdf_bytes = Path(compiled.pdf_path).read_bytes()
-        stored = repo.save_master_pdf(uid, key, pdf_bytes)
+        stored = repo.save_slug_document_pdf(kind, uid, key, pdf_bytes)
         return RenderResult(
             ok=True,
             log=compiled.log,
@@ -880,6 +865,43 @@ def render_master_pdf(
             pdf_bytes=stored["pdf_bytes"],
             pdf_filename=pdf_filename,
         )
+
+
+def save_document(
+    kind: SlugDocumentKind,
+    slug: str,
+    content: str,
+    *,
+    label: str = "",
+    user_id: int | None = None,
+) -> dict:
+    uid = user_id if user_id is not None else resolve_user_id()
+    _charge_mcp_quota(uid)
+    return repo.save_slug_document(kind, uid, slug, content, label=label)
+
+
+def list_master_resumes(*, user_id: int | None = None) -> list[SlugDocumentSummary]:
+    return list_documents(MASTER_RESUME, user_id=user_id)
+
+
+def get_master_resume_detail(slug: str, *, user_id: int | None = None) -> dict:
+    return get_document_detail(MASTER_RESUME, slug, user_id=user_id)
+
+
+def read_master_pdf_download(
+    slug: str,
+    *,
+    user_id: int | None = None,
+) -> tuple[bytes, str]:
+    return read_document_pdf_download(MASTER_RESUME, slug, user_id=user_id)
+
+
+def render_master_pdf(
+    slug: str,
+    *,
+    user_id: int | None = None,
+) -> RenderResult:
+    return render_document_pdf(MASTER_RESUME, slug, user_id=user_id)
 
 
 def save_master_resume(
@@ -889,35 +911,15 @@ def save_master_resume(
     label: str = "",
     user_id: int | None = None,
 ) -> dict:
-    uid = user_id if user_id is not None else resolve_user_id()
-    _charge_mcp_quota(uid)
-    return repo.save_master_resume(uid, slug, content, label=label)
+    return save_document(MASTER_RESUME, slug, content, label=label, user_id=user_id)
 
 
-def list_project_masters(*, user_id: int | None = None) -> list[ProjectMasterSummary]:
-    uid = user_id if user_id is not None else resolve_user_id()
-    items = repo.list_project_masters(uid)
-    return [
-        item.model_copy(update={"pdf_filename": _project_pdf_filename(uid, item.slug)})
-        for item in items
-    ]
+def list_project_masters(*, user_id: int | None = None) -> list[SlugDocumentSummary]:
+    return list_documents(PROJECT_MASTER, user_id=user_id)
 
 
 def get_project_master_detail(slug: str, *, user_id: int | None = None) -> dict:
-    uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_project_master_slug(slug)
-    row = repo.get_project_master_row(uid, slug)
-    if row is None or not (row.get("content") or "").strip():
-        raise LookupError(f"Project master not found: {key}")
-    return {
-        "slug": key,
-        "label": (row.get("label") or "").strip(),
-        "content": row["content"],
-        "updated_at": (row.get("updated_at") or "").strip(),
-        "has_pdf": bool(row.get("pdf_bytes")),
-        "pdf_updated_at": (row.get("pdf_updated_at") or "").strip(),
-        "pdf_filename": _project_pdf_filename(uid, key),
-    }
+    return get_document_detail(PROJECT_MASTER, slug, user_id=user_id)
 
 
 def read_project_pdf_download(
@@ -925,10 +927,7 @@ def read_project_pdf_download(
     *,
     user_id: int | None = None,
 ) -> tuple[bytes, str]:
-    uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_project_master_slug(slug)
-    pdf_bytes = repo.read_project_pdf_bytes(uid, key)
-    return pdf_bytes, _project_pdf_filename(uid, key)
+    return read_document_pdf_download(PROJECT_MASTER, slug, user_id=user_id)
 
 
 def render_project_pdf(
@@ -936,33 +935,7 @@ def render_project_pdf(
     *,
     user_id: int | None = None,
 ) -> RenderResult:
-    uid = user_id if user_id is not None else resolve_user_id()
-    key = repo.normalize_project_master_slug(slug)
-    try:
-        fragment = repo.read_project_master(uid, key)
-        tex = wrap_project_fragment_for_pdf(fragment)
-    except (LookupError, ValueError) as exc:
-        return RenderResult(ok=False, log=str(exc))
-
-    pdf_filename = _project_pdf_filename(uid, key)
-    basename = pdf_filename.removesuffix(".pdf")
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tex_path = Path(tmp) / f"{basename}.tex"
-        tex_path.write_text(tex, encoding="utf-8")
-        compiled = render.render_tex_to_pdf(tex_path)
-        if not compiled.ok:
-            return RenderResult(ok=False, log=compiled.log)
-
-        pdf_bytes = Path(compiled.pdf_path).read_bytes()
-        stored = repo.save_project_pdf(uid, key, pdf_bytes)
-        return RenderResult(
-            ok=True,
-            log=compiled.log,
-            pdf_stored=True,
-            pdf_bytes=stored["pdf_bytes"],
-            pdf_filename=pdf_filename,
-        )
+    return render_document_pdf(PROJECT_MASTER, slug, user_id=user_id)
 
 
 def save_project_master(
@@ -972,9 +945,50 @@ def save_project_master(
     label: str = "",
     user_id: int | None = None,
 ) -> dict:
+    return save_document(PROJECT_MASTER, slug, content, label=label, user_id=user_id)
+
+
+def list_interview_notes(*, user_id: int | None = None) -> list[SlugDocumentSummary]:
+    return list_documents(INTERVIEW_NOTE, user_id=user_id)
+
+
+def get_interview_note_detail(slug: str, *, user_id: int | None = None) -> dict:
+    return get_document_detail(INTERVIEW_NOTE, slug, user_id=user_id)
+
+
+def read_interview_note_pdf_download(
+    slug: str,
+    *,
+    user_id: int | None = None,
+) -> tuple[bytes, str]:
+    return read_document_pdf_download(INTERVIEW_NOTE, slug, user_id=user_id)
+
+
+def render_interview_note_pdf(
+    slug: str,
+    *,
+    user_id: int | None = None,
+) -> RenderResult:
+    return render_document_pdf(INTERVIEW_NOTE, slug, user_id=user_id)
+
+
+def save_interview_note(
+    slug: str,
+    content: str,
+    *,
+    label: str = "",
+    user_id: int | None = None,
+) -> dict:
+    return save_document(INTERVIEW_NOTE, slug, content, label=label, user_id=user_id)
+
+
+def get_application_profile(*, user_id: int | None = None) -> ApplicationProfile:
     uid = user_id if user_id is not None else resolve_user_id()
-    _charge_mcp_quota(uid)
-    return repo.save_project_master(uid, slug, content, label=label)
+    docs = repo.get_user_documents(uid)
+    if docs is None:
+        return ApplicationProfile()
+    raw = json.loads(docs.get("profile_json") or "{}")
+    return ApplicationProfile(**raw)
 
 
 def save_application_profile(profile: ApplicationProfile, *, user_id: int | None = None) -> dict:

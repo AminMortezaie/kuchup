@@ -70,10 +70,6 @@ docs/
     ec2-panel.md              Panel on EC2, kuchup.com, Caddy
     monitoring.md             Grafana Cloud Free + Alloy
     email.md                  Domain email via Cloudflare Email Routing
-  archive/                    historical handoffs — read only if debugging old work
-    v2-bugfix-handoff.md
-    v2-coding-verdict.md
-    refactor-handoff.md
 ```
 
 ---
@@ -119,14 +115,11 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 | `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
 
-### Backlog & archive
+### Backlog
 
 | Doc | Purpose |
 |-----|---------|
 | [backlog.md](backlog.md) | Living backlog |
-| [archive/v2-bugfix-handoff.md](archive/v2-bugfix-handoff.md) | Recent bugfix context |
-| [archive/v2-coding-verdict.md](archive/v2-coding-verdict.md) | Known v2 violations backlog |
-| [archive/refactor-handoff.md](archive/refactor-handoff.md) | **Historical** v1 Phase A–C |
 
 ---
 

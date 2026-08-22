@@ -85,3 +85,4 @@ def test_google_callback_sets_session(client, db, monkeypatch):
     body = status.get_json()
     assert body["authenticated"] is True
     assert body["user"]["email"] == "callback@example.com"
+    assert body["user"]["is_admin"] is False
