@@ -1,0 +1,12 @@
+we need to add something to kuchup, 
+a section in application data which is Interview notes and user can put docs there by the format we have (i mean latex and generate pdf like other docs)
+
+user can add documents for their interview there.
+
+its simple and straightforward like what we had in different documents parts.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
