@@ -1,0 +1,38 @@
+we have lots of similar codes in interview notes, master projects and master resumes.
+
+we can simply write down a contract to everyone simply use it and implement their own functionallity based on it.
+
+(i mean interfaces)
+plan for it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+ok go for deploy if you sure that its correct
+
+---
+
+we have deployed a new feature but didn't update kuchup mcp skill, we need to update it to claude recognize it directly.
+
+---
+
+no it uses mcp resume reframe on dist folder.
+
+---
+
+Listen to me about the interview notes. Yeah. You need to write it down to skills or any documents that you have on the purposes of these types of documents. For example, for master re-resumes and master projects, we you know, directly use them to create tailored resume for each positions. But for the interview notes which means that, for example a, a user invited to a interview with some companies, and they wanted to Add some interview notes based on their interview. For example, for a company like I don't know, Adjo. The user invited to this has invited to this Interview and starting to write something before the interview for their self and they use this for this purpose. It's not related to the resume and the tailoring the resume, the master resumes and master projects are completely different with these types of documents. These are the notes for the user to pass better their interview and throughout these notes The user can find out some beneficial data that they can use for further investigation under different for example positions. Because in my opinion, as a, you know, product manager for this project for this application I believe that you can write it down some notes for each interviews and push it into your CoachUp panel and you can download it later and you have all the interview notes and when you you know, gather these interview notes during the process of interviewing because most of the you know people, most of the applicants Are interviewing for more than for example, several companies, and if they gather these interview notes they can have a good glossary for different positions, because in my opinion, they should have write down these interview notes based on their resumes, based on their project description based on their job description. Sorry, and the interviewer that they want to see them. And it's a complete guide for a person to create a better you know, interview or pass better the interview based on their resume and other stuff that I mentioned before. So the purpose of these interview notes isn't about something that's used to be tailoring the resume. Maybe they can write down some informative information there and someday use it on their resume. For example, when they're trying to create a profile for them based on the interview they have and they want to meet someone they would deep dive on their expertise and their skills or experiences that they have done before, and maybe it can be used for further tailoring and resume you know resume creating. Okay, but the main purpose isn't about the resume tailoring. You should pay attention to this. You should pay make sure that you, you got an interview and you want to be prepared for this interview. not about the previous steps like you know, tailoring the resume. You have tailored your resume and now you have invited to a interview and you want to you know Be prepared for this interview. I think it's it's my intent to create this part.
+
+---
+
+field 'description' in SKILL.md must be at most 1024 characters
+
+---
+
+No dedicated interview-notes tools actually exist on the kuchup MCP right now — the toolset only has the 27 kuchup tools listed earlier (job/company/resume/cover-letter management), and none of them are list_interview_note, get_interview_note, or save_interview_note, even though the resume-reframe skill description mentions that workflow. So I can't pull up interview notes from kuchup — that feature doesn't appear to be wired up on the MCP server yet.
+
+What I can check: job/application context via get_job_context, or your application queue/pipeline. Want me to pull either of those instead?
