@@ -3,7 +3,7 @@
   "checkpoint_id": "459034908624",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 7,
+  "checkpoints_count": 11,
   "files_touched": [
     ".gitignore",
     "README.md",
@@ -104,6 +104,8 @@
     "relocation_jobs/mcp/types.py",
     "relocation_jobs/static/apply.html",
     "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/_next/static/_h9_cQfw_UuJV37Q1rzQw/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/_h9_cQfw_UuJV37Q1rzQw/_ssgManifest.js",
     "relocation_jobs/static/homepage/how-it-works.html",
     "relocation_jobs/static/homepage/how-it-works.txt",
     "relocation_jobs/static/homepage/index.html",
@@ -145,13 +147,20 @@
       "compact_transcript": "/45/9034908624/0/transcript.jsonl",
       "content_hash": "/45/9034908624/0/content_hash.txt",
       "prompt": "/45/9034908624/0/prompt.txt"
+    },
+    {
+      "metadata": "/45/9034908624/1/metadata.json",
+      "transcript": "/45/9034908624/1/full.jsonl",
+      "compact_transcript": "/45/9034908624/1/transcript.jsonl",
+      "content_hash": "/45/9034908624/1/content_hash.txt",
+      "prompt": "/45/9034908624/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 398344,
+    "input_tokens": 884274,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 14346112,
-    "output_tokens": 79451,
-    "api_call_count": 6
+    "cache_read_tokens": 20555904,
+    "output_tokens": 108001,
+    "api_call_count": 10
   }
 }
