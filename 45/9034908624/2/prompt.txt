@@ -1,0 +1,12 @@
+you need to go on github repo files and cause this project is on production now and using by the people we need to clean up github repo from data and files that manual users should be see there.
+
+please explore there and find out related data, for example there is a long time passing that we dont use companies name from json files but i saw there is a folder for them.
+lots of files are stale and they would not be used anymore you need to make the github repo clean and keep the files that are using and everyone should see.
+
+you need to do this deeply and with real accuracy.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
