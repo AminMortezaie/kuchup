@@ -22,6 +22,18 @@ def test_apply_known_ats_override_fixes_cached_recruitee_for_wolt():
     assert company["ats_url"] == "https://boards.greenhouse.io/wolt"
 
 
+def test_apply_known_ats_override_fixes_cached_generic_for_salmon():
+    company = {
+        "name": "Salmon",
+        "careers_url": "https://careers.salmon.ph/open-roles",
+        "ats_type": "generic",
+        "ats_url": "",
+    }
+    apply_known_ats_override(company)
+    assert company["ats_type"] == "ashby"
+    assert company["ats_url"] == "https://jobs.ashbyhq.com/salmon-group"
+
+
 def test_apply_known_ats_override_sets_idealo_recruitee_custom_domain():
     company = {
         "name": "idealo Internet",

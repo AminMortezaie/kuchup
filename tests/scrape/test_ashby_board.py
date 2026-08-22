@@ -10,6 +10,7 @@ from httpx import Response
 from relocation_jobs.scrape.boards.ashby import (
     ashby_job_board_api_url,
     fetch_ashby_board,
+    parse_ashby_api_jobs,
 )
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "ats" / "ashby.json"
@@ -99,3 +100,33 @@ async def test_fetch_ats_board_dispatches_ashby():
         jobs = await fetch_ats_board(client, company)
     assert len(jobs) == 2
     assert jobs[0]["title"] == "Senior Backend Engineer"
+
+
+def test_parse_ashby_api_jobs_includes_secondary_locations():
+    jobs = parse_ashby_api_jobs(
+        {
+            "jobs": [
+                {
+                    "title": "Software Engineer (Internal Tools & HR Automation)",
+                    "jobUrl": "https://jobs.ashbyhq.com/acme/abcd",
+                    "location": "Georgia",
+                    "secondaryLocations": [
+                        {
+                            "location": "Armenia",
+                            "address": {
+                                "postalAddress": {
+                                    "addressCountry": "Armenia",
+                                    "addressLocality": "Yerevan",
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+        "https://jobs.ashbyhq.com/acme",
+    )
+    assert len(jobs) == 1
+    assert jobs[0]["location"] == "Georgia"
+    assert "Yerevan" in jobs[0]["locations"]
+    assert "Armenia" in jobs[0]["locations"]

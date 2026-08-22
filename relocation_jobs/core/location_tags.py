@@ -972,6 +972,7 @@ def job_matches_expected_locations(
 
     saw_actionable = False
     explicit_mismatch = False
+    mismatch_reason: str | None = None
     remote_only = True
     unparsed_texts: list[str] = []
 
@@ -986,11 +987,17 @@ def job_matches_expected_locations(
         saw_actionable = True
 
         if country_key and country_key.startswith("unsupported:"):
-            return False, f"unsupported country ({country_key.split(':', 1)[1]})"
+            explicit_mismatch = True
+            mismatch_reason = f"unsupported country ({country_key.split(':', 1)[1]})"
+            continue
         if country_key and country_key not in supported_country_keys():
-            return False, f"unsupported country ({country_key})"
+            explicit_mismatch = True
+            mismatch_reason = f"unsupported country ({country_key})"
+            continue
         if country_key and country_key not in supported_countries:
-            return False, f"outside tagged countries ({country_key})"
+            explicit_mismatch = True
+            mismatch_reason = f"outside tagged countries ({country_key})"
+            continue
 
         if country_key:
             expected_cities = expected_by_country.get(country_key, set())
@@ -1014,8 +1021,14 @@ def job_matches_expected_locations(
 
     if remote_only and not saw_actionable and not unparsed_texts:
         return False, "remote only"
+    if unparsed_texts and any(
+        _listing_text_matches_expected_offices(text, expected)
+        for text in unparsed_texts
+        if _looks_like_location_text(text)
+    ):
+        return True, None
     if explicit_mismatch:
-        return False, "city mismatch"
+        return False, mismatch_reason or "city mismatch"
     if not saw_actionable:
         if unparsed_texts:
             actionable = [text for text in unparsed_texts if _looks_like_location_text(text)]

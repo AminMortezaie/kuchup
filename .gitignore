@@ -28,3 +28,4 @@ skills-lock.json
 .hallmark/
 # Local responsive/review captures (underscore-prefixed)
 **/brand/_*.png
+/.cursor/

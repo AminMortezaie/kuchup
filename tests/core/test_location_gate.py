@@ -153,3 +153,22 @@ def test_non_denylist_custom_country_matches_by_label(monkeypatch):
     )
     assert ok_de is False
     assert "germany" in (reason_de or "") or "outside tagged" in (reason_de or "")
+
+
+def test_secondary_office_matching_tagged_city_keeps_job():
+    company = {
+        "name": "Salmon",
+        "cities": ["Yerevan"],
+        "locations": [{"country": "germany", "city": "Yerevan"}],
+        "matching_jobs": [],
+    }
+    sync_company_location_fields(company, catalog_country="germany")
+    expected = company_expected_locations(company, catalog_country="germany")
+    ok, reason = job_matches_expected_locations(
+        {
+            "location": "Georgia",
+            "locations": ["Georgia", "Armenia", "Yerevan"],
+        },
+        expected,
+    )
+    assert ok is True, reason

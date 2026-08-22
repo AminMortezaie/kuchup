@@ -6,6 +6,8 @@ from collections.abc import Callable
 from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.shared.predicates import any_of
 
+_ENGINEER_TITLE_EXCLUDE_SKIP = frozenset({"marketing", "hr"})
+
 _IRRELEVANT_TITLE_RULES: tuple[Callable[[tuple[str, list[str]]], bool], ...] = (
     lambda ctx: bool(re.search(r"\bchief technology officer\b|\bcto\b", ctx[0])),
     lambda ctx: any(kw in ctx[0] for kw in ctx[1]),
@@ -17,15 +19,20 @@ _IRRELEVANT_TITLE_RULES: tuple[Callable[[tuple[str, list[str]]], bool], ...] = (
 )
 
 
+def _title_excludes(title_lower: str) -> list[str]:
+    if re.search(r"\b(engineer|developer|programmer)\b", title_lower):
+        return [
+            kw for kw in EXCLUDE_KEYWORDS
+            if kw.strip() not in _ENGINEER_TITLE_EXCLUDE_SKIP
+        ]
+    return list(EXCLUDE_KEYWORDS)
+
+
 def is_relevant(title: str) -> bool:
     t = title.lower()
     if not any(kw in t for kw in INCLUDE_KEYWORDS):
         return False
-    if re.search(r"\b(engineer|developer|programmer)\b", t):
-        excludes = [kw for kw in EXCLUDE_KEYWORDS if kw.strip() != "marketing"]
-    else:
-        excludes = EXCLUDE_KEYWORDS
-    ctx = (t, excludes)
+    ctx = (t, _title_excludes(t))
     return not any_of(ctx, _IRRELEVANT_TITLE_RULES)
 
 
@@ -36,10 +43,7 @@ def explain_title_filter(title: str) -> str:
         return "Title excluded (CTO)"
     if not any(kw in t for kw in INCLUDE_KEYWORDS):
         return "Title not relevant (no backend/software keyword)"
-    if re.search(r"\b(engineer|developer|programmer)\b", t):
-        excludes = [kw for kw in EXCLUDE_KEYWORDS if kw.strip() != "marketing"]
-    else:
-        excludes = EXCLUDE_KEYWORDS
+    excludes = _title_excludes(t)
     for kw in excludes:
         if kw in t:
             return f"Title excluded ({kw.strip() or kw})"

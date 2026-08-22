@@ -42,6 +42,36 @@ def _ashby_location_label(row: dict) -> str:
     return ""
 
 
+def _ashby_location_labels(row: dict) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+
+    def add(text: str) -> None:
+        text = (text or "").strip()
+        if not text:
+            return
+        key = text.casefold()
+        if key in seen:
+            return
+        seen.add(key)
+        labels.append(text)
+
+    add(_ashby_location_label(row))
+    for item in row.get("secondaryLocations") or []:
+        if not isinstance(item, dict):
+            add(str(item) if item else "")
+            continue
+        add(_ashby_location_label(item))
+        address = item.get("address") or {}
+        if not isinstance(address, dict):
+            continue
+        postal = address.get("postalAddress") or address
+        if isinstance(postal, dict):
+            add(str(postal.get("addressLocality") or ""))
+            add(str(postal.get("addressCountry") or ""))
+    return labels
+
+
 def ashby_job_detail(org: str, job_id: str) -> tuple[str, str]:
     slug = (org or "").strip()
     posting_id = (job_id or "").strip()
@@ -77,8 +107,15 @@ def parse_ashby_api_jobs(payload: dict, ats_url: str) -> list[dict]:
         url = (row.get("jobUrl") or ats_url).strip()
         if not title or not url:
             continue
-        location = row.get("location") or row.get("locationName")
-        jobs.append(listing_job(title, url, location=location))
+        labels = _ashby_location_labels(row)
+        jobs.append(
+            listing_job(
+                title,
+                url,
+                location=labels[0] if labels else None,
+                locations=labels or None,
+            )
+        )
     return jobs
 
 

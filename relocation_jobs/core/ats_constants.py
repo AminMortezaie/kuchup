@@ -100,6 +100,7 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "Bunq":                ("recruitee",     "https://bunq.recruitee.com/"),
     "Picnic":              ("smartrecruiters", "https://api.smartrecruiters.com/v1/companies/picnic/postings"),
     "Reaktor":             ("ashby",         "https://jobs.ashbyhq.com/reaktor"),
+    "Salmon":              ("ashby",         "https://jobs.ashbyhq.com/salmon-group"),
     "GreenFlux":           ("recruitee",     "https://greenflux.recruitee.com/"),
     "HomeToGo":            ("personio",      "https://hometogo.jobs.personio.de/"),
     "Personio":            ("personio",      "https://www.personio.com/api/careers/jobs/list"),
