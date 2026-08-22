@@ -1,0 +1,23 @@
+fetch problem on Salmon
+
+---
+
+there is a fetch problem for this company find the problem and fix it
+
+---
+
+you did not update the db which is our source of truth so it did not apply to app
+
+---
+
+Software Engineer (Internal Tools & HR Automation)
+
+i see this position on their website but we didnt fetch by ashby api what do u think about this?
+
+---
+
+ok i dont see it on other position that fetch shows.
+
+---
+
+deploy

@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "37ce8841c5cf",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/core/location_tags.py",
+    "relocation_jobs/scrape/boards/ashby.py",
+    "relocation_jobs/scrape/relevance.py",
+    "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/_next/static/0p8QyQV1hyBPnO7zv06oh/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/0p8QyQV1hyBPnO7zv06oh/_ssgManifest.js",
+    "relocation_jobs/static/homepage/_next/static/ZiKd3vNNL6tFv8jdofYLd/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/ZiKd3vNNL6tFv8jdofYLd/_ssgManifest.js",
+    "relocation_jobs/static/homepage/how-it-works.html",
+    "relocation_jobs/static/homepage/how-it-works.txt",
+    "relocation_jobs/static/homepage/index.html",
+    "relocation_jobs/static/homepage/index.txt",
+    "relocation_jobs/static/homepage/mcp.html",
+    "relocation_jobs/static/homepage/mcp.txt",
+    "relocation_jobs/static/homepage/pricing.html",
+    "relocation_jobs/static/homepage/pricing.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.html",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.html",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.html",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.html",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.html",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.txt",
+    "tests/core/test_ats_constants.py",
+    "tests/core/test_location_gate.py",
+    "tests/scrape/test_ashby_board.py",
+    "tests/scrape/test_relevance.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/37/ce8841c5cf/0/metadata.json",
+      "transcript": "/37/ce8841c5cf/0/full.jsonl",
+      "compact_transcript": "/37/ce8841c5cf/0/transcript.jsonl",
+      "content_hash": "/37/ce8841c5cf/0/content_hash.txt",
+      "prompt": "/37/ce8841c5cf/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1321844,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6843648,
+    "output_tokens": 42970,
+    "api_call_count": 5
+  }
+}
