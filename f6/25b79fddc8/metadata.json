@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f625b79fddc8",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "docs/assets/kuchup-bird.svg",
+    "docs/assets/kuchup-germany.png",
+    "docs/assets/kuchup-home.png",
+    "docs/assets/kuchup-how-it-works.png",
+    "docs/assets/kuchup-mcp.png"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f6/25b79fddc8/0/metadata.json",
+      "transcript": "/f6/25b79fddc8/0/full.jsonl",
+      "compact_transcript": "/f6/25b79fddc8/0/transcript.jsonl",
+      "content_hash": "/f6/25b79fddc8/0/content_hash.txt",
+      "prompt": "/f6/25b79fddc8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 111190,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1523072,
+    "output_tokens": 20244,
+    "api_call_count": 1
+  }
+}

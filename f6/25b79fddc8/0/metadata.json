@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f625b79fddc8",
+  "session_id": "94986898-d57a-480c-b776-70c88c61b720",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-23T11:00:14.414349Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "README.md",
+    "docs/assets/kuchup-bird.svg",
+    "docs/assets/kuchup-germany.png",
+    "docs/assets/kuchup-home.png",
+    "docs/assets/kuchup-how-it-works.png",
+    "docs/assets/kuchup-mcp.png"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "5e6eeec71ecb",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 111190,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1523072,
+    "output_tokens": 20244,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-23T11:00:14.402953Z",
+    "agent_lines": 134,
+    "agent_removed": 130,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 134,
+    "total_lines_changed": 264,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
