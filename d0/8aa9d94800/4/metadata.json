@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d08aa9d94800",
+  "session_id": "4f0a3d1e-3005-4686-a2d3-a2ec14522639",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:53:45.42428Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "design.md",
+    "homepage/app/design-tokens.css",
+    "relocation_jobs/static/design-tokens.css",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "89125f4e16a9",
+  "checkpoint_transcript_start": 19,
+  "transcript_lines_at_start": 19,
+  "compact_transcript_start": 6,
+  "session_metrics": {
+    "duration_ms": 286931667,
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:53:45.418066Z",
+    "agent_lines": 297,
+    "agent_removed": 193,
+    "human_added": 310,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 607,
+    "total_lines_changed": 1109,
+    "agent_percentage": 44.183949504057715,
+    "metric_version": 2
+  }
+}
