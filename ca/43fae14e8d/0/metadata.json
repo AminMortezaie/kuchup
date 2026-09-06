@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ca43fae14e8d",
+  "session_id": "0e1dd83a-221b-4b20-9c87-70a5fa3918f2",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T20:46:36.95691Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "homepage/app/how-it-works/page.tsx",
+    "homepage/app/mcp/page.tsx",
+    "homepage/app/pricing/page.tsx",
+    "homepage/components/AuthCta.tsx",
+    "homepage/components/Header.tsx",
+    "homepage/components/ui/Button.tsx",
+    "homepage/hooks/useAuthStatus.ts",
+    "homepage/lib/auth.ts"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "a4b834603369",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 165760,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 498304,
+    "output_tokens": 2796,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T20:46:36.924243Z",
+    "agent_lines": 200,
+    "agent_removed": 32,
+    "human_added": 129,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 329,
+    "total_lines_changed": 478,
+    "agent_percentage": 48.53556485355649,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 34,
+      "user_lines_removed": 13,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/reference/fetch-concurrency-model-review.md": 22,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "docs/reference/fetch-concurrency-model-review.md": 13
+      }
+    }
+  ]
+}

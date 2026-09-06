@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ca43fae14e8d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "homepage/app/how-it-works/page.tsx",
+    "homepage/app/mcp/page.tsx",
+    "homepage/app/pricing/page.tsx",
+    "homepage/components/AuthCta.tsx",
+    "homepage/components/Header.tsx",
+    "homepage/components/ui/Button.tsx",
+    "homepage/hooks/useAuthStatus.ts",
+    "homepage/lib/auth.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ca/43fae14e8d/0/metadata.json",
+      "transcript": "/ca/43fae14e8d/0/full.jsonl",
+      "compact_transcript": "/ca/43fae14e8d/0/transcript.jsonl",
+      "content_hash": "/ca/43fae14e8d/0/content_hash.txt",
+      "prompt": "/ca/43fae14e8d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 165760,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 498304,
+    "output_tokens": 2796,
+    "api_call_count": 1
+  }
+}
