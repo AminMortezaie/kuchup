@@ -21,7 +21,7 @@ from relocation_jobs.catalog.service import (
     job_locality,
     job_posting_json_ld_text,
 )
-from relocation_jobs.core.auth import current_user_id
+from relocation_jobs.core.auth import current_user_id, current_username
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.paths import STATIC_DIR
 from relocation_jobs.credits.service import credit_balance, spend_for_operation
@@ -121,6 +121,8 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
         "primary_label": cta.get("primary_label", ""),
         "employer_href": f"/jobs/{slug}/employer",
         "signed_in": signed_in,
+        "nav_label": "Open workspace" if signed_in else "Sign in",
+        "nav_title": (current_username() or "") if signed_in else "",
         "save_blocked": save_blocked,
     }
 

@@ -35,7 +35,7 @@
         <a href="/mcp">MCP</a>
         <a href="/how-it-works">How it works</a>
         <a href="/pricing">Pricing</a>
-        <a class="jp-nav-signin" href="/panel">Sign in</a>
+        <a class="jp-nav-signin" href="/panel"{% if nav_title %} title="{{ nav_title }}"{% endif %}>{{ nav_label }}</a>
       </nav>
     </header>
 
