@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d0d84d7784a0",
+  "session_id": "67a2f49e-0193-41de-bc8b-8c17f22a1c0e",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:54:04.673431Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "docs/operations/aws-postgres.md",
+    "docs/operations/ec2-panel.md",
+    "docs/operations/monitoring.md",
+    "scripts/aws_postgres_migrate.sh",
+    "scripts/ec2_app_deploy.sh",
+    "scripts/ec2_redis.sh"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "d66964b6d603",
+  "checkpoint_transcript_start": 185,
+  "transcript_lines_at_start": 185,
+  "compact_transcript_start": 18,
+  "session_metrics": {
+    "duration_ms": 119638298,
+    "turn_count": 7,
+    "context_tokens": 232262,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:54:04.631648Z",
+    "agent_lines": 103,
+    "agent_removed": 21,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 103,
+    "total_lines_changed": 124,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
