@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "35aa0c3facb7",
+  "session_id": "abe115bb-e9e5-42ce-bb6a-88a10fb2b5b9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T21:29:00.68935Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "relocation_jobs/mcp/service.py",
+    "tests/web/test_mcp_company_workspace.py",
+    "tests/web/test_public_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "8d07642c315a",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 155359,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2636928,
+    "output_tokens": 6863,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 1170504,
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T21:29:00.67858Z",
+    "agent_lines": 65,
+    "agent_removed": 0,
+    "human_added": 794,
+    "human_modified": 179,
+    "human_removed": 0,
+    "total_committed": 1038,
+    "total_lines_changed": 1055,
+    "agent_percentage": 6.161137440758294,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+when i sign in it redirects to the panel and everything is okay but on home page and other pages it shows sign in button static and not shows the user has signed in.
+
+find the problem and fix it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+so what's this?
+i just sign in but it shows this.
