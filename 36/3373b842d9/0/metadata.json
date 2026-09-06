@@ -50,7 +50,7 @@
   "turn_id": "1fe72e563dfa",
   "checkpoint_transcript_start": 13,
   "transcript_lines_at_start": 13,
-  "compact_transcript_start": 4,
+  "compact_transcript_start": 3,
   "initial_attribution": {
     "calculated_at": "2026-09-06T19:54:53.968286Z",
     "agent_lines": 154,
