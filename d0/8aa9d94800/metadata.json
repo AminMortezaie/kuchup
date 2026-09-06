@@ -3,7 +3,7 @@
   "checkpoint_id": "d08aa9d94800",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 23,
+  "checkpoints_count": 24,
   "files_touched": [
     "design.md",
     "homepage/app/[slug]/page.tsx",
@@ -103,6 +103,13 @@
       "compact_transcript": "/d0/8aa9d94800/7/transcript.jsonl",
       "content_hash": "/d0/8aa9d94800/7/content_hash.txt",
       "prompt": "/d0/8aa9d94800/7/prompt.txt"
+    },
+    {
+      "metadata": "/d0/8aa9d94800/8/metadata.json",
+      "transcript": "/d0/8aa9d94800/8/full.jsonl",
+      "compact_transcript": "/d0/8aa9d94800/8/transcript.jsonl",
+      "content_hash": "/d0/8aa9d94800/8/content_hash.txt",
+      "prompt": "/d0/8aa9d94800/8/prompt.txt"
     }
   ]
 }
