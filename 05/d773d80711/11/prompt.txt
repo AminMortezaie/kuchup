@@ -1,0 +1,61 @@
+for logging and deployment, what's your suggestion for this project because we have no place to see the logs and we need to go through the instance and read the logs using docker logs.
+
+think about it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+without adding any vars will it work?
+
+---
+
+how to get the api keys there?
+
+---
+
+i cannot find it
+
+---
+
+brother we have the alloy here on our configuration and you're speaking flakky i cannot get what you want me to do
+
+---
+
+do it for me on browser to see what you want to do
+
+---
+
+ok im in
+
+---
+
+i think the uri is incorrect how did you get it?
+
+---
+
+ok find deploy it and we will see is this working or not?
+
+---
+
+ok you have the browser access show me the logs there
+
+---
+
+i think we dont have logger and logs are preserving on db level which is not a good pattern.
+
+what do you think of it?
+
+---
+
+plan for real logger , i want to make it clean, if there is a good tool for it just set it up.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
