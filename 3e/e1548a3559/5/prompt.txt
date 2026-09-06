@@ -1,0 +1,19 @@
+use kuchup mcp and find interview notes.
+i want to create a new interview notes now.
+
+---
+
+ok for creative fabrica i want u to make it correct.
+
+don't change the words of questions and answers but make the format clean and also note: Running TeX ... Fontconfig error: Cannot load default config file: No such file: (null) error: amin_mortezaie_interview_creative_fabrica_hr_screen.tex:10: You can't use `macro parameter character #' in vertical mode error: halted on potentially-recoverable error as specified
+fix this
+
+---
+
+note: Running TeX ... Fontconfig error: Cannot load default config file: No such file: (null) error: amin_mortezaie_interview_creative_fabrica_hr_screen.tex:10: You can't use `macro parameter character #' in vertical mode error: halted on potentially-recoverable error as specified
+
+---
+
+brother, what you create it's not .tex format and it's markdown.
+so you need to rewrite like others we have .tex format.
+the problem is this and you need to resolve it
