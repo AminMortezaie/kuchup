@@ -103,7 +103,7 @@ Do not send cold traffic to `/pricing` first.
 - Header: title, employer, location, visa badge (only if `visa_sponsorship` is true)
 - Body: sanitized description HTML
 - Sticky CTA: **Track & prepare this application in Kuchup** → save/OAuth
-- Secondary text link: **Continue to the official {employer} career page** → `/employer`
+- Secondary text link (signed in only): **Continue to the official {employer} career page** → `/employer`
 - Value prop: workspace + MCP; Free is 30 credits/month and 20 MCP writes/day
 
 Save does **not** spend a credit (looking-to-apply is a free tracking action). Monetization is the existing Free wall: company slots, replacement-role credits, MCP daily quota — [entitlements-and-opportunities.md](entitlements-and-opportunities.md).

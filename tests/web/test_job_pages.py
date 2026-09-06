@@ -77,7 +77,8 @@ def test_job_page_renders_json_ld_without_redirect(v2_client, seeded_catalog_v2)
     assert '"name":"Kuchup"' in body
     assert "Track &amp; prepare this application in Kuchup" in body
     assert 'http-equiv="refresh"' not in body.lower()
-    assert job["url"] not in body or f"/jobs/{job['public_slug']}/employer" in body
+    assert "Continue to the official" not in body
+    assert f"/jobs/{job['public_slug']}/employer" not in body
 
 
 def test_unknown_job_slug_is_404(v2_client, seeded_catalog_v2):
@@ -217,6 +218,14 @@ def test_employer_uncapped_after_daily_saves(v2_client, seeded_catalog_v2):
     resp = v2_client.get(f"/jobs/{jobs[0]['public_slug']}/employer", follow_redirects=False)
     assert resp.status_code in (302, 303)
     assert (resp.headers.get("Location") or "") == jobs[0]["url"]
+
+
+def test_signed_in_job_page_shows_employer_link(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    _login_free(v2_client, "free-employer-link")
+    body = v2_client.get(f"/jobs/{job['public_slug']}").get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}/employer" in body
+    assert "Continue to the official" in body
 
 
 def test_signed_in_job_page_shows_free_remaining_cta(v2_client, seeded_catalog_v2):
