@@ -1,0 +1,48 @@
+we have fetch problem for most of the companies, lets go through the logs and find the real problem.
+
+is there any places we're preserving logs there to see the production logs?
+
+---
+
+we have fetch problem for most of the companies, lets go through the logs and find the real problem.
+
+is there any places we're preserving logs there to see the production logs?
+
+---
+
+its in memory graph now, again try to see the logs
+
+---
+
+i think that today we need to refactor the code to golang using goroutines and make the application memory optimized cause python asynco threads using coroutines but they cannot be controlled and also using high memory.
+
+what do you think about it?
+we should seperate the fetch job from services and run in golang.
+
+think about it
+
+---
+
+you mean that the real problem was not about lowing RAM and its about another thing, am i right?
+
+---
+
+ok, firstly write down the problems we faced and what was happened on docs for production issues like we have from previous problems and then we will plan to change the concurrency model.
+
+---
+
+plan it
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+what was changed, write down technical article review for this.
+
+---
+
+write it down in a file.
