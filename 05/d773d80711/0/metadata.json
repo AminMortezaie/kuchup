@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "05d773d80711",
+  "session_id": "2231d6ac-8345-451f-b762-2145a781a5ef",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:54:09.067961Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "docs/README.md"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "f764c09a6c9b",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "duration_ms": 273297827,
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:54:09.065366Z",
+    "agent_lines": 13,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 13,
+    "total_lines_changed": 15,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
