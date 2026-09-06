@@ -9,6 +9,10 @@ const PRODUCT_LINKS = [
 
 const META_LINKS = [
   {
+    href: "/engineering",
+    label: "Engineering",
+  },
+  {
     href: "https://github.com/AminMortezaie/relocation-jobs/blob/main/docs/contributing.md",
     label: "Contributing",
     external: true,
