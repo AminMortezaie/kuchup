@@ -3,7 +3,7 @@
   "checkpoint_id": "d08aa9d94800",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "design.md",
     "homepage/app/design-tokens.css",
@@ -18,6 +18,13 @@
       "compact_transcript": "/d0/8aa9d94800/0/transcript.jsonl",
       "content_hash": "/d0/8aa9d94800/0/content_hash.txt",
       "prompt": "/d0/8aa9d94800/0/prompt.txt"
+    },
+    {
+      "metadata": "/d0/8aa9d94800/1/metadata.json",
+      "transcript": "/d0/8aa9d94800/1/full.jsonl",
+      "compact_transcript": "/d0/8aa9d94800/1/transcript.jsonl",
+      "content_hash": "/d0/8aa9d94800/1/content_hash.txt",
+      "prompt": "/d0/8aa9d94800/1/prompt.txt"
     }
   ]
 }
