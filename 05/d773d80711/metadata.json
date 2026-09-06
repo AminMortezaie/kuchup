@@ -3,7 +3,7 @@
   "checkpoint_id": "05d773d80711",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 57,
+  "checkpoints_count": 58,
   "files_touched": [
     "AGENTS.md",
     "docs/README.md"
@@ -110,6 +110,13 @@
       "compact_transcript": "/05/d773d80711/14/transcript.jsonl",
       "content_hash": "/05/d773d80711/14/content_hash.txt",
       "prompt": "/05/d773d80711/14/prompt.txt"
+    },
+    {
+      "metadata": "/05/d773d80711/15/metadata.json",
+      "transcript": "/05/d773d80711/15/full.jsonl",
+      "compact_transcript": "/05/d773d80711/15/transcript.jsonl",
+      "content_hash": "/05/d773d80711/15/content_hash.txt",
+      "prompt": "/05/d773d80711/15/prompt.txt"
     }
   ],
   "token_usage": {
