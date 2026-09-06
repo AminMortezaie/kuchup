@@ -3,7 +3,7 @@
   "checkpoint_id": "3ee1548a3559",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 51,
+  "checkpoints_count": 54,
   "files_touched": [
     "docs/reference/fetch-concurrency-model-review.md",
     "docs/reference/fetch-scheduler-timeout-practices.md",
@@ -111,13 +111,20 @@
       "compact_transcript": "/3e/e1548a3559/11/transcript.jsonl",
       "content_hash": "/3e/e1548a3559/11/content_hash.txt",
       "prompt": "/3e/e1548a3559/11/prompt.txt"
+    },
+    {
+      "metadata": "/3e/e1548a3559/12/metadata.json",
+      "transcript": "/3e/e1548a3559/12/full.jsonl",
+      "compact_transcript": "/3e/e1548a3559/12/transcript.jsonl",
+      "content_hash": "/3e/e1548a3559/12/content_hash.txt",
+      "prompt": "/3e/e1548a3559/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4147691,
+    "input_tokens": 4477880,
     "cache_creation_tokens": 116813,
-    "cache_read_tokens": 69672598,
-    "output_tokens": 384015,
-    "api_call_count": 50
+    "cache_read_tokens": 76403478,
+    "output_tokens": 425166,
+    "api_call_count": 53
   }
 }

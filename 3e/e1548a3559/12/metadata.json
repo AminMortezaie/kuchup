@@ -1,0 +1,112 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3ee1548a3559",
+  "session_id": "b9f2e65f-070d-4113-bae4-252366bc4702",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:52:51.747387Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "save_step_count": 3,
+  "files_touched": [
+    "docs/reference/fetch-scheduler-timeout-practices.md",
+    "relocation_jobs/core/log.py",
+    "relocation_jobs/fetch/log.py",
+    "relocation_jobs/fetch/repo.py",
+    "relocation_jobs/fetch/scheduler.py",
+    "relocation_jobs/fetch/state.py",
+    "requirements.txt",
+    "scripts/mcp_http_server.py",
+    "scripts/mcp_server.py",
+    "scripts/opportunity_sqs_worker.py",
+    "tests/fetch/test_fetch_state_stale.py",
+    "tests/fetch/test_log.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "f354d077f7a5",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 330189,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6730880,
+    "output_tokens": 41151,
+    "api_call_count": 3
+  },
+  "session_metrics": {
+    "duration_ms": 466235954,
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:52:51.721366Z",
+    "agent_lines": 112,
+    "agent_removed": 102,
+    "human_added": 299,
+    "human_modified": 35,
+    "human_removed": 0,
+    "total_committed": 446,
+    "total_lines_changed": 760,
+    "agent_percentage": 28.157894736842103,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 483,
+      "user_lines_removed": 21,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env.example": 5,
+        "AGENTS.md": 2,
+        "docs/README.md": 3,
+        "docs/operations/aws-postgres.md": 1,
+        "docs/operations/ec2-panel.md": 5,
+        "docs/operations/monitoring.md": 50,
+        "docs/reference/fetch-scheduler-timeout-practices.md": 1,
+        "docs/reference/fetch-thread-exhaustion-incident.md": 363,
+        "scripts/.claude/settings.local.json": 12,
+        "scripts/aws_postgres_migrate.sh": 1,
+        "scripts/ec2_app_deploy.sh": 39,
+        "scripts/ec2_redis.sh": 1
+      },
+      "user_removed_per_file": {
+        ".env.example": 1,
+        "AGENTS.md": 1,
+        "docs/README.md": 1,
+        "docs/operations/monitoring.md": 13,
+        "docs/reference/fetch-scheduler-timeout-practices.md": 1,
+        "scripts/ec2_app_deploy.sh": 4
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 80,
+      "user_lines_removed": 34,
+      "agent_lines_added": 625,
+      "agent_lines_removed": 125,
+      "user_added_per_file": {
+        "docs/operations/monitoring.md": 2,
+        "relocation_jobs/fetch/repo.py": 9,
+        "relocation_jobs/fetch/state.py": 10,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/fetch/test_fetch_state_stale.py": 19,
+        "tests/fetch/test_log.py": 28
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/fetch/repo.py": 9,
+        "relocation_jobs/fetch/state.py": 4,
+        "tests/fetch/test_log.py": 21
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 982,
+      "agent_lines_removed": 342,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
