@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "02b7c37910c5",
+  "session_id": "89019f35-566e-4f93-941c-0c552d578c6d",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:54:42.808597Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/operations/seo-indexing.md",
+    "relocation_jobs/static/llms.txt",
+    "tests/web/test_public_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "414e1e6b0b64",
+  "checkpoint_transcript_start": 2,
+  "transcript_lines_at_start": 2,
+  "compact_transcript_start": 2,
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:54:42.806687Z",
+    "agent_lines": 20,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 20,
+    "total_lines_changed": 20,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
