@@ -16,7 +16,7 @@
   "turn_id": "414e1e6b0b64",
   "checkpoint_transcript_start": 2,
   "transcript_lines_at_start": 2,
-  "compact_transcript_start": 2,
+  "compact_transcript_start": 1,
   "initial_attribution": {
     "calculated_at": "2026-09-06T19:54:42.806687Z",
     "agent_lines": 20,
