@@ -3,7 +3,7 @@
   "checkpoint_id": "b200944b594a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     ".env.example",
     "relocation_jobs/web/server.py"
@@ -22,6 +22,13 @@
       "compact_transcript": "/b2/00944b594a/1/transcript.jsonl",
       "content_hash": "/b2/00944b594a/1/content_hash.txt",
       "prompt": "/b2/00944b594a/1/prompt.txt"
+    },
+    {
+      "metadata": "/b2/00944b594a/2/metadata.json",
+      "transcript": "/b2/00944b594a/2/full.jsonl",
+      "compact_transcript": "/b2/00944b594a/2/transcript.jsonl",
+      "content_hash": "/b2/00944b594a/2/content_hash.txt",
+      "prompt": "/b2/00944b594a/2/prompt.txt"
     }
   ]
 }
