@@ -1,0 +1,171 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3ee1548a3559",
+  "session_id": "a85702a6-d8ff-493a-a9cf-9359fee155b9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:52:51.649284Z",
+  "branch": "main",
+  "checkpoints_count": 9,
+  "save_step_count": 9,
+  "files_touched": [
+    "docs/reference/fetch-concurrency-model-review.md",
+    "docs/reference/fetch-scheduler-timeout-practices.md",
+    "docs/reference/fetch-thread-exhaustion-incident.md",
+    "relocation_jobs/fetch/country_runner.py",
+    "relocation_jobs/fetch/log.py",
+    "relocation_jobs/fetch/repo.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/fetch/scheduler.py",
+    "relocation_jobs/fetch/service.py",
+    "relocation_jobs/fetch/state.py",
+    "relocation_jobs/fetch/types.py",
+    "requirements.txt",
+    "scripts/mcp_http_server.py",
+    "scripts/mcp_server.py",
+    "scripts/opportunity_sqs_worker.py",
+    "tests/fetch/test_country_runner_timeout.py",
+    "tests/fetch/test_fetch_state_stale.py",
+    "tests/fetch/test_log.py",
+    "tests/fetch/test_scheduler.py",
+    "tests/fetch/test_service.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high-fast",
+  "turn_id": "1a12443eb09d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 503690,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8870144,
+    "output_tokens": 57795,
+    "api_call_count": 8
+  },
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:52:51.627135Z",
+    "agent_lines": 821,
+    "agent_removed": 327,
+    "human_added": 137,
+    "human_modified": 22,
+    "human_removed": 0,
+    "total_committed": 980,
+    "total_lines_changed": 1307,
+    "agent_percentage": 87.83473603672533,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 14,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "AGENTS.md": 2,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "AGENTS.md": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 59,
+      "user_lines_removed": 5,
+      "agent_lines_added": 2,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        ".env.example": 5,
+        "docs/operations/aws-postgres.md": 1,
+        "scripts/.claude/settings.local.json": 12,
+        "scripts/aws_postgres_migrate.sh": 1,
+        "scripts/ec2_app_deploy.sh": 39,
+        "scripts/ec2_redis.sh": 1
+      },
+      "user_removed_per_file": {
+        ".env.example": 1,
+        "scripts/ec2_app_deploy.sh": 4
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 471,
+      "agent_lines_removed": 21,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 983,
+      "agent_lines_removed": 343,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 50,
+      "user_lines_removed": 11,
+      "agent_lines_added": 1254,
+      "agent_lines_removed": 571,
+      "user_added_per_file": {
+        "docs/reference/fetch-thread-exhaustion-incident.md": 38,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "docs/reference/fetch-thread-exhaustion-incident.md": 11
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 50,
+      "user_lines_removed": 11,
+      "agent_lines_added": 1254,
+      "agent_lines_removed": 571,
+      "user_added_per_file": {
+        "docs/reference/fetch-thread-exhaustion-incident.md": 38,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "docs/reference/fetch-thread-exhaustion-incident.md": 11
+      }
+    }
+  ]
+}
