@@ -50,3 +50,20 @@ async def test_process_company_records_fetch_problem_on_error():
     assert "Error:" in line
     assert company.get("fetch_problem") is True
     assert company.get("fetch_ok") is False
+
+
+@pytest.mark.asyncio
+async def test_process_company_infra_error_does_not_mark_problem():
+    company = {"name": "ThreadCo", "city": "Berlin", "matching_jobs": []}
+
+    async def boom(_client, _company, **kwargs):
+        raise RuntimeError("can't start new thread")
+
+    line, new_count = await process_company(
+        None, company, 1, 1, fetch_board=boom,
+    )
+
+    assert new_count == 0
+    assert "can't start new thread" in line
+    assert not company.get("fetch_problem")
+    assert company.get("fetch_ok") is not False

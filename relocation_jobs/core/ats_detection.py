@@ -6,6 +6,7 @@ Shared by scrape_jobs and company_service — neither should duplicate this logi
 from __future__ import annotations
 
 import json
+import logging
 import re
 import threading
 from urllib.parse import urljoin, urlparse
@@ -21,6 +22,8 @@ try:
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
+LOGGER = logging.getLogger(__name__)
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -30,7 +33,7 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-_playwright_sem = threading.Semaphore(2)
+_playwright_sem = threading.Semaphore(1)
 
 
 def _playwright_browser_context(playwright):
@@ -290,6 +293,15 @@ def _extract_workday(url: str) -> str:
     return f"{api}|{base}" if base else api
 
 
+def _extract_pinpointhq(url: str) -> str:
+    match = re.search(r"https?://([a-z0-9-]+)\.pinpointhq\.com", url, re.I)
+    if match:
+        slug = match.group(1)
+        if slug not in ("www", "api", "developers"):
+            return f"https://{slug}.pinpointhq.com/postings.json"
+    return url
+
+
 def _extract_hibob(url: str) -> str:
     match = re.search(r"https?://([a-z0-9-]+)\.careers\.hibob\.com", url, re.I)
     if match:
@@ -317,6 +329,8 @@ XHR_ATS_PATTERNS = [
      lambda url: _detect_deel_from_url(url)[1] or url),
     (r"/wday/cxs/[^/]+/[^/]+/jobs",                 "workday",         _extract_workday),
     (r"careers\.hibob\.com/api/job-ad",             "hibob",           _extract_hibob),
+    (r"([a-z0-9-]+)\.pinpointhq\.com/postings\.json", "pinpointhq",
+     lambda url: _extract_pinpointhq(url)),
 ]
 
 # Static HTML patterns as a secondary check (for pages that load ATS links in HTML
@@ -358,6 +372,9 @@ HTML_ATS_PATTERNS = [
      lambda m: f"https://jobs.deel.com/{m.group(1)}"),
     (r"([a-z0-9-]+)\.careers\.hibob\.com",           "hibob",
      lambda m: f"https://{m.group(1)}.careers.hibob.com/jobs"),
+    (r"([a-z0-9-]+)\.pinpointhq\.com",              "pinpointhq",
+     lambda m: f"https://{m.group(1)}.pinpointhq.com/postings.json"
+     if m.group(1).lower() not in ("www", "api", "developers") else None),
     (_WORKDAY_BOARD_URL_RE.pattern,                  "workday",
      _workday_url_from_html_match),
 ]
@@ -463,6 +480,16 @@ def _detect_smartrecruiters_from_redcare_careers(
     except Exception:
         pass
     return None, None
+
+
+def _detect_pinpointhq_from_url(careers_url: str) -> tuple[str | None, str | None]:
+    match = re.search(r"https?://([a-z0-9-]+)\.pinpointhq\.com", careers_url or "", re.I)
+    if not match:
+        return None, None
+    slug = match.group(1).lower()
+    if slug in ("www", "api", "developers"):
+        return None, None
+    return "pinpointhq", f"https://{slug}.pinpointhq.com/postings.json"
 
 
 def _detect_hibob_from_url(careers_url: str) -> tuple[str | None, str | None]:
@@ -576,6 +603,7 @@ def _detect_ats_from_careers_url(careers_url: str) -> tuple[str | None, str | No
         _detect_hirehive_from_url,
         _detect_teamtailor_from_url,
         _detect_hibob_from_url,
+        _detect_pinpointhq_from_url,
         _detect_deel_from_url,
         _detect_join_from_url,
         _detect_applytojob_from_url,
@@ -642,7 +670,7 @@ def detect_ats_via_playwright(
     except FetchCancelled:
         raise
     except Exception as e:
-        print(f"    Playwright detection error: {e}")
+        LOGGER.warning("Playwright detection error: %s", e)
 
     if found_ats:
         if ats_hint:
@@ -692,6 +720,7 @@ ATS_HINT_URL_DETECTORS = (
     _detect_hirehive_from_url,
     _detect_teamtailor_from_url,
     _detect_hibob_from_url,
+    _detect_pinpointhq_from_url,
     _detect_deel_from_url,
     _detect_join_from_url,
     _detect_applytojob_from_url,
@@ -742,6 +771,7 @@ def guess_ats_url_from_name(ats_type: str, company_name: str) -> str:
         "bamboohr": lambda s: f"https://{s}.bamboohr.com/careers/list",
         "hirehive": lambda s: f"https://{s}.hirehive.com",
         "hibob": lambda s: f"https://{s}.careers.hibob.com/jobs",
+        "pinpointhq": lambda s: f"https://{s}.pinpointhq.com/postings.json",
     }
     builder = builders.get(ats_type)
     return builder(slug) if builder else ""

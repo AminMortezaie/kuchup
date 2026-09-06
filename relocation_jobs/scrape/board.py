@@ -25,6 +25,7 @@ from relocation_jobs.scrape.boards.joblet import fetch_joblet_board
 from relocation_jobs.scrape.boards.join import fetch_join_board
 from relocation_jobs.scrape.boards.lever import fetch_lever_board
 from relocation_jobs.scrape.boards.personio import fetch_personio_board
+from relocation_jobs.scrape.boards.pinpointhq import fetch_pinpointhq_board
 from relocation_jobs.scrape.boards.playwright_ats import (
     fetch_atlassian_board,
     fetch_jibe_board,
@@ -60,6 +61,7 @@ _BOARD_FETCHERS: dict[str, BoardFetcher] = {
     "lever_eu": fetch_lever_board,
     "movingimage": fetch_movingimage_board,
     "personio": fetch_personio_board,
+    "pinpointhq": fetch_pinpointhq_board,
     "project_a": fetch_project_a_board,
     "recruitee": fetch_recruitee_board,
     "remotedxb": fetch_remotedxb_board,

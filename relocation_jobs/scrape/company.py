@@ -13,6 +13,7 @@ from relocation_jobs.fetch.ports import (
     OnCompanyResult,
     OnReview,
 )
+from relocation_jobs.fetch.types import is_infra_fetch_error
 from relocation_jobs.scrape.aggregator_sync import (
     aggregator_success_line,
     is_aggregator_ats,
@@ -368,6 +369,7 @@ async def process_company(
     except FetchCancelled:
         raise
     except Exception as exc:
-        _mark_fetch_failed(company)
+        if not is_infra_fetch_error(str(exc)):
+            _mark_fetch_failed(company)
         _call_sync_board(sync_board)
         return f"{prefix} — Error: {exc}", 0

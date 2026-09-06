@@ -42,6 +42,12 @@ def test_sanitize_job_description_html_strips_images_and_attributes():
     assert "<li>Design developer tooling</li>" in html
 
 
+def test_sanitize_job_description_html_drops_comments():
+    html = sanitize_job_description_html("<div><!--block-->Hello</div>")
+    assert "block" not in html
+    assert "Hello" in html
+
+
 def test_format_job_description_returns_readable_and_display_html():
     readable, display_html = format_job_description(SAMPLE_HTML)
     assert readable

@@ -12,6 +12,9 @@ from relocation_jobs.scrape.boards.greenhouse import (
     greenhouse_job_ids_from_url,
 )
 from relocation_jobs.scrape.boards.hibob import fetch_hibob_job_detail as hibob_job_detail_fetch
+from relocation_jobs.scrape.boards.pinpointhq import (
+    fetch_pinpointhq_job_detail as pinpointhq_job_detail_fetch,
+)
 from relocation_jobs.scrape.boards.recruitee import recruitee_offers_api_url
 from relocation_jobs.scrape.boards.smartrecruiters import (
     smartrecruiters_job_ad_html,
@@ -183,6 +186,15 @@ def fetch_hibob_job_text(url: str) -> str:
     return fetch_hibob_job_detail(url).text
 
 
+def fetch_pinpointhq_job_detail(url: str) -> JobFetchResult:
+    text, location = pinpointhq_job_detail_fetch(url)
+    return JobFetchResult(text, location)
+
+
+def fetch_pinpointhq_job_text(url: str) -> str:
+    return fetch_pinpointhq_job_detail(url).text
+
+
 def fetch_workday_job_detail(url: str) -> JobFetchResult:
     api = workday_job_detail_api_url(url)
     if not api:
@@ -217,6 +229,7 @@ _JOB_DETAIL_FETCHERS = {
     "recruitee": fetch_recruitee_job_detail,
     "ashby": fetch_ashby_job_detail,
     "hibob": fetch_hibob_job_detail,
+    "pinpointhq": fetch_pinpointhq_job_detail,
     "smartrecruiters": fetch_smartrecruiters_job_detail,
     "workday": fetch_workday_job_detail,
 }

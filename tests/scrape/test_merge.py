@@ -84,3 +84,26 @@ class TestMergeMatchingJobs:
         merged, preserved, _, _, _ = merge_matching_jobs(existing, scraped)
         assert preserved == 1
         assert merged[0]["location"] == "Berlin, Germany"
+
+    def test_marks_stale_jobs_closed_and_reopens_on_rescrape(self):
+        existing = [
+            {
+                "title": "Gone",
+                "url": "https://example.com/j/1?gh_jid=1",
+                "fetched": "2025-01-01",
+                "public_slug": "acme-gone",
+            },
+        ]
+        merged, _, _, stale, _ = merge_matching_jobs(existing, [])
+        assert stale == 1
+        assert merged[0]["closed_at"]
+        assert merged[0]["public_slug"] == "acme-gone"
+
+        reopened, preserved, _, stale_again, _ = merge_matching_jobs(
+            merged,
+            [{"title": "Gone", "url": "https://example.com/j/1?gh_jid=1"}],
+        )
+        assert preserved == 1
+        assert stale_again == 0
+        assert reopened[0]["closed_at"] == ""
+        assert reopened[0]["public_slug"] == "acme-gone"

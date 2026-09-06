@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
 VISA_RELOCATION_POSITIVE = [
     r"visa\s+sponsor",
@@ -90,6 +90,8 @@ def sanitize_job_description_html(html: str) -> str:
     if not html:
         return ""
     soup = BeautifulSoup(html, "html.parser")
+    for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+        comment.extract()
     for tag in soup(["script", "style", "img", "iframe", "svg", "noscript"]):
         tag.decompose()
     for tag in soup.find_all(True):
@@ -133,6 +135,11 @@ _ASHBY_NOISE_MARKERS = (
     "cookie preferences",
     "create job alert",
     "ashbyhq.com",
+)
+_PINPOINTHQ_NOISE_MARKERS = (
+    "register your interest",
+    "view all opportunities",
+    "not quite right?",
 )
 
 
@@ -219,6 +226,22 @@ def needs_recruitee_refetch(text: str) -> bool:
     if len(stripped) < 1200 and "• " not in stripped:
         return True
     return False
+
+
+def looks_like_pinpointhq_page_scrape(text: str) -> bool:
+    lower = (text or "").lower()
+    return sum(marker in lower for marker in _PINPOINTHQ_NOISE_MARKERS) >= 2
+
+
+def needs_pinpointhq_refetch(text: str) -> bool:
+    stripped = (text or "").strip()
+    if not stripped:
+        return True
+    if looks_like_pinpointhq_page_scrape(stripped):
+        return True
+    if looks_like_html(stripped) and ("<h3>" in stripped or "<ul>" in stripped):
+        return False
+    return True
 
 
 def format_job_description(raw: str) -> tuple[str, str]:

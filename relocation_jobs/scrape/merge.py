@@ -80,6 +80,10 @@ def _update_from_scrape(old: dict, scraped: dict, key: str, seen_at: str) -> dic
     description = (scraped.get("description_text") or "").strip() or (old.get("description_text") or "").strip()
     if description:
         out["description_text"] = description
+    slug = (old.get("public_slug") or "").strip()
+    if slug:
+        out["public_slug"] = slug
+    out["closed_at"] = ""
     _apply_board_location(out, scraped, old)
     return out
 
@@ -89,6 +93,7 @@ def _add_from_scrape(scraped: dict, key: str, seen_at: str) -> dict:
     out["idempotency_key"] = key
     out["fetched"] = out.get("fetched") or seen_at
     out["last_seen"] = seen_at
+    out["closed_at"] = ""
     return out
 
 
@@ -126,6 +131,8 @@ def merge_matching_jobs(
             continue
         kept = dict(old)
         stamp_job_identity(kept)
+        if not (kept.get("closed_at") or "").strip():
+            kept["closed_at"] = seen_at
         merged.append(kept)
         stale_kept += 1
 

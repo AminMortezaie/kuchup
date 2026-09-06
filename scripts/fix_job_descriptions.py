@@ -18,6 +18,7 @@ from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.scrape.descriptions import (
     needs_ashby_refetch,
     needs_getyourguide_refetch,
+    needs_pinpointhq_refetch,
     needs_recruitee_refetch,
     needs_smartrecruiters_refetch,
 )
@@ -28,6 +29,7 @@ _BRANDED_CAREERS_URL_MARKERS = (
     "smartrecruiters.com",
     "getyourguide.careers",
     "ashbyhq.com",
+    "pinpointhq.com",
 )
 
 
@@ -40,6 +42,8 @@ def _ats_type_for_job(job: dict) -> str:
         return "greenhouse"
     if "ashbyhq.com" in url:
         return "ashby"
+    if "pinpointhq.com" in url:
+        return "pinpointhq"
     return ats_type
 
 
@@ -67,6 +71,8 @@ def needs_description_refetch(job: dict) -> bool:
         return needs_smartrecruiters_refetch(text)
     if ats_type == "recruitee" or "recruitee.com" in url:
         return needs_recruitee_refetch(text)
+    if ats_type == "pinpointhq" or "pinpointhq.com" in url:
+        return needs_pinpointhq_refetch(text)
     if ats_type in API_ATS_TYPES:
         return not text
     return False

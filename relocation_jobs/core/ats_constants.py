@@ -76,6 +76,7 @@ ATS_TYPE_CHOICES: tuple[tuple[str, str], ...] = (
     ("workable", "Workable"),
     ("workday", "Workday"),
     ("hibob", "HiBob"),
+    ("pinpointhq", "Pinpoint HQ"),
     ("successfactors", "SAP SuccessFactors"),
 )
 
@@ -138,6 +139,7 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "Wolt":                  ("greenhouse",    "https://boards.greenhouse.io/wolt"),
     "Mobile.de":             ("hibob",         "https://mobilede.careers.hibob.com/jobs"),
     "idealo Internet":       ("recruitee",     "https://jobs.idealo.com/"),
+    "Tabby":                 ("pinpointhq",    "https://tabby.pinpointhq.com/postings.json"),
 }
 
 FORCE_KNOWN_ATS = frozenset({

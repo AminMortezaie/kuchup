@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "id": "400322",
+      "title": "Senior Backend Engineer",
+      "url": "https://acme.pinpointhq.com/en/postings/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "path": "/en/postings/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "description": "<div><!--block-->Build payments APIs. Visa sponsorship is available.</div>",
+      "key_responsibilities_header": "Key Responsibilities",
+      "key_responsibilities": "<ul><li>Ship backend services in Kotlin</li><li>Own the payments platform</li></ul>",
+      "skills_knowledge_expertise_header": "Skills, Knowledge & Expertise",
+      "skills_knowledge_expertise": "<ul><li>5+ years of backend experience</li></ul>",
+      "benefits_header": "Job Benefits",
+      "benefits": "<ul><li>Relocation support</li></ul>",
+      "location": {
+        "city": "Belgrade",
+        "province": "/"
+      }
+    },
+    {
+      "id": "1",
+      "title": "Other Role",
+      "url": "https://acme.pinpointhq.com/en/postings/11111111-1111-1111-1111-111111111111",
+      "path": "/en/postings/11111111-1111-1111-1111-111111111111",
+      "description": "<p>Ignore this posting.</p>",
+      "location": {
+        "city": "Dubai",
+        "province": "UAE"
+      }
+    }
+  ]
+}
