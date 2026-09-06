@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f14fb4205ffd",
+  "session_id": "e9fc68a8-d12b-4d0f-9514-6db0eae583ca",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:53:23.846839Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/core/ats_detection.py",
+    "relocation_jobs/scrape/board.py",
+    "relocation_jobs/scrape/company.py",
+    "relocation_jobs/scrape/descriptions.py",
+    "relocation_jobs/scrape/job_text.py",
+    "relocation_jobs/scrape/merge.py",
+    "scripts/fix_job_descriptions.py",
+    "tests/scrape/test_company.py",
+    "tests/scrape/test_descriptions_format.py",
+    "tests/scrape/test_merge.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "e048cbe4372e",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "duration_ms": 24809313,
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:53:23.798973Z",
+    "agent_lines": 135,
+    "agent_removed": 4,
+    "human_added": 253,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 388,
+    "total_lines_changed": 392,
+    "agent_percentage": 35.45918367346938,
+    "metric_version": 2
+  }
+}
