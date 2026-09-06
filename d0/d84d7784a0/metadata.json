@@ -3,7 +3,7 @@
   "checkpoint_id": "d0d84d7784a0",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 42,
+  "checkpoints_count": 51,
   "files_touched": [
     "docs/operations/aws-postgres.md",
     "docs/operations/ec2-panel.md",
@@ -86,6 +86,13 @@
       "compact_transcript": "/d0/d84d7784a0/10/transcript.jsonl",
       "content_hash": "/d0/d84d7784a0/10/content_hash.txt",
       "prompt": "/d0/d84d7784a0/10/prompt.txt"
+    },
+    {
+      "metadata": "/d0/d84d7784a0/11/metadata.json",
+      "transcript": "/d0/d84d7784a0/11/full.jsonl",
+      "compact_transcript": "/d0/d84d7784a0/11/transcript.jsonl",
+      "content_hash": "/d0/d84d7784a0/11/content_hash.txt",
+      "prompt": "/d0/d84d7784a0/11/prompt.txt"
     }
   ]
 }
