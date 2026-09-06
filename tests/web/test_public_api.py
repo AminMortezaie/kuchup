@@ -100,6 +100,26 @@ def test_public_preview_returns_only_positive_sponsorship_positions(
     ]
 
 
+def test_public_preview_omits_closed_visa_positions(
+    v2_client,
+    seeded_catalog_v2,
+):
+    del seeded_catalog_v2
+    company = get_company("uk", "Acme Backend Ltd")
+    assert company is not None
+    company["matching_jobs"][0]["visa_sponsorship"] = True
+    company["matching_jobs"][0]["closed_at"] = "2026-09-07T00:00:00+00:00"
+    company["matching_jobs"][1]["visa_sponsorship"] = False
+    sync_company_board_to_catalog("uk", company)
+
+    resp = v2_client.get("/api/public/preview?country=uk&q=backend")
+
+    assert resp.status_code == 200
+    payload = resp.get_json()
+    assert payload["meta"]["positions_returned"] == 0
+    assert payload["positions"] == []
+
+
 def test_public_preview_always_returns_featured_companies(
     v2_client,
     seeded_catalog_v2,

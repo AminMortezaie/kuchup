@@ -10,6 +10,7 @@ from relocation_jobs.catalog.repo import (
     list_sponsored_catalog_jobs,
     load_catalog_companies_page,
 )
+from relocation_jobs.catalog.service import job_is_closed
 from relocation_jobs.core.location_tags import country_label
 
 PREVIEW_LIMIT = 8
@@ -28,7 +29,7 @@ def _rotate_rows(rows: list[dict], limit: int) -> list[dict]:
 
 
 def _preview_company(company: dict) -> dict:
-    jobs = list(company.get("matching_jobs") or [])
+    jobs = [job for job in company.get("matching_jobs") or [] if not job_is_closed(job)]
     visa_jobs = sum(1 for job in jobs if job.get("visa_sponsorship") is True)
     locations = list(company.get("locations") or [])
     primary_country = (

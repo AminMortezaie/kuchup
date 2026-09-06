@@ -84,6 +84,7 @@ def _update_from_scrape(old: dict, scraped: dict, key: str, seen_at: str) -> dic
     if slug:
         out["public_slug"] = slug
     out["closed_at"] = ""
+    out["listing_misses"] = 0
     _apply_board_location(out, scraped, old)
     return out
 
@@ -94,6 +95,7 @@ def _add_from_scrape(scraped: dict, key: str, seen_at: str) -> dict:
     out["fetched"] = out.get("fetched") or seen_at
     out["last_seen"] = seen_at
     out["closed_at"] = ""
+    out["listing_misses"] = 0
     return out
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from relocation_jobs.catalog.service import skip_closed_unengaged
 from relocation_jobs.core.location_tags import company_expected_locations, job_matches_expected_locations
 from relocation_jobs.panel.flatten_orphans import stats_job_entry
 from relocation_jobs.panel.tracking import catalog_not_for_me, job_dict, resolve_track, resolve_track_flags
@@ -95,6 +96,12 @@ def partition_stored_jobs(
                     wrong_location=wrong_location,
                 ))
                 continue
+            if skip_closed_unengaged(
+                job,
+                applied=bool(track.get("applied")),
+                looking_to_apply=bool(track.get("looking_to_apply")),
+            ):
+                continue
         elif catalog_not_for_me(job) or fails_gate:
             positions_not_for_me += 1
             not_for_me_jobs.append(not_for_me_entry(
@@ -108,6 +115,13 @@ def partition_stored_jobs(
                 mcp_applications=mcp_applications,
                 wrong_location=fails_gate,
             ))
+            continue
+
+        elif skip_closed_unengaged(
+            job,
+            applied=bool(job.get("applied")),
+            looking_to_apply=False,
+        ):
             continue
 
         if visa_only and job.get("visa_sponsorship") is not True:
@@ -168,8 +182,20 @@ def partition_stored_jobs_for_stats(
             if view.bucket == PositionBucket.NOT_FOR_ME:
                 positions_not_for_me += 1
                 continue
+            if skip_closed_unengaged(
+                job,
+                applied=bool(track.get("applied")),
+                looking_to_apply=bool(track.get("looking_to_apply")),
+            ):
+                continue
         elif catalog_not_for_me(job) or fails_gate:
             positions_not_for_me += 1
+            continue
+        elif skip_closed_unengaged(
+            job,
+            applied=bool(job.get("applied")),
+            looking_to_apply=False,
+        ):
             continue
 
         if visa_only and job.get("visa_sponsorship") is not True:

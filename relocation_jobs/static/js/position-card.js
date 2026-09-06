@@ -350,7 +350,10 @@ class PositionCard extends HTMLElement {
     const unavailable = job.listing_unavailable
       ? '<span class="badge seen" title="This role was previously shown to you but is no longer in the latest company fetch.">No longer in latest fetch</span>'
       : "";
-    return `<div class="position-title-row"><a class="job-title" href="${escapeHtml(job.url || "")}" target="_blank" rel="noopener noreferrer">${escapeHtml(job.title || "")}</a>${this._cityBadge(job)}${unavailable}</div>`;
+    const closed = job.closed_at
+      ? '<span class="badge seen" title="The employer is no longer listing this role.">Closed</span>'
+      : "";
+    return `<div class="position-title-row"><a class="job-title" href="${escapeHtml(job.url || "")}" target="_blank" rel="noopener noreferrer">${escapeHtml(job.title || "")}</a>${this._cityBadge(job)}${unavailable}${closed}</div>`;
   }
 
   /** Location badge showing at most CITY_PREVIEW_LIMIT cities, with an

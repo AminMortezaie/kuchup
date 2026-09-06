@@ -64,7 +64,7 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the worker or a local scrape.
 
-**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`.
+**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
 
 On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. See [fetch-thread-exhaustion-incident.md](../reference/fetch-thread-exhaustion-incident.md).
 

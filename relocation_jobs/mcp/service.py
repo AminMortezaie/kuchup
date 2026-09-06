@@ -15,6 +15,7 @@ from relocation_jobs.catalog.repo import (
     update_job_description_text,
     update_matching_job_fields,
 )
+from relocation_jobs.catalog.service import skip_closed_unengaged
 from relocation_jobs.companies.service import add_company as catalog_add_company
 from relocation_jobs.companies.service import add_manual_jobs as catalog_add_manual_jobs
 from relocation_jobs.companies.service import list_ats_types as catalog_list_ats_types
@@ -467,6 +468,12 @@ def list_company_applications(
         )
         wrong_location = effective_wrong_location(fails_gate=wrong_location, track=track)
         if position_view_from_row(track, wrong_location=wrong_location).bucket == PositionBucket.NOT_FOR_ME:
+            continue
+        if skip_closed_unengaged(
+            job,
+            applied=bool(track.get("applied")),
+            looking_to_apply=bool(track.get("looking_to_apply")),
+        ):
             continue
         catalog_url = (job.get("url") or "").strip()
         idem_key = (

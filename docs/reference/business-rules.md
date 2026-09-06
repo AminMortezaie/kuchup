@@ -6,7 +6,7 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 
 1. **Catalog vs tracking** — Company/job listings live in the catalog DB. Per-user state (applied, rejected, not-for-me, etc.) lives in the user DB. The panel merges both at read time when a user is logged in; the catalog alone is used when no `user_id` is passed.
 
-2. **Scrape never deletes roles** — A re-scrape merges by job idempotency key: new roles are added, existing roles keep their first `fetched` date and title/visa updates, and roles missing from the latest scrape stay in the catalog. Scraping adds; it does not remove. Listing location metadata is still copied from the latest ATS board onto every cached role (including stale kept and location-gate exclusions).
+2. **Scrape never deletes roles** — A re-scrape merges by job idempotency key: new roles are added, existing roles keep their first `fetched` date and title/visa updates, and roles missing from the latest scrape stay in the catalog with `closed_at` set. Scraping adds; it does not remove. Listing location metadata is still copied from the latest ATS board onto every cached role (including stale kept and location-gate exclusions). Public `/jobs/<slug>` pages and sponsored preview lists hide `closed_at`. The panel also hides closed roles from the main board unless the user already applied or marked looking-to-apply. A fetch-worker listing check probes employer URLs and can set `closed_at` after two closed signals.
 
 3. **Tracking survives re-scrape** — User flags are stored in the DB, not in the catalog JSON. Updating catalog job titles via scrape must not clear applied/rejected/etc. on the panel; read path overlays DB state onto catalog jobs.
 

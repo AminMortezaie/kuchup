@@ -56,6 +56,17 @@ def job_is_closed(job: dict) -> bool:
     return bool((job.get("closed_at") or "").strip())
 
 
+def skip_closed_unengaged(
+    job: dict,
+    *,
+    applied: bool = False,
+    looking_to_apply: bool = False,
+) -> bool:
+    if not job_is_closed(job):
+        return False
+    return not applied and not looking_to_apply
+
+
 def job_is_public_listing(job: dict) -> bool:
     if job.get("visa_sponsorship") is True:
         return True

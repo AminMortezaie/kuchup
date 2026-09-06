@@ -99,6 +99,7 @@ class TestMergeMatchingJobs:
         assert merged[0]["closed_at"]
         assert merged[0]["public_slug"] == "acme-gone"
 
+        merged[0]["listing_misses"] = 2
         reopened, preserved, _, stale_again, _ = merge_matching_jobs(
             merged,
             [{"title": "Gone", "url": "https://example.com/j/1?gh_jid=1"}],
@@ -107,3 +108,4 @@ class TestMergeMatchingJobs:
         assert stale_again == 0
         assert reopened[0]["closed_at"] == ""
         assert reopened[0]["public_slug"] == "acme-gone"
+        assert reopened[0]["listing_misses"] == 0

@@ -50,6 +50,10 @@ def test_run_fetch_cycle_skips_when_busy(db, monkeypatch):
         "relocation_jobs.fetch.state.fetch_is_running",
         lambda: True,
     )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.scheduler.run_listing_check_cycle",
+        lambda: {"skipped": True, "reason": "busy"},
+    )
     user_id = resolve_scheduler_user_id()
 
     result = run_fetch_cycle(user_id=user_id)
@@ -80,12 +84,17 @@ def test_run_fetch_cycle_starts_configured_countries(db, monkeypatch):
         "relocation_jobs.fetch.state.wait_for_fetch_thread",
         lambda timeout=None: True,
     )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.scheduler.run_listing_check_cycle",
+        lambda: {"skipped": False, "probed": 0, "closed": 0, "unknown": 0},
+    )
 
     user_id = resolve_scheduler_user_id()
     result = run_fetch_cycle(user_id=user_id)
 
     assert result["skipped"] is False
     assert result["started"] == ["uk", "netherlands"]
+    assert result["listing_check"]["probed"] == 0
     assert started == [
         (user_id, "uk", 2),
         (user_id, "netherlands", 2),
@@ -116,6 +125,10 @@ def test_run_fetch_cycle_abandons_on_country_timeout(db, monkeypatch):
         "relocation_jobs.fetch.state.abandon_fetch_after_timeout",
         fake_abandon,
     )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.scheduler.run_listing_check_cycle",
+        lambda: {"skipped": False, "probed": 0, "closed": 0, "unknown": 0},
+    )
 
     user_id = resolve_scheduler_user_id()
     result = run_fetch_cycle(user_id=user_id)
@@ -124,6 +137,41 @@ def test_run_fetch_cycle_abandons_on_country_timeout(db, monkeypatch):
     assert result["started"] == ["uk"]
     assert len(abandoned) == 1
     assert "timed out" in abandoned[0]["result_line"]
+
+
+def test_run_fetch_cycle_runs_listing_check_first(db, monkeypatch):
+    from relocation_jobs.users.repo import resolve_scheduler_user_id
+
+    del db
+    monkeypatch.setenv("FETCH_SCHEDULE_ENABLED", "1")
+    monkeypatch.setenv("FETCH_SCHEDULE_COUNTRIES", "uk")
+    order: list[str] = []
+
+    def fake_listing_check():
+        order.append("listing")
+        return {"skipped": False, "probed": 3, "closed": 1, "unknown": 0}
+
+    def fake_start_country_fetch(**kwargs):
+        order.append("country")
+        return 1
+
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.scheduler.run_listing_check_cycle",
+        fake_listing_check,
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.scheduler.start_country_fetch",
+        fake_start_country_fetch,
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.state.wait_for_fetch_thread",
+        lambda timeout=None: True,
+    )
+
+    result = run_fetch_cycle(user_id=resolve_scheduler_user_id())
+
+    assert order == ["listing", "country"]
+    assert result["listing_check"]["closed"] == 1
 
 
 def test_run_fetch_cycle_disabled(monkeypatch):

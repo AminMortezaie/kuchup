@@ -10,7 +10,9 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 **Priority:** medium  
 **Context:** Rule 16 routes known wrong-location roles to the not-for-me bucket at panel read time. User-initiated “not for me” writes `job_tracking.not_for_me`. Wrong-location hides were read-time only until the one-shot `scripts/mark_wrong_location_jobs.py` backfill.
 
-**Shipped (2026-07-03):** **Expired** added as a user-chosen hide reason (`not_for_me_reason='expired'`) in the board hide picker — human review when a posting is closed; same tracking bucket and restore flow as other not-for-me reasons. Automatic expiry during fetch is still out of scope.
+**Shipped (2026-07-03):** **Expired** added as a user-chosen hide reason (`not_for_me_reason='expired'`) in the board hide picker — human review when a posting is closed; same tracking bucket and restore flow as other not-for-me reasons.
+
+**Shipped (2026-09-07):** Automatic close is catalog `closed_at` from board merge **and** the fetch-worker listing check (employer URL probe, two misses). It does not write per-user Expired. Public pages 410; the panel hides closed unengaged rows.
 
 ### Problem today
 

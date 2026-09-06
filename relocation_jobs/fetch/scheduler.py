@@ -13,6 +13,7 @@ from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import start_country_fetch
+from relocation_jobs.fetch.listing_check import run_listing_check_cycle
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
 
@@ -77,6 +78,7 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
         return {"skipped": True, "reason": "fetch_busy"}
 
     resolved_user_id = user_id if user_id is not None else resolve_scheduler_user_id()
+    listing_check = _run_listing_check()
     countries = schedule_countries()
     concurrency = schedule_concurrency()
     started: list[str] = []
@@ -145,10 +147,27 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
         "not_started": skipped,
         "countries": list(countries),
         "concurrency": concurrency,
+        "listing_check": listing_check,
     }
     log_event(
         "Scheduled fetch cycle finished",
         total=len(countries),
+    )
+    return result
+
+
+def _run_listing_check() -> dict:
+    try:
+        result = run_listing_check_cycle()
+    except Exception as exc:
+        log_event(f"Listing check failed: {exc}", level=logging.ERROR)
+        return {"skipped": True, "reason": "error", "probed": 0, "closed": 0, "unknown": 0}
+    log_event(
+        "Listing check finished",
+        probed=result.get("probed"),
+        closed=result.get("closed"),
+        unknown=result.get("unknown"),
+        skipped=result.get("skipped"),
     )
     return result
 

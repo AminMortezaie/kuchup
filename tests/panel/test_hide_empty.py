@@ -21,7 +21,15 @@ def test_hide_empty_skips_not_for_me_only():
     ) is True
 
 
-def test_hide_empty_skips_rejected_only():
+def test_hide_empty_skips_closed_only():
+    filters = FlattenFilters(hide_empty=True)
+    assert skip_company_after_jobs(
+        filters=filters,
+        jobs=[],
+        not_for_me_jobs=[],
+        rejected_jobs=[],
+        header={"company_applied": False},
+    ) is True
     filters = FlattenFilters(hide_empty=True)
     assert skip_company_after_jobs(
         filters=filters,
@@ -81,6 +89,31 @@ def test_board_hide_empty_filters_not_for_me_only_company(v2_auth_client, db):
 
     unfiltered = v2_auth_client.get("/api/board?country=uk").get_json()
     assert len(unfiltered["companies"]) == 1
+
+    filtered = v2_auth_client.get("/api/board?country=uk&hide_empty=1").get_json()
+    assert filtered["companies"] == []
+    assert filtered["meta"]["total_companies"] == 0
+
+
+@pytest.mark.fresh_db
+def test_board_hide_empty_filters_closed_only_company(v2_auth_client, db):
+    from pathlib import Path
+
+    from tests.helpers.seed import replace_matching_jobs, seed_country
+
+    fixture = Path(__file__).resolve().parents[1] / "fixtures" / "country_uk_minimal.json"
+    seed_country("uk", fixture)
+
+    replace_matching_jobs("uk", "Acme Backend Ltd", [
+        {
+            "title": "Closed role",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/999",
+            "closed_at": "2026-09-07T00:00:00+00:00",
+        },
+    ])
+
+    unfiltered = v2_auth_client.get("/api/board?country=uk").get_json()
+    assert unfiltered["companies"] == [] or not unfiltered["companies"][0].get("jobs")
 
     filtered = v2_auth_client.get("/api/board?country=uk&hide_empty=1").get_json()
     assert filtered["companies"] == []

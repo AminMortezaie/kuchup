@@ -85,6 +85,50 @@ def test_list_company_applications_excludes_not_for_me(
     assert hidden_url not in urls
 
 
+def test_list_company_applications_excludes_closed_unengaged(
+    seeded_catalog_v2, mcp_documents,
+):
+    from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
+
+    company = get_company("uk", COMPANY)
+    hidden = dict(company["matching_jobs"][1])
+    hidden["closed_at"] = "2026-09-07T00:00:00+00:00"
+    company["matching_jobs"][1] = hidden
+    sync_company_board_to_catalog("uk", company)
+    visible_url = company["matching_jobs"][0]["url"]
+    hidden_url = hidden["url"]
+
+    payload = service.list_company_applications(COUNTRY, COMPANY, user_id=1)
+    urls = {p.url for p in payload.positions}
+    assert visible_url in urls
+    assert hidden_url not in urls
+
+
+def test_list_company_applications_keeps_closed_looking_to_apply(
+    v2_auth_client, seeded_catalog_v2, mcp_documents,
+):
+    from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
+
+    company = get_company("uk", COMPANY)
+    closed = dict(company["matching_jobs"][0])
+    closed["closed_at"] = "2026-09-07T00:00:00+00:00"
+    company["matching_jobs"][0] = closed
+    sync_company_board_to_catalog("uk", company)
+    v2_auth_client.post(
+        "/api/jobs/looking-to-apply",
+        json={
+            "country": COUNTRY,
+            "company": COMPANY,
+            "url": closed["url"],
+            "looking_to_apply": True,
+        },
+    )
+
+    payload = service.list_company_applications(COUNTRY, COMPANY, user_id=1)
+    urls = {p.url for p in payload.positions}
+    assert closed["url"] in urls
+
+
 def test_list_company_applications_resolves_slug(
     seeded_catalog_v2, mcp_documents,
 ):
