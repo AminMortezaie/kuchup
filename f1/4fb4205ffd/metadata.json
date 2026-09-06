@@ -3,11 +3,12 @@
   "checkpoint_id": "f14fb4205ffd",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 12,
+  "checkpoints_count": 16,
   "files_touched": [
     "relocation_jobs/core/ats_constants.py",
     "relocation_jobs/core/ats_detection.py",
     "relocation_jobs/scrape/board.py",
+    "relocation_jobs/scrape/boards/pinpointhq.py",
     "relocation_jobs/scrape/company.py",
     "relocation_jobs/scrape/descriptions.py",
     "relocation_jobs/scrape/job_text.py",
@@ -61,6 +62,13 @@
       "compact_transcript": "/f1/4fb4205ffd/5/transcript.jsonl",
       "content_hash": "/f1/4fb4205ffd/5/content_hash.txt",
       "prompt": "/f1/4fb4205ffd/5/prompt.txt"
+    },
+    {
+      "metadata": "/f1/4fb4205ffd/6/metadata.json",
+      "transcript": "/f1/4fb4205ffd/6/full.jsonl",
+      "compact_transcript": "/f1/4fb4205ffd/6/transcript.jsonl",
+      "content_hash": "/f1/4fb4205ffd/6/content_hash.txt",
+      "prompt": "/f1/4fb4205ffd/6/prompt.txt"
     }
   ]
 }
