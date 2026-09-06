@@ -3,9 +3,12 @@
   "checkpoint_id": "38cb150e5349",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
+    "homepage/app/engineering/[slug]/page.tsx",
     "homepage/app/globals.css",
+    "homepage/components/engineering/OneLoopNotFasterPost.tsx",
+    "homepage/lib/engineering-posts.ts",
     "relocation_jobs/static/homepage/404.html",
     "relocation_jobs/static/homepage/_next/static/1L6TZ7S6guAM8P5X2O2Ci/_buildManifest.js",
     "relocation_jobs/static/homepage/_next/static/1L6TZ7S6guAM8P5X2O2Ci/_ssgManifest.js",
@@ -14,6 +17,8 @@
     "relocation_jobs/static/homepage/engineering.txt",
     "relocation_jobs/static/homepage/engineering/cant-start-new-thread.html",
     "relocation_jobs/static/homepage/engineering/cant-start-new-thread.txt",
+    "relocation_jobs/static/homepage/engineering/one-loop-not-faster.html",
+    "relocation_jobs/static/homepage/engineering/one-loop-not-faster.txt",
     "relocation_jobs/static/homepage/how-it-works.html",
     "relocation_jobs/static/homepage/how-it-works.txt",
     "relocation_jobs/static/homepage/index.html",
@@ -41,13 +46,20 @@
       "compact_transcript": "/38/cb150e5349/0/transcript.jsonl",
       "content_hash": "/38/cb150e5349/0/content_hash.txt",
       "prompt": "/38/cb150e5349/0/prompt.txt"
+    },
+    {
+      "metadata": "/38/cb150e5349/1/metadata.json",
+      "transcript": "/38/cb150e5349/1/full.jsonl",
+      "compact_transcript": "/38/cb150e5349/1/transcript.jsonl",
+      "content_hash": "/38/cb150e5349/1/content_hash.txt",
+      "prompt": "/38/cb150e5349/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 294419,
+    "input_tokens": 452089,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 6293760,
-    "output_tokens": 34429,
-    "api_call_count": 1
+    "cache_read_tokens": 11126528,
+    "output_tokens": 48414,
+    "api_call_count": 2
   }
 }
