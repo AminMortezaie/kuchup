@@ -1,0 +1,102 @@
+### Context for Agent
+
+We are building a "Job Wrapping / Syndication Funnel" for our job board, Kuchup.com. Currently, LinkedIn's web crawler (`LinkedInBot`) is scraping a few text strings from our country landing pages and automatically posting them to our LinkedIn Company Page as "Basic Jobs."
+
+We want to scale this up intentionally. We need to build dynamic, crawler-friendly job detail pages for all 500+ roles in our database, inject the correct `schema.org/JobPosting` JSON-LD so LinkedIn and Google Jobs scrape them, and design an interstitial landing page that captures the inbound traffic from LinkedIn before they bounce to the external employer.
+
+### Technical Requirements
+
+#### 1. Dynamic Job Routes (SSR or SSG)
+
+Create a new dynamic route for individual job postings: `/jobs/[slug]` (e.g., `/jobs/flixbus-senior-backend-engineer`).
+
+* **Crawler Friendly:** This page *must* be Server-Side Rendered (SSR) or Statically Generated (SSG/ISR). Bots like `LinkedInBot` and `Googlebot` will not execute complex client-side JavaScript or authenticate to view this page. The raw HTML must contain the job data on the first load.
+
+#### 2. Schema.org / JSON-LD Injection (Crucial for LinkedIn)
+
+In the `<head>` of the `/jobs/[slug]` route, inject a strictly formatted `schema.org/JobPosting` JSON-LD script.
+
+* **The "Hiring Organization" Hack:** To ensure LinkedIn maps this job to the **Kuchup** LinkedIn Company Page (and not the external employer's page), the `hiringOrganization` must be set to Kuchup. We will clarify the actual employer in the job title and description.
+
+**Implement this exact JSON-LD structure:**
+
+```json
+{
+  "@context": "https://schema.org/",
+  "@type": "JobPosting",
+  "title": "{job.title} at {job.external_company_name} (Visa Sponsorship)",
+  "description": "{job.html_description} <br><br> <strong>Note:</strong> This role is curated by Kuchup. Apply via our workspace to track your application and tailor your CV.",
+  "identifier": {
+    "@type": "PropertyValue",
+    "name": "Kuchup",
+    "value": "{job.internal_id}"
+  },
+  "datePosted": "{job.created_at_iso_format}",
+  "validThrough": "{job.expiration_date_iso_format}",
+  "employmentType": "{job.employment_type}", 
+  "hiringOrganization": {
+    "@type": "Organization",
+    "name": "Kuchup",
+    "sameAs": "https://kuchup.com",
+    "logo": "https://kuchup.com/logo.png"
+  },
+  "jobLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "{job.city}",
+      "addressCountry": "{job.country_code}"
+    }
+  },
+  "applyUrl": "https://kuchup.com/jobs/{job.slug}"
+}
+
+```
+
+#### 3. Interstitial Landing Page UX (Traffic Capture)
+
+When a user clicks "Apply" on the LinkedIn job post, they will be sent to `[https://kuchup.com/jobs/](https://kuchup.com/jobs/)[slug]`.
+**Do not automatically redirect them to the external employer.** We must capture this traffic.
+
+Build the UI for `/jobs/[slug]` with the following hierarchy:
+
+* **Header:** Job Title, Actual Employer (e.g., FlixBus), Location, and a prominent "Visa Sponsorship Supported" badge.
+* **Body:** The job description.
+* **Call to Action Box (Sticky or Prominent):**
+* **Primary Button (High Contrast):** "Track & Prepare Application via Kuchup" -> (Redirects to auth/signup, then drops them into the personalized workspace with this job saved and the Claude/Cursor MCP instructions ready).
+* **Secondary Button (Subtle/Text-link):** "Continue to official {employer} career page" -> (Standard `target="_blank"` link to the ATS, passing through analytics tracking).
+
+
+* **Value Prop block:** Briefly explain what Kuchup is to cold traffic: *"Kuchup is a workspace for international engineers. Track your relocation roles and tailor your CV with our Claude/Cursor MCP integration."*
+
+#### 4. XML Sitemap & Robots.txt
+
+To ensure `LinkedInBot` and `Googlebot` find all 500+ jobs instantly:
+
+1. Create a dynamic route `/server-sitemap-jobs.xml` (or similar depending on the framework).
+2. Query the database for all *active* jobs and generate standard XML sitemap `<url>` nodes pointing to `/jobs/[slug]`.
+3. Add a `<lastmod>` tag based on when the job was added/updated.
+4. Update the root `/robots.txt` to include: `Sitemap: [https://kuchup.com/server-sitemap-jobs.xml](https://kuchup.com/server-sitemap-jobs.xml)`.
+
+#### 5. Expiration / Cleanup Logic
+
+When a job is no longer active (removed from the employer's ATS in your 6-hour refresh cycle):
+
+* Remove it from the `sitemap.xml`.
+* Change the `/jobs/[slug]` route to return a **410 Gone** HTTP status (preferred over 404), or render a UI that says "This role has been closed" with a button to "Browse similar relocation roles in {job.country}".
+
+---
+
+### Next steps for the Agent:
+
+Please confirm you understand this architecture. Start by scaffolding the dynamic `/jobs/[slug]` route and the JSON-LD injection logic based on our current frontend framework.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+write down of refernces to have this as an article on our docs.

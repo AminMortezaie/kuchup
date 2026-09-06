@@ -3,7 +3,7 @@
   "checkpoint_id": "b200944b594a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 57,
+  "checkpoints_count": 60,
   "files_touched": [
     ".env.example",
     "docs/operations/seo-indexing.md",
@@ -12,6 +12,7 @@
     "docs/reference/job-syndication.md",
     "relocation_jobs/catalog/repo.py",
     "relocation_jobs/catalog/schema.py",
+    "relocation_jobs/catalog/service.py",
     "relocation_jobs/core/migrations.py",
     "relocation_jobs/core/slug.py",
     "relocation_jobs/credits/policy.py",
@@ -19,13 +20,18 @@
     "relocation_jobs/positions/__init__.py",
     "relocation_jobs/positions/repo.py",
     "relocation_jobs/positions/service.py",
+    "relocation_jobs/static/job-posting.css",
     "relocation_jobs/users/entitlements.py",
     "relocation_jobs/users/repo.py",
     "relocation_jobs/web/routes/__init__.py",
+    "relocation_jobs/web/routes/job_pages.py",
     "relocation_jobs/web/server.py",
+    "relocation_jobs/web/templates/job_posting.html",
+    "tests/catalog/test_public_jobs.py",
     "tests/helpers/postgres_mock.py",
     "tests/helpers/route_manifest.py",
     "tests/test_entitlements.py",
+    "tests/web/test_job_pages.py",
     "tests/web/test_public_api.py"
   ],
   "sessions": [
@@ -130,6 +136,13 @@
       "compact_transcript": "/b2/00944b594a/14/transcript.jsonl",
       "content_hash": "/b2/00944b594a/14/content_hash.txt",
       "prompt": "/b2/00944b594a/14/prompt.txt"
+    },
+    {
+      "metadata": "/b2/00944b594a/15/metadata.json",
+      "transcript": "/b2/00944b594a/15/full.jsonl",
+      "compact_transcript": "/b2/00944b594a/15/transcript.jsonl",
+      "content_hash": "/b2/00944b594a/15/content_hash.txt",
+      "prompt": "/b2/00944b594a/15/prompt.txt"
     }
   ]
 }
