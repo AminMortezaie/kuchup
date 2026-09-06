@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a5054d7cbdbb",
+  "session_id": "67a2f49e-0193-41de-bc8b-8c17f22a1c0e",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:53:37.340781Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/mcp/ports.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "d66964b6d603",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "duration_ms": 119638298,
+    "turn_count": 7,
+    "context_tokens": 232262,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:53:37.29885Z",
+    "agent_lines": 40,
+    "agent_removed": 0,
+    "human_added": 33,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 73,
+    "total_lines_changed": 73,
+    "agent_percentage": 54.794520547945204,
+    "metric_version": 2
+  }
+}
