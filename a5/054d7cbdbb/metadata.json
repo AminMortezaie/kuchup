@@ -3,7 +3,7 @@
   "checkpoint_id": "a5054d7cbdbb",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "relocation_jobs/mcp/ports.py"
   ],
@@ -21,6 +21,13 @@
       "compact_transcript": "/a5/054d7cbdbb/1/transcript.jsonl",
       "content_hash": "/a5/054d7cbdbb/1/content_hash.txt",
       "prompt": "/a5/054d7cbdbb/1/prompt.txt"
+    },
+    {
+      "metadata": "/a5/054d7cbdbb/2/metadata.json",
+      "transcript": "/a5/054d7cbdbb/2/full.jsonl",
+      "compact_transcript": "/a5/054d7cbdbb/2/transcript.jsonl",
+      "content_hash": "/a5/054d7cbdbb/2/content_hash.txt",
+      "prompt": "/a5/054d7cbdbb/2/prompt.txt"
     }
   ]
 }
