@@ -20,6 +20,7 @@ from relocation_jobs.catalog.serialize import (
     locations_json_from_company,
     parse_sources,
 )
+from relocation_jobs.core.slug import public_job_slug_base
 from relocation_jobs.shared.board_contract import (
     catalog_kind_for_write,
     normalize_catalog_kind,
@@ -71,9 +72,59 @@ def _job_locations_column(job: dict) -> str:
     return "[]"
 
 
+def _closed_at_value(job: dict) -> str:
+    return (job.get("closed_at") or "").strip()
+
+
+def _public_slug_value(job: dict) -> str | None:
+    slug = (job.get("public_slug") or "").strip()
+    return slug or None
+
+
+def _company_name_by_id(conn, company_id: int) -> str:
+    row = conn.execute("SELECT name FROM companies WHERE id = %s", (company_id,)).fetchone()
+    return (_row(row).get("name") or "") if row else ""
+
+
+def _assign_public_slug(conn, job_id: int, company_name: str, title: str) -> None:
+    row = conn.execute(
+        "SELECT public_slug FROM matching_jobs WHERE id = %s",
+        (job_id,),
+    ).fetchone()
+    existing = (_row(row).get("public_slug") or "").strip() if row else ""
+    if existing:
+        return
+    base = public_job_slug_base(company_name, title)
+    taken = conn.execute(
+        "SELECT 1 FROM matching_jobs WHERE public_slug = %s",
+        (base,),
+    ).fetchone()
+    slug = base if taken is None else f"{base}-{job_id}"
+    conn.execute(
+        "UPDATE matching_jobs SET public_slug = %s WHERE id = %s",
+        (slug, job_id),
+    )
+
+
+def _fill_missing_public_slugs(conn, company_id: int) -> None:
+    name = _company_name_by_id(conn, company_id)
+    rows = conn.execute(
+        """
+        SELECT id, title FROM matching_jobs
+        WHERE company_id = %s AND (public_slug IS NULL OR public_slug = '')
+        ORDER BY id
+        """,
+        (company_id,),
+    ).fetchall()
+    for row in rows:
+        data = _row(row)
+        _assign_public_slug(conn, int(data["id"]), name, data.get("title") or "")
+
+
 def _job_row(row) -> dict:
     data = _row(row)
     job = {
+        "id": data.get("id"),
         "title": data.get("title") or "",
         "url": data.get("url") or "",
         "fetched": data.get("fetched") or "",
@@ -81,6 +132,8 @@ def _job_row(row) -> dict:
         "idempotency_key": data.get("idempotency_key") or "",
         "visa_sponsorship": _visa_from_db(data.get("visa_sponsorship")),
         "description_text": (data.get("description_text") or "").strip(),
+        "public_slug": (data.get("public_slug") or "").strip(),
+        "closed_at": (data.get("closed_at") or "").strip(),
     }
     location = (data.get("location") or "").strip()
     if location:
@@ -144,6 +197,8 @@ def _job_row_with_context(row) -> dict:
         job["company_name"] = data["company_name"]
     if data.get("country"):
         job["country"] = data["country"]
+    if data.get("city"):
+        job["city"] = data["city"]
     return job
 
 
@@ -739,6 +794,49 @@ def get_job_by_idempotency_key(idempotency_key: str) -> dict | None:
     return _job_row_with_context(row)
 
 
+def get_public_job_by_slug(slug: str) -> dict | None:
+    key = (slug or "").strip().lower()
+    if not key:
+        return None
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT j.id, j.title, j.url, j.fetched, j.last_seen, j.idempotency_key,
+                   j.visa_sponsorship, j.location, j.locations_json, j.description_text,
+                   j.public_slug, j.closed_at,
+                   c.name AS company_name, c.country, c.city
+            FROM matching_jobs j
+            JOIN companies c ON c.id = j.company_id
+            WHERE j.public_slug = %s
+            LIMIT 1
+            """,
+            (key,),
+        ).fetchone()
+    if row is None:
+        return None
+    job = _job_row_with_context(row)
+    data = _row(row)
+    if data.get("city"):
+        job["city"] = data["city"]
+    return job
+
+
+def list_active_public_job_sitemap_entries() -> list[dict]:
+    with db_read() as conn:
+        rows = conn.execute(
+            """
+            SELECT j.public_slug, j.last_seen, j.fetched
+            FROM matching_jobs j
+            WHERE j.visa_sponsorship = 1
+              AND (j.closed_at IS NULL OR j.closed_at = '')
+              AND j.public_slug IS NOT NULL
+              AND j.public_slug != ''
+            ORDER BY COALESCE(NULLIF(j.last_seen, ''), j.fetched) DESC, j.public_slug
+            """
+        ).fetchall()
+    return [_row(row) for row in rows]
+
+
 def update_job_description_text(idempotency_key: str, description_text: str) -> bool:
     key = (idempotency_key or "").strip()
     if not key:
@@ -922,8 +1020,9 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
             """
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
-                visa_sponsorship, location, locations_json, description_text
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                visa_sponsorship, location, locations_json, description_text,
+                public_slug, closed_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -942,6 +1041,13 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
+                END,
+                closed_at = EXCLUDED.closed_at,
+                public_slug = CASE
+                    WHEN matching_jobs.public_slug IS NOT NULL
+                         AND matching_jobs.public_slug != ''
+                    THEN matching_jobs.public_slug
+                    ELSE EXCLUDED.public_slug
                 END
             """,
             (
@@ -955,6 +1061,8 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                 (job.get("location") or "").strip(),
                 _job_locations_column(job),
                 (job.get("description_text") or "").strip(),
+                _public_slug_value(job),
+                _closed_at_value(job),
             ),
         )
     if board_keys:
@@ -968,6 +1076,7 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
         )
     else:
         conn.execute("DELETE FROM matching_jobs WHERE company_id = %s", (company_id,))
+    _fill_missing_public_slugs(conn, company_id)
 
 
 def _upsert_country_meta_row(conn, country_key: str, meta: dict) -> None:
@@ -1125,6 +1234,8 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             (job.get("location") or "").strip(),
             job_locations_json(job),
             (job.get("description_text") or "").strip(),
+            _public_slug_value(job),
+            _closed_at_value(job),
         ))
 
     for row in job_rows:
@@ -1132,8 +1243,9 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             """
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
-                visa_sponsorship, location, locations_json, description_text
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                visa_sponsorship, location, locations_json, description_text,
+                public_slug, closed_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -1152,6 +1264,13 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
+                END,
+                closed_at = EXCLUDED.closed_at,
+                public_slug = CASE
+                    WHEN matching_jobs.public_slug IS NOT NULL
+                         AND matching_jobs.public_slug != ''
+                    THEN matching_jobs.public_slug
+                    ELSE EXCLUDED.public_slug
                 END
             """,
             row,
@@ -1171,6 +1290,7 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             "DELETE FROM matching_jobs WHERE company_id = %s",
             (company_id,),
         )
+    _fill_missing_public_slugs(conn, company_id)
 
 
 def upsert_company_and_jobs(
@@ -1213,8 +1333,9 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
             """
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
-                visa_sponsorship, location, locations_json, description_text
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                visa_sponsorship, location, locations_json, description_text,
+                public_slug, closed_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -1232,6 +1353,13 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
+                END,
+                closed_at = EXCLUDED.closed_at,
+                public_slug = CASE
+                    WHEN matching_jobs.public_slug IS NOT NULL
+                         AND matching_jobs.public_slug != ''
+                    THEN matching_jobs.public_slug
+                    ELSE EXCLUDED.public_slug
                 END
             """,
             (
@@ -1245,9 +1373,12 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                 (job.get("location") or "").strip(),
                 job_locations_json(job),
                 (job.get("description_text") or "").strip(),
+                _public_slug_value(job),
+                _closed_at_value(job),
             ),
         )
         touched += 1
+    _fill_missing_public_slugs(conn, company_id)
     return touched
 
 
@@ -1461,8 +1592,9 @@ def insert_jobs(country_key: str, company_name: str, jobs: list[dict]) -> int:
                 """
                 INSERT INTO matching_jobs (
                     company_id, idempotency_key, title, url, fetched, last_seen,
-                    visa_sponsorship, location, locations_json, description_text
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    visa_sponsorship, location, locations_json, description_text,
+                    public_slug, closed_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT DO NOTHING
                 RETURNING id
                 """,
@@ -1476,10 +1608,13 @@ def insert_jobs(country_key: str, company_name: str, jobs: list[dict]) -> int:
                     (job.get("location") or "").strip(),
                     job_locations_json(job),
                     (job.get("description_text") or "").strip(),
+                    _public_slug_value(job),
+                    _closed_at_value(job),
                 ),
             )
             if cur.fetchone() is not None:
                 inserted += 1
+        _fill_missing_public_slugs(conn, company_id)
     if inserted:
         invalidate_country_cache(country_key)
     return inserted

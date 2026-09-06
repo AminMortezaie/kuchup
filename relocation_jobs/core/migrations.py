@@ -123,6 +123,27 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "mcp_interview_notes_v1", _migrate_mcp_interview_notes_v1)
     run_migration_once(conn, "mcp_oauth_remote_v1", _ensure_mcp_oauth_remote_tables)
     run_migration_once(conn, "location_gate_override_v1", _apply_location_gate_override_column)
+    run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
+
+
+def _ensure_public_job_saves_table(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS public_job_saves (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            job_id INTEGER NOT NULL,
+            slug TEXT NOT NULL DEFAULT '',
+            saved_on TEXT NOT NULL,
+            PRIMARY KEY (user_id, job_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_public_job_saves_user_day
+        ON public_job_saves (user_id, saved_on)
+        """
+    )
 
 
 def _migrate_fetch_runs_live_state(conn) -> None:

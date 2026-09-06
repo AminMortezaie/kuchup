@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if closed %}Closed: {{ title }} at {{ company }}{% else %}{{ title }} at {{ company }} (Visa Sponsorship){% endif %} | Kuchup</title>
+  <meta name="description" content="{% if closed %}This {{ title }} role at {{ company }} is no longer open. Browse similar relocation roles.{% else %}{{ title }} at {{ company }}. Track and prepare your application in Kuchup.{% endif %}">
+  <link rel="canonical" href="{{ canonical }}">
+  {% if closed %}
+  <meta name="robots" content="noindex, follow">
+  {% else %}
+  <meta name="robots" content="index, follow">
+  {% endif %}
+  <meta property="og:title" content="{{ title }} at {{ company }}">
+  <meta property="og:url" content="{{ canonical }}">
+  <meta property="og:image" content="https://kuchup.com/og-default.png">
+  <link rel="icon" href="/static/icons/kuchup-bird.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/design-tokens.css">
+  <link rel="stylesheet" href="/static/job-posting.css">
+  {% if json_ld %}
+  <script type="application/ld+json">{{ json_ld | safe }}</script>
+  {% endif %}
+</head>
+<body>
+  <div class="jp-shell">
+    <header class="jp-nav">
+      <a class="jp-brand" href="/">
+        <img src="/static/icons/kuchup-bird.svg" width="28" height="28" alt="">
+        <span>Kuchup</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="/mcp">MCP</a>
+        <a href="/how-it-works">How it works</a>
+        <a href="/pricing">Pricing</a>
+        <a class="jp-nav-signin" href="/panel">Sign in</a>
+      </nav>
+    </header>
+
+    <main class="jp-main">
+      {% if closed %}
+      <p class="jp-kicker">Role closed</p>
+      <h1>{{ title }}</h1>
+      <p class="jp-meta">{{ company }}{% if location_label %} · {{ location_label }}{% endif %}</p>
+      <p class="jp-closed">This role has been closed. The employer is no longer listing it on their career page.</p>
+      <p>
+        <a class="jp-btn jp-btn-primary" href="{{ country_href }}">Browse similar relocation roles{% if country_label %} in {{ country_label }}{% endif %}</a>
+      </p>
+      {% else %}
+      <p class="jp-kicker">Visa-sponsored role</p>
+      <h1>{{ title }}</h1>
+      <p class="jp-meta">
+        <span>{{ company }}</span>
+        {% if location_label %}<span>{{ location_label }}</span>{% endif %}
+        {% if visa %}<span class="jp-badge">Visa sponsorship supported</span>{% endif %}
+      </p>
+
+      <aside class="jp-cta" aria-label="Apply with Kuchup">
+        <a class="jp-btn jp-btn-primary" href="{{ primary_href }}">{{ primary_label }}</a>
+        <a class="jp-employer" href="{{ employer_href }}" rel="nofollow">Continue to the official {{ company }} career page</a>
+        {% if save_blocked %}
+        <p class="jp-value">You've used today's free saves. Buy a credit pack or Full Access to track more roles today. The official career page stays available above.</p>
+        {% else %}
+        <p class="jp-value">Kuchup is a workspace for international engineers. Track this relocation role and tailor your CV with Claude/Cursor MCP. Free includes 30 credits a month and 20 MCP writes a day; add a credit pack when you need more matched roles.</p>
+        {% endif %}
+      </aside>
+
+      <article class="jp-body">
+        {% if description_html %}
+        {{ description_html | safe }}
+        {% else %}
+        <p>Full description is available on the employer career page. Save this role in Kuchup to track it and prepare your application.</p>
+        {% endif %}
+      </article>
+      {% endif %}
+    </main>
+
+    <footer class="jp-foot">
+      <a href="/">Home</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/mcp">MCP</a>
+    </footer>
+  </div>
+</body>
+</html>

@@ -155,6 +155,16 @@ def set_job_looking_to_apply(
     return _validated(_with_catalog_url(result, job.get("url", "")))
 
 
+def job_is_looking_to_apply(
+    country_key: str,
+    company_name: str,
+    job_url: str,
+    *,
+    user_id: int,
+) -> bool:
+    return repo.is_looking_to_apply(user_id, country_key, company_name, job_url)
+
+
 def set_job_seen(
     country_key: str,
     company_name: str,

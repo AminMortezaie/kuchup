@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from relocation_jobs.core.db import db_transaction
 from relocation_jobs.core.migrations import run_migration_once
+from relocation_jobs.core.slug import public_job_slug_base
 
 def convert_text_to_jsonb(conn, table: str, column: str) -> None:
     """Safely convert TEXT JSON column to JSONB if not already done."""
@@ -96,6 +97,7 @@ def init_catalog_schema() -> None:
         run_migration_once(conn, "custom_countries_json_import_v1", migrate_custom_countries_from_json)
         run_migration_once(conn, "catalog_kind_v1", _migrate_catalog_kind_v1)
         run_migration_once(conn, "remotedxb_to_remote_dxb_v1", _migrate_remotedxb_to_remote_dxb_v1)
+        run_migration_once(conn, "catalog_public_job_syndication_v1", _migrate_public_job_syndication_v1)
 
 
 def _ensure_job_description_column(conn) -> None:
@@ -135,6 +137,53 @@ def _ensure_job_columns(conn) -> None:
     conn.execute(
         "ALTER TABLE matching_jobs ADD COLUMN IF NOT EXISTS description_text TEXT NOT NULL DEFAULT ''"
     )
+
+
+def _migrate_public_job_syndication_v1(conn) -> None:
+    conn.execute("ALTER TABLE matching_jobs ADD COLUMN IF NOT EXISTS public_slug TEXT")
+    conn.execute(
+        "ALTER TABLE matching_jobs ADD COLUMN IF NOT EXISTS closed_at TEXT NOT NULL DEFAULT ''"
+    )
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_matching_jobs_public_slug
+        ON matching_jobs(public_slug)
+        WHERE public_slug IS NOT NULL AND public_slug != ''
+        """
+    )
+    _backfill_public_job_slugs(conn)
+
+
+def _backfill_public_job_slugs(conn) -> None:
+    taken = {
+        (dict(row).get("public_slug") or "").strip()
+        for row in conn.execute(
+            """
+            SELECT public_slug FROM matching_jobs
+            WHERE public_slug IS NOT NULL AND public_slug != ''
+            """
+        ).fetchall()
+        if (dict(row).get("public_slug") or "").strip()
+    }
+    rows = conn.execute(
+        """
+        SELECT j.id, j.title, c.name
+        FROM matching_jobs j
+        JOIN companies c ON c.id = j.company_id
+        WHERE j.visa_sponsorship = 1
+          AND (j.public_slug IS NULL OR j.public_slug = '')
+        """
+    ).fetchall()
+    for row in rows:
+        data = dict(row) if not isinstance(row, dict) else row
+        job_id = int(data["id"])
+        base = public_job_slug_base(data.get("name") or "", data.get("title") or "")
+        slug = base if base not in taken else f"{base}-{job_id}"
+        conn.execute(
+            "UPDATE matching_jobs SET public_slug = %s WHERE id = %s",
+            (slug, job_id),
+        )
+        taken.add(slug)
 
 
 def _migrate_catalog_kind_v1(conn) -> None:

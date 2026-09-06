@@ -13,6 +13,8 @@ def test_entitlement_status_free_defaults(db):
     assert status["board_company_cap"] == entitlements.free_board_company_cap()
     assert status["mcp_daily_limit"] == entitlements.free_mcp_daily_requests()
     assert status["mcp_daily_remaining"] == status["mcp_daily_limit"]
+    assert status["public_job_saves_used"] == 0
+    assert status["public_job_saves_remaining"] == entitlements.free_public_job_saves_per_day()
 
 
 def test_set_plan_full_removes_board_cap(db):
@@ -72,3 +74,44 @@ def test_auth_status_includes_entitlements(auth_client, db):
     assert status["user"]["is_admin"] is True
     assert "entitlements" in status
     assert status["entitlements"]["plan"] in ("free", "full", "grandfathered")
+    assert "public_job_saves_used" in status["entitlements"]
+    assert status["entitlements"]["public_job_saves_remaining"] is None
+
+
+def test_consume_public_job_save_three_free_then_needs_credit(db):
+    user = create_user("pubsave", email="pubsave@example.com", google_sub="sub-pubsave")
+    uid = int(user["id"])
+    for job_id in (11, 12, 13):
+        result = entitlements.consume_public_job_save(uid, job_id, f"slug-{job_id}")
+        assert result["ok"] is True
+        assert result["needs_credit"] is False
+    fourth = entitlements.consume_public_job_save(uid, 14, "slug-14")
+    assert fourth["ok"] is False
+    assert fourth["needs_credit"] is True
+    status = entitlements.entitlement_status(uid)
+    assert status["public_job_saves_used"] == 3
+    assert status["public_job_saves_remaining"] == 0
+
+
+def test_consume_public_job_save_same_job_is_duplicate(db):
+    user = create_user("dupsave", email="dupsave@example.com", google_sub="sub-dupsave")
+    uid = int(user["id"])
+    first = entitlements.consume_public_job_save(uid, 21, "same-slug")
+    second = entitlements.consume_public_job_save(uid, 21, "same-slug")
+    assert first["duplicate"] is False
+    assert second["ok"] is True
+    assert second["duplicate"] is True
+    assert entitlements.entitlement_status(uid)["public_job_saves_used"] == 1
+
+
+def test_consume_public_job_save_full_plan_unlimited(db):
+    user = create_user("fullsave", email="fullsave@example.com", google_sub="sub-fullsave")
+    uid = int(user["id"])
+    entitlements.set_plan(uid, "full")
+    for job_id in (31, 32, 33, 34):
+        result = entitlements.consume_public_job_save(uid, job_id, f"full-{job_id}")
+        assert result["ok"] is True
+        assert result["needs_credit"] is False
+    status = entitlements.entitlement_status(uid)
+    assert status["public_job_saves_used"] == 4
+    assert status["public_job_saves_remaining"] is None

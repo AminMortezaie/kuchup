@@ -10,6 +10,11 @@ PANEL_PAGE_ROUTES: dict[str, frozenset[str]] = {
     "/company/<country>/<path:company_slug>": frozenset({"GET"}),
     "/robots.txt": frozenset({"GET"}),
     "/sitemap.xml": frozenset({"GET"}),
+    "/sitemap-jobs.xml": frozenset({"GET"}),
+    "/logo.png": frozenset({"GET"}),
+    "/jobs/<slug>": frozenset({"GET"}),
+    "/jobs/<slug>/save": frozenset({"GET"}),
+    "/jobs/<slug>/employer": frozenset({"GET"}),
 }
 
 PANEL_API_ROUTES: dict[str, frozenset[str]] = {

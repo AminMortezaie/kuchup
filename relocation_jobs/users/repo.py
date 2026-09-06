@@ -551,6 +551,68 @@ def admin_tracking_totals() -> dict:
     }
 
 
+def count_public_job_saves_on(user_id: int, saved_on: str) -> int:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM public_job_saves
+            WHERE user_id = %s AND saved_on = %s
+            """,
+            (user_id, saved_on),
+        ).fetchone()
+    return int((row or {}).get("n") or 0)
+
+
+def record_public_job_save(user_id: int, job_id: int, slug: str, saved_on: str) -> None:
+    with db_transaction() as conn:
+        conn.execute(
+            """
+            INSERT INTO public_job_saves (user_id, job_id, slug, saved_on)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (user_id, job_id) DO NOTHING
+            """,
+            (user_id, job_id, (slug or "").strip(), saved_on),
+        )
+
+
+def claim_public_job_save(
+    user_id: int,
+    job_id: int,
+    slug: str,
+    *,
+    unlimited: bool,
+    free_limit: int,
+    saved_on: str,
+) -> str:
+    clean_slug = (slug or "").strip()
+    with db_transaction() as conn:
+        conn.execute("UPDATE users SET id = id WHERE id = %s", (user_id,))
+        existing = conn.execute(
+            "SELECT 1 FROM public_job_saves WHERE user_id = %s AND job_id = %s",
+            (user_id, job_id),
+        ).fetchone()
+        if existing:
+            return "duplicate"
+        if not unlimited:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM public_job_saves
+                WHERE user_id = %s AND saved_on = %s
+                """,
+                (user_id, saved_on),
+            ).fetchone()
+            if int((row or {}).get("n") or 0) >= free_limit:
+                return "needs_credit"
+        conn.execute(
+            """
+            INSERT INTO public_job_saves (user_id, job_id, slug, saved_on)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (user_id, job_id, clean_slug, saved_on),
+        )
+    return "unlimited" if unlimited else "free"
+
+
 def rename_user(user_id: int, username: str) -> bool:
     username = username.strip()
     with db_transaction() as conn:

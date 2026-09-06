@@ -11,6 +11,7 @@ OPERATION_COSTS: dict[CreditOperation, int] = {
     CreditOperation.JOB_DESCRIPTION_FETCH: 1,
     CreditOperation.APPLICATION_PACK: 5,
     CreditOperation.COMPANY_REFRESH: 5,
+    CreditOperation.PUBLIC_JOB_SAVE: 1,
 }
 
 PACKS: tuple[CreditPack, ...] = (

@@ -1,4 +1,5 @@
 from relocation_jobs.positions.service import (
+    job_is_looking_to_apply,
     reconcile_wrong_location_hides,
     set_job_applied,
     set_job_ats_score,
@@ -33,6 +34,7 @@ __all__ = [
     "PositionView",
     "TrackingFlags",
     "derive_bucket",
+    "job_is_looking_to_apply",
     "orphan_reinject_eligible",
     "passes_position_filters",
     "position_view_from_row",

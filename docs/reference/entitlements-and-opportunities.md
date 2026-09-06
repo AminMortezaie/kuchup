@@ -48,8 +48,21 @@ Free position capacity is assignment-based:
   they are labelled as absent from the latest fetch instead of disappearing.
 
 - Admin grant: `PATCH /api/admin/users/<id>/plan`
-- `GET /api/auth/status` includes `entitlements` (`plan`, `board_company_cap`, `jobs_per_company`, `total_position_budget`, `mcp_daily_*`)
+- `GET /api/auth/status` includes `entitlements` (`plan`, `board_company_cap`, `jobs_per_company`, `total_position_budget`, `mcp_daily_*`, `public_job_saves_used`, `public_job_saves_remaining`)
 - MCP write/render tools call `consume_mcp_quota` ([`users/entitlements.py`](../../relocation_jobs/users/entitlements.py)).
+
+## Public job-page saves (LinkedIn wrapping funnel)
+
+Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primary CTA saves the role into looking-to-apply; the official employer link is never paywalled.
+
+| Plan | Unique `/jobs/<slug>/save` |
+|------|----------------------------|
+| `free` | First **3** unique jobs per UTC day are free (`FREE_PUBLIC_JOB_SAVES_PER_DAY`). Further unique saves spend **1** credit (`PUBLIC_JOB_SAVE`). Empty wallet stays on the job page with a pack / Full Access CTA. |
+| `full` / `grandfathered` / admin | Unlimited; no credit spend |
+
+- Re-saving a job already in looking-to-apply, or already recorded on the public-save ledger, does not count again.
+- Board/API `looking_to_apply` stays free and does not increment the public-save counter.
+- Credits are the existing wallet (30 monthly promo, then purchased packs). Board replacement-credit rules are unchanged.
 
 ## Personalized board reads (Phase D — shipped)
 

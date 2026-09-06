@@ -18,6 +18,7 @@ class CreditOperation(str, Enum):
     JOB_DESCRIPTION_FETCH = "job_description_fetch"
     APPLICATION_PACK = "application_pack"
     COMPANY_REFRESH = "company_refresh"
+    PUBLIC_JOB_SAVE = "public_job_save"
 
 
 @dataclass(frozen=True)

@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import os
-from datetime import date
+from datetime import date, datetime, timezone
 
 from relocation_jobs.broadcast.types import CapacityLimits
-from relocation_jobs.users.repo import get_user_by_id, is_user_admin, update_user_mcp_quota, update_user_plan
+from relocation_jobs.users.repo import (
+    claim_public_job_save,
+    count_public_job_saves_on,
+    get_user_by_id,
+    is_user_admin,
+    record_public_job_save,
+    update_user_mcp_quota,
+    update_user_plan,
+)
 
 PLANS = frozenset({"free", "full", "grandfathered"})
 
@@ -13,6 +21,7 @@ _DEFAULT_FREE_JOBS_PER_COMPANY = 3
 _DEFAULT_FREE_TOTAL_POSITION_BUDGET = 30
 _DEFAULT_FREE_MCP_DAILY = 20
 _DEFAULT_FULL_MCP_DAILY = 500
+_DEFAULT_FREE_PUBLIC_JOB_SAVES_PER_DAY = 3
 
 
 def free_board_company_cap() -> int:
@@ -55,6 +64,30 @@ def full_mcp_daily_requests() -> int:
         return max(0, int(raw))
     except ValueError:
         return _DEFAULT_FULL_MCP_DAILY
+
+
+def free_public_job_saves_per_day() -> int:
+    raw = (
+        os.environ.get("FREE_PUBLIC_JOB_SAVES_PER_DAY")
+        or str(_DEFAULT_FREE_PUBLIC_JOB_SAVES_PER_DAY)
+    ).strip()
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return _DEFAULT_FREE_PUBLIC_JOB_SAVES_PER_DAY
+
+
+def _utc_today() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _public_job_save_fields(user: dict) -> dict:
+    uid = int(user["id"])
+    used = count_public_job_saves_on(uid, _utc_today())
+    if plan_is_full_access(user.get("plan"), user_id=uid):
+        return {"public_job_saves_used": used, "public_job_saves_remaining": None}
+    remaining = max(0, free_public_job_saves_per_day() - used)
+    return {"public_job_saves_used": used, "public_job_saves_remaining": remaining}
 
 
 def normalize_plan(plan: str | None) -> str:
@@ -116,6 +149,7 @@ def entitlement_status(user_id: int) -> dict:
         "mcp_daily_used": used,
         "mcp_daily_remaining": remaining,
         "is_admin": is_user_admin(user_id),
+        **_public_job_save_fields(user),
     }
 
 
@@ -143,3 +177,29 @@ def consume_mcp_quota(user_id: int) -> dict:
     used += 1
     update_user_mcp_quota(user_id, quota_date=today, quota_used=used)
     return entitlement_status(user_id)
+
+
+def consume_public_job_save(user_id: int, job_id: int, slug: str) -> dict:
+    user = get_user_by_id(user_id)
+    if not user:
+        raise LookupError("User not found")
+    status = claim_public_job_save(
+        user_id,
+        job_id,
+        slug,
+        unlimited=plan_is_full_access(user.get("plan"), user_id=user_id),
+        free_limit=free_public_job_saves_per_day(),
+        saved_on=_utc_today(),
+    )
+    if status == "needs_credit":
+        return {"ok": False, "needs_credit": True, "charged": False, "duplicate": False}
+    return {
+        "ok": True,
+        "needs_credit": False,
+        "charged": False,
+        "duplicate": status == "duplicate",
+    }
+
+
+def record_credited_public_job_save(user_id: int, job_id: int, slug: str) -> None:
+    record_public_job_save(user_id, job_id, slug, saved_on=_utc_today())

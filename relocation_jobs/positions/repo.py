@@ -332,6 +332,28 @@ def set_looking_to_apply(
     )
 
 
+def is_looking_to_apply(
+    user_id: int,
+    country: str,
+    company_name: str,
+    job_url: str,
+) -> bool:
+    canonical_url = _normalize_url(job_url)
+    conn = get_connection()
+    for url in tracking_urls_for_job(conn, user_id, country, company_name, canonical_url):
+        row = conn.execute(
+            """
+            SELECT looking_to_apply FROM job_tracking
+            WHERE user_id = %s AND country = %s AND company_name = %s AND job_url = %s
+            """,
+            (user_id, country, company_name, url),
+        ).fetchone()
+        data = dict(row) if row else {}
+        if int(data.get("looking_to_apply") or 0):
+            return True
+    return False
+
+
 def set_seen(
     user_id: int,
     country: str,

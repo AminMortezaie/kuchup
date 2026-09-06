@@ -4,7 +4,7 @@
 
 How this panel separates **shared job data** from **per-user state** — a common pattern in job boards, CRMs, and any product where many users see the same reference records but act on them independently.
 
-Related: [architecture.md](architecture.md) (package layout), [schemas.md](schemas.md) (catalog shapes), [business-rules.md](business-rules.md) (job buckets), [board.md](board.md) (read path).
+Related: [architecture.md](architecture.md) (package layout), [schemas.md](schemas.md) (catalog shapes), [business-rules.md](business-rules.md) (job buckets), [board.md](board.md) (read path), [job-syndication.md](job-syndication.md) (public `/jobs/<slug>` pages).
 
 ---
 
