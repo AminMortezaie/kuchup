@@ -3,9 +3,11 @@
   "checkpoint_id": "3ee1548a3559",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 25,
+  "checkpoints_count": 42,
   "files_touched": [
     "docs/reference/fetch-scheduler-timeout-practices.md",
+    "docs/reference/fetch-thread-exhaustion-incident.md",
+    "relocation_jobs/core/log.py",
     "relocation_jobs/fetch/country_runner.py",
     "relocation_jobs/fetch/log.py",
     "relocation_jobs/fetch/repo.py",
@@ -94,13 +96,20 @@
       "compact_transcript": "/3e/e1548a3559/9/transcript.jsonl",
       "content_hash": "/3e/e1548a3559/9/content_hash.txt",
       "prompt": "/3e/e1548a3559/9/prompt.txt"
+    },
+    {
+      "metadata": "/3e/e1548a3559/10/metadata.json",
+      "transcript": "/3e/e1548a3559/10/full.jsonl",
+      "compact_transcript": "/3e/e1548a3559/10/transcript.jsonl",
+      "content_hash": "/3e/e1548a3559/10/content_hash.txt",
+      "prompt": "/3e/e1548a3559/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2371194,
+    "input_tokens": 3644001,
     "cache_creation_tokens": 116813,
-    "cache_read_tokens": 41792406,
-    "output_tokens": 235774,
-    "api_call_count": 25
+    "cache_read_tokens": 60802454,
+    "output_tokens": 326220,
+    "api_call_count": 42
   }
 }
