@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3ee1548a3559",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/reference/fetch-scheduler-timeout-practices.md",
+    "relocation_jobs/fetch/country_runner.py",
+    "relocation_jobs/fetch/log.py",
+    "relocation_jobs/fetch/repo.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/fetch/scheduler.py",
+    "relocation_jobs/fetch/service.py",
+    "relocation_jobs/fetch/state.py",
+    "relocation_jobs/fetch/types.py",
+    "requirements.txt",
+    "scripts/mcp_http_server.py",
+    "scripts/mcp_server.py",
+    "scripts/opportunity_sqs_worker.py",
+    "tests/fetch/test_country_runner_timeout.py",
+    "tests/fetch/test_fetch_state_stale.py",
+    "tests/fetch/test_log.py",
+    "tests/fetch/test_scheduler.py",
+    "tests/fetch/test_service.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3e/e1548a3559/0/metadata.json",
+      "transcript": "/3e/e1548a3559/0/full.jsonl",
+      "compact_transcript": "/3e/e1548a3559/0/transcript.jsonl",
+      "content_hash": "/3e/e1548a3559/0/content_hash.txt",
+      "prompt": "/3e/e1548a3559/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 43600,
+    "cache_read_tokens": 170380,
+    "output_tokens": 1130,
+    "api_call_count": 2
+  }
+}
