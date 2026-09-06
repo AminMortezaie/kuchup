@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b200944b594a",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".env.example",
+    "relocation_jobs/web/server.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b2/00944b594a/0/metadata.json",
+      "transcript": "/b2/00944b594a/0/full.jsonl",
+      "compact_transcript": "/b2/00944b594a/0/transcript.jsonl",
+      "content_hash": "/b2/00944b594a/0/content_hash.txt",
+      "prompt": "/b2/00944b594a/0/prompt.txt"
+    }
+  ]
+}
