@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   description:
     "Find visa-sponsored software jobs in Europe. Search relocation-friendly roles in Germany, Netherlands, UK, Portugal, and Ireland — then track and tailor applications.",
   alternates: {
-    canonical: "/",
+    canonical: `${SITE}/`,
   },
   icons: {
     icon: [{ url: "/static/icons/kuchup-bird.svg", type: "image/svg+xml" }],
@@ -89,14 +89,6 @@ export default function RootLayout({
         url: `${SITE}/`,
         description:
           "Find visa-sponsored software engineering roles in Germany, Netherlands, UK, Portugal, and Ireland.",
-        potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: `${SITE}/?q={search_term_string}`,
-          },
-          "query-input": "required name=search_term_string",
-        },
       },
       {
         "@type": "SoftwareApplication",

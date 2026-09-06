@@ -24,14 +24,14 @@ const STEPS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: "How It Works",
+  title: "How Kuchup finds visa-sponsored software jobs in Europe",
   description:
-    "How Kuchup tracks visa-friendly software jobs in Europe: public preview, signed-in board tracking, and Claude/Cursor MCP for per-role CV prep.",
+    "How Kuchup finds visa-sponsored software jobs in Europe: public preview from company career pages, signed-in board tracking, and Claude/Cursor MCP for per-role CV prep.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How It Works | Relocation Jobs",
+    title: "How Kuchup finds visa-sponsored software jobs in Europe | Relocation Jobs",
     description:
-      "Search the public preview, then sign in to track applications and prepare CVs with MCP across major European hubs.",
+      "See visa-sponsored software jobs from employer career pages, then sign in to track applications and prepare CVs with MCP.",
     url: "https://kuchup.com/how-it-works",
     siteName: "Relocation Jobs",
     type: "website",
@@ -40,15 +40,15 @@ export const metadata: Metadata = {
         url: "https://kuchup.com/og-default.png",
         width: 1200,
         height: 630,
-        alt: "How Kuchup works",
+        alt: "How Kuchup finds visa-sponsored software jobs in Europe",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "How It Works | Relocation Jobs",
+    title: "How Kuchup finds visa-sponsored software jobs in Europe | Relocation Jobs",
     description:
-      "Search the public preview, then sign in to track applications and prepare CVs with MCP across major European hubs.",
+      "See visa-sponsored software jobs from employer career pages, then sign in to track applications and prepare CVs with MCP.",
     images: ["https://kuchup.com/og-default.png"],
   },
 };

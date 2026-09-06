@@ -22,6 +22,15 @@
   --color-accent-ink: #082743;
   --color-focus: #ff6b35;
 
+  /* Status primitives — chip-scale meaning, not a second brand accent */
+  --color-status-sky: oklch(48% 0.12 240);
+  --color-status-green: oklch(44% 0.13 150);
+  --color-status-violet: oklch(46% 0.11 295);
+  --color-status-crimson: oklch(48% 0.16 20);
+  --color-status-ochre: oklch(55% 0.13 80);
+  --color-status-slate: oklch(46% 0.03 250);
+  --color-status-teal: oklch(45% 0.08 195);
+
   /* Base (panel / marketing shared names) */
   --bg-base: var(--color-paper);
   --bg-surface: var(--color-paper);
@@ -31,17 +40,17 @@
   --border-subtle: #d1e0e9;
   --border-hover: #7fa2bb;
 
-  /* Orange leads; logo navy handles every secondary brand role */
+  /* Orange leads brand chrome; status hues carry workbench meaning */
   --accent-primary: var(--color-accent);
   --accent-primary-hover: var(--color-accent-hover);
-  --accent-blue: var(--color-ink-2);
-  --accent-purple: var(--color-ink);
-  --accent-green: oklch(42% 0.09 145);
+  --accent-blue: var(--color-status-sky);
+  --accent-purple: var(--color-status-violet);
+  --accent-green: var(--color-status-green);
 
   --accent-primary-soft: var(--color-accent-soft);
-  --accent-blue-soft: color-mix(in srgb, var(--color-ink-2) 12%, var(--color-paper));
-  --accent-purple-soft: color-mix(in srgb, var(--color-rule) 12%, var(--color-paper));
-  --accent-green-soft: color-mix(in srgb, var(--accent-green) 14%, var(--color-paper));
+  --accent-blue-soft: color-mix(in srgb, var(--color-status-sky) 14%, var(--color-paper));
+  --accent-purple-soft: color-mix(in srgb, var(--color-status-violet) 14%, var(--color-paper));
+  --accent-green-soft: color-mix(in srgb, var(--color-status-green) 14%, var(--color-paper));
 
   /* Text */
   --text-primary: var(--color-ink);
@@ -98,18 +107,26 @@
   --accent: var(--accent-primary);
   --accent-hover: var(--accent-primary-hover);
   --accent-soft: var(--accent-primary-soft);
-  --success: var(--accent-green);
-  --success-soft: var(--accent-green-soft);
-  --warn: oklch(55% 0.14 55);
-  --warn-soft: color-mix(in srgb, var(--warn) 14%, var(--color-paper));
-  --danger: oklch(48% 0.14 25);
-  --danger-soft: color-mix(in srgb, var(--danger) 14%, var(--color-paper));
-  --referral: var(--color-ink-2);
-  --referral-soft: var(--accent-blue-soft);
-  --visa: var(--color-rule);
-  --visa-soft: var(--accent-purple-soft);
-  --brand-sky: var(--color-ink-2);
-  --brand-sky-soft: var(--accent-blue-soft);
+  --intent: var(--color-status-sky);
+  --intent-soft: color-mix(in srgb, var(--color-status-sky) 14%, var(--color-paper));
+  --success: var(--color-status-green);
+  --success-soft: color-mix(in srgb, var(--color-status-green) 14%, var(--color-paper));
+  --pending: var(--color-status-violet);
+  --pending-soft: color-mix(in srgb, var(--color-status-violet) 14%, var(--color-paper));
+  --danger: var(--color-status-crimson);
+  --danger-soft: color-mix(in srgb, var(--color-status-crimson) 14%, var(--color-paper));
+  --dismiss: var(--color-status-ochre);
+  --dismiss-soft: color-mix(in srgb, var(--color-status-ochre) 14%, var(--color-paper));
+  --memory: var(--color-status-slate);
+  --memory-soft: color-mix(in srgb, var(--color-status-slate) 14%, var(--color-paper));
+  --warn: var(--dismiss);
+  --warn-soft: var(--dismiss-soft);
+  --referral: var(--pending);
+  --referral-soft: var(--pending-soft);
+  --visa: var(--color-status-teal);
+  --visa-soft: color-mix(in srgb, var(--color-status-teal) 14%, var(--color-paper));
+  --brand-sky: var(--color-status-sky);
+  --brand-sky-soft: var(--intent-soft);
   --brand-gradient: linear-gradient(
     135deg,
     var(--accent-primary) 0%,

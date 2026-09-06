@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { CountryCatalogPanel } from "@/components/CountryCatalogPanel";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { MARKETING_COUNTRY_KEYS, countryLabel, countryLinks } from "@/lib/countries";
+import { MARKETING_COUNTRY_KEYS, countryLabel } from "@/lib/countries";
 import { COUNTRY_PAGES } from "@/lib/country-pages";
 import { countrySnapshot } from "@/lib/country-snapshots";
 
@@ -34,9 +34,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!country) {
     return { title: "Not found" };
   }
-  const label = countryLabel(country)!;
   const content = COUNTRY_PAGES[country];
-  const title = `Visa Sponsorship for Software Jobs in ${label}`;
+  const title = content.title;
   const path = `/relocation-jobs-${country}`;
   const description =
     content.metaDescription.length > 158
@@ -57,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           url: "https://kuchup.com/og-default.png",
           width: 1200,
           height: 630,
-          alt: `Visa-sponsored software jobs in ${label}`,
+          alt: content.h1,
         },
       ],
     },
@@ -79,8 +78,11 @@ export default async function CountryJobsPage({ params }: PageProps) {
   const label = countryLabel(country)!;
   const content = COUNTRY_PAGES[country];
   const snap = countrySnapshot(country);
-  const otherCountries = countryLinks().filter(
-    (item) => item.href !== `/relocation-jobs-${country}`,
+  const otherCountries = MARKETING_COUNTRY_KEYS.filter((key) => key !== country).map(
+    (key) => ({
+      href: `/relocation-jobs-${key}`,
+      title: COUNTRY_PAGES[key].title,
+    }),
   );
 
   const faqJsonLd = {
@@ -108,7 +110,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
       {
         "@type": "ListItem",
         position: 2,
-        name: `Visa sponsorship in ${label}`,
+        name: content.h1,
         item: `https://kuchup.com/relocation-jobs-${country}`,
       },
     ],
@@ -128,9 +130,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
         <Header />
         <main className="mx-auto mt-12 max-w-2xl">
           <p className="section-kicker">{content.kicker}</p>
-          <h1 className="text-fluid-hero text-text-primary">
-            Visa sponsorship &amp; software jobs in {label}
-          </h1>
+          <h1 className="text-fluid-hero text-text-primary">{content.h1}</h1>
           <p className="mt-4 text-base leading-relaxed text-text-secondary">
             {content.lede}
           </p>
@@ -319,7 +319,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
                     href={item.href}
                     className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
                   >
-                    Visa sponsorship in {item.label}{" "}
+                    {item.title}{" "}
                     <span aria-hidden="true">→</span>
                   </a>
                 </li>

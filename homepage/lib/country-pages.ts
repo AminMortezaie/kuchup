@@ -1,4 +1,6 @@
 export type CountryPageContent = {
+  title: string;
+  h1: string;
   kicker: string;
   lede: string;
   hubs: string[];
@@ -21,9 +23,11 @@ export type CountryPageContent = {
 
 export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
   germany: {
+    title: "Germany software engineer jobs with visa sponsorship",
+    h1: "Software engineer jobs in Germany with visa sponsorship",
     kicker: "Germany · visas & sponsorship",
     lede:
-      "Germany is one of Europe’s deepest software markets for international hires. Most engineers relocate on an EU Blue Card after a concrete job offer that meets the published salary threshold — with IT treated as a shortage occupation.",
+      "Germany is one of Europe’s deepest markets for software engineer jobs with visa sponsorship. Most programmers and other tech specialists relocate on an EU Blue Card after a concrete job offer that meets the published salary threshold — with IT treated as a shortage occupation.",
     hubs: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne"],
     marketTitle: "Why software engineers target Germany",
     marketBody: [
@@ -36,9 +40,9 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
       "For many EU Blue Card cases in shortage occupations such as ICT, the Federal Employment Agency (BA) is involved in the approval path. Your company usually coordinates that with their immigration counsel or HR.",
       "Ask early whether the offer is intended for an EU Blue Card, another §18 residence title, or a local hire only — the contract language and salary must match the route.",
     ],
-    visaTitle: "Main routes engineers discuss",
+    visaTitle: "German work visa routes for programmers and tech specialists",
     visaIntro:
-      "The EU Blue Card is the default conversation for qualified software roles. Thresholds are set annually; confirm the current figures on Make it in Germany before you negotiate.",
+      "The EU Blue Card is the default German work visa conversation for qualified software roles and other tech specialists. Thresholds are set annually; confirm the current figures on Make it in Germany before you negotiate.",
     visaRoutes: [
       {
         title: "EU Blue Card (ICT / shortage threshold)",
@@ -88,9 +92,9 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
           "No. Sponsorship is expressed through a qualifying employment contract and the documents the mission and authorities require. Always ask HR which residence title they intend to support.",
       },
       {
-        question: "Is software engineering treated as a shortage occupation?",
+        question: "How does a German work visa work for programmers and tech specialists?",
         answer:
-          "ICT professionals are commonly treated under the lower EU Blue Card shortage threshold, but classification and BA involvement depend on the role. Confirm with the employer’s immigration process.",
+          "Most programmers and other ICT specialists use the EU Blue Card when the job and salary qualify. Shortage-occupation IT roles often use the lower Blue Card threshold, but classification and BA involvement depend on the role — confirm the residence title with the employer’s immigration process.",
       },
       {
         question: "How does Kuchup help before the visa?",
@@ -99,12 +103,14 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
       },
     ],
     metaDescription:
-      "Germany visa sponsorship for software engineers: EU Blue Card thresholds, employer declaration flow, Berlin Munich Hamburg hubs, and how to track relocation roles on Kuchup.",
+      "Germany software engineer jobs with visa sponsorship: EU Blue Card for programmers and tech specialists, salary thresholds, and Kuchup tracking.",
   },
   netherlands: {
+    title: "Visa-sponsored jobs in the Netherlands",
+    h1: "Visa-sponsored jobs in the Netherlands",
     kicker: "Netherlands · visas & sponsorship",
     lede:
-      "The Netherlands uses a recognised-sponsor model. For most non-EU software engineers the Highly Skilled Migrant (kennismigrant) permit is the default: the employer must already be listed with the IND and files on your behalf.",
+      "Visa-sponsored jobs in the Netherlands for software engineers usually mean a Highly Skilled Migrant (kennismigrant) permit. The employer must already be an IND recognised sponsor and files on your behalf.",
     hubs: ["Amsterdam", "Eindhoven", "Rotterdam", "Utrecht", "The Hague"],
     marketTitle: "Why software engineers target the Netherlands",
     marketBody: [
@@ -174,18 +180,20 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
           "The HSM route is primarily salary- and sponsor-based rather than degree-based. Employers may still require a degree for the job itself.",
       },
       {
-        question: "How does Kuchup fit?",
+        question: "Where can I find visa-sponsored jobs in the Netherlands?",
         answer:
-          "Use Kuchup to find Netherlands roles and prepare tailored CVs via MCP. Confirm IND recognised-sponsor status directly with the company before you accept.",
+          "Kuchup tracks Netherlands software roles from company career pages. Sponsorship almost always means an IND recognised sponsor filing Highly Skilled Migrant — confirm that status with the company before you accept, then use MCP to tailor the CV.",
       },
     ],
     metaDescription:
-      "Netherlands Highly Skilled Migrant visa for software engineers: recognised sponsors, 2026 salary thresholds, IND flow, Amsterdam Eindhoven hubs, and Kuchup job tracking.",
+      "Visa-sponsored jobs in the Netherlands for software engineers: Highly Skilled Migrant, IND recognised sponsors, salary thresholds, and Kuchup tracking.",
   },
   uk: {
+    title: "UK software engineer jobs with visa sponsorship",
+    h1: "Software engineer jobs in the UK with visa sponsorship",
     kicker: "United Kingdom · visas & sponsorship",
     lede:
-      "UK relocation for non-UK engineers usually means a Skilled Worker visa. The employer must hold a Home Office sponsor licence and assign a Certificate of Sponsorship (CoS) before you can apply.",
+      "UK software engineer jobs with visa sponsorship usually mean a Skilled Worker visa. The employer must hold a Home Office sponsor licence and assign a Certificate of Sponsorship (CoS) before you can apply.",
     hubs: ["London", "Manchester", "Cambridge", "Edinburgh", "Bristol"],
     marketTitle: "Why software engineers target the United Kingdom",
     marketBody: [
@@ -261,12 +269,14 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
       },
     ],
     metaDescription:
-      "UK Skilled Worker visa for software engineers: licensed sponsors, Certificate of Sponsorship, salary and SOC rules, London hubs, and how to track sponsored roles on Kuchup.",
+      "UK software engineer jobs with visa sponsorship: Skilled Worker, licensed sponsors, Certificate of Sponsorship, SOC rules, and Kuchup tracking.",
   },
   portugal: {
+    title: "IT jobs in Portugal with visa sponsorship",
+    h1: "IT jobs in Portugal with visa sponsorship",
     kicker: "Portugal · visas & sponsorship",
     lede:
-      "Portugal’s tech market centres on Lisbon and Porto. International engineers usually discuss the D3 highly qualified activity route, often accelerated when the employer holds Tech Visa certification from IAPMEI.",
+      "IT jobs in Portugal with visa sponsorship centre on Lisbon and Porto. International engineers usually discuss the D3 highly qualified activity route, often accelerated when the employer holds Tech Visa certification from IAPMEI.",
     hubs: ["Lisbon", "Porto", "Braga", "Aveiro", "Coimbra"],
     marketTitle: "Why software engineers target Portugal",
     marketBody: [
@@ -336,18 +346,20 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
           "The national rules are the same; employers and processing logistics differ by company and consulate, not by city name alone.",
       },
       {
-        question: "How does Kuchup help?",
+        question: "Are there IT jobs in Portugal with visa sponsorship?",
         answer:
-          "Track Portugal roles from career pages and prepare application PDFs with MCP while you confirm the employer’s Tech Visa / D3 plan.",
+          "Yes — Lisbon and Porto employers hire international engineers on Tech Visa–assisted D3 or a standard highly qualified D3. Track those roles from career pages on Kuchup and confirm the employer’s filing plan before you accept.",
       },
     ],
     metaDescription:
-      "Portugal Tech Visa and D3 highly qualified visa for software engineers: employer certification, Lisbon Porto hubs, AIMA steps, and relocation job tracking on Kuchup.",
+      "IT jobs in Portugal with visa sponsorship: Tech Visa and D3 routes, Lisbon and Porto hubs, AIMA steps, and Kuchup tracking.",
   },
   ireland: {
+    title: "Ireland software engineer jobs with visa sponsorship",
+    h1: "Software engineer jobs in Ireland with visa sponsorship",
     kicker: "Ireland · visas & sponsorship",
     lede:
-      "Ireland concentrates large technology employers around Dublin (and Cork). Non-EEA software engineers usually need an employment permit — most often the Critical Skills Employment Permit — before or alongside the entry visa / stamp process.",
+      "Ireland software engineer jobs with visa sponsorship concentrate around Dublin (and Cork). Non-EEA engineers usually need an employment permit — most often the Critical Skills Employment Permit — before or alongside the entry visa / stamp process.",
     hubs: ["Dublin", "Cork", "Galway", "Limerick", "Letterkenny"],
     marketTitle: "Why software engineers target Ireland",
     marketBody: [
@@ -424,6 +436,6 @@ export const COUNTRY_PAGES: Record<string, CountryPageContent> = {
       },
     ],
     metaDescription:
-      "Ireland Critical Skills Employment Permit for software engineers: 2026 salary thresholds, DETE flow, Dublin Cork hubs, Trusted Partners, and relocation tracking on Kuchup.",
+      "Ireland software engineer jobs with visa sponsorship: Critical Skills permit, 2026 salary thresholds, Dublin and Cork hubs, and Kuchup tracking.",
   },
 };

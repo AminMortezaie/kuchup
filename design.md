@@ -38,8 +38,34 @@ Hallmark Hum, but the Hum pear/cyan/coral palette is deliberately not used.
 
 Paper mode: **light** warm paper with sky-tinted supporting surfaces. Dark navy
 is reserved for readable text and high-emphasis structure—never large
-background fields. No unrelated
-aubergine, oxblood, purple, cyan, or competing multi-accent palette.
+background fields. Brand chrome stays navy + orange. Do not introduce a second
+brand accent (no Hum pear, coral, lavender, or page-scale rainbow). A chip-scale
+**status layer** is required on the workbench so adjacent job actions stay
+distinguishable — those hues are meaning, not competing brand color.
+
+## Status layer (workbench)
+
+Chip-scale only: tinted controls, badges, and card-edge tints. Combined status
+fills stay well under the 5% accent budget. Never use these as page or section
+fills.
+
+| Meaning | Token | OKLCH | Use |
+| --- | --- | --- | --- |
+| Intent | `--intent` | `oklch(48% 0.12 240)` sky | Looking to apply |
+| Success | `--success` | `oklch(44% 0.13 150)` green | Mark applied, Restore |
+| Pending | `--pending` | `oklch(46% 0.11 295)` violet | Waiting referral, awaiting response |
+| Danger | `--danger` | `oklch(48% 0.16 20)` crimson | Mark rejected |
+| Dismiss | `--dismiss` | `oklch(55% 0.13 80)` ochre | Not for me, pin, warn |
+| Memory | `--memory` | `oklch(46% 0.03 250)` slate | Seen before |
+| Visa | `--visa` | `oklch(45% 0.08 195)` teal | Visa / relocation badge only |
+
+Status control states (same pill/chip shape):
+
+- Idle: ~8% tint, 1px hue border, hue text
+- Hover: ~14% tint
+- Active/on: ~20% tint, stronger border
+
+Text on tinted fills must meet WCAG 4.5:1. Labels (not hue alone) carry meaning.
 
 ## Typography
 
@@ -81,7 +107,8 @@ aubergine, oxblood, purple, cyan, or competing multi-accent palette.
 - Marketing workflow pages use a numbered narrative rail
 - Orange owns primary action; sky-tinted surfaces support content; navy carries
   trust and readability
-- No Hum pear, coral, lavender, or multi-accent rainbow
+- No Hum pear, coral, lavender, or a second brand accent. Status chips (sky,
+  green, violet, crimson, ochre, slate, teal) are allowed at control scale only.
 
 ## Per-page allowances
 
@@ -98,6 +125,8 @@ aubergine, oxblood, purple, cyan, or competing multi-accent palette.
 - CTA voice (button shape, border-radius, padding rhythm)
 - 1px boundaries, rounded surfaces, and restrained soft elevation
 - Tactile primary-button press feedback
+- Workbench job-state chips use the status layer (intent / success / pending /
+  danger / dismiss / memory / visa) — never brand navy as a stand-in
 
 ## What pages MAY differ on
 
@@ -126,6 +155,14 @@ Canonical CSS lives in:
   --color-accent:     #ff6b35;
   --color-accent-ink: #082743;
   --color-focus:      #ff6b35;
+
+  --color-status-sky:     oklch(48% 0.12 240);
+  --color-status-green:   oklch(44% 0.13 150);
+  --color-status-violet:  oklch(46% 0.11 295);
+  --color-status-crimson: oklch(48% 0.16 20);
+  --color-status-ochre:   oklch(55% 0.13 80);
+  --color-status-slate:   oklch(46% 0.03 250);
+  --color-status-teal:    oklch(45% 0.08 195);
 
   --font-display: "Lexend", sans-serif;
   --font-body:    "Manrope", sans-serif;

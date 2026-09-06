@@ -8,7 +8,8 @@ const NAV_LINKS = [
   { href: "/#product", label: "Product" },
   { href: "/mcp", label: "MCP" },
   { href: "/#countries", label: "Countries" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/#access", label: "Access" },
 ] as const;
 
