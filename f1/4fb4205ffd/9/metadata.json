@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f14fb4205ffd",
+  "session_id": "80982293-a075-4232-92fa-75239cada037",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:53:23.190799Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/core/ats_detection.py",
+    "relocation_jobs/scrape/board.py",
+    "relocation_jobs/scrape/company.py",
+    "relocation_jobs/scrape/descriptions.py",
+    "relocation_jobs/scrape/job_text.py",
+    "scripts/fix_job_descriptions.py",
+    "tests/scrape/test_company.py",
+    "tests/scrape/test_descriptions_format.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "520460854145",
+  "checkpoint_transcript_start": 21,
+  "transcript_lines_at_start": 21,
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:53:23.189069Z",
+    "agent_lines": 105,
+    "agent_removed": 4,
+    "human_added": 283,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 388,
+    "total_lines_changed": 392,
+    "agent_percentage": 27.806122448979593,
+    "metric_version": 2
+  }
+}
