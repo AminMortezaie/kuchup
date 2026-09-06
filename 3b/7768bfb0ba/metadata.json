@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3b7768bfb0ba",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "docs/reference/job-syndication.md",
+    "relocation_jobs/web/templates/job_posting.html",
+    "tests/web/test_job_pages.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3b/7768bfb0ba/0/metadata.json",
+      "transcript": "/3b/7768bfb0ba/0/full.jsonl",
+      "compact_transcript": "/3b/7768bfb0ba/0/transcript.jsonl",
+      "content_hash": "/3b/7768bfb0ba/0/content_hash.txt",
+      "prompt": "/3b/7768bfb0ba/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 274935,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1334016,
+    "output_tokens": 10549,
+    "api_call_count": 4
+  }
+}
