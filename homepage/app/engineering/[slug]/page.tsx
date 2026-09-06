@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ComponentType } from "react";
 import { notFound } from "next/navigation";
 import { CantStartNewThreadPost } from "@/components/engineering/CantStartNewThreadPost";
-import { EngineeringShell } from "@/components/engineering/EngineeringShell";
+import { OneLoopNotFasterPost } from "@/components/engineering/OneLoopNotFasterPost";
 import {
   ENGINEERING_AUTHOR,
   ENGINEERING_POSTS,
@@ -16,6 +16,7 @@ import {
 
 const POST_BODIES: Record<string, ComponentType> = {
   "cant-start-new-thread": CantStartNewThreadPost,
+  "one-loop-not-faster": OneLoopNotFasterPost,
 };
 
 type PageProps = {
@@ -129,18 +130,19 @@ export default async function EngineeringPostPage({ params }: PageProps) {
   };
 
   return (
-    <EngineeringShell>
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto mt-12 max-w-2xl">
+      <div className="landing-shell pb-16">
+        <main className="mx-auto mt-12 max-w-2xl">
         <p className="engineering-back">
           <a href="/engineering">Engineering</a>
         </p>
         <header className="mt-6">
           <p className="text-sm font-medium uppercase tracking-[0.08em] text-text-muted">
-            Production incident
+            {post.kicker}
           </p>
           <h1 className="engineering-title mt-2 text-fluid-hero text-text-primary">
             {post.title}
@@ -166,7 +168,8 @@ export default async function EngineeringPostPage({ params }: PageProps) {
           {" · "}
           <a href="/engineering">More engineering notes</a>
         </p>
-      </main>
-    </EngineeringShell>
+        </main>
+      </div>
+    </>
   );
 }

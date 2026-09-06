@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -36,10 +34,8 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
-        <Header />
-        <main className="mx-auto mt-12 max-w-4xl">
+    <div className="landing-shell pb-16">
+      <main className="mx-auto mt-12 max-w-4xl">
           <h1 className="text-fluid-hero text-text-primary">Plans & Pricing</h1>
           <p className="mt-4 text-base leading-relaxed text-text-secondary">
             Relocation Jobs (Kuchup) is a curation-first tracker for
@@ -186,9 +182,7 @@ export default function PricingPage() {
             Credits are usage units with no cash or redemption value. Full Access
             pricing will be announced separately.
           </p>
-        </main>
-        <Footer />
-      </div>
+      </main>
     </div>
   );
 }

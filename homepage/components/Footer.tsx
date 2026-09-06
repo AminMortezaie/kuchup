@@ -28,7 +28,7 @@ export function Footer() {
   const countryNav = countryLinks();
   return (
     <footer className="landing-footer">
-      <div className="landing-shell flex flex-col gap-7 py-10">
+      <div className="landing-shell footer-inner">
         <div className="footer-brand">
           <p className="font-display text-sm font-bold tracking-[0.06em] text-text-primary">
             KUCHUP
@@ -38,12 +38,9 @@ export function Footer() {
             thread, and preparing what comes next.
           </p>
         </div>
-
-        <div className="grid gap-5 sm:grid-cols-3">
-          <FooterGroup title="Product" links={PRODUCT_LINKS} />
-          <FooterGroup title="Countries" links={countryNav} />
-          <FooterGroup title="Project" links={META_LINKS} />
-        </div>
+        <FooterGroup title="Product" links={PRODUCT_LINKS} />
+        <FooterGroup title="Countries" links={countryNav} />
+        <FooterGroup title="Project" links={META_LINKS} />
       </div>
     </footer>
   );

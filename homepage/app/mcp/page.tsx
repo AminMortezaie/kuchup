@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -111,13 +109,12 @@ export default function McpPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
-        <Header />
+      <div className="landing-shell pb-16">
         <main className="mx-auto mt-12 max-w-2xl">
           <p className="section-kicker">Kuchup MCP</p>
           <h1 className="text-fluid-hero text-text-primary">
@@ -255,8 +252,7 @@ export default function McpPage() {
             </Button>
           </div>
         </main>
-        <Footer />
       </div>
-    </div>
+    </>
   );
 }

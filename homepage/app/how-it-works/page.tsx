@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -55,10 +53,8 @@ export const metadata: Metadata = {
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
-        <Header />
-        <main className="mx-auto mt-12 max-w-2xl">
+    <div className="landing-shell pb-16">
+      <main className="mx-auto mt-12 max-w-2xl">
           <h1 className="text-fluid-hero text-text-primary">How It Works</h1>
           <p className="mt-4 text-base leading-relaxed text-text-secondary">
             Relocation Jobs is a curated search tool for software engineers
@@ -166,9 +162,7 @@ export default function HowItWorksPage() {
               </Button>
             </div>
           </div>
-        </main>
-        <Footer />
-      </div>
+      </main>
     </div>
   );
 }

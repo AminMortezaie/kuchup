@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { CountryCatalogPanel } from "@/components/CountryCatalogPanel";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -117,7 +115,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -126,8 +124,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <div className="mx-auto max-w-site px-4 pb-8 pt-5 sm:px-5">
-        <Header />
+      <div className="landing-shell pb-16">
         <main className="mx-auto mt-12 max-w-2xl">
           <p className="section-kicker">{content.kicker}</p>
           <h1 className="text-fluid-hero text-text-primary">{content.h1}</h1>
@@ -336,8 +333,7 @@ export default async function CountryJobsPage({ params }: PageProps) {
             </Button>
           </div>
         </main>
-        <Footer />
       </div>
-    </div>
+    </>
   );
 }

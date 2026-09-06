@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { EngineeringShell } from "@/components/engineering/EngineeringShell";
 import {
   ENGINEERING_POSTS,
   OG_IMAGE,
@@ -57,12 +56,13 @@ export default function EngineeringIndexPage() {
   };
 
   return (
-    <EngineeringShell>
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto mt-12 max-w-2xl">
+      <div className="landing-shell pb-16">
+        <main className="mx-auto mt-12 max-w-2xl">
         <p className="text-sm font-medium uppercase tracking-[0.08em] text-text-muted">
           Engineering
         </p>
@@ -90,7 +90,8 @@ export default function EngineeringIndexPage() {
             </li>
           ))}
         </ol>
-      </main>
-    </EngineeringShell>
+        </main>
+      </div>
+    </>
   );
 }

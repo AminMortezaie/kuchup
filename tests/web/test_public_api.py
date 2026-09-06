@@ -167,6 +167,7 @@ def test_public_seo_endpoints_are_available(v2_client):
     assert "<loc>https://kuchup.com/mcp</loc>" in body
     assert "<loc>https://kuchup.com/engineering</loc>" in body
     assert "<loc>https://kuchup.com/engineering/cant-start-new-thread</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/one-loop-not-faster</loc>" in body
     assert "<lastmod>" in body
     today = datetime.now(timezone.utc).date()
     for lastmod in re.findall(r"<lastmod>([^<]+)</lastmod>", body):
@@ -288,6 +289,10 @@ def test_engineering_index_and_post_are_served(v2_client, monkeypatch, tmp_path)
         "<html>thread exhaustion</html>",
         encoding="utf-8",
     )
+    (post_dir / "one-loop-not-faster.html").write_text(
+        "<html>one loop not faster</html>",
+        encoding="utf-8",
+    )
     monkeypatch.setattr(web_server, "HOMEPAGE_STATIC", html_dir)
 
     index = v2_client.get("/engineering")
@@ -300,6 +305,10 @@ def test_engineering_index_and_post_are_served(v2_client, monkeypatch, tmp_path)
     assert "thread exhaustion" in post.get_data(as_text=True)
     assert "max-age=300" in (post.headers.get("Cache-Control") or "")
 
+    after = v2_client.get("/engineering/one-loop-not-faster")
+    assert after.status_code == 200
+    assert "one loop not faster" in after.get_data(as_text=True)
+
     missing = v2_client.get("/engineering/no-such-post")
     assert missing.status_code == 404
 
@@ -307,10 +316,11 @@ def test_engineering_index_and_post_are_served(v2_client, monkeypatch, tmp_path)
     body = sitemap.get_data(as_text=True)
     assert "<loc>https://kuchup.com/engineering</loc>" in body
     assert "<loc>https://kuchup.com/engineering/cant-start-new-thread</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/one-loop-not-faster</loc>" in body
 
     jobs = v2_client.get("/sitemap-jobs.xml")
     jobs_body = jobs.get_data(as_text=True)
-    assert "engineering" not in jobs_body
+    assert "/engineering" not in jobs_body
 
 
 def test_engineering_index_serves_nested_index_html(v2_client, monkeypatch, tmp_path):
