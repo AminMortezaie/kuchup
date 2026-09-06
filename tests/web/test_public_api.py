@@ -166,6 +166,7 @@ def test_public_seo_endpoints_are_available(v2_client):
     assert "<loc>https://kuchup.com/</loc>" in body
     assert "<loc>https://kuchup.com/mcp</loc>" in body
     assert "<loc>https://kuchup.com/engineering</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/cant-start-new-thread</loc>" in body
     assert "<lastmod>" in body
     today = datetime.now(timezone.utc).date()
     for lastmod in re.findall(r"<lastmod>([^<]+)</lastmod>", body):
@@ -324,6 +325,9 @@ def test_engineering_index_serves_nested_index_html(v2_client, monkeypatch, tmp_
     resp = v2_client.get("/engineering")
     assert resp.status_code == 200
     assert "nested engineering" in resp.get_data(as_text=True)
+
+
+def test_country_marketing_path_serves_exported_html(v2_client, monkeypatch, tmp_path):
     from relocation_jobs.web import server as web_server
 
     html_dir = tmp_path / "homepage"

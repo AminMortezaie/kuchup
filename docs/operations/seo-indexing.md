@@ -70,3 +70,17 @@ Visa-positive catalog jobs are public at `/jobs/<slug>`. Each page is server-ren
 - Watch **Coverage** for indexing errors or sitemap issues
 - Fix any `noindex` flags, unexpected 404s, or crawl errors promptly
 - Closed roles should be **410**, not lingering 200s in the jobs sitemap
+
+## Engineering notes
+
+Canonical home: `https://kuchup.com/engineering`. Posts are static marketing HTML (Next export), listed in `/sitemap.xml` only.
+
+After an engineering deploy:
+
+1. Confirm `https://kuchup.com/engineering` and the post URL return 200
+2. Confirm `/sitemap.xml` lists those URLs and `/sitemap-jobs.xml` does not
+3. Request indexing in Search Console for `/engineering` and the new slug
+4. Syndicate **after** the kuchup.com URL is live: Dev.to (or Hashnode) frontmatter `canonical_url: https://kuchup.com/engineering/<slug>`
+5. One HN submission for the first post only — do not dump the series
+
+Current first post: `https://kuchup.com/engineering/cant-start-new-thread`
