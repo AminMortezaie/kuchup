@@ -1,0 +1,6 @@
+if you wanted to add to this project DynamoDb what was the real usage in this project?
+
+---
+
+in another words, what is the real usage of DynamoDB in projects?
+why people use this?
