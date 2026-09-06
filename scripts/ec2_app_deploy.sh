@@ -13,7 +13,8 @@
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
 # Optional Grafana Cloud (Alloy): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
-# GRAFANA_CLOUD_API_TOKEN in .env — see docs/operations/monitoring.md
+# GRAFANA_CLOUD_API_TOKEN in .env. Logs: GRAFANA_CLOUD_LOKI_URL, GRAFANA_CLOUD_LOKI_USER
+# (token needs logs:write). See docs/operations/monitoring.md
 # Disk: root fills from leftover panel/worker images; deploy prunes dangling
 # images only. BuildKit cache is kept across deploys so tectonic/pip/playwright
 # layers are reused — never wiped mid/post-deploy (use `prune` for that).
@@ -184,6 +185,21 @@ grafana_cloud_user() {
 
 grafana_cloud_token() {
   printf '%s' "${GRAFANA_CLOUD_API_TOKEN:-$(_dotenv_value GRAFANA_CLOUD_API_TOKEN)}"
+}
+
+grafana_cloud_loki_url() {
+  printf '%s' "${GRAFANA_CLOUD_LOKI_URL:-$(_dotenv_value GRAFANA_CLOUD_LOKI_URL)}"
+}
+
+grafana_cloud_loki_user() {
+  printf '%s' "${GRAFANA_CLOUD_LOKI_USER:-$(_dotenv_value GRAFANA_CLOUD_LOKI_USER)}"
+}
+
+grafana_cloud_loki_configured() {
+  local url user
+  url="$(grafana_cloud_loki_url)"
+  user="$(grafana_cloud_loki_user)"
+  [[ -n "$url" && -n "$user" ]]
 }
 
 container_for_log_service() {
@@ -478,6 +494,7 @@ EOF
 set -euo pipefail
 docker rm -f ${PANEL_CONTAINER} 2>/dev/null || true
 docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -p ${PANEL_PORT}:${PANEL_PORT} \\
   -v ${REMOTE_DIR}/relocation_jobs/static:/app/relocation_jobs/static:ro \\
   -e PORT=${PANEL_PORT} \\
@@ -495,7 +512,7 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e SESSION_COOKIE_SECURE=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
-  -e FETCH_SCHEDULE_CONCURRENCY=4 \\
+  -e FETCH_SCHEDULE_CONCURRENCY=2 \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
   -e MCP_PUBLIC_BASE_URL='${MCP_PUBLIC_BASE_URL}' \\
@@ -507,6 +524,7 @@ EOF
 set -euo pipefail
 docker rm -f ${MCP_CONTAINER} 2>/dev/null || true
 docker run -d --name ${MCP_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -p ${MCP_PORT}:${MCP_PORT} \\
   --entrypoint ./docker-entrypoint-mcp.sh \\
   -e MCP_HTTP_HOST=0.0.0.0 \\
@@ -540,10 +558,11 @@ EOF
 set -euo pipefail
 docker rm -f ${WORKER_CONTAINER} 2>/dev/null || true
 docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -e PANEL_SCRAPE_ENABLED=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
-  -e FETCH_SCHEDULE_CONCURRENCY=4 \\
+  -e FETCH_SCHEDULE_CONCURRENCY=2 \\
   -e FETCH_COMPANY_TIMEOUT_SECONDS=300 \\
   -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
   -e PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90 \\
@@ -558,6 +577,7 @@ EOF
 set -euo pipefail
 docker rm -f ${CADDY_CONTAINER} 2>/dev/null || true
 docker run -d --name ${CADDY_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -p 80:80 -p 443:443 \\
   --add-host=host.docker.internal:host-gateway \\
   -v ${REMOTE_DIR}/deploy/ec2/Caddyfile:/etc/caddy/Caddyfile:ro \\
@@ -580,18 +600,31 @@ start_alloy_container() {
     ssh_cmd "docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true" || true
     return 0
   fi
-  local url user token
+  local url user token loki_url loki_user
   url="$(grafana_cloud_url)"
   user="$(grafana_cloud_user)"
   token="$(grafana_cloud_token)"
-  log "Starting Grafana Alloy (remote_write to Grafana Cloud)..."
+  loki_url="$(grafana_cloud_loki_url)"
+  loki_user="$(grafana_cloud_loki_user)"
+  if grafana_cloud_loki_configured; then
+    log "Starting Grafana Alloy (metrics + logs → Grafana Cloud)..."
+  else
+    log "Starting Grafana Alloy (metrics only — set GRAFANA_CLOUD_LOKI_URL and GRAFANA_CLOUD_LOKI_USER for logs)"
+  fi
   # cAdvisor needs privileged + host /sys and /var/lib/docker or container
   # name/labels stay empty and dashboard panels show No data.
   ssh_cmd bash -s <<EOF
 set -euo pipefail
 docker pull ${ALLOY_IMAGE}
 docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true
+ALLOY_CONFIG=/tmp/alloy-config.alloy
+if [ -n '${loki_url}' ] && [ -n '${loki_user}' ]; then
+  cp ${REMOTE_DIR}/deploy/ec2/config.alloy \$ALLOY_CONFIG
+else
+  awk '\$0=="// LOKI_BEGIN"{exit} {print}' ${REMOTE_DIR}/deploy/ec2/config.alloy > \$ALLOY_CONFIG
+fi
 docker run -d --name ${ALLOY_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   --privileged \\
   --pid=host \\
   --add-host=host.docker.internal:host-gateway \\
@@ -602,10 +635,12 @@ docker run -d --name ${ALLOY_CONTAINER} --restart unless-stopped \\
   -v /proc:/host/proc:ro \\
   -v /:/host/root:ro,rslave \\
   -v /var/lib/docker/:/var/lib/docker:ro \\
-  -v ${REMOTE_DIR}/deploy/ec2/config.alloy:/etc/alloy/config.alloy:ro \\
+  -v /tmp/alloy-config.alloy:/etc/alloy/config.alloy:ro \\
   -e GRAFANA_CLOUD_PROMETHEUS_URL='${url}' \\
   -e GRAFANA_CLOUD_PROMETHEUS_USER='${user}' \\
   -e GRAFANA_CLOUD_API_TOKEN='${token}' \\
+  -e GRAFANA_CLOUD_LOKI_URL='${loki_url}' \\
+  -e GRAFANA_CLOUD_LOKI_USER='${loki_user}' \\
   -e HOSTNAME=kuchup-ec2 \\
   ${ALLOY_IMAGE} run /etc/alloy/config.alloy \\
     --storage.path=/tmp/alloy \\

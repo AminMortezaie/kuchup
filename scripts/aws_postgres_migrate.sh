@@ -159,6 +159,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
 systemctl enable docker
 systemctl start docker
 docker run -d --name pg --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   --memory=768m \\
   -e POSTGRES_USER=${DB_USER} \\
   -e POSTGRES_PASSWORD='${DB_PASSWORD}' \\

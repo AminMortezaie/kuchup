@@ -133,6 +133,7 @@ sudo usermod -aG docker ubuntu
 
 ```bash
 docker run -d --name pg --restart unless-stopped \
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
   -e POSTGRES_USER=relocation \
   -e POSTGRES_PASSWORD='<long-random-password>' \
   -e POSTGRES_DB=relocation_jobs \

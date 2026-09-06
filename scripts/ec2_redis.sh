@@ -78,6 +78,7 @@ if docker ps -a --format '{{.Names}}' | grep -qx '${CONTAINER_NAME}'; then
   docker start ${CONTAINER_NAME} >/dev/null 2>&1 || true
 else
   docker run -d --name ${CONTAINER_NAME} --restart unless-stopped \\
+    --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
     -p ${REDIS_PORT}:6379 \\
     redis:7-alpine redis-server --requirepass '${pass}'
 fi

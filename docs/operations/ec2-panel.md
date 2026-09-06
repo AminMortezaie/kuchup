@@ -64,9 +64,11 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the worker or a local scrape.
 
-**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=4`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`.
+**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`.
 
-On `t4g.micro`, if the worker OOMs during fetch, lower concurrency to `2` or upsize the instance.
+On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. See [fetch-thread-exhaustion-incident.md](../reference/fetch-thread-exhaustion-incident.md).
+
+**Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.
 
 **Scheduler stuck?** If `worker-logs` shows no new lines for 2+ hours while the container is Up, a Playwright scrape may have hung. Restart: `docker restart relocation-fetch-worker`. See [fetch-scheduler-timeout-practices.md](../reference/fetch-scheduler-timeout-practices.md) for layered timeout rules and the implementation plan.
 
@@ -202,12 +204,15 @@ Set via `ec2_app_deploy.sh` (from local `.env` / `aws-postgres.env`):
 - `REDIS_URL` → `172.17.0.1:6379`
 - `PANEL_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PANEL_ADMIN_EMAILS`
 - Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (starts Alloy)
+- Optional logs: `GRAFANA_CLOUD_LOKI_URL`, `GRAFANA_CLOUD_LOKI_USER` (same token needs `logs:write`; see [monitoring.md](monitoring.md))
 
 Do not commit production secrets. Rotate `PANEL_SECRET_KEY` to a long random value in `.env` before deploy if still using the placeholder.
 
 ---
 
 ## SSH
+
+Searchable history: Grafana Explore → Loki (`{name="relocation-panel"}`) — [monitoring.md](monitoring.md). Live tail:
 
 ```bash
 cd ~/Downloads

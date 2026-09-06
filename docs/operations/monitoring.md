@@ -1,10 +1,10 @@
 # Production monitoring (Grafana Cloud Free)
 
-**Stack:** Grafana Alloy on EC2 → Grafana Cloud Prometheus → dashboards + email alerts + synthetics  
+**Stack:** Grafana Alloy on EC2 → Grafana Cloud Prometheus + Loki → dashboards + log search + email alerts + synthetics  
 **App probe:** `GET https://kuchup.com/api/health`  
-**Ops CLI:** `./scripts/ec2_app_deploy.sh status` · `logs`
+**Ops CLI:** `./scripts/ec2_app_deploy.sh status` · `logs` (SSH live-tail)
 
-This is the production-shaped, interview-relevant path (Prometheus metrics + Grafana). Stay on **Grafana Cloud Free** ($0 within free limits). Do not commit API tokens — gitignored `.env` only.
+This is the production-shaped, interview-relevant path (Prometheus metrics + Loki logs + Grafana). Stay on **Grafana Cloud Free** ($0 within free limits: 50 GB logs/month, 14-day retention). Do not commit API tokens — gitignored `.env` only.
 
 ---
 
@@ -13,32 +13,39 @@ This is the production-shaped, interview-relevant path (Prometheus metrics + Gra
 | Piece | Role |
 |-------|------|
 | `GET /api/health` | Unauthenticated; probes Postgres + Redis; **200** / **503** |
-| Grafana Alloy (`relocation-alloy`) | Host (node), Docker (cAdvisor), blackbox probe of local `/api/health`; `remote_write` to Cloud |
-| Grafana Cloud Free | Store metrics, dashboards, alert rules, email contact points |
+| Grafana Alloy (`relocation-alloy`) | Host (node), Docker (cAdvisor), blackbox probe of local `/api/health`; Docker logs from panel / worker / MCP / Caddy |
+| Grafana Cloud Free | Metrics (Prometheus), logs (Loki), dashboards, alert rules, email contact points |
 | Cloud synthetics | Hit public `https://kuchup.com/api/health` (catches Cloudflare 522 when origin is dead) |
 
 Config in repo: [`deploy/ec2/config.alloy`](../../deploy/ec2/config.alloy). Secrets via env from local `.env` at deploy time.
 
-Alloy runs **privileged** with `/sys` and `/var/lib/docker` mounted so cAdvisor can attach the Docker `name` label. Without that, host/`probe_success` panels work but container memory/CPU stay **No data**.
+Alloy runs **privileged** with `/sys` and `/var/lib/docker` mounted so cAdvisor can attach the Docker `name` label. Without that, host/`probe_success` panels work but container memory/CPU stay **No data**. Docker socket is the same mount Loki uses to tail container stdout.
+
+App containers use the json-file log driver with `max-size=10m` / `max-file=3` so Docker logs cannot fill the root volume. Recreate (deploy) applies rotation to panel / MCP / worker / Caddy / Alloy. Postgres and Redis pick it up only on the next `docker run` (do not recreate `pg` just for this).
 
 ---
 
 ## One-time Grafana Cloud setup
 
 1. Create a free stack at [grafana.com](https://grafana.com/auth/sign-up/create-user) (Free forever; no credit card required for Free).
-2. Open your stack → **Connections** / **Prometheus** → **Send metrics** → copy **remote_write** details:
+2. Create an **access policy** with **metrics:write** and **logs:write** (or add `logs:write` to the existing policy). Copy the token → `GRAFANA_CLOUD_API_TOKEN`.
+3. Open your stack → **Connections** / **Prometheus** → **Send metrics** → copy **remote_write** details:
    - URL → `GRAFANA_CLOUD_PROMETHEUS_URL` (ends with `/api/prom/push`)
    - Username (instance id) → `GRAFANA_CLOUD_PROMETHEUS_USER`
-   - Access policy / API token with **metrics:write** → `GRAFANA_CLOUD_API_TOKEN`
-3. Add to **gitignored** `.env` (see [`.env.example`](../../.env.example)):
+4. Same stack → **Loki** → **Send logs** → copy push details (Loki user is a different instance id than Prometheus):
+   - URL → `GRAFANA_CLOUD_LOKI_URL` (ends with `/loki/api/v1/push`)
+   - Username → `GRAFANA_CLOUD_LOKI_USER`
+5. Add to **gitignored** `.env` (see [`.env.example`](../../.env.example)):
 
 ```bash
 GRAFANA_CLOUD_PROMETHEUS_URL=https://prometheus-prod-XX-XX.grafana.net/api/prom/push
 GRAFANA_CLOUD_PROMETHEUS_USER=123456
+GRAFANA_CLOUD_LOKI_URL=https://logs-prod-XX-XX.grafana.net/loki/api/v1/push
+GRAFANA_CLOUD_LOKI_USER=123456
 GRAFANA_CLOUD_API_TOKEN=glc_...
 ```
 
-4. Deploy so Alloy starts (credentials required or Alloy is skipped):
+6. Deploy so Alloy starts (Prometheus credentials required or Alloy is skipped; Loki vars optional — without them Alloy ships metrics only):
 
 ```bash
 ./scripts/ec2_app_deploy.sh deploy
@@ -47,9 +54,39 @@ GRAFANA_CLOUD_API_TOKEN=glc_...
 # then recreate Alloy by re-running deploy, or SSH and start manually
 ```
 
-5. In Grafana Explore, confirm series such as `node_filesystem_avail_bytes`, `container_memory_usage_bytes`, `probe_success`.
+7. In Grafana Explore (Prometheus), confirm series such as `node_filesystem_avail_bytes`, `container_memory_usage_bytes`, `probe_success`.
+8. In Grafana Explore (Loki), confirm `{name="relocation-panel"}` returns gunicorn lines.
 
-If credentials are missing, deploy logs `Alloy skipped` and removes any old `relocation-alloy` container.
+If Prometheus credentials are missing, deploy logs `Alloy skipped` and removes any old `relocation-alloy` container.
+
+---
+
+## Logs (Loki)
+
+Search in Grafana → **Explore** → datasource **Loki**. Container recreate on deploy wipes local `docker logs`; Loki keeps ~14 days.
+
+| Query | What |
+|-------|------|
+| `{name="relocation-panel"}` | Gunicorn access / error |
+| `{name="relocation-fetch-worker"}` | Scheduled country scrape |
+| `{name="relocation-caddy"}` | TLS / reverse proxy |
+| `{name="relocation-mcp"}` | Remote MCP |
+| `{name="relocation-panel"} \|= "ERROR"` | Panel errors |
+| `{name="relocation-fetch-worker"} \|= "ERROR"` | Fetch failures |
+| `{job="docker"} \|= "credit_"` | Credit checkout / grant lines |
+
+App processes emit **JSON lines on stderr** (`LOG_FORMAT=json` in Docker / when stderr is not a TTY; `console` on a local TTY). Set `LOG_LEVEL` (default `INFO`). Explore `{name="relocation-panel"}` and `{name="relocation-fetch-worker"}` — fetch events carry fields such as `run_id` and `country`. The fetch modal still polls a capped `log_json` buffer (last 200 lines); Loki is the archive. Gunicorn access stays CLF on stdout.
+
+Worker HTTP body previews can be chatty during a country cycle. If Free ingest looks high, lower `FETCH_LOG_BODY_LIMIT` — do not ship Postgres or Redis logs.
+
+**Live tail** (this moment, this box) is still SSH:
+
+```bash
+./scripts/ec2_app_deploy.sh logs panel 100
+./scripts/ec2_app_deploy.sh logs worker 50 -f
+```
+
+Use Loki for “what happened two hours ago / after the last deploy.” Use `logs` for “is this scrape hung right now.”
 
 ---
 
@@ -106,6 +143,8 @@ Send a test notification once.
 
 ## Ops commands
 
+Grafana Explore → Loki for history (`{name="relocation-panel"}`). SSH live-tail:
+
 ```bash
 ./scripts/ec2_app_deploy.sh status          # disk, RAM, containers, /api/health, layer verdict
 ./scripts/ec2_app_deploy.sh logs panel 100
@@ -141,7 +180,7 @@ Layer verdicts from `status`: `all_ok`, `origin_ok_cf_fail`, `panel_down`, `degr
 
 **Known causes on this host (2026):** root disk filling with Docker layers (`no space left on device`); memory cliff (fetch-worker ~560MiB idle, no swap, Playwright concurrency). Soft reboot may not recover; **stop/start** did.
 
-**Runbook:** Grafana disk/RAM panels → `./scripts/ec2_app_deploy.sh status` → `logs caddy` / `logs panel` → do **not** terminate the instance (EBS `DeleteOnTermination`); prefer stop/start. Postgres lives in Docker volume `pgdata`.
+**Runbook:** Grafana disk/RAM panels → Explore Loki `{name="relocation-caddy"}` / `{name="relocation-panel"}` → `./scripts/ec2_app_deploy.sh status` → `logs caddy` / `logs panel` for live tail → do **not** terminate the instance (EBS `DeleteOnTermination`); prefer stop/start. Postgres lives in Docker volume `pgdata`.
 
 ---
 
