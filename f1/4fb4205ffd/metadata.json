@@ -1,0 +1,21 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f14fb4205ffd",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/core/ats_detection.py",
+    "relocation_jobs/scrape/company.py",
+    "tests/scrape/test_company.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/4fb4205ffd/0/metadata.json",
+      "transcript": "/f1/4fb4205ffd/0/full.jsonl",
+      "compact_transcript": "/f1/4fb4205ffd/0/transcript.jsonl",
+      "content_hash": "/f1/4fb4205ffd/0/content_hash.txt",
+      "prompt": "/f1/4fb4205ffd/0/prompt.txt"
+    }
+  ]
+}
