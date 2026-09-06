@@ -1,0 +1,41 @@
+i can see that the colors was used on front and ux is great most of them are the same and cannot show that there is different between them.
+
+for example Looking to apply
+Seen before
+Waiting referral
+Mark rejected
+
+Mark applied
+Not for me
+
+
+or other buttons there which they have different meanings and we have some skills for UX and designing system,
+
+you need to rethink about the color pallets on system and design something meaningful and professional.
+
+---
+
+i can see that the colors was used on front and ux is great most of them are the same and cannot show that there is different between them.
+
+for example Looking to apply
+Seen before
+Waiting referral
+Mark rejected
+
+Mark applied
+Not for me
+
+
+or other buttons there which they have different meanings and we have some skills for UX and designing system,
+
+you need to rethink about the color pallets on system and design something meaningful and professional.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+deploy it to see what happened
