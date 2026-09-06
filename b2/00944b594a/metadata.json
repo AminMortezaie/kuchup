@@ -3,7 +3,7 @@
   "checkpoint_id": "b200944b594a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 16,
+  "checkpoints_count": 23,
   "files_touched": [
     ".env.example",
     "docs/operations/seo-indexing.md",
@@ -77,6 +77,13 @@
       "compact_transcript": "/b2/00944b594a/6/transcript.jsonl",
       "content_hash": "/b2/00944b594a/6/content_hash.txt",
       "prompt": "/b2/00944b594a/6/prompt.txt"
+    },
+    {
+      "metadata": "/b2/00944b594a/7/metadata.json",
+      "transcript": "/b2/00944b594a/7/full.jsonl",
+      "compact_transcript": "/b2/00944b594a/7/transcript.jsonl",
+      "content_hash": "/b2/00944b594a/7/content_hash.txt",
+      "prompt": "/b2/00944b594a/7/prompt.txt"
     }
   ]
 }
