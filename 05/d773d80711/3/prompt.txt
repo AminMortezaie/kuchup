@@ -1,0 +1,9 @@
+@job_syndication_funnel_df92f929.plan.md (1-98) we should also have limitation for each user comes from linkedin to just can apply for 3 jobs per day and for more jobs needed to buy credits or full package.
+
+what do you think about it?
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
