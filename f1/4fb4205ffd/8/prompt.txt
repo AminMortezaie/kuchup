@@ -1,0 +1,134 @@
+use kuchup and mcp reframe to tailor resume for new pinned position on justDice company.
+
+i think its so similar to adjoe position.
+
+i will send you my most recent resume i sent them to use if you need on this position.
+
+\documentclass[10pt, a4paper]{article}
+
+\usepackage[top=1.0cm, bottom=1.0cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{needspace}
+
+\hypersetup{colorlinks=true, urlcolor=black, linkcolor=black}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\emergencystretch=2em
+
+\newcommand{\cvsection}[1]{%
+  \Needspace{4\baselineskip}%
+  \vspace{7pt}%
+  {\normalsize\textbf{\MakeUppercase{#1}}}\par
+  \vspace{1pt}\hrule height 0.5pt\vspace{4pt}%
+}
+
+\newcommand{\jobheader}[3]{%
+  \Needspace{3\baselineskip}%
+  \textbf{#1 --- #2} \hfill #3\par
+  \vspace{2pt}%
+}
+\newcommand{\jobsub}[1]{%
+  \vspace{-1pt}{\itshape\footnotesize #1}\par\vspace{2pt}%
+}
+
+\newcommand{\skillline}[2]{\textbf{#1:} #2\par\vspace{1.5pt}}
+
+\setlist[itemize]{leftmargin=1.3em, itemsep=1pt, parsep=0pt, topsep=2pt}
+\renewcommand{\labelitemi}{\small$\bullet$}
+
+\begin{document}
+
+{\LARGE\textbf{AMIN MORTEZAIE}}\par\vspace{2pt}
+{\normalsize\itshape Senior Backend Engineer --- Go · Kafka · Distributed Systems}\par\vspace{3pt}
+{\small Yerevan, Armenia --- Open to relocation to Hamburg \textbar\ +374 43 351 388 \textbar\ \href{mailto:a.mortezaie98@gmail.com}{a.mortezaie98@gmail.com} \textbar\ \href{https://linkedin.com/in/aminmortezaie}{linkedin.com/in/aminmortezaie}}\par
+
+\cvsection{Professional Summary}
+
+Backend engineer writing production Go since 2020, with 6+ years in fintech. At AbanTether (crypto exchange, 1M+ users), built the real-time balance retrieval service in Go --- per-network goroutine worker pools, buffered channels for backpressure, context-based timeout handling --- and designed gRPC and Kafka-based asynchronous communication across the wallet backend. Currently designing card authorization and settlement systems at Mili Gold, a payments platform with 25M+ registered users.
+
+\cvsection{Core Skills}
+
+\skillline{Languages}{Go, SQL}
+\skillline{Go}{Gin, Sqlx, gRPC, per-network goroutine worker pools, buffered channels, channel-based backpressure}
+\skillline{Go Concurrency}{Worker pools, buffered channels, context cancellation with select, goroutine leak debugging with -race, DB-level locking for shared state}
+\skillline{Data}{PostgreSQL (query optimisation, EXPLAIN ANALYZE, composite indexing, row-level locking), Redis, MongoDB, Elasticsearch, DynamoDB, MySQL}
+\skillline{Messaging}{Kafka --- exactly-once, idempotency, DLQ, circuit breaker; gRPC interservice communication; event-driven architecture}
+\skillline{Security}{HMAC request signing (service-to-service)}
+\skillline{Payments}{Card authorization flows, settlement, core banking integration, idempotency, reconciliation, multi-currency ledgers}
+\skillline{Infrastructure}{Docker (production, self-managed deployments), Kubernetes (day-to-day on platform-managed clusters), AWS EC2, Linux}
+\skillline{Architecture}{API design, domain-driven design, hexagonal architecture (ports and adapters), saga pattern, transactional outbox, SOLID}
+
+\cvsection{Key Project}
+
+\jobheader{Milli Card --- Real-Time Asset-Backed Payment Card}{Mili Gold}{2024 -- Present}
+\jobsub{Card authorization infrastructure integrating with a national core banking network (Shetab) to power a Visa-equivalent debit card backed by gold assets}
+\begin{itemize}
+  \item Designed the waterfall debit logic behind each authorization: debit the gold balance at a locked conversion price first, then fall back to the user's linked bank account
+  \item The conversion engine debits atomically using PostgreSQL row-level locking (\texttt{SELECT...FOR UPDATE}) inside a transaction --- concurrent authorizations on the same balance serialize at the database, preventing double-spends without application-level locking
+  \item Held the 98\%+ authorization success rate required by the bank's SLA, serving 25M+ registered users with 5,000+ daily transactions at launch
+  \item Integrated with the local core banking system for settlement, clearing, and dispute handling
+\end{itemize}
+
+\cvsection{Professional Experience}
+
+\jobheader{Senior Backend Engineer}{Mili Gold}{Nov 2023 -- Present}
+\begin{itemize}
+  \item Owned system architecture and API design across the platform's core services: the Milli Card pipeline, the withdrawal settlement engine redesign, and the real-time leaderboard
+  \item Redesigned the withdrawal settlement engine from 34 states down to 8, using Kafka exactly-once delivery with consumer-side idempotency keys in PostgreSQL --- this ended the daily blocked-transaction firefighting on a platform with 25M+ registered users
+  \item Designed gRPC contracts for interservice communication between the notification and user-engagement modules, simplifying integration and balancing load between services
+  \item Took a PostgreSQL query from 4 minutes to under 1 second with EXPLAIN ANALYZE, plan rewriting, and a composite index
+  \item Built the leaderboard on Lua + Redis with atomic ranking, which removed the distributed lock contention the old design suffered from
+  \item Built an LLM-based document processing feature end to end, from schema design to deployment; cut manual data entry by roughly 40\% working closely to Data Science team.
+\end{itemize}
+
+\vspace{4pt}
+\jobheader{Backend Engineer}{AbanTether}{Feb 2022 -- Nov 2023}
+\begin{itemize}
+  \item Designed gRPC interservice contracts and Kafka-based asynchronous event pipelines with DLQ and circuit breaker for reliable cross-service and partner-facing communication
+  \item Built the real-time balance retrieval service in Go (Gin, Sqlx): per-network goroutine worker pools across 8 blockchain networks, each independently tuned for that chain's RPC rate limits; held sub-10ms p99 under load for 1M+ users
+  \item Built a two-stage concurrent pipeline for the Personal Wallet: buffered channels carried computed balances from RPC-fetch workers to DB-writer workers, with the buffer exerting natural backpressure when persistence slowed
+  \item Diagnosed a goroutine leak caught by the \texttt{-race} detector in staging --- a sender blocked forever on an unbuffered error channel after the receiver exited on context cancellation; fixed by sizing the channel to the worker pool count
+  \item Designed a hexagonal architecture for the Personal Wallet's Tron energy management --- domain logic decoupled from the Tron RPC/SDK adapter --- to automate daily energy delegation and allocation across wallets, eliminating manual 24/7 monitoring
+  \item Built the Personal Wallet platform from scratch to replace paid third-party wallet services --- cut that monthly spend by roughly 90\%, and wallet fraud incidents dropped to zero after launch
+  \item Modelled the multi-currency wallet schema: 400K+ wallets across 8 networks with consistency guarantees
+\end{itemize}
+
+\vspace{4pt}
+\jobheader{Backend Engineer}{NuraFinTech (Remote)}{Mar 2020 -- Feb 2022}
+\begin{itemize}
+  \item Built the trade audit pipeline in Go: append-only, immutable records giving full traceability across trader operations
+  \item Used the transactional outbox pattern in Go to get zero-loss guarantees across banking integrations without distributed transactions
+  \item Built the trader-facing dashboard backend in Go for real-time trade data
+\end{itemize}
+
+\cvsection{Projects}
+
+\jobheader{Relocation Jobs (kuchup.com)}{Solo backend/infra project}{2026}
+\begin{itemize}
+  \item Diagnosed and fixed a production board-load regression on a single-host PostgreSQL deployment: eliminated 678 uncached per-request round-trips, cutting board latency from $\sim$90s to $\sim$1.7s, then caught a follow-up Redis cache-check that had reintroduced network I/O into the same hot loop
+  \item Built production monitoring for a memory-constrained EC2 host on Grafana Cloud Free + Alloy --- cardinality-filtered container metrics, synthetic health checks separate from on-box probes, and a runbook after a disk-full incident caused a host hang (Cloudflare 522, not an app error)
+\end{itemize}
+
+\cvsection{Writing}
+
+Medium \href{https://medium.com/@a.mortezaie}{@a.mortezaie} --- including a production deep-dive on DBOS Transact for Go that drew engagement from DBOS's founding engineers
+
+\cvsection{Education}
+
+\textbf{B.Sc. Computer Engineering} --- Iran University of Science and Technology (IUST) \hfill 2016 -- 2021
+
+\cvsection{Languages}
+
+English --- Full Professional Proficiency (C1) \textbar\ Persian --- Native
+
+\end{document}
+
+---
+
+no i just add dynamo to pass the ats keyword passing and in interview i just tell them it's sample project and learning exposure.
+go ahead
