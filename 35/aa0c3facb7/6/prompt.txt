@@ -1,0 +1,13 @@
+i saw a free user does have 3 positions on adyen but when opens job panel he can see all the Opportunities!
+
+read the docs and plan for fix.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+deploy please
