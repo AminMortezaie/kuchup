@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthCta } from "@/components/AuthCta";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -85,9 +86,11 @@ export default function PricingPage() {
                 <li>Personal apply / reject / not-for-me tracking</li>
                 <li>MCP connect with 20 write/render requests per day</li>
               </ul>
-              <Button as="a" href="/panel" variant="primary" className="mt-6">
-                Sign in with Google
-              </Button>
+              <AuthCta
+                signedOutLabel="Sign in with Google"
+                signedInLabel="Open workspace"
+                className="mt-6"
+              />
             </Card>
 
             <Card className="px-5 py-6" accentBar>
@@ -123,9 +126,10 @@ export default function PricingPage() {
                 <li>Purchased credit balance remains on your account</li>
               </ul>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Button as="a" href="/panel" variant="primary">
-                  Sign in for Free access
-                </Button>
+                <AuthCta
+                  signedOutLabel="Sign in for Free access"
+                  signedInLabel="Open workspace"
+                />
                 <Button as="a" href="/mcp" variant="secondary">
                   Explore MCP
                 </Button>

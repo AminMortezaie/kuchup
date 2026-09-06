@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { AuthCta } from "@/components/AuthCta";
 import { BrandLockup } from "@/components/BrandMark";
-import { Button } from "@/components/ui/Button";
 
 const NAV_LINKS = [
   { href: "/#product", label: "Product" },
@@ -61,22 +61,12 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            as="a"
-            href="/panel"
-            variant="primary"
-            className="hidden px-4 py-2 sm:inline-flex"
-          >
-            Sign in
-          </Button>
-          <Button
-            as="a"
-            href="/panel"
-            variant="primary"
-            className="px-3.5 py-2 text-xs sm:hidden"
-          >
-            Sign in
-          </Button>
+          <AuthCta
+            signedOutLabel="Sign in"
+            signedInLabel="Open workspace"
+            showIdentity
+            className="px-3.5 py-2 text-xs sm:px-4 sm:text-sm"
+          />
           <button
             type="button"
             className="inline-flex h-11 w-11 items-center justify-center rounded-app border border-[var(--color-rule)] text-text-primary transition-transform duration-150 ease-out active:translate-y-px md:hidden"

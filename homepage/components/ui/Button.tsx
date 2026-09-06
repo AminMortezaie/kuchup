@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary";
+export type ButtonVariant = "primary" | "secondary";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -17,6 +17,10 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
     "btn-secondary inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold",
 };
 
+export function buttonClass(variant: ButtonVariant = "primary", className = "") {
+  return `${VARIANT_CLASS[variant]} ${className}`.trim();
+}
+
 export function Button({
   variant = "primary",
   children,
@@ -25,11 +29,11 @@ export function Button({
   as,
   ...rest
 }: ButtonProps) {
-  const classes = `${VARIANT_CLASS[variant]} ${className}`;
+  const classes = buttonClass(variant, className);
 
   if (as === "a" || href) {
     return (
-      <a href={href} className={classes}>
+      <a href={href} className={classes} title={rest.title}>
         {children}
       </a>
     );

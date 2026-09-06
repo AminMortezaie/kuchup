@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthCta } from "@/components/AuthCta";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -244,9 +245,10 @@ export default function McpPage() {
           </section>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-3 text-center">
-            <Button as="a" href="/panel" variant="primary">
-              Sign in to the board
-            </Button>
+            <AuthCta
+              signedOutLabel="Sign in to the board"
+              signedInLabel="Open the board"
+            />
             <Button as="a" href="/apply" variant="secondary">
               Set up MCP
             </Button>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthCta } from "@/components/AuthCta";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -154,9 +155,10 @@ export default function HowItWorksPage() {
 
           <div className="mt-10 text-center">
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button as="a" href="/panel" variant="primary">
-                Sign in to start tracking
-              </Button>
+              <AuthCta
+                signedOutLabel="Sign in to start tracking"
+                signedInLabel="Open workspace"
+              />
               <Button as="a" href="/mcp" variant="secondary">
                 Explore MCP
               </Button>
