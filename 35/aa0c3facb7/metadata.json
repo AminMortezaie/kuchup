@@ -3,10 +3,30 @@
   "checkpoint_id": "35aa0c3facb7",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 11,
   "files_touched": [
+    "docs/backlog.md",
+    "docs/operations/ec2-panel.md",
+    "docs/reference/business-rules.md",
     "docs/reference/job-syndication.md",
+    "relocation_jobs/catalog/repo.py",
+    "relocation_jobs/catalog/schema.py",
+    "relocation_jobs/catalog/service.py",
+    "relocation_jobs/fetch/listing_check.py",
+    "relocation_jobs/fetch/scheduler.py",
     "relocation_jobs/mcp/service.py",
+    "relocation_jobs/panel/flatten_jobs.py",
+    "relocation_jobs/panel/tracking.py",
+    "relocation_jobs/scrape/listing_status.py",
+    "relocation_jobs/scrape/merge.py",
+    "relocation_jobs/static/js/position-card.js",
+    "relocation_jobs/web/routes/public.py",
+    "tests/fetch/test_listing_check.py",
+    "tests/fetch/test_scheduler.py",
+    "tests/panel/test_hide_empty.py",
+    "tests/panel/test_jobs.py",
+    "tests/scrape/test_listing_status.py",
+    "tests/scrape/test_merge.py",
     "tests/web/test_mcp_company_workspace.py",
     "tests/web/test_public_api.py"
   ],
@@ -24,13 +44,20 @@
       "compact_transcript": "/35/aa0c3facb7/1/transcript.jsonl",
       "content_hash": "/35/aa0c3facb7/1/content_hash.txt",
       "prompt": "/35/aa0c3facb7/1/prompt.txt"
+    },
+    {
+      "metadata": "/35/aa0c3facb7/2/metadata.json",
+      "transcript": "/35/aa0c3facb7/2/full.jsonl",
+      "compact_transcript": "/35/aa0c3facb7/2/transcript.jsonl",
+      "content_hash": "/35/aa0c3facb7/2/content_hash.txt",
+      "prompt": "/35/aa0c3facb7/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 845053,
+    "input_tokens": 1336959,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 13737856,
-    "output_tokens": 64807,
-    "api_call_count": 5
+    "cache_read_tokens": 28510592,
+    "output_tokens": 108640,
+    "api_call_count": 11
   }
 }

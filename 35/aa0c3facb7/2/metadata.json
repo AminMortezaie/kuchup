@@ -1,0 +1,178 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "35aa0c3facb7",
+  "session_id": "66d2c889-e4a2-4c59-ba39-86982495507b",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T21:29:00.301982Z",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "save_step_count": 6,
+  "files_touched": [
+    "docs/backlog.md",
+    "docs/operations/ec2-panel.md",
+    "docs/reference/business-rules.md",
+    "docs/reference/job-syndication.md",
+    "relocation_jobs/catalog/repo.py",
+    "relocation_jobs/catalog/schema.py",
+    "relocation_jobs/catalog/service.py",
+    "relocation_jobs/fetch/listing_check.py",
+    "relocation_jobs/fetch/scheduler.py",
+    "relocation_jobs/mcp/service.py",
+    "relocation_jobs/panel/flatten_jobs.py",
+    "relocation_jobs/panel/tracking.py",
+    "relocation_jobs/scrape/listing_status.py",
+    "relocation_jobs/scrape/merge.py",
+    "relocation_jobs/static/js/position-card.js",
+    "relocation_jobs/web/routes/public.py",
+    "tests/fetch/test_listing_check.py",
+    "tests/fetch/test_scheduler.py",
+    "tests/panel/test_hide_empty.py",
+    "tests/panel/test_jobs.py",
+    "tests/scrape/test_listing_status.py",
+    "tests/scrape/test_merge.py",
+    "tests/web/test_mcp_company_workspace.py",
+    "tests/web/test_public_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "0f408dfb1231",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 491906,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 14772736,
+    "output_tokens": 43833,
+    "api_call_count": 6
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T21:29:00.27383Z",
+    "agent_lines": 986,
+    "agent_removed": 23,
+    "human_added": 0,
+    "human_modified": 73,
+    "human_removed": 106,
+    "total_committed": 1059,
+    "total_lines_changed": 1188,
+    "agent_percentage": 84.93265993265993,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1116,
+      "agent_lines_removed": 224,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 71,
+      "user_lines_removed": 41,
+      "agent_lines_added": 1302,
+      "agent_lines_removed": 307,
+      "user_added_per_file": {
+        "relocation_jobs/static/admin.html": 1,
+        "relocation_jobs/static/apply.html": 1,
+        "relocation_jobs/static/company.html": 1,
+        "relocation_jobs/static/index.html": 1,
+        "relocation_jobs/static/styles.css": 55,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/admin.html": 1,
+        "relocation_jobs/static/apply.html": 1,
+        "relocation_jobs/static/company.html": 1,
+        "relocation_jobs/static/index.html": 1,
+        "relocation_jobs/static/styles.css": 37
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 36,
+      "user_lines_removed": 24,
+      "agent_lines_added": 2513,
+      "agent_lines_removed": 491,
+      "user_added_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 36,
+      "user_lines_removed": 24,
+      "agent_lines_added": 2513,
+      "agent_lines_removed": 491,
+      "user_added_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 36,
+      "user_lines_removed": 24,
+      "agent_lines_added": 2513,
+      "agent_lines_removed": 491,
+      "user_added_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 6,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 6,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 6
+      }
+    }
+  ]
+}
