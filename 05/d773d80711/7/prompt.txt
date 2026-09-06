@@ -1,0 +1,15 @@
+i have added tabby as new company and it does have problem in fetching positions, it uses new ats which name is pinpointhq you can find it on fetch problems on kuchup.
+
+lets fix the problem to make it works and start to get the positions.
+
+---
+
+ok deploy to make it run
+
+---
+
+ok now i just pinned a position on tabby use mcp reframe skill to make my resume tailor there.
+
+---
+
+ok make tailor based on the JD and mcp reframe skill to make it complete and finally save on position resume on kuchup
