@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d08aa9d94800",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "design.md",
+    "homepage/app/design-tokens.css",
+    "relocation_jobs/static/design-tokens.css",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d0/8aa9d94800/0/metadata.json",
+      "transcript": "/d0/8aa9d94800/0/full.jsonl",
+      "compact_transcript": "/d0/8aa9d94800/0/transcript.jsonl",
+      "content_hash": "/d0/8aa9d94800/0/content_hash.txt",
+      "prompt": "/d0/8aa9d94800/0/prompt.txt"
+    }
+  ]
+}
