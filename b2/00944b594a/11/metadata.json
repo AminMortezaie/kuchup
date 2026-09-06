@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b200944b594a",
+  "session_id": "a85702a6-d8ff-493a-a9cf-9359fee155b9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T19:53:31.145736Z",
+  "branch": "main",
+  "checkpoints_count": 9,
+  "files_touched": [
+    ".env.example",
+    "relocation_jobs/web/server.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high-fast",
+  "turn_id": "1a12443eb09d",
+  "checkpoint_transcript_start": 96,
+  "transcript_lines_at_start": 96,
+  "compact_transcript_start": 21,
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T19:53:31.117341Z",
+    "agent_lines": 125,
+    "agent_removed": 23,
+    "human_added": 1743,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1868,
+    "total_lines_changed": 1922,
+    "agent_percentage": 7.700312174817898,
+    "metric_version": 2
+  }
+}
