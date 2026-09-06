@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "1d4daf4564b2",
+  "session_id": "f95ea05f-a553-4253-b5e7-8ea03fe8a8aa",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T20:52:32.67336Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/web/routes/job_pages.py",
+    "relocation_jobs/web/templates/job_posting.html",
+    "tests/web/test_job_pages.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "ae7cb8767bc9",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 346188,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6394112,
+    "output_tokens": 32426,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T20:52:32.652237Z",
+    "agent_lines": 9,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 9,
+    "total_lines_changed": 11,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 34,
+      "user_lines_removed": 13,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/reference/fetch-concurrency-model-review.md": 22,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "docs/reference/fetch-concurrency-model-review.md": 13
+      }
+    }
+  ]
+}
