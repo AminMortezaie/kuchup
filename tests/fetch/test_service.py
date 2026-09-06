@@ -72,3 +72,36 @@ async def test_fetch_company_logs_error_and_marks_problem(db):
     rows = list_attempts(country="uk", company_name="Fail Co")
     assert rows[0].status == AttemptStatus.ERROR
     assert rows[0].error_message == "connection refused"
+
+
+@pytest.mark.asyncio
+async def test_fetch_company_infra_error_does_not_mark_problem(db):
+    from relocation_jobs.fetch import service as fetch_service
+
+    async def fake_process(_client, company, _index, _total, **kwargs):
+        company["matching_jobs"] = []
+        company["fetch_problem"] = True
+        company["fetch_problem_date"] = "2026-09-01"
+        return "[1/1] Thread Co — Error: can't start new thread", 0
+
+    company = {"name": "Thread Co", "careers_url": "https://thread.example/jobs"}
+    msg, new_count = await fetch_service.fetch_company(
+        None,
+        company,
+        1,
+        1,
+        country_key="uk",
+        process_company=fake_process,
+        sync_board=None,
+        enrich_only=False,
+        skip_enriched=False,
+        enrich_concurrency=4,
+    )
+    assert new_count == 0
+    assert "can't start new thread" in msg
+    assert company.get("fetch_problem") is None
+    assert company.get("fetch_problem_date") is None
+
+    rows = list_attempts(country="uk", company_name="Thread Co")
+    assert rows[0].status == AttemptStatus.ERROR
+    assert rows[0].error_message == "can't start new thread"

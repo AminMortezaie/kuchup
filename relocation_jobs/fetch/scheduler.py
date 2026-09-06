@@ -5,11 +5,12 @@ import os
 import time
 
 from relocation_jobs.core.ats_constants import HTTPX_AVAILABLE, MAX_CONCURRENCY
+from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.db import init_db
 from relocation_jobs.users.repo import resolve_scheduler_user_id
 from relocation_jobs.fetch import repo as fetch_repo
-from relocation_jobs.fetch.log import configure_fetch_logging, log_event
+from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import start_country_fetch
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
@@ -31,11 +32,11 @@ def schedule_interval_hours() -> float:
 
 
 def schedule_concurrency() -> int:
-    raw = (os.environ.get("FETCH_SCHEDULE_CONCURRENCY") or "4").strip()
+    raw = (os.environ.get("FETCH_SCHEDULE_CONCURRENCY") or "2").strip()
     try:
         return max(1, min(int(raw), MAX_CONCURRENCY))
     except (TypeError, ValueError):
-        return 4
+        return 2
 
 
 def schedule_countries() -> tuple[str, ...]:
@@ -58,7 +59,7 @@ def schedule_countries() -> tuple[str, ...]:
 
 def bootstrap_scheduler() -> None:
     init_db()
-    configure_fetch_logging()
+    configure_logging()
     fetch_repo.reap_orphan_running_fetch_runs()
     ensure_aggregator_seeds()
 

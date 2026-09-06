@@ -29,6 +29,11 @@ def test_schedule_countries_override(monkeypatch):
     assert schedule_countries() == ("uk", "netherlands")
 
 
+def test_schedule_concurrency_defaults_to_two(monkeypatch):
+    monkeypatch.delenv("FETCH_SCHEDULE_CONCURRENCY", raising=False)
+    assert schedule_concurrency() == 2
+
+
 def test_schedule_concurrency_caps_at_max(monkeypatch):
     monkeypatch.setenv("FETCH_SCHEDULE_CONCURRENCY", "99")
     from relocation_jobs.core.ats_constants import MAX_CONCURRENCY

@@ -8,6 +8,17 @@ from relocation_jobs.core.db import db_transaction, get_connection
 from relocation_jobs.fetch.types import AttemptStatus, CompanyFetchAttempt
 from relocation_jobs.users.applied import local_day_utc_bounds
 
+UI_LOG_MAX_LINES = 200
+
+
+def cap_fetch_ui_log(lines: list | None) -> list | None:
+    if lines is None:
+        return None
+    max_n = UI_LOG_MAX_LINES
+    if len(lines) <= max_n:
+        return list(lines)
+    return list(lines[-max_n:])
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -383,10 +394,10 @@ def update_fetch_run_live(
         params.append(_json_dumps(activity))
     if activity_log is not None:
         fields.append("activity_log_json = %s")
-        params.append(_json_dumps(activity_log))
+        params.append(_json_dumps(cap_fetch_ui_log(activity_log)))
     if log is not None:
         fields.append("log_json = %s")
-        params.append(_json_dumps(log))
+        params.append(_json_dumps(cap_fetch_ui_log(log)))
     if cancel_requested is not None:
         fields.append("cancel_requested = %s")
         params.append(1 if cancel_requested else 0)
@@ -453,8 +464,8 @@ def finalize_fetch_run(
         (result_line or "").strip() or None,
         _json_dumps(progress) if progress is not None else None,
         _json_dumps(activity) if activity is not None else None,
-        _json_dumps(activity_log) if activity_log is not None else None,
-        _json_dumps(log) if log is not None else None,
+        _json_dumps(cap_fetch_ui_log(activity_log)),
+        _json_dumps(cap_fetch_ui_log(log)),
         _json_dumps(review_jobs) if review_jobs is not None else None,
         int(run_id),
     ]

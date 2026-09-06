@@ -93,3 +93,22 @@ def test_update_progress_for_run_ignores_stale_run_id(db):
     fetch_state.update_progress_for_run(4, {"current": 9, "total": 10})
 
     assert fetch_state.memory_status()["progress"]["current"] == 0
+
+
+def test_append_log_line_drops_lines_past_cap(monkeypatch):
+    monkeypatch.setattr("relocation_jobs.fetch.repo.UI_LOG_MAX_LINES", 5)
+    fetch_state.reset_for_tests()
+    fetch_state.mutate_state(lambda st: st.update({
+        "running": True,
+        "run_id": 1,
+        "log": [],
+    }))
+    for i in range(8):
+        fetch_state.append_log_line(f"line-{i}")
+    assert fetch_state.memory_status()["log"] == [
+        "line-3",
+        "line-4",
+        "line-5",
+        "line-6",
+        "line-7",
+    ]

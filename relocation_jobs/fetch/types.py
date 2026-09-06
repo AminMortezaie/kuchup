@@ -33,3 +33,15 @@ class CompanyFetchAttempt(BaseSchema):
     @classmethod
     def from_row(cls, row: dict) -> CompanyFetchAttempt:
         return cls.model_validate(dict(row))
+
+
+INFRA_FETCH_ERROR_MARKERS = (
+    "can't start new thread",
+    "cannot allocate memory",
+    "too many open files",
+)
+
+
+def is_infra_fetch_error(message: str | None) -> bool:
+    text = (message or "").lower()
+    return any(marker in text for marker in INFRA_FETCH_ERROR_MARKERS)

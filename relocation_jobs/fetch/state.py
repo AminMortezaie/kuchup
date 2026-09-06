@@ -123,14 +123,16 @@ def sync_live_to_db() -> None:
         snapshot = {
             "progress": dict(_fetch_state.get("progress") or {}),
             "activity": dict(_fetch_state.get("activity") or {}),
-            "activity_log": list(_fetch_state.get("activity_log") or []),
-            "log": list(_fetch_state.get("log") or []),
+            "activity_log": fetch_repo.cap_fetch_ui_log(list(_fetch_state.get("activity_log") or [])),
+            "log": fetch_repo.cap_fetch_ui_log(list(_fetch_state.get("log") or [])),
             "review_jobs": _fetch_state.get("review_jobs"),
             "cancel_requested": bool(_fetch_state.get("cancel_requested")),
             "new_jobs": int(_fetch_state.get("new_jobs_total") or 0),
             "result_line": _fetch_state.get("result_line"),
             "concurrency": _fetch_state.get("concurrency"),
         }
+        _fetch_state["activity_log"] = snapshot["activity_log"]
+        _fetch_state["log"] = snapshot["log"]
     fetch_repo.update_fetch_run_live(
         int(run_id),
         progress=snapshot["progress"],
@@ -163,10 +165,12 @@ def persist_fetch_run(run_id: int | None = None) -> None:
             "result_line": _fetch_state.get("result_line"),
             "progress": dict(_fetch_state.get("progress") or {}),
             "activity": dict(_fetch_state.get("activity") or {}),
-            "activity_log": list(_fetch_state.get("activity_log") or []),
-            "log": list(_fetch_state.get("log") or []),
+            "activity_log": fetch_repo.cap_fetch_ui_log(list(_fetch_state.get("activity_log") or [])),
+            "log": fetch_repo.cap_fetch_ui_log(list(_fetch_state.get("log") or [])),
             "review_jobs": _fetch_state.get("review_jobs"),
         }
+        _fetch_state["activity_log"] = payload["activity_log"]
+        _fetch_state["log"] = payload["log"]
     row = fetch_repo.finalize_fetch_run(int(rid), **payload)
     with _fetch_lock:
         _fetch_state["last_fetch_run"] = row
@@ -185,7 +189,7 @@ def reap_zombie_fetch() -> None:
             _fetch_state["running"] = False
             if _fetch_state.get("exit_code") is None:
                 _fetch_state["exit_code"] = 1
-                _fetch_state["log"].append("Fetch thread stopped unexpectedly")
+                _append_log_unlocked("Fetch thread stopped unexpectedly")
             if not _fetch_state.get("finished_at"):
                 _fetch_state["finished_at"] = utc_now()
             should_finalize = bool(_fetch_state.get("run_id"))
@@ -243,7 +247,7 @@ def abandon_fetch_after_timeout(*, result_line: str) -> None:
             _fetch_state["exit_code"] = 1
             _fetch_state["finished_at"] = utc_now()
             _fetch_state["result_line"] = result_line
-            _fetch_state["log"].append(result_line)
+            _append_log_unlocked(result_line)
     persist_fetch_run()
     set_fetch_thread(None)
 
@@ -350,11 +354,17 @@ def record_company_result(company_name: str, new_count: int, jobs: list[dict]) -
     sync_live_to_db()
 
 
+def _append_log_unlocked(line: str) -> None:
+    log = list(_fetch_state.get("log") or [])
+    log.append(line)
+    _fetch_state["log"] = fetch_repo.cap_fetch_ui_log(log) or []
+
+
 def append_log_line(line: str) -> None:
     with _fetch_lock:
         if not _fetch_state.get("running"):
             return
-        _fetch_state["log"].append(line)
+        _append_log_unlocked(line)
 
 
 def set_review_jobs(payload: dict) -> None:
@@ -401,7 +411,7 @@ def append_log_line_for_run(run_id: int, line: str) -> None:
         active = _fetch_state.get("run_id")
         if active is None or int(active) != int(run_id):
             return
-        _fetch_state["log"].append(line)
+        _append_log_unlocked(line)
 
 
 def record_company_result_for_run(

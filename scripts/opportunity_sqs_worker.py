@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.sqs_client import sqs_enabled
 from relocation_jobs.db import init_db
 from relocation_jobs.async_jobs.dispatch import poll_once
@@ -26,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sleep-seconds", type=float, default=1.0)
     args = parser.parse_args(argv)
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    configure_logging()
     init_db()
     if not sqs_enabled():
         LOGGER.error("SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL is not set")

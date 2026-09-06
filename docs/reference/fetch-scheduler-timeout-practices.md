@@ -4,7 +4,7 @@
 **Status:** implemented (2026-07-10)  
 **Trigger:** EC2 worker blocked 15+ hours on a hung Playwright scrape (endios, Germany run 341)
 
-Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md), [board-load-performance-incident.md](board-load-performance-incident.md)
+Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md), [board-load-performance-incident.md](board-load-performance-incident.md), [fetch-thread-exhaustion-incident.md](fetch-thread-exhaustion-incident.md) (2026-09: `can't start new thread`)
 
 ---
 
@@ -46,7 +46,7 @@ flowchart TD
   end
   subgraph mid [Country run]
     C[Per-company wall clock]
-    D[ThreadPool future.result timeout]
+    D[asyncio.wait_for on shared loop]
   end
   subgraph inner [Scrape I/O]
     E[httpx client 15s]
@@ -68,7 +68,7 @@ flowchart TD
 | Generic HTTP board | `scrape/boards/generic.py` | 15s | 15s | OK |
 | Playwright `goto` | `scrape/playwright_board.py` | 25s | 60s max | `networkidle` boards use 90s elsewhere — cap all |
 | Playwright **process** | `run_sync` / fallback | **none** | **90s** | `goto` timeout does not kill a stuck renderer |
-| Per-company fetch | `country_runner._fetch_one_thread` | **none** | **5 min** | One bad company must not block 97 others |
+| Per-company fetch | `country_runner._fetch_one_company` | 5 min | 5 min | `asyncio.wait_for` on the shared loop; one timeout must not cancel the country |
 | Country fetch thread | `scheduler.wait_for_fetch_thread` | **none** | **45 min** | Germany ~98 cos × ~2 min worst case + headroom |
 | Scheduler cycle | `run_scheduler_loop` | 6h sleep only | unchanged | Sleep runs only **after** country join returns |
 
@@ -91,8 +91,7 @@ PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90      # wall clock for entire sync fallback
    On timeout: log error, call `request_fetch_cancel()`, set in-memory state failed, `persist_fetch_run()`, continue to next country / sleep.
 
 2. **Per-company timeout in `country_runner`**  
-   Wrap `_fetch_one_thread` / `asyncio.wait_for(_inner(), timeout=...)` or `future.result(timeout=...)` on `ThreadPoolExecutor` submits.  
-   On timeout: log `[n/total] Company — timed out after Ns`, mark `fetch_problem` on company row (optional but useful), continue pool.
+   `asyncio.wait_for(fetch_and_persist_company(...), timeout=FETCH_COMPANY_TIMEOUT_SECONDS)` on the **shared** country event loop (not a `ThreadPoolExecutor`). One timeout must not cancel the rest of the country (`asyncio.gather`; exceptions handled per company).
 
 3. **Playwright watchdog**  
    Run `scrape_board_with_playwright` inside `concurrent.futures` with `result(timeout=PLAYWRIGHT_BOARD_TIMEOUT_SECONDS)` or a dedicated helper in `scrape/boards/_async.py` (`run_sync_timed`).  
@@ -146,10 +145,7 @@ Worker bootstrap calls `reap_orphan_running_fetch_runs()` — safe on restart. S
 
 ### Prevent recurrence
 
-Ship Phase 1–2 code changes. Until then, consider:
-
-- Lower `FETCH_SCHEDULE_CONCURRENCY` to `2` on `t4g.micro` (less Playwright parallelism)
-- Mark known bad companies `fetch_problem: true` in catalog JSON after manual verification
+Concurrency model (2026-09-02): one event loop + `asyncio.Semaphore`; production `FETCH_SCHEDULE_CONCURRENCY=2`; Playwright `_playwright_sem=1`. See [fetch-thread-exhaustion-incident.md](fetch-thread-exhaustion-incident.md). Do not raise concurrency on `t4g.micro` without watching RSS.
 
 ---
 

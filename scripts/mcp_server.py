@@ -15,8 +15,10 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 from relocation_jobs.core.db import init_db
+from relocation_jobs.core.log import configure_logging
 from relocation_jobs.mcp.server import main
 
 if __name__ == "__main__":
+    configure_logging()
     init_db()
     main()

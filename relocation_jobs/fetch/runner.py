@@ -78,8 +78,9 @@ def _country_fetch_worker(
             st["new_jobs_total"] = new_jobs_total
             prog = dict(st.get("progress") or {})
             total = int(prog.get("total") or 0)
-            if total > 0 and not cancelled:
-                st["progress"] = {**prog, "current": total, "status": "done"}
+            if not cancelled:
+                current = total if exit_code == 0 and total > 0 else companies_done
+                st["progress"] = {**prog, "current": current, "status": "done"}
             if finish_line:
                 st["log"].append(finish_line)
             st["result_line"] = (

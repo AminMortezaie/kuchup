@@ -6,7 +6,7 @@ from datetime import date
 from relocation_jobs.core.scrape_cancel import FetchCancelled
 from relocation_jobs.fetch import repo
 from relocation_jobs.fetch.ports import ProcessCompany
-from relocation_jobs.fetch.types import AttemptStatus
+from relocation_jobs.fetch.types import AttemptStatus, is_infra_fetch_error
 _ERROR_RE = re.compile(r" — Error: (.+)$")
 
 
@@ -84,12 +84,17 @@ async def fetch_company(
 
     err_match = _ERROR_RE.search(msg)
     if err_match:
-        _mark_fetch_problem(company)
+        error_message = err_match.group(1)
+        if is_infra_fetch_error(error_message):
+            company.pop("fetch_problem", None)
+            company.pop("fetch_problem_date", None)
+        else:
+            _mark_fetch_problem(company)
         jobs = company.get("matching_jobs") or []
         _record_finish(
             attempt_id,
             status=AttemptStatus.ERROR,
-            error_message=err_match.group(1),
+            error_message=error_message,
             jobs_total=len(jobs),
             jobs_new=0,
             message=msg,
