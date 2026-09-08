@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f3f60e50a52f",
+  "session_id": "3fe9617b-a61a-4b61-b08d-e713e9c3c6c7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T13:39:16.379648Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "docs/reference/fetch-concurrency-model-review.md"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "11ebd4136c68",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 15783,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 814336,
+    "output_tokens": 2128,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 1437161,
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T13:39:16.371941Z",
+    "agent_lines": 7,
+    "agent_removed": 13,
+    "human_added": 4625,
+    "human_modified": 15,
+    "human_removed": 0,
+    "total_committed": 4647,
+    "total_lines_changed": 7990,
+    "agent_percentage": 0.2503128911138924,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
