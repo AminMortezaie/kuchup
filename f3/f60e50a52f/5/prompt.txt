@@ -1,0 +1,19 @@
+why Continue to the official Mollie career page is like this and the ui is difference?
+
+also we wanted to limit the users to click on company websites directly and use the kuchup panel after 3 free jobs per day so you're showing all the positions to the user and direct link to apply on the company website.
+
+it's against our policy we decided on it.
+
+---
+
+plan for it and do it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+deploy
