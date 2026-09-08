@@ -17,3 +17,7 @@ search for it and find why it happened like this?
 we can simply change with public slugs instead of Zalando to see does linkedin again wrap it or not and then we will think later if our strategy worked.
 
 what do you think about it?
+
+---
+
+ok find your changes create a branch for them and merge into main.
