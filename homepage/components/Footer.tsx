@@ -1,6 +1,8 @@
 import { countryLinks } from "@/lib/countries";
+import { appSurfaceRel } from "@/lib/seo";
 
 const PRODUCT_LINKS = [
+  { href: "/jobs", label: "Visa jobs" },
   { href: "/panel", label: "Board" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/mcp", label: "MCP" },
@@ -70,7 +72,7 @@ function FooterGroup({
               className="text-sm font-medium text-text-secondary transition-colors duration-150 ease-out hover:text-text-primary"
               {...(link.external
                 ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
+                : { rel: appSurfaceRel(link.href) })}
             >
               {link.label}
             </a>

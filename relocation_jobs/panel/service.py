@@ -170,6 +170,8 @@ def flatten_companies(
     city: str | None = None,
     ats_type: str | None = None,
     user_id: int | None = None,
+    opportunity_company_keys: frozenset[tuple[str, str]] | None = None,
+    opportunity_country_keys: frozenset[str] | None = None,
 ) -> tuple[list[dict], list[dict], int]:
     filters = FlattenFilters.from_kwargs(
         country_key=country_key,
@@ -188,6 +190,8 @@ def flatten_companies(
         position_applied_only=position_applied_only,
         position_rejected_only=position_rejected_only,
         position_looking_to_apply_only=position_looking_to_apply_only,
+        opportunity_company_keys=opportunity_company_keys,
+        opportunity_country_keys=opportunity_country_keys,
     )
     return flatten_with_filters(filters)
 

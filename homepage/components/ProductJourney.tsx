@@ -43,7 +43,7 @@ export function ProductJourney() {
           {CHAPTERS.map((chapter) => (
             <article key={chapter.id} id={chapter.id} className="journey-chapter">
               <div className="journey-copy">
-                <span className="journey-number">{chapter.number}</span>
+                <span className="journey-number" aria-hidden="true">{chapter.number}</span>
                 <p className="section-kicker">{chapter.eyebrow}</p>
                 <h3>{chapter.title}</h3>
                 <p>{chapter.body}</p>

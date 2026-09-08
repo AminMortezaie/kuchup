@@ -250,6 +250,16 @@ class PositionCard extends HTMLElement {
     this._toast(seen ? "Marked as seen" : "Seen mark cleared");
   }
 
+  async _markSeenOnOpen() {
+    if (this._job?.seen) return;
+    const data = await this._api(API.seen, {
+      country: this._job.country, company: this._job.company, url: this._job.url,
+      seen: true, ...(this._job.idempotency_key ? { idempotency_key: this._job.idempotency_key } : {}),
+    });
+    if (!data) return;
+    this._apply(data);
+  }
+
   async _togglePin() {
     const pinned = !this._job.pinned;
     const data = await this._api(API.pin, {
@@ -572,6 +582,7 @@ class PositionCard extends HTMLElement {
 
     if (t.closest(".job-title")) {
       e.stopPropagation();
+      void this._markSeenOnOpen();
       return;
     }
 

@@ -179,15 +179,24 @@ def test_public_seo_endpoints_are_available(v2_client):
     robots_body = robots.get_data(as_text=True)
     assert "Sitemap: https://kuchup.com/sitemap.xml" in robots_body
     assert "Sitemap: https://kuchup.com/sitemap-jobs.xml" in robots_body
+    assert "linkedin-jobs.xml" not in robots_body
+    assert "Allow: /api/public/" in robots_body
+    assert "Disallow: /api/" in robots_body
+    assert "Disallow: /panel" in robots_body
+    assert "Disallow: /_next/static/media/" in robots_body
 
     sitemap = v2_client.get("/sitemap.xml")
     assert sitemap.status_code == 200
     body = sitemap.get_data(as_text=True)
     assert "<loc>https://kuchup.com/</loc>" in body
+    assert "<loc>https://kuchup.com/jobs</loc>" in body
     assert "<loc>https://kuchup.com/mcp</loc>" in body
     assert "<loc>https://kuchup.com/engineering</loc>" in body
     assert "<loc>https://kuchup.com/engineering/cant-start-new-thread</loc>" in body
     assert "<loc>https://kuchup.com/engineering/one-loop-not-faster</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/678-postgres-round-trips</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/cache-check-in-the-hot-path</loc>" in body
+    assert "<loc>https://kuchup.com/engineering/playwright-hung-for-15-hours</loc>" in body
     assert "<lastmod>" in body
     today = datetime.now(timezone.utc).date()
     for lastmod in re.findall(r"<lastmod>([^<]+)</lastmod>", body):
@@ -195,7 +204,10 @@ def test_public_seo_endpoints_are_available(v2_client):
 
     llms = v2_client.get("/llms.txt")
     assert llms.status_code == 200
-    assert "kuchup.com" in llms.get_data(as_text=True).lower()
+    llms_body = llms.get_data(as_text=True)
+    assert llms_body.startswith("# Kuchup")
+    assert "[Home](https://kuchup.com/)" in llms_body
+    assert "[MCP](https://kuchup.com/mcp)" in llms_body
 
     favicon = v2_client.get("/favicon.ico")
     assert favicon.status_code == 200

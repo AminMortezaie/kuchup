@@ -14,7 +14,6 @@ const PREF_COUNTRY_OPTIONS = [
 ];
 
 let dialogBound = false;
-let dialogRequired = false;
 
 function dialogEl() {
   return $("preferencesDialog");
@@ -45,11 +44,10 @@ export async function fetchPreferences() {
   return state.preferences;
 }
 
-export async function openPreferencesDialog({ required = false } = {}) {
+export async function openPreferencesDialog() {
   ensureDialog();
   const dialog = dialogEl();
   if (!dialog) return;
-  dialogRequired = Boolean(required);
   let prefs = state.preferences;
   try {
     prefs = await fetchPreferences();
@@ -65,19 +63,13 @@ export async function openPreferencesDialog({ required = false } = {}) {
   const err = $("preferencesError");
   if (err) err.textContent = "";
   const title = $("preferencesTitle");
-  if (title) {
-    title.textContent = required
-      ? "Choose where you want to relocate"
-      : "Search preferences";
-  }
+  if (title) title.textContent = "Search preferences";
   const hint = $("preferencesHint");
   if (hint) {
-    hint.textContent = required
-      ? "We’ll match companies for these countries. You can change this later from the account menu."
-      : "Your board filters to matched companies in these countries. Free accounts include a company cap.";
+    hint.textContent = "Your board filters to matched companies in these countries.";
   }
   const cancelBtn = $("preferencesCancelBtn");
-  if (cancelBtn) cancelBtn.hidden = dialogRequired;
+  if (cancelBtn) cancelBtn.hidden = false;
   dialog.showModal();
 }
 
@@ -116,7 +108,6 @@ async function savePreferences(event) {
       remote_ok: remoteOk,
       preferences_confirmed: true,
     };
-    dialogRequired = false;
     dialogEl()?.close();
     const countrySel = $("country");
     if (countrySel && !isRemotePanel() && countries.length) {
@@ -143,22 +134,5 @@ function ensureDialog() {
   if (!dialog) return;
   dialogBound = true;
   $("preferencesForm")?.addEventListener("submit", savePreferences);
-  $("preferencesCancelBtn")?.addEventListener("click", () => {
-    if (!dialogRequired) dialog.close();
-  });
-  dialog.addEventListener("cancel", (event) => {
-    if (dialogRequired) event.preventDefault();
-  });
-}
-
-export async function maybeShowPreferencesOnboarding() {
-  if (isRemotePanel()) return;
-  try {
-    const prefs = await fetchPreferences();
-    if (!prefs.preferences_confirmed) {
-      await openPreferencesDialog({ required: true });
-    }
-  } catch {
-    /* ignore — board still loads with defaults */
-  }
+  $("preferencesCancelBtn")?.addEventListener("click", () => dialog.close());
 }

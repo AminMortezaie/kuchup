@@ -37,6 +37,10 @@ FIXED_MARKETING_PATHS = (
     "/engineering",
 )
 
+PRIVATE_ROBOTS_ALLOW = (
+    "/api/public/",
+)
+
 PRIVATE_ROBOTS_DISALLOW = (
     "/panel",
     "/remote",
@@ -44,6 +48,7 @@ PRIVATE_ROBOTS_DISALLOW = (
     "/apply",
     "/company",
     "/api/",
+    "/_next/static/media/",
 )
 
 
@@ -331,10 +336,12 @@ def preview_page():
 @app.route("/robots.txt")
 def robots_txt():
     public_site_url = _public_site_url()
+    allow_lines = "\n".join(f"Allow: {p}" for p in PRIVATE_ROBOTS_ALLOW)
     disallow_lines = "\n".join(f"Disallow: {p}" for p in PRIVATE_ROBOTS_DISALLOW)
     body = "\n".join((
         "User-agent: *",
         "Allow: /",
+        allow_lines,
         disallow_lines,
         "",
         f"Sitemap: {public_site_url}/sitemap.xml",
@@ -366,6 +373,8 @@ def sitemap_xml():
             lines.append(f"    <lastmod>{lastmod}</lastmod>")
         lines.append("  </url>")
         entries.append("\n".join(lines))
+    jobs_hub = [f"  <url>", f"    <loc>{public_site_url}/jobs</loc>", "  </url>"]
+    entries.append("\n".join(jobs_hub))
     body = "\n".join((
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',

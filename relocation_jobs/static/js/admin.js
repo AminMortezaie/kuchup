@@ -333,6 +333,7 @@ function renderCreditOrders(data, audit) {
     <tr>
       ${adminCell(order.id, "Order")}
       ${adminCell(order.user_id, "User")}
+      ${adminCell(escapeHtml(order.kind || "credits"), "Kind")}
       ${adminCell(`${escapeHtml(order.pack_key)} · ${order.credits}`, "Pack")}
       ${adminCell(escapeHtml(order.status), "Status")}
       ${adminCell(formatTs(order.created_at), "Created")}
@@ -348,8 +349,8 @@ function renderCreditOrders(data, audit) {
       <p class="hint">${audit.ok ? "Wallet audit healthy" : `${audit.invalid_grant_balances} invalid balances · ${audit.paid_orders_without_grants.length} paid orders missing grants`}</p>
       <div class="admin-table-wrap">
         <table class="admin-table admin-table--responsive">
-          <thead><tr><th>Order</th><th>User</th><th>Pack</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="6">No credit orders</td></tr>'}</tbody>
+          <thead><tr><th>Order</th><th>User</th><th>Kind</th><th>Pack</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="7">No credit orders</td></tr>'}</tbody>
         </table>
       </div>
     </section>

@@ -37,7 +37,9 @@ export function AccessSection() {
             <ul>
               {PREVIEW_ITEMS.map((item) => <li key={item}>{item}</li>)}
             </ul>
-            <Button as="a" href="#search" variant="secondary">Search the catalog</Button>
+            <div className="access-panel-actions">
+              <Button as="a" href="#search" variant="secondary">Search the catalog</Button>
+            </div>
           </article>
 
           <article className="access-panel access-panel-primary">

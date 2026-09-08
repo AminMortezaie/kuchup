@@ -8,6 +8,7 @@ let routeCountry = "";
 let routeSlug = "";
 let companyName = "";
 let positions = [];
+let jobsHiddenCount = 0;
 let selectedKey = "";
 let savedTexContent = "";
 let texEditing = false;
@@ -153,10 +154,25 @@ function positionBadges(position) {
   return badges.join("");
 }
 
+function renderUpgradeHint() {
+  const el = $("companyPositionsUpgrade");
+  if (!el) return;
+  const hidden = Number(jobsHiddenCount) || 0;
+  if (hidden <= 0) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  const noun = hidden === 1 ? "role" : "roles";
+  el.hidden = false;
+  el.innerHTML = `+${hidden} more ${noun} waiting. A new role costs 1 credit after you act on a shown role. <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.`;
+}
+
 function renderPositionList() {
   const list = $("companyPositionList");
   const hint = $("companyPositionsHint");
   if (!list) return;
+  renderUpgradeHint();
 
   if (!positions.length) {
     list.innerHTML = `<li class="company-position-empty">No open positions in catalog.</li>`;
@@ -724,6 +740,7 @@ async function loadWorkspace() {
     );
     companyName = data.company || "";
     positions = data.positions || [];
+    jobsHiddenCount = Number(data.jobs_hidden_count) || 0;
     document.title = `${companyName} — Relocation Jobs`;
     $("companyTitle").textContent = companyName;
     $("companySubtitle").textContent = "Tailored resumes, cover letters, and PDF preview";
@@ -762,6 +779,7 @@ async function refreshPositionsAfterRender() {
     `/api/mcp/companies/${encodeURIComponent(routeCountry)}/${encodeURIComponent(routeSlug)}/applications`,
   );
   positions = data.positions || [];
+  jobsHiddenCount = Number(data.jobs_hidden_count) || 0;
   renderPositionList();
   const position = positions.find((p) => p.idempotency_key === selectedKey);
   if (position) {

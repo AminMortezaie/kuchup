@@ -14,6 +14,44 @@ def test_jobs_list_returns_companies(v2_auth_client, seeded_catalog_v2):
     assert stats["companies_with_jobs"] == 1
 
 
+def test_free_user_jobs_list_caps_positions(client, db, seeded_catalog_v2):
+    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from relocation_jobs.users.repo import create_user
+    from tests.helpers.seed import append_matching_jobs
+
+    append_matching_jobs(
+        "uk",
+        "Acme Backend Ltd",
+        [
+            {
+                "title": f"Engineer {index}",
+                "url": (
+                    f"https://boards.greenhouse.io/acmebackend/jobs/{index}00000"
+                    f"?gh_jid={index}00000"
+                ),
+                "fetched": "2025-06-01",
+                "last_seen": "2025-06-01",
+            }
+            for index in range(3, 6)
+        ],
+    )
+    user = create_user(
+        "freejobslist",
+        email="freejobslist@example.com",
+        google_sub="sub-free-jobs-list",
+    )
+    save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = user["id"]
+        sess["username"] = user["username"]
+        sess.permanent = True
+    payload = client.get("/api/jobs?country=uk").get_json()
+    acme = next(company for company in payload["companies"] if company["name"] == "Acme Backend Ltd")
+    assert len(acme["jobs"]) == 3
+    assert acme["jobs_hidden_count"] == 2
+
+
 def test_jobs_applied_marks_position(v2_auth_client, seeded_catalog_v2):
     listing = v2_auth_client.get("/api/jobs?country=uk").get_json()
     company = listing["companies"][0]

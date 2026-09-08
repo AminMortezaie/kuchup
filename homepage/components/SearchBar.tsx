@@ -1,94 +1,25 @@
-"use client";
+import { MARKETING_COUNTRY_KEYS, countryLabel } from "@/lib/countries";
 
-import { FormEvent, useId } from "react";
-import type { SearchFilters } from "@/lib/search";
-
-const ROLES = [
-  { value: "", label: "All roles" },
-  { value: "backend", label: "Backend" },
-  { value: "python", label: "Python" },
-  { value: "go", label: "Go" },
-  { value: "java", label: "Java" },
-  { value: "react", label: "React / Frontend" },
-  { value: "devops", label: "DevOps / Platform" },
-] as const;
-
-const COUNTRIES = [
-  { value: "all", label: "All countries" },
-  { value: "germany", label: "Germany" },
-  { value: "netherlands", label: "Netherlands" },
-  { value: "uk", label: "UK" },
-  { value: "portugal", label: "Portugal" },
-  { value: "ireland", label: "Ireland" },
-] as const;
-
-type SearchBarProps = {
-  id?: string;
-  defaultFilters?: SearchFilters;
-  onSearch: (filters: SearchFilters) => void;
-};
-
-export function SearchBar({
-  id,
-  defaultFilters,
-  onSearch,
-}: SearchBarProps) {
-  const roleId = useId();
-  const countryId = useId();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    onSearch({
-      country: String(data.get("country") || "all"),
-      q: String(data.get("q") || ""),
-    });
-  }
-
+export function SearchBar({ id }: { id?: string }) {
   return (
-    <form
-      id={id}
-      onSubmit={handleSubmit}
-      className="hero-search-form"
-    >
+    <form id={id} action="/jobs" method="get" className="hero-search-form">
       <div className="hero-search-fields">
         <div className="hero-search-field">
-          <label className="hero-search-label" htmlFor={roleId}>
-            Role or stack
-          </label>
-          <div className="hero-search-control">
-            <StackIcon />
-            <select
-              id={roleId}
-              name="q"
-              defaultValue={defaultFilters?.q ?? ""}
-              className="hero-search-select"
-            >
-              {ROLES.map((option) => (
-                <option key={option.value || "all"} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <Chevron />
-          </div>
-        </div>
-
-        <div className="hero-search-field">
-          <label className="hero-search-label" htmlFor={countryId}>
+          <label className="hero-search-label" htmlFor="hero-destination">
             Destination
           </label>
           <div className="hero-search-control">
             <GlobeIcon />
             <select
-              id={countryId}
+              id="hero-destination"
               name="country"
-              defaultValue={defaultFilters?.country ?? "all"}
+              defaultValue=""
               className="hero-search-select"
             >
-              {COUNTRIES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              <option value="">All countries</option>
+              {MARKETING_COUNTRY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {countryLabel(key) ?? key}
                 </option>
               ))}
             </select>
@@ -97,32 +28,11 @@ export function SearchBar({
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="btn-primary hero-search-submit"
-      >
+      <button type="submit" className="btn-primary hero-search-submit">
         <span>Find roles</span>
         <ArrowIcon />
       </button>
     </form>
-  );
-}
-
-function StackIcon() {
-  return (
-    <svg
-      className="hero-search-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
   );
 }
 

@@ -17,6 +17,7 @@
   --color-accent: #ff6b35;
   --color-accent-hover: #ff7f52;
   --color-accent-deep: #d94f1f;
+  --color-accent-text: #b84018;
   --color-accent-soft: rgba(255, 107, 53, 0.14);
   --color-accent-2: #0e3a69;
   --color-accent-ink: #082743;
@@ -73,6 +74,10 @@
   --radius-button: 999px;
   --radius-pill: 999px;
   --radius-input: 0.75rem;
+  --control-height: 2.75rem;
+  --control-pad-x: 0.85rem;
+  --control-font: 0.8125rem;
+  --control-line: 1;
   --ease-snap: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-short: 180ms;
@@ -88,7 +93,7 @@
   --space-2xl: 4.5rem;
   --space-3xl: 7rem;
 
-  /* Typography stacks (faces loaded by page) */
+  /* Typography stacks (next/font on <html> overrides these with the actual face) */
   --font-display: "Lexend", "Manrope", system-ui, sans-serif;
   --font-body: "Manrope", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;

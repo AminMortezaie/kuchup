@@ -37,9 +37,19 @@ function renderWallet(body, wallet) {
   const balance = wallet.balance || {};
   const packs = Array.isArray(wallet.packs) ? wallet.packs : [];
   const ledger = Array.isArray(wallet.ledger) ? wallet.ledger : [];
+  const fullAccess = wallet.full_access || {};
+  const plan = wallet.plan || "free";
   const reset = balance.next_reset_at
     ? new Date(balance.next_reset_at).toLocaleDateString()
     : "next month";
+  const upgradeHtml = plan === "free" && fullAccess.key
+    ? `
+      <button type="button" class="credits-pack credits-upgrade" data-sku="${escapeHtml(fullAccess.key)}">
+        <strong>Unlock Full Access — ${escapeHtml(money(fullAccess.price_minor, fullAccess.currency))}</strong>
+        <span>One-time. Uncapped matched board and higher MCP quota.</span>
+      </button>
+    `
+    : "";
   body.innerHTML = `
     <div class="credits-balance-card">
       <strong>${escapeHtml(String(balance.total ?? 0))} credits</strong>
@@ -47,8 +57,9 @@ function renderWallet(body, wallet) {
       <small>Free balance resets ${escapeHtml(reset)}</small>
     </div>
     <div class="credits-pack-grid">
+      ${upgradeHtml}
       ${packs.map((pack) => `
-        <button type="button" class="credits-pack" data-pack="${escapeHtml(pack.key)}">
+        <button type="button" class="credits-pack" data-sku="${escapeHtml(pack.key)}">
           <strong>${escapeHtml(String(pack.credits))} credits</strong>
           <span>${escapeHtml(money(pack.price_minor, pack.currency))}</span>
         </button>
@@ -64,22 +75,24 @@ function renderWallet(body, wallet) {
       </div>
     ` : ""}
   `;
-  body.querySelectorAll("[data-pack]").forEach((button) => {
-    button.addEventListener("click", () => startCheckout(button.dataset.pack, button));
+  body.querySelectorAll("[data-sku]").forEach((button) => {
+    button.addEventListener("click", () => startCheckout(button.dataset.sku, button));
   });
 }
 
 
-async function startCheckout(packKey, button) {
+async function startCheckout(sku, button) {
   button.disabled = true;
   const previous = button.textContent;
   button.textContent = "Opening checkout…";
   try {
-    const response = await fetch("/api/credits/checkout", {
+    const path = sku === "full_access" ? "/api/payments/checkout" : "/api/credits/checkout";
+    const body = sku === "full_access" ? { sku } : { pack_key: sku };
+    const response = await fetch(path, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pack_key: packKey }),
+      body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Checkout could not start");

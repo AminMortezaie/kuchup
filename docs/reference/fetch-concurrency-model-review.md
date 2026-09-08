@@ -1,7 +1,7 @@
 # Technical review: fetch concurrency (one event loop)
 
-**Last updated:** 2026-09-02  
-**Status:** review of the shipped concurrency-model change
+**Last updated:** 2026-09-06  
+**Status:** review of the shipped concurrency-model change; measured after 2026-09-03 16:09 UTC
 
 Country fetch no longer starts OS threads per company. Production died with `can't start new thread` from 2026-08-28; every scheduled country run failed from 2026-08-30. This is a review of the fix that landed, not a second postmortem.
 
@@ -131,20 +131,23 @@ A Go HTTP sidecar was the wrong response to this outage. HTTP ATS would get chea
 
 ---
 
-## After deploy
+## After deploy (measured 2026-09-06)
 
-Restart `relocation-fetch-worker`. The next cycle should be judged in Postgres, not by board dots:
+Do **not** score this change on Germany/Netherlands wall clock. Healthy duration was concurrency **4** on the thread pool; after is concurrency **2** on the event loop. Outage runs were ~0s with `new_jobs = 0` — not a speed baseline. Two knobs moved in one deploy.
 
-```sql
-SELECT LEFT(error_message, 80), COUNT(*)
-FROM company_fetch_attempts
-WHERE started_at >= (NOW() AT TIME ZONE 'utc' - INTERVAL '8 hours')::text
-  AND status = 'error'
-GROUP BY 1
-ORDER BY 2 DESC;
-```
+The number that belongs to the model: `can't start new thread`. First production run with `concurrency = 2`: Armenia at **2026-09-03 16:09 UTC**. Empty scheduler countries (`austria`, `joblet`, `mauritius`, `uae`, `united-state`) still fail with `No catalog` and are excluded from completion counts.
 
-If `can't start new thread` is gone and `new_jobs` is non-zero on real catalogs, the model change worked. If RSS still cliffs on Germany, drop concurrency to 1 before touching language or instance size.
+| Signal | Value |
+|--------|--------|
+| Outage attempt errors | **357 / 358** `can't start new thread` |
+| Attempts after 3 Sep 16:09 UTC | **3,375 / 3,375** `ok`, **0** thread errors |
+| Real catalogs 30–31 Aug | **0 / 91** ok, **0** new jobs |
+| Real catalogs after the cut | **153 / 154** ok, 160 new jobs (healthy 20–27 Aug: 345 / 352) |
+| Board `fetch_problem` | **3 / 401** (186 / 394 on 1 Sep). Remaining: arculus, bol, Channable — dated 6 Sep, real ATS |
+
+The one miss is Germany run 3991 (5 Sep 11:00 UTC): `90/111`, exit 1, not a thread error. Next cycle `111/111`.
+
+Grafana Cloud is host health (disk, `MemAvailable`, `/api/health`); fetch outcomes live in Postgres. Public write-up: [kuchup.com/engineering/one-loop-not-faster](https://kuchup.com/engineering/one-loop-not-faster).
 
 The incident file still quotes the buggy code. This review is the “what we shipped and why it is the right seam.”
 
@@ -155,3 +158,4 @@ The incident file still quotes the buggy code. This review is the “what we shi
 - [fetch-thread-exhaustion-incident.md](fetch-thread-exhaustion-incident.md) — production outage, evidence, old code
 - [fetch-scheduler-timeout-practices.md](fetch-scheduler-timeout-practices.md) — hang/timeout incident (2026-07)
 - [operations/ec2-panel.md](../operations/ec2-panel.md) — worker deploy, concurrency env
+- Public post: [one-loop-not-faster](https://kuchup.com/engineering/one-loop-not-faster)

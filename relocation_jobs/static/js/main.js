@@ -15,7 +15,7 @@ import { saveWaitingReferral, markJobSeen } from "./api.js";
 import { toast, $ } from "./utils.js";
 import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
-import { maybeShowPreferencesOnboarding, openPreferencesDialog } from "./preferences.js";
+import { openPreferencesDialog } from "./preferences.js";
 import { openCreditsDialog } from "./credits.js";
 import {
   loadCollapsedCompanies,
@@ -54,7 +54,14 @@ async function init() {
 
   const ok = await refreshAuth();
   if (!ok) return;
-  if (new URLSearchParams(window.location.search).has("credits")) {
+  const params = new URLSearchParams(window.location.search);
+  const checkoutState = params.get("credits") || params.get("upgrade");
+  if (params.has("credits") || params.has("upgrade")) {
+    if (checkoutState === "success") {
+      toast("Checkout complete. Credits and Full Access apply after the payment confirms.");
+    } else if (checkoutState === "cancelled") {
+      toast("Checkout cancelled.");
+    }
     void openCreditsDialog();
   }
 
@@ -74,7 +81,6 @@ async function init() {
   refreshFilterBar();
   await loadBoardWithLocations();
   finishLoadingProgress();
-  await maybeShowPreferencesOnboarding();
   await resumeFetchIfRunning();
   await syncFetchStateFromServer();
 }

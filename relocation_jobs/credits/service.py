@@ -6,7 +6,6 @@ from uuid import uuid4
 from relocation_jobs.credits import repo
 from relocation_jobs.credits.policy import (
     MONTHLY_FREE_CREDITS,
-    credit_pack,
     list_credit_packs,
     operation_cost,
 )
@@ -15,6 +14,7 @@ from relocation_jobs.credits.types import (
     CreditGrantKind,
     CreditOperation,
 )
+from relocation_jobs.payments.catalog import FULL_ACCESS_SKU
 from relocation_jobs.users.entitlements import plan_is_full_access
 from relocation_jobs.users.repo import get_user_by_id
 
@@ -65,10 +65,15 @@ def credit_balance(user_id: int) -> CreditBalance:
 
 
 def wallet_status(user_id: int, *, include_history: bool = False) -> dict:
+    user = get_user_by_id(user_id)
+    if not user:
+        raise LookupError("User not found")
     balance = credit_balance(user_id)
     result = {
         "balance": balance.as_dict(),
         "packs": list_credit_packs(),
+        "full_access": FULL_ACCESS_SKU.as_dict(),
+        "plan": user.get("plan") or "free",
     }
     if include_history:
         result["ledger"] = repo.list_ledger(user_id)
@@ -123,11 +128,14 @@ def grant_admin_credits(user_id: int, *, credits: int, reason: str) -> dict:
 
 
 def grant_order_credits(order: dict) -> bool:
+    credits = int(order["credits"])
+    if credits <= 0:
+        return False
     return repo.create_grant(
         int(order["user_id"]),
         kind=CreditGrantKind.PURCHASED,
         source_key=f"order:{order['provider']}:{order['provider_order_id']}",
-        credits=int(order["credits"]),
+        credits=credits,
         expires_at=None,
         metadata={
             "order_id": int(order["id"]),
@@ -136,7 +144,3 @@ def grant_order_credits(order: dict) -> bool:
             "currency": order["currency"],
         },
     )
-
-
-def pack_for_checkout(pack_key: str):
-    return credit_pack(pack_key)

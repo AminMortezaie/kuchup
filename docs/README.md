@@ -20,7 +20,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Board performance / read-model design (proposal) | [reference/board-read-model-proposal.md](reference/board-read-model-proposal.md) |
 | Fetch pipeline queue / Kafka placement (proposal) | [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md) |
 | Multi-user scaling — SQS broker, DB pool, board projection (proposal) | [reference/multi-user-scaling-proposal.md](reference/multi-user-scaling-proposal.md) |
-| Entitlements — Google auth, plans, MCP quotas, personalized board (in progress) | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
+| Entitlements — Google auth, plans, credits, NOWPayments checkout | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
 | Full SPA UI modernization (proposal) | [reference/full-spa-ui-modernization-proposal.md](reference/full-spa-ui-modernization-proposal.md) |
 | Single-company fetch modal session (why it felt flaky) | [reference/fetch-panel-session.md](reference/fetch-panel-session.md) |
 | Catalog vs per-user tracking (design) | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
@@ -37,6 +37,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Public job pages / LinkedIn wrapping | [reference/job-syndication.md](reference/job-syndication.md) |
 | SEO indexing (Search Console, sitemaps) | [operations/seo-indexing.md](operations/seo-indexing.md) |
 | **Production panel (EC2, kuchup.com)** | [operations/ec2-panel.md](operations/ec2-panel.md) |
+| **NOWPayments checkout (credits + Full Access)** | [operations/nowpayments.md](operations/nowpayments.md) |
 | **Production monitoring (Grafana Cloud)** | [operations/monitoring.md](operations/monitoring.md) |
 | Domain email (`@kuchup.com`) | [operations/email.md](operations/email.md) |
 | **SQS opportunity refresh queue** | [operations/sqs-opportunity-refresh.md](operations/sqs-opportunity-refresh.md) |
@@ -77,6 +78,7 @@ docs/
     ec2-panel.md              Panel on EC2, kuchup.com, Caddy
     monitoring.md             Grafana Cloud Free + Alloy
     email.md                  Domain email via Cloudflare Email Routing
+    nowpayments.md            NOWPayments credit packs + Full Access checkout
     seo-indexing.md           Search Console, marketing + jobs sitemaps
 ```
 

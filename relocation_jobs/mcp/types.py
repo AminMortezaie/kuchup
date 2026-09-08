@@ -146,6 +146,7 @@ class CompanyPositionApplication(BaseSchema):
     cover_letter_pdf_updated_at: str = ""
     cover_letter_pdf_filename: str = ""
     has_description: bool = False
+    listing_unavailable: bool = False
 
 
 class CompanyApplicationsResponse(BaseSchema):
@@ -153,6 +154,8 @@ class CompanyApplicationsResponse(BaseSchema):
     company: str
     company_slug: str = ""
     positions: list[CompanyPositionApplication] = Field(default_factory=list)
+    jobs_hidden_count: int = 0
+    upgrade_jobs: bool = False
 
 
 class ApplicationTexDetail(BaseSchema):

@@ -8,7 +8,6 @@ from relocation_jobs.credits.policy import list_credit_packs
 from relocation_jobs.credits.service import grant_admin_credits, wallet_status
 from relocation_jobs.payments.service import (
     create_credit_checkout,
-    process_nowpayments_notification,
     reconcile_order,
     revoke_order_credits,
 )
@@ -54,26 +53,6 @@ def register(app):
         if not order:
             return jsonify({"error": "Credit order not found"}), 404
         return jsonify({"order": order})
-
-    @app.post("/api/payments/nowpayments/ipn")
-    def api_nowpayments_ipn():
-        payload = request.get_json(silent=True) or {}
-        signature = request.headers.get("x-nowpayments-sig", "")
-        try:
-            result = process_nowpayments_notification(payload, signature)
-            app.logger.info(
-                "credit_payment_event paid=%s deduplicated=%s",
-                result.get("paid", False),
-                result.get("deduplicated", False),
-            )
-            return jsonify(result)
-        except PermissionError as exc:
-            return jsonify({"error": str(exc)}), 401
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        except LookupError as exc:
-            app.logger.error("payment order lookup failed: %s", exc)
-            return jsonify({"error": str(exc)}), 404
 
     @app.post("/api/admin/users/<int:user_id>/credits")
     @admin_required

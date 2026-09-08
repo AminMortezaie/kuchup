@@ -137,8 +137,11 @@ export default async function CountryJobsPage({ params }: PageProps) {
             ))}
           </ul>
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button as="a" href={`/panel?country=${country}`} variant="primary">
-              Browse {label} roles
+            <Button as="a" href={`/jobs?country=${country}`} variant="primary">
+              Open {label} visa jobs
+            </Button>
+            <Button as="a" href={`/panel?country=${country}`} variant="secondary">
+              Browse {label} board
             </Button>
             <Button as="a" href={content.officialHref} variant="secondary">
               Official guidance
@@ -270,7 +273,10 @@ export default async function CountryJobsPage({ params }: PageProps) {
                 the employer, and the authorities.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Button as="a" href={`/panel?country=${country}`} variant="primary">
+                <Button as="a" href={`/jobs?country=${country}`} variant="primary">
+                  Open {label} visa jobs
+                </Button>
+                <Button as="a" href={`/panel?country=${country}`} variant="secondary">
                   Open {label} board
                 </Button>
                 <Button as="a" href="/mcp" variant="secondary">
@@ -325,7 +331,10 @@ export default async function CountryJobsPage({ params }: PageProps) {
           </section>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-3 text-center">
-            <Button as="a" href={`/panel?country=${country}`} variant="primary">
+            <Button as="a" href={`/jobs?country=${country}`} variant="primary">
+              Open {label} visa jobs
+            </Button>
+            <Button as="a" href={`/panel?country=${country}`} variant="secondary">
               Browse {label} companies
             </Button>
             <Button as="a" href="/how-it-works" variant="secondary">

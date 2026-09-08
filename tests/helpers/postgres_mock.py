@@ -84,11 +84,16 @@ class FakePgConnection:
                 return self._conn.execute(sql, params)
             except sqlite3.OperationalError as exc:
                 msg = str(exc).lower()
+                sql_l = sql.lower()
                 if "duplicate column name" in msg or "already exists" in msg:
                     return self._conn.execute("SELECT 1 AS ok")
-                if "cannot add a column" in msg and "alter table" in msg.lower():
+                if sql_l.lstrip().startswith("alter table"):
                     return self._conn.execute("SELECT 1 AS ok")
-                if "no such column" in msg and "drop column" in sql.lower():
+                if "cannot add a column" in msg:
+                    return self._conn.execute("SELECT 1 AS ok")
+                if "near \"type\"" in msg:
+                    return self._conn.execute("SELECT 1 AS ok")
+                if "no such column" in msg and "drop column" in sql_l:
                     return self._conn.execute("SELECT 1 AS ok")
                 raise
 

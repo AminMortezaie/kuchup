@@ -159,7 +159,7 @@ Layer verdicts from `status`: `all_ok`, `origin_ok_cf_fail`, `panel_down`, `degr
 
 - Admin audit: `GET /api/admin/credits/audit` reports invalid grant balances,
   ledger/balance mismatches, and paid orders without a corresponding grant.
-- Panel logs emit `credit_checkout_started`, `credit_payment_event`, and
+- Panel logs emit `checkout_started`, `credit_checkout_started`, `payment_event`, and
   `credit_admin_grant` for conversion and incident investigation.
 - Alert on any non-empty `paid_orders_without_grants` result. Reconcile a paid
   order with `POST /api/admin/credit-orders/<order_id>/reconcile`; the grant is

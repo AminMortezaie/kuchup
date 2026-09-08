@@ -9,7 +9,7 @@ from relocation_jobs.broadcast.types import (
     RevealEvent,
 )
 from relocation_jobs.catalog.repo import get_company, list_jobs_for_company_keys
-from relocation_jobs.core.job_identity import job_idempotency_key
+from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from relocation_jobs.credits.service import (
     credit_balance,
     mark_usage_migration_done,
@@ -20,7 +20,9 @@ from relocation_jobs.credits.service import (
 from relocation_jobs.credits.types import CreditOperation
 from relocation_jobs.opportunities import repo as opportunities_repo
 from relocation_jobs.users.entitlements import capacity_limits_for_user, plan_is_full_access
-from relocation_jobs.users.repo import get_user_by_id, is_user_admin
+from relocation_jobs.users.repo import get_user_by_id, is_user_admin, load_job_tracking
+
+_ENGAGED_TRACK_FLAGS = ("looking_to_apply", "applied", "pinned", "rejected")
 
 
 def limits_for_user_id(user_id: int) -> CapacityLimits:
@@ -143,6 +145,90 @@ def apply_capacity_to_board_page(user_id: int, companies: list[dict]) -> list[di
         current_assignment_keys=current_assignment_keys,
         bypass=limits.unlimited,
     )
+
+
+def _job_identity_key(job: dict) -> str:
+    return (job.get("idempotency_key") or "").strip() or job_idempotency_key(
+        job.get("url") or "",
+    )
+
+
+def _track_is_engaged(track: dict) -> bool:
+    if track.get("not_for_me"):
+        return False
+    return any(track.get(flag) for flag in _ENGAGED_TRACK_FLAGS)
+
+
+def _engaged_job_keys(
+    user_id: int,
+    country: str,
+    company_name: str,
+    jobs: list[dict],
+) -> set[str]:
+    tracking = load_job_tracking(user_id, country=country)
+    by_url = {
+        url: track
+        for (track_country, track_company, url), track in tracking.items()
+        if track_country == country and track_company == company_name
+    }
+    keys: set[str] = set()
+    for job in jobs:
+        track = by_url.get(normalize_job_url(job.get("url") or ""), {})
+        if not _track_is_engaged(track):
+            continue
+        key = _job_identity_key(job)
+        if key:
+            keys.add(key)
+    return keys
+
+
+def visible_jobs_for_company(
+    user_id: int,
+    country: str,
+    company_name: str,
+    jobs: list[dict],
+    *,
+    extra_visible_keys: set[str] | frozenset[str] | None = None,
+) -> tuple[list[dict], int]:
+    if limits_for_user_id(user_id).unlimited:
+        return list(jobs), 0
+    extra = set(extra_visible_keys or ())
+    extra |= _engaged_job_keys(user_id, country, company_name, jobs)
+    capped = apply_capacity_to_board_page(
+        user_id,
+        [{"country": country, "name": company_name, "jobs": list(jobs)}],
+    )[0]
+    visible = list(capped.get("jobs") or [])
+    seen = {_job_identity_key(job) for job in visible if _job_identity_key(job)}
+    for job in jobs:
+        key = _job_identity_key(job)
+        if key and key in extra and key not in seen:
+            visible.append(job)
+            seen.add(key)
+    hidden = max(
+        0,
+        len(jobs) - len([job for job in jobs if _job_identity_key(job) in seen]),
+    )
+    return visible, hidden
+
+
+def filter_catalog_company_for_user(
+    user_id: int,
+    country: str,
+    company: dict,
+) -> dict:
+    name = (company.get("name") or "").strip()
+    jobs = list(company.get("matching_jobs") or [])
+    visible, hidden = visible_jobs_for_company(user_id, country, name, jobs)
+    if hidden == 0 and len(visible) == len(jobs):
+        return company
+    allowed = {_job_identity_key(job) for job in visible if _job_identity_key(job)}
+    out = dict(company)
+    out["matching_jobs"] = [
+        job for job in jobs if _job_identity_key(job) in allowed
+    ]
+    out["jobs_hidden_count"] = hidden
+    return out
 
 
 def _role_delivery_key(

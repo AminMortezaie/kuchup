@@ -7,10 +7,11 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
   <link rel="manifest" href="/static/manifest.json" />
-  <meta name="theme-color" content="#090b10" />
+  <meta name="theme-color" content="#fcfaf7" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=65" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css?v=93" />
 </head>
 <body>
   <div id="loadingBar" aria-hidden="true"><div id="loadingBarFill"></div></div>
@@ -87,6 +88,7 @@
         <aside class="company-positions-panel admin-panel">
           <h2 class="admin-panel-title">Positions</h2>
           <p class="hint company-positions-hint" id="companyPositionsHint">Select a role to preview its tailored CV.</p>
+          <p class="empty-hint company-positions-upgrade" id="companyPositionsUpgrade" hidden></p>
           <ul class="company-position-list" id="companyPositionList"></ul>
         </aside>
 
@@ -147,7 +149,7 @@
               </div>
             </div>
 
-            <div class="company-artifact-tabs" role="tablist" aria-label="Document type">
+            <div class="company-artifact-tabs tab-rail" role="tablist" aria-label="Document type">
               <button type="button" class="company-artifact-tab company-artifact-tab--active" role="tab" data-artifact="cv" id="companyArtifactCv" aria-selected="true">CV</button>
               <button type="button" class="company-artifact-tab" role="tab" data-artifact="cover-letter" id="companyArtifactCover" aria-selected="false">Cover letter</button>
             </div>
@@ -181,7 +183,7 @@
 
   <div class="toast" id="companyToast"></div>
 
-  <script type="module" src="/static/js/position-card.js?v=1"></script>
-  <script type="module" src="/static/js/company.js?v=15"></script>
+  <script type="module" src="/static/js/position-card.js?v=2"></script>
+  <script type="module" src="/static/js/company.js?v=16"></script>
 </body>
 </html>

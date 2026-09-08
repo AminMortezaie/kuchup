@@ -113,6 +113,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_opportunities_reveal_v1", _ensure_opportunity_reveal_columns)
     run_migration_once(conn, "position_broadcast_assignments_v1", _ensure_position_broadcast_tables)
     run_migration_once(conn, "credit_wallet_v1", _ensure_credit_wallet_tables)
+    run_migration_once(conn, "credit_order_kind_v1", _ensure_credit_order_kind)
     run_migration_once(conn, "mcp_tables_v1", _ensure_mcp_tables)
     run_migration_once(conn, "mcp_master_resumes_v2", _migrate_mcp_master_resumes_v2)
     run_migration_once(conn, "mcp_master_resumes_pdf_v1", _migrate_mcp_master_resumes_pdf_v1)
@@ -370,6 +371,7 @@ def _ensure_credit_wallet_tables(conn) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             paid_at TEXT,
+            kind TEXT NOT NULL DEFAULT 'credits',
             UNIQUE (provider, provider_order_id)
         );
         CREATE INDEX IF NOT EXISTS idx_credit_orders_user_created
@@ -384,6 +386,15 @@ def _ensure_credit_wallet_tables(conn) -> None:
             received_at TEXT NOT NULL,
             UNIQUE (provider, event_id)
         )
+        """
+    )
+
+
+def _ensure_credit_order_kind(conn) -> None:
+    conn.execute(
+        """
+        ALTER TABLE credit_orders
+        ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'credits'
         """
     )
 

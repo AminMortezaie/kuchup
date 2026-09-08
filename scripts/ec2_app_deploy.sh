@@ -141,6 +141,24 @@ google_redirect_uri() {
   printf '%s' "${GOOGLE_REDIRECT_URI:-$(_dotenv_value GOOGLE_REDIRECT_URI)}"
 }
 
+nowpayments_api_key() {
+  printf '%s' "${NOWPAYMENTS_API_KEY:-$(_dotenv_value NOWPAYMENTS_API_KEY)}"
+}
+
+nowpayments_ipn_secret() {
+  printf '%s' "${NOWPAYMENTS_IPN_SECRET:-$(_dotenv_value NOWPAYMENTS_IPN_SECRET)}"
+}
+
+nowpayments_sandbox() {
+  local value
+  value="${NOWPAYMENTS_SANDBOX:-$(_dotenv_value NOWPAYMENTS_SANDBOX)}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  case "$value" in
+    1|true|yes) printf '1' ;;
+    *) printf '' ;;
+  esac
+}
+
 panel_allow_register() {
   local value
   value="${PANEL_ALLOW_REGISTER:-$(_dotenv_value PANEL_ALLOW_REGISTER)}"
@@ -455,6 +473,7 @@ cmd_deploy() {
   load_state
   local redis_pass db_url redis_url secret admin_emails_value
   local google_id google_secret google_redirect panel_public allow_register
+  local nowpayments_key nowpayments_secret nowpayments_sandbox_flag
   local panel_hash worker_hash
   redis_pass="$(redis_password)"
   secret="$(panel_secret)"
@@ -464,6 +483,9 @@ cmd_deploy() {
   google_redirect="$(google_redirect_uri)"
   panel_public="$(panel_public_base_url)"
   allow_register="$(panel_allow_register)"
+  nowpayments_key="$(nowpayments_api_key)"
+  nowpayments_secret="$(nowpayments_ipn_secret)"
+  nowpayments_sandbox_flag="$(nowpayments_sandbox)"
   db_url="postgresql://${DB_USER:-relocation}:${DB_PASSWORD}@172.17.0.1:5432/${DB_NAME:-relocation_jobs}?sslmode=prefer"
   redis_url="redis://:${redis_pass}@172.17.0.1:6379/0"
 
@@ -509,6 +531,9 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e GOOGLE_REDIRECT_URI='${google_redirect}' \\
   -e PANEL_PUBLIC_BASE_URL='${panel_public}' \\
   -e PANEL_ALLOW_REGISTER='${allow_register}' \\
+  -e NOWPAYMENTS_API_KEY='${nowpayments_key}' \\
+  -e NOWPAYMENTS_IPN_SECRET='${nowpayments_secret}' \\
+  -e NOWPAYMENTS_SANDBOX='${nowpayments_sandbox_flag}' \\
   -e SESSION_COOKIE_SECURE=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\

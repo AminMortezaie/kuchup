@@ -486,3 +486,71 @@ def test_cover_letter_routes_require_auth(v2_client):
     ).status_code == 401
     assert v2_client.get("/api/mcp/applications/some-key/cover-letter/pdf").status_code == 401
     assert v2_client.post("/api/mcp/applications/some-key/cover-letter/render").status_code == 401
+
+
+def _expand_acme_to_five_jobs() -> list[dict]:
+    from tests.helpers.seed import append_matching_jobs
+
+    return append_matching_jobs(
+        COUNTRY,
+        COMPANY,
+        [
+            {
+                "title": f"Engineer {index}",
+                "url": (
+                    f"https://boards.greenhouse.io/acmebackend/jobs/{index}00000"
+                    f"?gh_jid={index}00000"
+                ),
+                "fetched": "2025-06-01",
+                "last_seen": "2025-06-01",
+            }
+            for index in range(3, 6)
+        ],
+    )
+
+
+def test_free_user_workspace_caps_positions(seeded_catalog_v2):
+    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from relocation_jobs.users.repo import create_user
+
+    jobs = _expand_acme_to_five_jobs()
+    user = create_user(
+        "freeworkspace",
+        email="freeworkspace@example.com",
+        google_sub="sub-free-workspace",
+    )
+    uid = int(user["id"])
+    save_preferences_and_refresh(uid, target_countries=["uk"])
+    payload = service.list_company_applications(COUNTRY, COMPANY, user_id=uid)
+    assert len(payload.positions) == 3
+    assert payload.jobs_hidden_count == 2
+    assert payload.upgrade_jobs is True
+    visible_urls = {item.url for item in payload.positions}
+    hidden_url = next(job["url"] for job in jobs if job["url"] not in visible_urls)
+    from relocation_jobs.positions.service import set_job_looking_to_apply
+
+    set_job_looking_to_apply(COUNTRY, COMPANY, hidden_url, True, user_id=uid)
+    refreshed = service.list_company_applications(COUNTRY, COMPANY, user_id=uid)
+    assert hidden_url in {item.url for item in refreshed.positions}
+    assert len(refreshed.positions) == 4
+    assert refreshed.jobs_hidden_count == 1
+
+
+def test_full_user_workspace_lists_all_positions(seeded_catalog_v2):
+    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from relocation_jobs.users.entitlements import set_plan
+    from relocation_jobs.users.repo import create_user
+
+    jobs = _expand_acme_to_five_jobs()
+    user = create_user(
+        "fullworkspace",
+        email="fullworkspace@example.com",
+        google_sub="sub-full-workspace",
+    )
+    uid = int(user["id"])
+    set_plan(uid, "full")
+    save_preferences_and_refresh(uid, target_countries=["uk"])
+    payload = service.list_company_applications(COUNTRY, COMPANY, user_id=uid)
+    assert len(payload.positions) == len(jobs)
+    assert payload.jobs_hidden_count == 0
+    assert payload.upgrade_jobs is False

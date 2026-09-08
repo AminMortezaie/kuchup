@@ -29,6 +29,23 @@ def replace_matching_jobs(country_key: str, company_name: str, jobs: list[dict])
     sync_company_board_to_catalog(country_key, company)
 
 
+def append_matching_jobs(
+    country_key: str,
+    company_name: str,
+    extra: list[dict],
+) -> list[dict]:
+    company = get_company(country_key, company_name)
+    if company is None:
+        raise LookupError(f"Company not found: {company_name}")
+    jobs = list(company.get("matching_jobs") or [])
+    for job in extra:
+        stamp_job_identity(job)
+        jobs.append(job)
+    company["matching_jobs"] = jobs
+    sync_company_board_to_catalog(country_key, company)
+    return jobs
+
+
 def merge_and_save_jobs(country_key: str, company_name: str, scraped: list[dict]) -> list[dict]:
     company = get_company(country_key, company_name)
     if company is None:

@@ -73,6 +73,10 @@
   --radius-button: 999px;
   --radius-pill: 999px;
   --radius-input: 0.75rem;
+  --control-height: 2.75rem;
+  --control-pad-x: 0.85rem;
+  --control-font: 0.8125rem;
+  --control-line: 1;
   --ease-snap: cubic-bezier(0.2, 0.7, 0.3, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-short: 180ms;

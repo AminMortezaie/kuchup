@@ -2,6 +2,7 @@ export type AuthUser = {
   id: number;
   username: string;
   email: string;
+  display_name: string;
   is_admin: boolean;
   plan: string;
 };
@@ -10,13 +11,12 @@ export type AuthStatus =
   | { authenticated: false }
   | { authenticated: true; user: AuthUser };
 
-export function authUserLabel(user: AuthUser): string {
-  return user.email || user.username || "?";
+export function authDisplayName(user: AuthUser): string {
+  return user.display_name.trim();
 }
 
-export function authUserInitial(label: string): string {
-  const trimmed = label.trim();
-  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+export function authGivenName(user: AuthUser): string {
+  return authDisplayName(user).split(/\s+/).find(Boolean) || "";
 }
 
 let pending: Promise<AuthStatus> | null = null;
@@ -42,6 +42,7 @@ async function readAuthStatus(): Promise<AuthStatus> {
         id: payload.user.id,
         username: payload.user.username || "",
         email: payload.user.email || "",
+        display_name: payload.user.display_name || "",
         is_admin: Boolean(payload.user.is_admin),
         plan: payload.user.plan || "free",
       },

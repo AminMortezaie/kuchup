@@ -1,12 +1,7 @@
-"use client";
-
 import { BrandMark } from "@/components/BrandMark";
-import { SearchBar } from "@/components/SearchBar";
-import { useSearchFlow } from "@/components/SearchFlowContext";
+import { HeroSearch } from "@/components/HeroSearch";
 
 export function Hero() {
-  const { filters, onSearch } = useSearchFlow();
-
   return (
     <section id="search" className="landing-hero" aria-labelledby="hero-heading">
       <div className="landing-shell hero-layout">
@@ -17,7 +12,7 @@ export function Hero() {
 
           <h1
             id="hero-heading"
-            className="hero-enter hero-enter-delay-1 mt-3 text-fluid-hero text-text-primary"
+            className="mt-3 text-fluid-hero text-text-primary"
           >
             Visa-sponsored software jobs in Europe — in one place
           </h1>
@@ -29,30 +24,7 @@ export function Hero() {
             the thread.
           </p>
 
-          <div className="hero-enter hero-enter-delay-3 hero-search">
-            <div className="hero-search-glow">
-              <SearchBar
-                id="hero-search"
-                key={`hero-${filters?.country ?? "all"}-${filters?.q ?? ""}`}
-                onSearch={onSearch}
-                defaultFilters={filters ?? undefined}
-              />
-            </div>
-            <div className="hero-search-note">
-              <p>
-                Public preview. No sign-in required. Updated every six hours
-                from company career pages.
-              </p>
-              <div className="hero-search-links">
-                <a href="/panel">
-                  Open the board <span aria-hidden="true">→</span>
-                </a>
-                <a href="/mcp">
-                  Claude &amp; Cursor MCP <span aria-hidden="true">→</span>
-                </a>
-              </div>
-            </div>
-          </div>
+          <HeroSearch />
         </div>
 
         <div className="hero-bird" aria-hidden="true">

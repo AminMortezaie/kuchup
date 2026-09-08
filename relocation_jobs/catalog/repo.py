@@ -850,6 +850,32 @@ def list_active_public_job_sitemap_entries() -> list[dict]:
     return [_row(row) for row in rows]
 
 
+def list_active_public_jobs() -> list[dict]:
+    with db_read() as conn:
+        rows = conn.execute(
+            """
+            SELECT j.id, j.title, j.public_slug, j.location, j.description_text,
+                   j.fetched, j.last_seen,
+                   c.name AS company_name, c.country, c.city
+            FROM matching_jobs j
+            JOIN companies c ON c.id = j.company_id
+            WHERE j.visa_sponsorship = 1
+              AND (j.closed_at IS NULL OR j.closed_at = '')
+              AND j.public_slug IS NOT NULL
+              AND j.public_slug != ''
+            ORDER BY c.country, c.name, j.title, j.public_slug
+            """
+        ).fetchall()
+    jobs: list[dict] = []
+    for row in rows:
+        data = _row(row)
+        job = dict(data)
+        if data.get("city"):
+            job["city"] = data["city"]
+        jobs.append(job)
+    return jobs
+
+
 def list_open_jobs_for_listing_check(limit: int) -> list[dict]:
     cap = max(0, int(limit))
     if cap <= 0:

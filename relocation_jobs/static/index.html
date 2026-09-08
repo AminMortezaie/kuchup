@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=90" />
+  <link rel="stylesheet" href="/static/styles.css?v=93" />
 </head>
 <body>
   <div id="loadingBar" aria-hidden="true"><div id="loadingBarFill"></div></div>
@@ -111,7 +111,7 @@
 
         <div class="header-action-group">
           <div class="header-fetch-slot" id="fetch-header-root"></div>
-          <a href="/admin" class="header-secondary-btn admin-header-btn" id="adminPanelBtn" hidden>
+          <a href="/admin" class="header-secondary-btn admin-header-btn" id="adminPanelBtn" hidden aria-label="Admin">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
               <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
@@ -621,7 +621,7 @@
   <dialog class="preferences-dialog" id="preferencesDialog">
     <form id="preferencesForm" class="preferences-form">
       <h2 id="preferencesTitle">Search preferences</h2>
-      <p class="hint" id="preferencesHint">Choose countries to match on your board.</p>
+      <p class="hint" id="preferencesHint">Your board filters to matched companies in these countries.</p>
       <div class="pref-check-list" id="preferencesCountryList"></div>
       <label class="pref-check pref-check-remote">
         <input type="checkbox" id="preferencesRemoteOk" />
@@ -635,9 +635,9 @@
     </form>
   </dialog>
 
-  <script type="module" src="/static/js/position-card.js?v=10"></script>
+  <script type="module" src="/static/js/position-card.js?v=11"></script>
   <script type="module" crossorigin src="/static/dist/board.js?v=15"></script>
-  <script type="module" src="/static/js/main.js?v=116"></script>
+  <script type="module" src="/static/js/main.js?v=117"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js"));

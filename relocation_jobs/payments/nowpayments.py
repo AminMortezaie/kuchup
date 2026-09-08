@@ -12,6 +12,9 @@ from relocation_jobs.payments.types import CheckoutSession, PaymentNotification
 
 PROVIDER = "nowpayments"
 PAID_STATUSES = frozenset({"confirmed", "finished"})
+SANDBOX_API_ROOT = "https://api-sandbox.nowpayments.io"
+LIVE_API_ROOT = "https://api.nowpayments.io"
+_TRUTHY = frozenset({"1", "true", "yes"})
 
 
 def configured() -> bool:
@@ -21,8 +24,22 @@ def configured() -> bool:
     )
 
 
-def _canonical_payload(payload: dict) -> bytes:
-    return json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+def sandbox_enabled() -> bool:
+    return os.environ.get("NOWPAYMENTS_SANDBOX", "").strip().lower() in _TRUTHY
+
+
+def api_root() -> str:
+    return SANDBOX_API_ROOT if sandbox_enabled() else LIVE_API_ROOT
+
+
+def public_base_url(fallback: str = "") -> str:
+    configured_url = os.environ.get("PANEL_PUBLIC_BASE_URL", "").strip()
+    return (configured_url or fallback).rstrip("/")
+
+
+def canonical_ipn_body(payload: dict) -> bytes:
+    ordered = {key: payload[key] for key in sorted(payload)}
+    return json.dumps(ordered, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
 
 
 def create_checkout(
@@ -32,21 +49,23 @@ def create_checkout(
     currency: str,
     description: str,
     base_url: str,
+    return_query: str = "credits",
 ) -> CheckoutSession:
     api_key = os.environ.get("NOWPAYMENTS_API_KEY", "").strip()
-    if not api_key:
+    origin = public_base_url(base_url)
+    if not api_key or not origin:
         raise RuntimeError("Credit checkout is not configured")
     payload = {
         "price_amount": price_minor / 100,
         "price_currency": currency.lower(),
         "order_id": str(order_id),
         "order_description": description,
-        "ipn_callback_url": f"{base_url.rstrip('/')}/api/payments/nowpayments/ipn",
-        "success_url": f"{base_url.rstrip('/')}/panel?credits=success",
-        "cancel_url": f"{base_url.rstrip('/')}/panel?credits=cancelled",
+        "ipn_callback_url": f"{origin}/api/payments/nowpayments/ipn",
+        "success_url": f"{origin}/panel?{return_query}=success",
+        "cancel_url": f"{origin}/panel?{return_query}=cancelled",
     }
     response = httpx.post(
-        "https://api.nowpayments.io/v1/invoice",
+        f"{api_root()}/v1/invoice",
         headers={"x-api-key": api_key, "Content-Type": "application/json"},
         json=payload,
         timeout=20,
@@ -64,11 +83,7 @@ def parse_notification(payload: dict, signature: str) -> PaymentNotification:
     secret = os.environ.get("NOWPAYMENTS_IPN_SECRET", "").strip()
     if not secret:
         raise RuntimeError("Payment webhook is not configured")
-    expected = hmac.new(
-        secret.encode("utf-8"),
-        _canonical_payload(payload),
-        hashlib.sha512,
-    ).hexdigest()
+    expected = hmac.new(secret.encode("utf-8"), canonical_ipn_body(payload), hashlib.sha512).hexdigest()
     if not hmac.compare_digest(expected, signature.strip().lower()):
         raise PermissionError("Invalid payment signature")
     provider_order_id = str(
@@ -77,7 +92,7 @@ def parse_notification(payload: dict, signature: str) -> PaymentNotification:
     status = str(payload.get("payment_status") or "").strip().lower()
     if not provider_order_id or not status:
         raise ValueError("Payment notification is incomplete")
-    event_id = hashlib.sha256(_canonical_payload(payload)).hexdigest()
+    event_id = hashlib.sha256(canonical_ipn_body(payload)).hexdigest()
     return PaymentNotification(
         event_id=event_id,
         provider_order_id=provider_order_id,

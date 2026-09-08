@@ -292,18 +292,30 @@ def create_order(
     price_minor: int,
     currency: str,
     provider: str,
+    kind: str = "credits",
 ) -> int:
     now = _utc_now()
+    order_kind = (kind or "credits").strip() or "credits"
     with db_transaction() as conn:
         row = conn.execute(
             """
             INSERT INTO credit_orders (
                 user_id, pack_key, credits, price_minor, currency,
-                provider, status, created_at, updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, 'pending', %s, %s)
+                provider, status, created_at, updated_at, kind
+            ) VALUES (%s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s)
             RETURNING id
             """,
-            (user_id, pack_key, credits, price_minor, currency, provider, now, now),
+            (
+                user_id,
+                pack_key,
+                credits,
+                price_minor,
+                currency,
+                provider,
+                now,
+                now,
+                order_kind,
+            ),
         ).fetchone()
     return int(row["id"])
 
@@ -509,6 +521,8 @@ def credit_audit() -> dict:
         ).fetchall()
         missing_grants = []
         for order in paid_orders:
+            if str(order.get("kind") or "credits") == "full_access":
+                continue
             source_key = f"order:{order['provider']}:{order['provider_order_id']}"
             grant = conn.execute(
                 """

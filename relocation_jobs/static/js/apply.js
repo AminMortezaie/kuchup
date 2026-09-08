@@ -155,6 +155,20 @@ function setTab(tab) {
   if (notes) notes.hidden = tab !== "notes";
   if (connect) connect.hidden = tab !== "connect";
 
+  const active = document.querySelector(`.apply-tab[data-tab="${tab}"]`);
+  const rail = active?.closest(".tab-rail");
+  if (active && rail) {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const railRect = rail.getBoundingClientRect();
+    const btnRect = active.getBoundingClientRect();
+    if (btnRect.left < railRect.left || btnRect.right > railRect.right) {
+      rail.scrollBy({
+        left: btnRect.left - railRect.left - 12,
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    }
+  }
+
   if (tab === "connect") {
     loadConnectPanel().catch((err) => showError(err.message || "Failed to load MCP connect info"));
   }

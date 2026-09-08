@@ -32,10 +32,11 @@
         <span>Kuchup</span>
       </a>
       <nav aria-label="Primary">
+        <a href="/jobs">Jobs</a>
         <a href="/mcp">MCP</a>
         <a href="/how-it-works">How it works</a>
         <a href="/pricing">Pricing</a>
-        <a class="jp-nav-signin" href="/panel"{% if nav_title %} title="{{ nav_title }}"{% endif %}>{{ nav_label }}</a>
+        <a class="jp-nav-signin" href="/panel" rel="nofollow"{% if nav_title %} title="{{ nav_title }}"{% endif %}>{{ nav_label }}</a>
       </nav>
     </header>
 
@@ -59,11 +60,8 @@
 
       <aside class="jp-cta" aria-label="Apply with Kuchup">
         <a class="jp-btn jp-btn-primary" href="{{ primary_href }}">{{ primary_label }}</a>
-        {% if signed_in %}
-        <a class="jp-employer" href="{{ employer_href }}" rel="nofollow">Continue to the official {{ company }} career page</a>
-        {% endif %}
         {% if save_blocked %}
-        <p class="jp-value">You've used today's free saves. Buy a credit pack or Full Access to track more roles today. The official career page stays available above.</p>
+        <p class="jp-value">You've used today's free saves. Buy a credit pack or Full Access to track more roles today.</p>
         {% else %}
         <p class="jp-value">Kuchup is a workspace for international engineers. Track this relocation role and tailor your CV with Claude/Cursor MCP. Free includes 30 credits a month and 20 MCP writes a day; add a credit pack when you need more matched roles.</p>
         {% endif %}
@@ -81,6 +79,7 @@
 
     <footer class="jp-foot">
       <a href="/">Home</a>
+      <a href="/jobs">Jobs</a>
       <a href="/pricing">Pricing</a>
       <a href="/mcp">MCP</a>
     </footer>

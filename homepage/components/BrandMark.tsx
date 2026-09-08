@@ -44,9 +44,9 @@ type BrandLockupProps = {
 /** Full lockup: transparent mark + KUCHUP wordmark (nav). */
 export function BrandLockup({ className = "", markSize = "default" }: BrandLockupProps) {
   return (
-    <span className={`inline-flex min-w-0 items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex shrink-0 items-center gap-2.5 ${className}`}>
       <BrandMark size={markSize} />
-      <span className="font-display text-lg font-bold uppercase tracking-[0.04em] text-text-primary sm:text-xl">
+      <span className="whitespace-nowrap font-display text-lg font-bold uppercase tracking-[0.04em] text-text-primary sm:text-xl">
         KUCHUP
       </span>
     </span>

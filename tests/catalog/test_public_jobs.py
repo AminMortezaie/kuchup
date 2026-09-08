@@ -106,4 +106,14 @@ def test_job_posting_json_ld_uses_kuchup_hiring_org(seeded_catalog_v2):
     assert payload["jobLocation"]["address"]["addressLocality"]
     assert payload["employmentType"] == "FULL_TIME"
     assert payload["applyUrl"] == payload["url"]
+    assert "Kuchup" in payload["description"]
     json.dumps(payload)
+
+
+def test_job_location_label_includes_city_and_country(seeded_catalog_v2):
+    from relocation_jobs.catalog.service import job_location_label
+
+    job = _visa_job(seeded_catalog_v2)
+    found = get_public_job_by_slug(job["public_slug"])
+    assert found is not None
+    assert job_location_label(found) == "London, United Kingdom"

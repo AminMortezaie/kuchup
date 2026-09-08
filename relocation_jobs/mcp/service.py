@@ -6,7 +6,10 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-from relocation_jobs.broadcast.service import record_touch_and_maybe_reveal
+from relocation_jobs.broadcast.service import (
+    record_touch_and_maybe_reveal,
+    visible_jobs_for_company,
+)
 from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.catalog.repo import (
     get_company,
@@ -432,6 +435,92 @@ def resolve_company_for_workspace(
     return resolved
 
 
+def _company_position_from_job(
+    job: dict,
+    *,
+    country_key: str,
+    company_name: str,
+    company_row: dict,
+    tracking: dict,
+    status_history: dict,
+    app_by_key: dict,
+    profile: ApplicationProfile,
+) -> CompanyPositionApplication | None:
+    track = resolve_track(
+        tracking,
+        country=country_key,
+        company_name=company_name,
+        job=job,
+    )
+    wrong_location, _ = job_fails_office_location_gate(
+        job, company_row, catalog_country=country_key,
+    )
+    wrong_location = effective_wrong_location(fails_gate=wrong_location, track=track)
+    if position_view_from_row(track, wrong_location=wrong_location).bucket == PositionBucket.NOT_FOR_ME:
+        return None
+    if skip_closed_unengaged(
+        job,
+        applied=bool(track.get("applied")),
+        looking_to_apply=bool(track.get("looking_to_apply")),
+    ):
+        return None
+    catalog_url = (job.get("url") or "").strip()
+    idem_key = (
+        (job.get("idempotency_key") or "").strip()
+        or job_idempotency_key(catalog_url)
+    )
+    app = app_by_key.get(idem_key, {})
+    state = job_dict(
+        job,
+        company_name=company_name,
+        company=company_row,
+        country_key=country_key,
+        country_label="",
+        job_tracking=tracking,
+        status_history=status_history,
+        mcp_applications=None,
+    )
+    return CompanyPositionApplication(
+        title=(job.get("title") or "").strip(),
+        url=catalog_url,
+        idempotency_key=idem_key,
+        location=(job.get("location") or "").strip(),
+        applied=bool(track.get("applied")),
+        rejected=bool(track.get("rejected")),
+        looking_to_apply=bool(track.get("looking_to_apply")),
+        pinned=bool(track.get("pinned")),
+        ats_score=track.get("ats_score"),
+        applied_date=state["applied_date"],
+        applied_at=state["applied_at"],
+        applied_history=state["applied_history"],
+        applied_events=state["applied_events"],
+        rejected_date=state["rejected_date"],
+        rejected_history=state["rejected_history"],
+        looking_to_apply_date=state["looking_to_apply_date"],
+        seen=state["seen"],
+        seen_date=state["seen_date"],
+        waiting_referral=state["waiting_referral"],
+        waiting_referral_date=state["waiting_referral_date"],
+        referral_linkedin_url=state["referral_linkedin_url"],
+        pinned_at=state["pinned_at"],
+        has_tailored_tex=bool((app.get("tailored_tex") or "").strip()),
+        has_pdf=bool(app.get("pdf_bytes")),
+        master_resume_slug=(app.get("master_resume_slug") or "").strip(),
+        tailored_tex_updated_at=(app.get("tailored_tex_updated_at") or "").strip(),
+        pdf_updated_at=(app.get("pdf_updated_at") or "").strip(),
+        pdf_filename=application_pdf_filename(profile.full_name, company_name),
+        has_cover_letter_tex=bool((app.get("cover_letter_tex") or "").strip()),
+        has_cover_letter_pdf=bool(app.get("cover_letter_pdf_bytes")),
+        cover_letter_tex_updated_at=(app.get("cover_letter_tex_updated_at") or "").strip(),
+        cover_letter_pdf_updated_at=(app.get("cover_letter_pdf_updated_at") or "").strip(),
+        cover_letter_pdf_filename=application_cover_letter_pdf_filename(
+            profile.full_name, company_name,
+        ),
+        has_description=bool(_job_description_fields(job)["has_description"]),
+        listing_unavailable=bool(job.get("listing_unavailable")),
+    )
+
+
 def list_company_applications(
     country: str,
     company: str,
@@ -454,84 +543,24 @@ def list_company_applications(
         for row in app_rows
         if (row.get("idempotency_key") or "").strip()
     }
+    visible_jobs, jobs_hidden_count = visible_jobs_for_company(
+        uid, country_key, company_name, list(company_row.get("matching_jobs") or []),
+    )
 
     positions: list[CompanyPositionApplication] = []
-    for job in company_row.get("matching_jobs") or []:
-        track = resolve_track(
-            tracking,
-            country=country_key,
-            company_name=company_name,
-            job=job,
-        )
-        wrong_location, _ = job_fails_office_location_gate(
-            job, company_row, catalog_country=country_key,
-        )
-        wrong_location = effective_wrong_location(fails_gate=wrong_location, track=track)
-        if position_view_from_row(track, wrong_location=wrong_location).bucket == PositionBucket.NOT_FOR_ME:
-            continue
-        if skip_closed_unengaged(
+    for job in visible_jobs:
+        item = _company_position_from_job(
             job,
-            applied=bool(track.get("applied")),
-            looking_to_apply=bool(track.get("looking_to_apply")),
-        ):
-            continue
-        catalog_url = (job.get("url") or "").strip()
-        idem_key = (
-            (job.get("idempotency_key") or "").strip()
-            or job_idempotency_key(catalog_url)
-        )
-        row = track
-        app = app_by_key.get(idem_key, {})
-        # Full tracking state, derived exactly as the job board does, so the
-        # company page's <position-card> shows identical state badges/dates.
-        state = job_dict(
-            job,
-            company_name=company_name,
-            company=company_row,
             country_key=country_key,
-            country_label="",
-            job_tracking=tracking,
+            company_name=company_name,
+            company_row=company_row,
+            tracking=tracking,
             status_history=status_history,
-            mcp_applications=None,
+            app_by_key=app_by_key,
+            profile=profile,
         )
-        positions.append(CompanyPositionApplication(
-            title=(job.get("title") or "").strip(),
-            url=catalog_url,
-            idempotency_key=idem_key,
-            location=(job.get("location") or "").strip(),
-            applied=bool(row.get("applied")),
-            rejected=bool(row.get("rejected")),
-            looking_to_apply=bool(row.get("looking_to_apply")),
-            pinned=bool(row.get("pinned")),
-            ats_score=row.get("ats_score"),
-            applied_date=state["applied_date"],
-            applied_at=state["applied_at"],
-            applied_history=state["applied_history"],
-            applied_events=state["applied_events"],
-            rejected_date=state["rejected_date"],
-            rejected_history=state["rejected_history"],
-            looking_to_apply_date=state["looking_to_apply_date"],
-            seen=state["seen"],
-            seen_date=state["seen_date"],
-            waiting_referral=state["waiting_referral"],
-            waiting_referral_date=state["waiting_referral_date"],
-            referral_linkedin_url=state["referral_linkedin_url"],
-            pinned_at=state["pinned_at"],
-            has_tailored_tex=bool((app.get("tailored_tex") or "").strip()),
-            has_pdf=bool(app.get("pdf_bytes")),
-            master_resume_slug=(app.get("master_resume_slug") or "").strip(),
-            tailored_tex_updated_at=(app.get("tailored_tex_updated_at") or "").strip(),
-            pdf_updated_at=(app.get("pdf_updated_at") or "").strip(),
-            pdf_filename=application_pdf_filename(profile.full_name, company_name),
-            has_cover_letter_tex=bool((app.get("cover_letter_tex") or "").strip()),
-            has_cover_letter_pdf=bool(app.get("cover_letter_pdf_bytes")),
-            cover_letter_tex_updated_at=(app.get("cover_letter_tex_updated_at") or "").strip(),
-            cover_letter_pdf_updated_at=(app.get("cover_letter_pdf_updated_at") or "").strip(),
-            cover_letter_pdf_filename=application_cover_letter_pdf_filename(
-                profile.full_name, company_name,
-            ),
-            has_description=bool(_job_description_fields(job)["has_description"]),
-        ))
+        if item:
+            positions.append(item)
 
     positions.sort(key=lambda item: (not item.pinned, not item.looking_to_apply, item.title.lower()))
     return CompanyApplicationsResponse(
@@ -539,6 +568,8 @@ def list_company_applications(
         company=company_name,
         company_slug=repo.company_slug(company_name),
         positions=positions,
+        jobs_hidden_count=jobs_hidden_count,
+        upgrade_jobs=jobs_hidden_count > 0,
     )
 
 

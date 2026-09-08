@@ -147,13 +147,6 @@ body {
   background: var(--accent-primary-hover);
 }
 
-.jp-employer {
-  display: inline-block;
-  margin: 0.85rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
 .jp-value {
   margin: 0.9rem 0 0;
   color: var(--text-secondary);
@@ -189,6 +182,65 @@ body {
 .jp-foot a {
   color: var(--text-secondary);
   text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.jp-shell-wide {
+  max-width: 52rem;
+}
+
+.jp-jobs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
+.jp-jobs-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.jp-jobs-nav a:hover,
+.jp-jobs-nav a[aria-current="page"] {
+  color: var(--text-primary);
+}
+
+.jp-jobs-group {
+  margin-top: 2rem;
+}
+
+.jp-jobs-group h2 {
+  margin: 0;
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  font-size: 1.15rem;
+}
+
+.jp-jobs-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.jp-job-row {
+  display: block;
+  padding: 0.85rem 0;
+  border-bottom: var(--rule-width) solid var(--color-rule);
+  color: inherit;
+  text-decoration: none;
+}
+
+.jp-job-row strong {
+  display: block;
+  color: var(--text-primary);
+}
+
+.jp-job-row span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 

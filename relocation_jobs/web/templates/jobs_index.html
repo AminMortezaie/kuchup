@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if selected_country %}Visa-sponsored jobs in {{ groups[0].label if groups else selected_country }}{% else %}Visa-sponsored relocation jobs{% endif %} | Kuchup</title>
+  <meta name="description" content="Open visa-sponsored software roles curated by Kuchup. Track and prepare applications in one workspace.">
+  <link rel="canonical" href="{{ canonical }}">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Visa-sponsored relocation jobs | Kuchup">
+  <meta property="og:url" content="{{ canonical }}">
+  <meta property="og:image" content="https://kuchup.com/og-default.png">
+  <link rel="icon" href="/static/icons/kuchup-bird.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/design-tokens.css">
+  <link rel="stylesheet" href="/static/job-posting.css">
+  {% if json_ld %}
+  <script type="application/ld+json">{{ json_ld | safe }}</script>
+  {% endif %}
+</head>
+<body>
+  <div class="jp-shell jp-shell-wide">
+    <header class="jp-nav">
+      <a class="jp-brand" href="/">
+        <img src="/static/icons/kuchup-bird.svg" width="28" height="28" alt="">
+        <span>Kuchup</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="/jobs" aria-current="page">Jobs</a>
+        <a href="/mcp">MCP</a>
+        <a href="/how-it-works">How it works</a>
+        <a href="/pricing">Pricing</a>
+        <a class="jp-nav-signin" href="/panel" rel="nofollow"{% if nav_title %} title="{{ nav_title }}"{% endif %}>{{ nav_label }}</a>
+      </nav>
+    </header>
+
+    <main class="jp-main">
+      <p class="jp-kicker">Public catalog</p>
+      <h1>{% if selected_country and groups %}{{ groups[0].label }} visa-sponsored roles{% else %}Visa-sponsored relocation jobs{% endif %}</h1>
+      <p class="jp-meta">
+        <span>{{ job_count }} open role{% if job_count != 1 %}s{% endif %}</span>
+        <span class="jp-badge">Visa sponsorship supported</span>
+      </p>
+      <p class="jp-value">Each listing is a crawlable job page. Apply on Kuchup to track the role and tailor your CV. Updated from company career pages every six hours.</p>
+
+      <nav class="jp-jobs-nav" aria-label="Countries">
+        <a href="/jobs"{% if not selected_country %} aria-current="page"{% endif %}>All</a>
+        {% for group in country_nav %}
+        <a href="{{ group.href }}"{% if selected_country == group.key %} aria-current="page"{% endif %}>{{ group.label }}</a>
+        {% endfor %}
+      </nav>
+
+      {% if job_count == 0 %}
+      <p class="jp-closed">No open visa-sponsored roles in this filter. Browse all countries or a marketing country page.</p>
+      {% endif %}
+
+      {% for group in groups %}
+      {% if group.jobs %}
+      <section class="jp-jobs-group" aria-labelledby="jobs-{{ group.key }}">
+        <h2 id="jobs-{{ group.key }}">{{ group.label }}</h2>
+        <ul class="jp-jobs-list">
+          {% for job in group.jobs %}
+          <li>
+            <a class="jp-job-row" href="/jobs/{{ job.public_slug }}">
+              <strong>{{ job.title }}</strong>
+              <span>{{ job.company_name }}{% if job.location or job.city %} · {{ job.location or job.city }}{% endif %}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% endfor %}
+    </main>
+
+    <footer class="jp-foot">
+      <a href="/">Home</a>
+      <a href="/jobs">Jobs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/mcp">MCP</a>
+    </footer>
+  </div>
+</body>
+</html>

@@ -15,6 +15,7 @@ OPERATION_COSTS: dict[CreditOperation, int] = {
 }
 
 PACKS: tuple[CreditPack, ...] = (
+    CreditPack("mini", 10, 99, "USD", "10 credits"),
     CreditPack("starter", 50, 499, "USD", "50 credits"),
     CreditPack("plus", 150, 1199, "USD", "150 credits"),
     CreditPack("power", 400, 2499, "USD", "400 credits"),

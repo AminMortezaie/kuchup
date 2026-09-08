@@ -4,31 +4,35 @@
 
 ## Product
 
-- Public preview search on https://kuchup.com/ (no sign-in)
-- Country guides for Germany, Netherlands, UK, Portugal, and Ireland
+- [Public preview search](https://kuchup.com/) (no sign-in)
+- Country guides for [Germany](https://kuchup.com/relocation-jobs-germany), the [Netherlands](https://kuchup.com/relocation-jobs-netherlands), the [UK](https://kuchup.com/relocation-jobs-uk), [Portugal](https://kuchup.com/relocation-jobs-portugal), and [Ireland](https://kuchup.com/relocation-jobs-ireland)
 - Full board and company workspaces behind sign-in (not for indexing)
-- MCP server for gated CV reframe — you submit applications yourself
+- [MCP server](https://kuchup.com/mcp) for gated CV reframe — you submit applications yourself
 
 ## Canonical pages
 
-- https://kuchup.com/
-- https://kuchup.com/how-it-works
-- https://kuchup.com/pricing
-- https://kuchup.com/mcp
-- https://kuchup.com/engineering
-- https://kuchup.com/engineering/cant-start-new-thread
-- https://kuchup.com/relocation-jobs-germany
-- https://kuchup.com/relocation-jobs-netherlands
-- https://kuchup.com/relocation-jobs-uk
-- https://kuchup.com/relocation-jobs-portugal
-- https://kuchup.com/relocation-jobs-ireland
+- [Home](https://kuchup.com/)
+- [How it works](https://kuchup.com/how-it-works)
+- [Pricing](https://kuchup.com/pricing)
+- [MCP](https://kuchup.com/mcp)
+- [Engineering](https://kuchup.com/engineering)
+- [One loop is not faster](https://kuchup.com/engineering/one-loop-not-faster)
+- [Can't start a new thread](https://kuchup.com/engineering/cant-start-new-thread)
+- [678 Postgres round trips](https://kuchup.com/engineering/678-postgres-round-trips)
+- [Cache check in the hot path](https://kuchup.com/engineering/cache-check-in-the-hot-path)
+- [Playwright hung for 15 hours](https://kuchup.com/engineering/playwright-hung-for-15-hours)
+- [Relocation jobs in Germany](https://kuchup.com/relocation-jobs-germany)
+- [Relocation jobs in the Netherlands](https://kuchup.com/relocation-jobs-netherlands)
+- [Relocation jobs in the UK](https://kuchup.com/relocation-jobs-uk)
+- [Relocation jobs in Portugal](https://kuchup.com/relocation-jobs-portugal)
+- [Relocation jobs in Ireland](https://kuchup.com/relocation-jobs-ireland)
 
 ## Notes
 
 - Catalog refreshes from company career pages about every six hours
 - Sponsorship signals are heuristics; always confirm the live job description
-- Private app surfaces (/panel, /apply, /api/) are disallowed in robots.txt
+- Private app surfaces (`/panel`, `/apply`, `/api/`) are disallowed in [robots.txt](https://kuchup.com/robots.txt); `/api/public/` is allowed
 
 ## Optional
 
-- GitHub: https://github.com/AminMortezaie/relocation-jobs
+- [GitHub](https://github.com/AminMortezaie/relocation-jobs)

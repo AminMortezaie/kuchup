@@ -1,6 +1,6 @@
 "use client";
 
-import { authUserInitial, authUserLabel } from "@/lib/auth";
+import { authDisplayName, authGivenName } from "@/lib/auth";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button, buttonClass, type ButtonVariant } from "@/components/ui/Button";
 
@@ -10,8 +10,34 @@ type AuthCtaProps = {
   href?: string;
   className?: string;
   variant?: ButtonVariant;
-  showIdentity?: boolean;
+  compact?: boolean;
+  tabIndex?: number;
 };
+
+export function AuthPresence({
+  variant = "inline",
+}: {
+  variant?: "inline" | "sheet";
+}) {
+  const auth = useAuthStatus();
+  if (auth.status !== "signedIn") return null;
+
+  const fullName = authDisplayName(auth.user);
+  const givenName = authGivenName(auth.user);
+  if (variant === "sheet") {
+    return (
+      <p className="px-3 text-sm text-text-secondary">
+        {fullName ? `Signed in as ${fullName}` : "Signed in"}
+      </p>
+    );
+  }
+  if (!givenName) return null;
+  return (
+    <span className="max-w-[9rem] truncate text-sm font-medium text-text-secondary">
+      {givenName}
+    </span>
+  );
+}
 
 export function AuthCta({
   signedOutLabel,
@@ -19,72 +45,40 @@ export function AuthCta({
   href = "/panel",
   className = "",
   variant = "primary",
-  showIdentity = false,
+  compact = false,
+  tabIndex,
 }: AuthCtaProps) {
   const auth = useAuthStatus();
   const placeholder = signedInLabel.length >= signedOutLabel.length
     ? signedInLabel
     : signedOutLabel;
+  const buttonClassName = compact
+    ? `whitespace-nowrap px-3.5 py-2 text-sm ${className}`
+    : `whitespace-nowrap ${className}`;
 
   if (auth.status === "loading") {
     return (
       <span
-        className={buttonClass(variant, `${className} pointer-events-none`)}
+        className={buttonClass(variant, `${buttonClassName} pointer-events-none`)}
         aria-busy="true"
         aria-label="Checking sign-in"
       >
-        <span className="invisible inline-flex items-center gap-2">
-          {showIdentity ? (
-            <>
-              <span className="inline-flex h-6 w-6 shrink-0 rounded-full" />
-              <span className="hidden max-w-[9rem] truncate sm:inline">
-                user@example.com
-              </span>
-              <span>{signedInLabel}</span>
-            </>
-          ) : (
-            placeholder
-          )}
-        </span>
+        <span className="invisible">{compact ? signedOutLabel : placeholder}</span>
       </span>
     );
   }
 
   if (auth.status === "signedOut") {
     return (
-      <Button as="a" href={href} variant={variant} className={className}>
+      <Button as="a" href={href} variant={variant} className={buttonClassName} tabIndex={tabIndex}>
         {signedOutLabel}
       </Button>
     );
   }
 
-  const label = authUserLabel(auth.user);
-  const initial = authUserInitial(label);
-
-  if (!showIdentity) {
-    return (
-      <Button as="a" href={href} variant={variant} className={className} title={label}>
-        {signedInLabel}
-      </Button>
-    );
-  }
-
   return (
-    <Button
-      as="a"
-      href={href}
-      variant={variant}
-      className={`${className} gap-2`}
-      title={label}
-    >
-      <span
-        aria-hidden="true"
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-ink)] text-xs font-bold text-[var(--color-paper)]"
-      >
-        {initial}
-      </span>
-      <span className="hidden max-w-[9rem] truncate sm:inline">{label}</span>
-      <span>{signedInLabel}</span>
+    <Button as="a" href={href} variant={variant} className={buttonClassName} tabIndex={tabIndex}>
+      {signedInLabel}
     </Button>
   );
 }

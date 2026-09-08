@@ -4,22 +4,26 @@ import os
 from html import escape
 from urllib.parse import urlencode
 
-import structlog
-from flask import Response, redirect, render_template, send_from_directory
+from flask import Response, redirect, render_template, request, send_from_directory
 
 from relocation_jobs.catalog.repo import (
     get_public_job_by_slug,
     list_active_public_job_sitemap_entries,
+    list_active_public_jobs,
 )
 from relocation_jobs.catalog.service import (
     SITE,
     company_workspace_path,
+    group_public_jobs_by_country,
     iso_date,
     job_description_html,
     job_is_closed,
     job_is_public_listing,
     job_locality,
+    job_location_label,
     job_posting_json_ld_text,
+    linkedin_jobs_xml_text,
+    public_jobs_item_list_json_ld,
 )
 from relocation_jobs.core.auth import current_user_id, current_username
 from relocation_jobs.core.location_tags import country_label
@@ -33,8 +37,6 @@ from relocation_jobs.users.entitlements import (
     free_public_job_saves_per_day,
     record_credited_public_job_save,
 )
-
-log = structlog.get_logger("relocation_jobs.web")
 
 JOB_PAGE_CACHE = "public, max-age=300, stale-while-revalidate=86400"
 HOMEPAGE_STATIC = STATIC_DIR / "homepage"
@@ -110,7 +112,7 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
         "closed": closed,
         "title": (job.get("title") or "").strip() or "Role",
         "company": company,
-        "location_label": job.get("location") or job_locality(job) or country_label(country),
+        "location_label": job_location_label(job) or job.get("location") or job_locality(job) or country_label(country),
         "country_label": country_label(country),
         "country_href": f"/relocation-jobs-{country}" if country else "/",
         "visa": job.get("visa_sponsorship") is True,
@@ -119,7 +121,6 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
         "canonical": f"{_public_site_url()}/jobs/{slug}",
         "primary_href": cta.get("primary_href", ""),
         "primary_label": cta.get("primary_label", ""),
-        "employer_href": f"/jobs/{slug}/employer",
         "signed_in": signed_in,
         "nav_label": "Open workspace" if signed_in else "Sign in",
         "nav_title": (current_username() or "") if signed_in else "",
@@ -181,7 +182,66 @@ def _xml_lastmod(row: dict) -> str:
     return iso_date(row.get("last_seen") or row.get("fetched") or "")
 
 
+def _requested_country() -> str:
+    return (request.args.get("country") or "").strip().lower()
+
+
+def _jobs_hub_groups(jobs: list[dict], country: str) -> list[dict]:
+    groups = group_public_jobs_by_country(jobs)
+    if not country:
+        return groups
+    matched = [group for group in groups if group["key"] == country]
+    if matched:
+        return matched
+    return [
+        {
+            "key": country,
+            "label": country_label(country) or country,
+            "href": f"/jobs?country={country}",
+            "jobs": [],
+        }
+    ]
+
+
+def _jobs_hub_context() -> dict:
+    country = _requested_country()
+    jobs = list_active_public_jobs()
+    groups = _jobs_hub_groups(jobs, country)
+    listed = [job for group in groups for job in group["jobs"]]
+    site = _public_site_url()
+    canonical = f"{site}/jobs"
+    if country:
+        canonical = f"{canonical}?country={country}"
+    return {
+        "groups": groups,
+        "country_nav": group_public_jobs_by_country(jobs),
+        "selected_country": country,
+        "job_count": len(listed),
+        "canonical": canonical,
+        "json_ld": public_jobs_item_list_json_ld(listed, canonical),
+        "signed_in": current_user_id() is not None,
+        "nav_label": "Open workspace" if current_user_id() else "Sign in",
+        "nav_title": (current_username() or "") if current_user_id() else "",
+    }
+
+
 def register(app):
+    @app.get("/jobs")
+    def public_jobs_hub():
+        if "country" in request.args and not _requested_country():
+            return redirect("/jobs")
+        html = render_template("jobs_index.html", **_jobs_hub_context())
+        resp = Response(html, mimetype="text/html")
+        resp.headers["Cache-Control"] = JOB_PAGE_CACHE
+        return resp
+
+    @app.get("/feeds/linkedin-jobs.xml")
+    def linkedin_jobs_feed():
+        body = linkedin_jobs_xml_text(list_active_public_jobs(), site=_public_site_url())
+        resp = Response(body, mimetype="application/xml")
+        resp.headers["Cache-Control"] = JOB_PAGE_CACHE
+        return resp
+
     @app.get("/jobs/<slug>")
     def public_job_page(slug: str):
         job = _page_job(slug)
@@ -219,16 +279,7 @@ def register(app):
         job = _page_job(slug)
         if job is None:
             return _not_found()
-        dest = (job.get("url") or "").strip()
-        if not dest:
-            return _not_found()
-        log.info(
-            "employer_outbound",
-            slug=slug,
-            company=job.get("company_name") or "",
-            url=dest,
-        )
-        resp = redirect(dest, code=302)
+        resp = redirect(f"/jobs/{slug}/save")
         resp.headers["X-Robots-Tag"] = "noindex"
         return resp
 

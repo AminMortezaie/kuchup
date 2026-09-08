@@ -1,6 +1,6 @@
 # Entitlements and personalized opportunities
 
-**Status:** Phase A–B–C–D–E implemented; F–G planned  
+**Status:** Phase A–F implemented; G planned  
 **Related plan:** Cursor plan `google-only_auth` (personalized opportunities via Google identity + plans)
 
 ## Identity (Phase A — shipped)
@@ -53,7 +53,7 @@ Free position capacity is assignment-based:
 
 ## Public job-page saves (LinkedIn wrapping funnel)
 
-Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primary CTA saves the role into looking-to-apply; the official employer link is never paywalled.
+Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primary CTA saves the role into looking-to-apply. The employer ATS URL is only shown in the company workspace after the role is tracked. `/jobs/<slug>/employer` is a compatibility redirect into `/save` (same 3/day + credit wall).
 
 | Plan | Unique `/jobs/<slug>/save` |
 |------|----------------------------|
@@ -67,6 +67,7 @@ Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primar
 ## Personalized board reads (Phase D — shipped)
 
 - Authenticated **non-admin** board reads (`GET /api/board`) filter companies to `user_opportunities`, then [`broadcast`](../../relocation_jobs/broadcast/) truncates jobs for free users.
+- Company workspace (`GET /api/mcp/companies/<country>/<company>/applications`) uses the same assignment cap. Looking-to-apply, applied, pinned, and rejected roles stay visible even if they sit outside the current 3. `GET /api/jobs` and `GET /api/companies/<country>/<name>` apply the same filter.
 - Meta includes capacity: `company_slots_used/cap`, `positions_used/budget`, `jobs_per_company_peek`, `upgrade_reason`.
 - **Remote board** does **not** apply relocation opportunity keys.
 - **Default preferences:** `germany` until confirmed.
@@ -74,17 +75,20 @@ Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primar
 
 Preferences API + onboarding UI (Phase C): unchanged (`GET`/`PUT /api/preferences`).
 
-## Credit checkout
+## Credit checkout and Full Access (Phase F — shipped)
 
-Credit packs are 50/$4.99, 150/$11.99, and 400/$24.99. Checkout uses
-NOWPayments invoice creation plus signed IPN callbacks. Credits are granted only
-from a verified paid event; browser redirects never mutate a wallet. Full Access
-remains a separate plan capability.
+Credit packs are 10/$0.99, 50/$4.99, 150/$11.99, and 400/$24.99. Full Access is **$29
+one-time** and sets `plan=full`. Checkout uses NOWPayments invoice creation
+plus signed IPN callbacks. Credits and plan changes apply only from a verified
+paid event (`confirmed` / `finished`); browser redirects never mutate a wallet
+or plan. Refunds revoke unused purchased credits and return Full Access to
+`free` unless the account is admin or `grandfathered`.
+
+Ops: [`docs/operations/nowpayments.md`](../operations/nowpayments.md).
 
 ## Next
 
 - **G** Infra SQS (fetch/PDF) per [multi-user-scaling-proposal.md](multi-user-scaling-proposal.md)
-- Opportunity SQS worker deploy + DLQ alarms when enabling `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL`
 
 ## Opportunity refresh (Phase E — shipped)
 

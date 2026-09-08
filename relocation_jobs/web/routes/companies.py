@@ -8,6 +8,7 @@ from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.panel_flags import company_fetch_enabled
 from relocation_jobs.core.paths import country_archive_filename, supported_countries
 from relocation_jobs.catalog.repo import get_company
+from relocation_jobs.broadcast.service import filter_catalog_company_for_user
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import start_company_fetch
 from relocation_jobs.users.entitlements import plan_is_full_access
@@ -25,6 +26,7 @@ def register(app):
         company = get_company(country, company_name)
         if company is None:
             return jsonify({"error": f"Company not found: {company_name}"}), 404
+        company = filter_catalog_company_for_user(g.user_id, country, company)
         return jsonify({"company": company})
 
     @app.patch("/api/companies/applied")

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
 import { notFound } from "next/navigation";
+import { CacheCheckHotPathPost } from "@/components/engineering/CacheCheckHotPathPost";
 import { CantStartNewThreadPost } from "@/components/engineering/CantStartNewThreadPost";
 import { OneLoopNotFasterPost } from "@/components/engineering/OneLoopNotFasterPost";
+import { PlaywrightHungPost } from "@/components/engineering/PlaywrightHungPost";
+import { PostgresRoundTripsPost } from "@/components/engineering/PostgresRoundTripsPost";
 import {
   ENGINEERING_AUTHOR,
   ENGINEERING_POSTS,
@@ -17,6 +20,9 @@ import {
 const POST_BODIES: Record<string, ComponentType> = {
   "cant-start-new-thread": CantStartNewThreadPost,
   "one-loop-not-faster": OneLoopNotFasterPost,
+  "678-postgres-round-trips": PostgresRoundTripsPost,
+  "cache-check-in-the-hot-path": CacheCheckHotPathPost,
+  "playwright-hung-for-15-hours": PlaywrightHungPost,
 };
 
 type PageProps = {

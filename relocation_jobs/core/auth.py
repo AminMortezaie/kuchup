@@ -68,6 +68,7 @@ def auth_status() -> dict:
             "id": user["id"],
             "username": user["username"],
             "email": user.get("email") or "",
+            "display_name": user.get("display_name") or "",
             "is_admin": is_user_admin(user["id"]),
             "plan": user.get("plan") or "free",
         },

@@ -32,6 +32,8 @@ Hallmark Hum, but the Hum pear/cyan/coral palette is deliberately not used.
 - `--color-rule`    #a9c1d1
 - `--color-accent`  #ff6b35 (logo orange)
 - `--color-accent-hover` #ff7f52
+- `--color-accent-deep` #d94f1f (button shadow, not small text)
+- `--color-accent-text` #b84018 (AA small accent text on paper / paper-2)
 - `--color-accent-2` #0e3a69 (secondary brand role)
 - `--color-accent-ink` #082743 (AA text on orange)
 - `--color-focus`   #ff6b35
@@ -98,6 +100,33 @@ Text on tinted fills must meet WCAG 4.5:1. Labels (not hue alone) carry meaning.
 - Primary CTA: orange fill (`--color-accent`), ink text (`--color-accent-ink`),
   pill radius, a restrained solid orange edge-shadow, and a physical press
 - Secondary CTA: paper fill, 1px sky-blue outline, navy text, pill radius
+
+### Marketing nav
+
+Full-bleed sticky bar flush to the top (hairline bottom rule, no floating
+island). Desktop: wordmark + links + compact Sign in / Board CTA. Mobile:
+wordmark + menu only; the primary CTA and identity live inside the sheet.
+The wordmark never shrinks or clips under chrome.
+
+### Tab rails (app)
+
+Horizontal tab rows (apply sections, company document type) scroll instead of
+wrapping labels. Labels stay one line; the row is the thing that reflows.
+Touch height stays `--control-height`.
+
+### Control sizes (app chrome)
+
+Named tokens in `design-tokens.css`. Chrome buttons, dialogs, tabs, selects, and
+status chips in the same row share one box model so mixed `<a>` / `<button>`
+pairs (e.g. Application data vs Sign out) match.
+
+- `--control-height: 2.75rem` (44px touch target)
+- `--control-pad-x: 0.85rem`
+- `--control-font: 0.8125rem`
+- `--control-line: 1`
+
+Text-style `.link-btn` does not use this height. Icon-only squares that already
+set an explicit size (avatar, pin) override it.
 
 ## Hum adaptations
 
@@ -173,6 +202,8 @@ Canonical CSS lives in:
   --space-xl:  3rem;     --space-2xl: 4.5rem;  --space-3xl: 7rem;
 
   --radius-card: 16px; --radius-button: 999px; --radius-input: 12px;
+  --control-height: 2.75rem; --control-pad-x: 0.85rem;
+  --control-font: 0.8125rem; --control-line: 1;
   --shadow-card: 0 8px 24px rgba(14, 58, 105, 0.10);
 }
 ```

@@ -141,7 +141,9 @@ msg, new_count = asyncio.run(_inner())`}</code>
         exception string is the thread error, not a hung browser.
       </p>
       <p>
-        A July hang had already taught us to put timeouts on every blocking
+        A{" "}
+        <a href="/engineering/playwright-hung-for-15-hours">July hang</a> had
+        already taught us to put timeouts on every blocking
         boundary. Those timeouts do not bound how many OS threads and browsers
         exist. This incident is that next failure mode.
       </p>

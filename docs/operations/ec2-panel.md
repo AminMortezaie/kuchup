@@ -203,6 +203,7 @@ Set via `ec2_app_deploy.sh` (from local `.env` / `aws-postgres.env`):
 - `DATABASE_URL` → `172.17.0.1:5432`
 - `REDIS_URL` → `172.17.0.1:6379`
 - `PANEL_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PANEL_ADMIN_EMAILS`
+- Checkout: `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` (see [nowpayments.md](nowpayments.md))
 - Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (starts Alloy)
 - Optional logs: `GRAFANA_CLOUD_LOKI_URL`, `GRAFANA_CLOUD_LOKI_USER` (same token needs `logs:write`; see [monitoring.md](monitoring.md))
 
@@ -228,6 +229,7 @@ docker logs relocation-caddy --tail 50
 ## Related
 
 - [monitoring.md](monitoring.md) — Grafana Cloud Free, Alloy, alerts, 522 runbook
+- [nowpayments.md](nowpayments.md) — credit packs + Full Access checkout
 - [aws-postgres.md](aws-postgres.md) — Postgres on EC2
 - `scripts/ec2_redis.sh` — Redis on EC2
 - [board-read-model-proposal.md](../reference/board-read-model-proposal.md) — board performance (still the main latency fix)

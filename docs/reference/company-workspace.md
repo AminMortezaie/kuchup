@@ -1,6 +1,6 @@
 # Company workspace (panel)
 
-**Last updated:** 2026-07-02
+**Last updated:** 2026-09-07
 
 Panel UI for viewing per-position tailored resumes and PDF previews after Claude Desktop MCP has prepared application artifacts. Complements [mcp-application.md](mcp-application.md) (MCP tools + `/apply` setup).
 
@@ -31,7 +31,7 @@ Out of scope for early phases: browser auto-submit, headless Claude API, full Ov
 | Path | Purpose |
 |------|---------|
 | `/company/<country>/<company-slug>` | Company workspace page (static shell + JS) |
-| `/api/mcp/companies/<country>/<company>/applications` | All catalog positions merged with MCP + tracking state |
+| `/api/mcp/companies/<country>/<company>/applications` | Catalog positions merged with MCP + tracking state. Free users see assigned roles (same 3-per-company cap as the board) plus any looking-to-apply / applied / pinned / rejected roles; `jobs_hidden_count` is the rest. |
 | `/api/mcp/applications/<idempotency_key>` | Single position application detail |
 | `/api/mcp/applications/<idempotency_key>/tex` | Tailored resume LaTeX source |
 | `/api/mcp/applications/<idempotency_key>/pdf` | Stored resume PDF (`application/pdf`) |
@@ -101,6 +101,8 @@ flowchart LR
   "country": "uk",
   "company": "Acme Backend Ltd",
   "company_slug": "acme-backend-ltd",
+  "jobs_hidden_count": 0,
+  "upgrade_jobs": false,
   "positions": [
     {
       "title": "Senior Go Engineer",

@@ -9,6 +9,43 @@ def test_company_detail(v2_auth_client, seeded_catalog_v2):
     assert len(company["matching_jobs"]) == 2
 
 
+def test_free_user_company_detail_caps_matching_jobs(client, db, seeded_catalog_v2):
+    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from relocation_jobs.users.repo import create_user
+    from tests.helpers.seed import append_matching_jobs
+
+    append_matching_jobs(
+        "uk",
+        "Acme Backend Ltd",
+        [
+            {
+                "title": f"Engineer {index}",
+                "url": (
+                    f"https://boards.greenhouse.io/acmebackend/jobs/{index}00000"
+                    f"?gh_jid={index}00000"
+                ),
+                "fetched": "2025-06-01",
+                "last_seen": "2025-06-01",
+            }
+            for index in range(3, 6)
+        ],
+    )
+    user = create_user(
+        "freedetail",
+        email="freedetail@example.com",
+        google_sub="sub-free-detail",
+    )
+    save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = user["id"]
+        sess["username"] = user["username"]
+        sess.permanent = True
+    company = client.get("/api/companies/uk/Acme%20Backend%20Ltd").get_json()["company"]
+    assert len(company["matching_jobs"]) == 3
+    assert company["jobs_hidden_count"] == 2
+
+
 def test_fetch_attempts_empty(v2_auth_client, seeded_catalog_v2):
     resp = v2_auth_client.get("/api/fetch/attempts?country=uk")
     assert resp.status_code == 200

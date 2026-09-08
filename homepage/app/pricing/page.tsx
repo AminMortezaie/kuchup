@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Start with 30 monthly credits, add non-expiring credit packs when needed, or choose Full Access for an uncapped matched board.",
+    "Start with 30 monthly credits, add non-expiring credit packs when needed, or unlock Full Access for $29 one-time.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Pricing | Relocation Jobs",
     description:
-      "Free includes 30 monthly credits. Purchased credit packs never expire, and Full Access removes board caps.",
+      "Free includes 30 monthly credits. Purchased credit packs never expire. Full Access is $29 one-time.",
     url: "https://kuchup.com/pricing",
     siteName: "Relocation Jobs",
     type: "website",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pricing | Relocation Jobs",
     description:
-      "Free includes 30 monthly credits. Purchased credit packs never expire, and Full Access removes board caps.",
+      "Free includes 30 monthly credits. Purchased credit packs never expire. Full Access is $29 one-time.",
     images: ["https://kuchup.com/og-default.png"],
   },
 };
@@ -68,8 +68,8 @@ export default function PricingPage() {
             </p>
           </section>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <Card className="px-5 py-6">
+          <div className="mt-10 grid items-stretch gap-5 md:grid-cols-3">
+            <Card className="flex h-full flex-col px-5 py-6">
               <h2 className="font-display text-xl font-bold text-text-primary">
                 Free
               </h2>
@@ -86,38 +86,42 @@ export default function PricingPage() {
                 <li>Personal apply / reject / not-for-me tracking</li>
                 <li>MCP connect with 20 write/render requests per day</li>
               </ul>
-              <AuthCta
-                signedOutLabel="Sign in with Google"
-                signedInLabel="Open workspace"
-                className="mt-6"
-              />
+              <div className="mt-auto flex w-full flex-col gap-3 pt-6 md:min-h-[calc(1.5rem+var(--control-height)*2+0.75rem)]">
+                <AuthCta
+                  signedOutLabel="Sign in with Google"
+                  signedInLabel="Open workspace"
+                  className="w-full"
+                />
+              </div>
             </Card>
 
-            <Card className="px-5 py-6" accentBar>
+            <Card className="flex h-full flex-col px-5 py-6" accentBar>
               <h2 className="font-display text-xl font-bold text-text-primary">
                 Credit packs
               </h2>
               <p className="mt-1 font-display text-2xl font-extrabold text-text-primary">
-                From $4.99
+                From $0.99
               </p>
               <ul className="mt-4 space-y-2 text-sm text-text-secondary">
-                <li>50, 150, or 400-credit packs</li>
+                <li>10, 50, 150, or 400-credit packs</li>
                 <li>Purchased credits never expire</li>
                 <li>Free monthly credits are always used first</li>
                 <li>1 credit only when a new matched role is delivered</li>
                 <li>Tracking actions and failed deliveries stay free</li>
               </ul>
-              <Button as="a" href="/panel?credits=1" variant="primary" className="mt-6">
-                Add credits
-              </Button>
+              <div className="mt-auto flex w-full flex-col gap-3 pt-6 md:min-h-[calc(1.5rem+var(--control-height)*2+0.75rem)]">
+                <Button as="a" href="/panel?credits=1" variant="primary" className="w-full">
+                  Add credits
+                </Button>
+              </div>
             </Card>
 
-            <Card className="px-5 py-6">
+            <Card className="flex h-full flex-col px-5 py-6">
               <h2 className="font-display text-xl font-bold text-text-primary">
                 Full Access
               </h2>
               <p className="mt-1 font-display text-2xl font-extrabold text-text-primary">
-                Coming soon
+                $29 one-time
               </p>
               <ul className="mt-4 space-y-2 text-sm text-text-secondary">
                 <li>No Free company cap on your matched board</li>
@@ -125,12 +129,11 @@ export default function PricingPage() {
                 <li>Free already includes workspace, documents, and MCP</li>
                 <li>Purchased credit balance remains on your account</li>
               </ul>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <AuthCta
-                  signedOutLabel="Sign in for Free access"
-                  signedInLabel="Open workspace"
-                />
-                <Button as="a" href="/mcp" variant="secondary">
+              <div className="mt-auto flex w-full flex-col gap-3 pt-6 md:min-h-[calc(1.5rem+var(--control-height)*2+0.75rem)]">
+                <Button as="a" href="/panel?upgrade=1" variant="primary" className="w-full">
+                  Unlock Full Access
+                </Button>
+                <Button as="a" href="/mcp" variant="secondary" className="w-full">
                   Explore MCP
                 </Button>
               </div>
@@ -184,7 +187,8 @@ export default function PricingPage() {
 
           <p className="mt-8 text-center text-xs text-text-muted">
             Credits are usage units with no cash or redemption value. Full Access
-            pricing will be announced separately.
+            is a one-time $29 unlock. Payments confirm via NOWPayments, not the
+            browser return URL.
           </p>
       </main>
     </div>

@@ -113,6 +113,7 @@ def test_jobs_sitemap_lists_only_active_visa_slugs(v2_client, seeded_catalog_v2)
     body = resp.get_data(as_text=True)
     assert f"/jobs/{job['public_slug']}" in body
     assert "<lastmod>" in body
+    assert "<loc>https://kuchup.com/jobs</loc>" not in body
     company = get_company("uk", "Acme Backend Ltd")
     other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
     assert other.get("public_slug")
@@ -137,11 +138,23 @@ def test_save_authenticated_lands_in_company_workspace(auth_client, seeded_catal
     assert "/company/uk/acme-backend-ltd" in (resp.headers.get("Location") or "")
 
 
-def test_employer_outbound_redirects_to_ats(v2_client, seeded_catalog_v2):
+def test_employer_redirects_to_save(v2_client, seeded_catalog_v2):
     job = _publish_visa_job(seeded_catalog_v2)
     resp = v2_client.get(f"/jobs/{job['public_slug']}/employer", follow_redirects=False)
     assert resp.status_code in (302, 303)
-    assert (resp.headers.get("Location") or "") == job["url"]
+    location = resp.headers.get("Location") or ""
+    assert f"/jobs/{job['public_slug']}/save" in location
+    assert job["url"] not in location
+
+
+def test_signed_in_employer_redirects_to_save(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    _login_free(v2_client, "free-employer-save")
+    resp = v2_client.get(f"/jobs/{job['public_slug']}/employer", follow_redirects=False)
+    assert resp.status_code in (302, 303)
+    location = resp.headers.get("Location") or ""
+    assert f"/jobs/{job['public_slug']}/save" in location
+    assert job["url"] not in location
 
 
 def test_three_public_saves_do_not_spend_credits(v2_client, seeded_catalog_v2):
@@ -188,6 +201,8 @@ def test_fourth_public_save_empty_wallet_stays_on_page(v2_client, seeded_catalog
     body = resp.get_data(as_text=True)
     assert "Buy credits or Full Access to track more roles today" in body
     assert "/pricing" in body
+    assert "The official career page stays available" not in body
+    assert "Continue to the official" not in body
     assert entitlement_status(uid)["public_job_saves_used"] == 3
 
 
@@ -212,22 +227,39 @@ def test_board_looking_to_apply_does_not_count_public_save(v2_client, seeded_cat
     assert entitlement_status(uid)["public_job_saves_used"] == 0
 
 
-def test_employer_uncapped_after_daily_saves(v2_client, seeded_catalog_v2):
-    jobs = _publish_visa_jobs(seeded_catalog_v2, 3)
-    _login_free(v2_client, "free-employer")
-    for job in jobs:
+def test_employer_follows_save_wall_after_daily_saves(v2_client, seeded_catalog_v2):
+    jobs = _publish_visa_jobs(seeded_catalog_v2, 4)
+    user = _login_free(v2_client, "free-employer")
+    uid = int(user["id"])
+    credit_balance(uid)
+    for index in range(30):
+        spend_for_operation(
+            uid,
+            CreditOperation.ROLE_REPLACEMENT,
+            idempotency_key=f"drain-employer:{index}",
+        )
+    for job in jobs[:3]:
         v2_client.get(f"/jobs/{job['public_slug']}/save", follow_redirects=False)
-    resp = v2_client.get(f"/jobs/{jobs[0]['public_slug']}/employer", follow_redirects=False)
+    blocked = jobs[3]
+    resp = v2_client.get(f"/jobs/{blocked['public_slug']}/employer", follow_redirects=False)
     assert resp.status_code in (302, 303)
-    assert (resp.headers.get("Location") or "") == jobs[0]["url"]
+    location = resp.headers.get("Location") or ""
+    assert f"/jobs/{blocked['public_slug']}/save" in location
+    assert blocked["url"] not in location
+    save_resp = v2_client.get(f"/jobs/{blocked['public_slug']}/save", follow_redirects=False)
+    assert save_resp.status_code == 200
+    body = save_resp.get_data(as_text=True)
+    assert "Buy credits or Full Access to track more roles today" in body
+    assert blocked["url"] not in body
+    assert "Continue to the official" not in body
 
 
-def test_signed_in_job_page_shows_employer_link(v2_client, seeded_catalog_v2):
+def test_signed_in_job_page_hides_employer_link(v2_client, seeded_catalog_v2):
     job = _publish_visa_job(seeded_catalog_v2)
     _login_free(v2_client, "free-employer-link")
     body = v2_client.get(f"/jobs/{job['public_slug']}").get_data(as_text=True)
-    assert f"/jobs/{job['public_slug']}/employer" in body
-    assert "Continue to the official" in body
+    assert f"/jobs/{job['public_slug']}/employer" not in body
+    assert "Continue to the official" not in body
     assert ">Open workspace</a>" in body
     assert ">Sign in</a>" not in body
     assert 'title="free-employer-link"' in body
@@ -239,6 +271,71 @@ def test_signed_in_job_page_shows_free_remaining_cta(v2_client, seeded_catalog_v
     resp = v2_client.get(f"/jobs/{job['public_slug']}")
     assert resp.status_code == 200
     assert "3 of 3 free today" in resp.get_data(as_text=True)
+
+
+def test_jobs_hub_lists_open_visa_slugs(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    resp = v2_client.get("/jobs")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}" in body
+    assert "noindex" not in body
+    assert "index, follow" in body
+    company = get_company("uk", "Acme Backend Ltd")
+    other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
+    if other.get("visa_sponsorship") is not True:
+        assert f"/jobs/{other['public_slug']}" not in body
+
+
+def test_jobs_hub_country_filter(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    uk = v2_client.get("/jobs?country=uk")
+    assert uk.status_code == 200
+    assert f"/jobs/{job['public_slug']}" in uk.get_data(as_text=True)
+    empty = v2_client.get("/jobs?country=germany")
+    assert empty.status_code == 200
+    body = empty.get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}" not in body
+    assert "noindex" not in body
+    blank = v2_client.get("/jobs?country=")
+    assert blank.status_code == 302
+    assert blank.headers["Location"].endswith("/jobs")
+
+
+def test_jobs_hub_omits_closed_roles(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    company = get_company("uk", "Acme Backend Ltd")
+    other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
+    merge_and_save_jobs(
+        "uk",
+        "Acme Backend Ltd",
+        [{"title": other["title"], "url": other["url"]}],
+    )
+    body = v2_client.get("/jobs").get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}" not in body
+
+
+def test_linkedin_jobs_feed_lists_open_visa_jobs(v2_client, seeded_catalog_v2, monkeypatch):
+    monkeypatch.setenv("LINKEDIN_COMPANY_ID", "123456")
+    monkeypatch.setenv("LINKEDIN_JOB_POSTER_EMAIL", "jobs@example.com")
+    job = _publish_visa_job(seeded_catalog_v2)
+    resp = v2_client.get("/feeds/linkedin-jobs.xml")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "<source>" in body
+    assert "<partnerJobId>" in body
+    assert f"<applyUrl><![CDATA[https://kuchup.com/jobs/{job['public_slug']}]]></applyUrl>" in body
+    assert "<company><![CDATA[Kuchup]]></company>" in body
+    assert str(job["id"]) in body
+    company = get_company("uk", "Acme Backend Ltd")
+    other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
+    merge_and_save_jobs(
+        "uk",
+        "Acme Backend Ltd",
+        [{"title": other["title"], "url": other["url"]}],
+    )
+    closed_body = v2_client.get("/feeds/linkedin-jobs.xml").get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}" not in closed_body
 
 
 def test_signed_in_job_page_credit_cta_after_free_saves(v2_client, seeded_catalog_v2):

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { AuthCta } from "@/components/AuthCta";
+import { AuthCta, AuthPresence } from "@/components/AuthCta";
 import { BrandLockup } from "@/components/BrandMark";
 
 const NAV_LINKS = [
@@ -35,11 +35,11 @@ export function Header() {
   }, []);
 
   return (
-    <header className="nav-glass relative sticky top-3 z-40 rounded-app shadow-header">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+    <header className="nav-glass relative sticky top-0 z-40">
+      <div className="landing-nav-inner flex items-center justify-between gap-3">
         <a
           href="/"
-          className="inline-flex min-w-0 items-center text-inherit no-underline"
+          className="inline-flex shrink-0 items-center text-inherit no-underline"
           onClick={() => setOpen(false)}
         >
           <BrandLockup markSize="compact" />
@@ -51,7 +51,7 @@ export function Header() {
               <li key={link.label}>
                 <a
                   href={link.href}
-                  className="rounded-app px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+                  className="whitespace-nowrap rounded-app px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
                 >
                   {link.label}
                 </a>
@@ -61,12 +61,14 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <AuthCta
-            signedOutLabel="Sign in"
-            signedInLabel="Open workspace"
-            showIdentity
-            className="px-3.5 py-2 text-xs sm:px-4 sm:text-sm"
-          />
+          <div className="hidden md:flex items-center gap-3">
+            <AuthPresence />
+            <AuthCta
+              signedOutLabel="Sign in"
+              signedInLabel="Board"
+              compact
+            />
+          </div>
           <button
             type="button"
             className="inline-flex h-11 w-11 items-center justify-center rounded-app border border-[var(--color-rule)] text-text-primary transition-transform duration-150 ease-out active:translate-y-px md:hidden"
@@ -85,22 +87,33 @@ export function Header() {
         aria-label="Primary mobile"
         aria-hidden={!open}
         data-open={open}
-        className="mobile-menu-panel absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-app border border-[var(--color-rule)] bg-[var(--color-paper)] px-2 py-2 shadow-header md:hidden"
+        className="mobile-menu-panel absolute inset-x-0 top-full z-50 md:hidden"
       >
-        <ul className="flex flex-col gap-0.5">
-          {NAV_LINKS.map((link) => (
-            <li key={link.label}>
-              <a
-                href={link.href}
-                tabIndex={open ? undefined : -1}
-                className="block rounded-app px-3 py-2.5 text-sm font-medium text-text-secondary transition-[color,background-color,transform] duration-150 ease-out active:translate-y-px hover:bg-bg-surface-hover hover:text-text-primary"
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className="landing-nav-inner flex flex-col gap-2 pb-4 pt-2">
+          <ul className="flex flex-col gap-0.5">
+            {NAV_LINKS.map((link) => (
+              <li key={link.label}>
+                <a
+                  href={link.href}
+                  tabIndex={open ? undefined : -1}
+                  className="block whitespace-nowrap rounded-app px-3 py-2.5 text-sm font-medium text-text-secondary transition-[color,background-color,transform] duration-150 ease-out active:translate-y-px hover:bg-bg-surface-hover hover:text-text-primary"
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-2 border-t border-[var(--color-rule)] pt-3">
+            <AuthPresence variant="sheet" />
+            <AuthCta
+              signedOutLabel="Sign in"
+              signedInLabel="Open workspace"
+              className="w-full"
+              tabIndex={open ? 0 : -1}
+            />
+          </div>
+        </div>
       </nav>
     </header>
   );

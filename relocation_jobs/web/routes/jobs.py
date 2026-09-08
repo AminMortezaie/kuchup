@@ -5,8 +5,9 @@ from flask import g, jsonify, request
 from relocation_jobs.core.auth import login_required
 from relocation_jobs.panel.service import flatten_companies
 from relocation_jobs.panel.stats import compute_stats
-from relocation_jobs.broadcast.service import record_touch_and_maybe_reveal
+from relocation_jobs.broadcast.service import apply_capacity_to_board_page, record_touch_and_maybe_reveal
 from relocation_jobs.broadcast.types import RevealEvent
+from relocation_jobs.opportunities.service import resolve_board_opportunity_scope
 from relocation_jobs.web import deps
 from relocation_jobs.web.query import query_flags
 from relocation_jobs.web.validators import job_mutation_error, job_mutation_fields
@@ -34,11 +35,19 @@ def register(app):
     @login_required
     def api_jobs():
         flags = query_flags()
+        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
+        requested_hide_empty = flags["hide_empty"]
+        hide_empty = False if opportunity_scope.plan == "free" else requested_hide_empty
+        opportunity_company_keys = None
+        opportunity_country_keys = None
+        if not opportunity_scope.bypass:
+            opportunity_company_keys = opportunity_scope.company_keys
+            opportunity_country_keys = opportunity_scope.country_keys
         companies, file_meta, fetch_problem_count = flatten_companies(
             flags["country_key"],
             visa_only=flags["visa_only"],
             hide_applied=flags["hide_applied"],
-            hide_empty=flags["hide_empty"],
+            hide_empty=hide_empty,
             not_applied_only=flags["not_applied_only"],
             hide_position_applied=flags["hide_position_applied"],
             hide_position_rejected=flags["hide_position_rejected"],
@@ -51,7 +60,20 @@ def register(app):
             city=flags["city"],
             ats_type=flags["ats_type"],
             user_id=g.user_id,
+            opportunity_company_keys=opportunity_company_keys,
+            opportunity_country_keys=opportunity_country_keys,
         )
+        companies = apply_capacity_to_board_page(g.user_id, companies)
+        if opportunity_scope.plan == "free" and requested_hide_empty:
+            companies = [
+                company
+                for company in companies
+                if company.get("jobs")
+                or (
+                    flags["position_rejected_only"]
+                    and company.get("rejected_jobs")
+                )
+            ]
         stats = compute_stats(
             companies,
             file_meta,

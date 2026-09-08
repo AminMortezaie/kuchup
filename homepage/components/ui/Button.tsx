@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { appSurfaceRel } from "@/lib/seo";
 
 export type ButtonVariant = "primary" | "secondary";
 
@@ -8,6 +9,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   className?: string;
   href?: string;
   as?: "button" | "a";
+  rel?: string;
 };
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
@@ -27,13 +29,20 @@ export function Button({
   className = "",
   href,
   as,
+  rel,
   ...rest
 }: ButtonProps) {
   const classes = buttonClass(variant, className);
 
   if (as === "a" || href) {
     return (
-      <a href={href} className={classes} title={rest.title}>
+      <a
+        href={href}
+        className={classes}
+        title={rest.title}
+        tabIndex={rest.tabIndex}
+        rel={rel ?? (href ? appSurfaceRel(href) : undefined)}
+      >
         {children}
       </a>
     );

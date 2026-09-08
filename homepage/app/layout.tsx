@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Manrope } from "next/font/google";
+import { JetBrains_Mono, Lexend, Manrope } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import "./globals.css";
@@ -8,6 +8,13 @@ const manrope = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-body",
+  display: "swap",
+});
+
+const lexend = Lexend({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -112,28 +119,17 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${manrope.variable} ${jetbrains.variable}`}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${manrope.variable} ${lexend.variable} ${jetbrains.variable}`}
+    >
       <body className={manrope.className}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="flex min-h-dvh flex-col">
-          <div className="landing-nav-shell">
-            <Header />
-          </div>
+          <Header />
           <div className="flex-1">{children}</div>
           <Footer />
         </div>
