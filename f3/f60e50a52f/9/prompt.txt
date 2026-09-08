@@ -1,0 +1,13 @@
+after a change, job has seen is not working and when a user click on a job, the job card is not changing and not showing that user has seen that specific job.
+
+why this is happening? find the bug and fix it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+Deploy
