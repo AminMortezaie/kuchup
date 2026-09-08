@@ -1,0 +1,20 @@
+what's this fucking shit why this is pop up and for credits we have this shitty UX.
+
+
+find the problem and plan to fix it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+why this is on the left, in which website you saw pop up like this.
+
+its completely a wrong ui and needs to be fix quickly.
+
+---
+
+deploy it
