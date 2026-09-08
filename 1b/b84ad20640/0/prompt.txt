@@ -1,0 +1,11 @@
+there is a problem with JDs.
+if you see for example jobs we have in germany relocation jobs page you can see lots of them has problem in JD parsing find the problem with JD parsing in all ATS we have and then please create a plan to solve this problem.
+use /ponytail  for it.
+
+---
+
+create a branch from main and start to build it
+
+---
+
+ok deploy and merge then run the script to see the changes.
