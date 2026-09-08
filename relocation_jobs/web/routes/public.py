@@ -56,6 +56,7 @@ def _preview_position(job: dict) -> dict:
     return {
         "title": job.get("title") or "Untitled role",
         "url": job.get("url") or "",
+        "public_slug": (job.get("public_slug") or "").strip(),
         "company_name": job.get("company_name") or "",
         "country": country,
         "country_label": country_label(country) if country else "",

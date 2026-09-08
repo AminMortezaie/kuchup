@@ -18,6 +18,19 @@ type LiveState = {
   last_fetch: string;
 };
 
+function publicJobHref(role: CountrySnapshot["sample_positions"][number]): string | null {
+  const slug = (role.public_slug || "").trim();
+  if (slug) {
+    return `/jobs/${slug}`;
+  }
+  const url = (role.url || "").trim();
+  return url.startsWith("/jobs/") ? url : null;
+}
+
+function hasPublicJobHref(role: CountrySnapshot["sample_positions"][number]): boolean {
+  return publicJobHref(role) !== null;
+}
+
 function fromSnapshot(snapshot: CountrySnapshot | null): LiveState {
   if (!snapshot) {
     return {
@@ -37,7 +50,7 @@ function fromSnapshot(snapshot: CountrySnapshot | null): LiveState {
       .map((row) => row.name)
       .filter(Boolean)
       .slice(0, 4),
-    sample_positions: snapshot.sample_positions.slice(0, 5),
+    sample_positions: snapshot.sample_positions.filter(hasPublicJobHref).slice(0, 5),
     last_fetch: snapshot.last_fetch || "",
   };
 }
@@ -143,26 +156,30 @@ export function CountryCatalogPanel({ country, label, initial }: Props) {
       {state.sample_positions.length > 0 ? (
         <div className="mt-5">
           <h2 className="font-display text-lg font-semibold text-text-primary">
-            Sample roles from company career pages
+            Sample visa-sponsored roles
           </h2>
           <ul className="mt-3 space-y-2">
-            {state.sample_positions.map((role) => (
-              <li key={`${role.company_name}-${role.title}-${role.url}`}>
-                <a
-                  href={role.url}
-                  className="text-sm font-medium text-text-primary underline-offset-2 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {role.title}
-                </a>
-                <span className="text-xs text-text-muted">
-                  {" "}
-                  — {role.company_name}
-                  {role.location ? ` · ${role.location}` : ""}
-                </span>
-              </li>
-            ))}
+            {state.sample_positions.map((role) => {
+              const href = publicJobHref(role);
+              if (!href) {
+                return null;
+              }
+              return (
+                <li key={`${role.company_name}-${role.title}-${href}`}>
+                  <a
+                    href={href}
+                    className="text-sm font-medium text-text-primary underline-offset-2 hover:underline"
+                  >
+                    {role.title}
+                  </a>
+                  <span className="text-xs text-text-muted">
+                    {" "}
+                    — {role.company_name}
+                    {role.location ? ` · ${role.location}` : ""}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
