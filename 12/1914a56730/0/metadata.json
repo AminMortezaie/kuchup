@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "121914a56730",
+  "session_id": "8fd2e913-cc06-4e23-8a90-c5beeaefc3b3",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T16:18:17.109042Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "dd1f07e3981b",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "turn_count": 3,
+    "context_tokens": 233180,
+    "context_window_size": 256000
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
