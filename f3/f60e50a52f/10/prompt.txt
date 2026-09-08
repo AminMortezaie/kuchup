@@ -1,0 +1,23 @@
+based on the numbers we have on our monitoring tools, how does changing the concurrency model helped to improve performance on our system?
+
+find the numbers and then write down an article about it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+why this is the result?
+
+---
+
+ok so your article is wrong article cause comparing to different things that shouldn't.
+
+fix or remove the article.
+
+---
+
+deploy
