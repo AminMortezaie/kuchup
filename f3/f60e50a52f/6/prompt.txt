@@ -1,0 +1,24 @@
+there is a seo problem with google search console.
+
+see the report.
+based on the data we have what's the problem here and how we can fix it?
+
+---
+
+open up google search console i will login and you find the data you want.
+
+---
+
+fix the problems you saw
+
+---
+
+where did you apply it?
+
+---
+
+need deploy?
+
+---
+
+depoly
