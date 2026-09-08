@@ -166,6 +166,7 @@ _UNRECOVERABLE_CHROME = (
     "only necessary cookies",
     "manage cookie preferences",
     "linkedin respects your privacy",
+    "this website uses cookies",
     "compare personal plans",
     "open bank account",
     "toggle accordion",

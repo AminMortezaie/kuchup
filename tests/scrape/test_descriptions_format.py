@@ -91,6 +91,13 @@ def test_format_job_description_drops_unrecoverable_chrome():
     readable, display_html = format_job_description(raw)
     assert readable == ""
     assert display_html == ""
+    cookie = (
+        "Senior Golang Developer. This website uses cookies to ensure you get "
+        "the best experience. Leaseweb and our selected partners use cookies."
+    )
+    readable, display_html = format_job_description(cookie)
+    assert readable == ""
+    assert display_html == ""
 
 
 def test_format_job_description_strips_personio_chrome():
