@@ -3,15 +3,18 @@
   "checkpoint_id": "f34a8964be84",
   "strategy": "manual-commit",
   "branch": "feat/country-sample-public-slugs",
-  "checkpoints_count": 6,
+  "checkpoints_count": 8,
   "files_touched": [
     "homepage/components/CountryCatalogPanel.tsx",
     "homepage/lib/country-snapshots.ts",
     "relocation_jobs/catalog/repo.py",
     "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/_next/static/5fBDjSZw9pLSh4Oy40orQ/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/5fBDjSZw9pLSh4Oy40orQ/_ssgManifest.js",
     "relocation_jobs/static/homepage/_next/static/AB1U2hA8mHeybzgdbNgbp/_buildManifest.js",
     "relocation_jobs/static/homepage/_next/static/AB1U2hA8mHeybzgdbNgbp/_ssgManifest.js",
     "relocation_jobs/static/homepage/_next/static/chunks/app/[slug]/page-535d9c338b50f27c.js",
+    "relocation_jobs/static/homepage/_next/static/chunks/app/[slug]/page-a3116b94b3c44d88.js",
     "relocation_jobs/static/homepage/engineering.html",
     "relocation_jobs/static/homepage/engineering.txt",
     "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html",
@@ -60,13 +63,20 @@
       "compact_transcript": "/f3/4a8964be84/1/transcript.jsonl",
       "content_hash": "/f3/4a8964be84/1/content_hash.txt",
       "prompt": "/f3/4a8964be84/1/prompt.txt"
+    },
+    {
+      "metadata": "/f3/4a8964be84/2/metadata.json",
+      "transcript": "/f3/4a8964be84/2/full.jsonl",
+      "compact_transcript": "/f3/4a8964be84/2/transcript.jsonl",
+      "content_hash": "/f3/4a8964be84/2/content_hash.txt",
+      "prompt": "/f3/4a8964be84/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 551359,
+    "input_tokens": 737575,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 13618432,
-    "output_tokens": 79038,
-    "api_call_count": 6
+    "cache_read_tokens": 18085376,
+    "output_tokens": 105350,
+    "api_call_count": 8
   }
 }
