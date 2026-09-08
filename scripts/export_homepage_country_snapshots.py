@@ -58,16 +58,24 @@ def _snapshot_for_country(country: str, overview_row: dict | None, meta_row: dic
     featured_scope = (preview.get("meta") or {}).get("featured_scope") or ""
     if featured_scope != "country":
         featured = []
-    positions = [
-        {
-            "title": row.get("title") or "",
-            "company_name": row.get("company_name") or "",
-            "location": row.get("location") or "",
-            "url": row.get("url") or "",
-        }
-        for row in (preview.get("positions") or [])[:POSITION_LIMIT]
-        if (row.get("country") or "").strip().lower() == country
-    ]
+    positions = []
+    for row in preview.get("positions") or []:
+        if (row.get("country") or "").strip().lower() != country:
+            continue
+        slug = (row.get("public_slug") or "").strip()
+        if not slug:
+            continue
+        positions.append(
+            {
+                "title": row.get("title") or "",
+                "company_name": row.get("company_name") or "",
+                "location": row.get("location") or "",
+                "public_slug": slug,
+                "url": f"/jobs/{slug}",
+            }
+        )
+        if len(positions) >= POSITION_LIMIT:
+            break
     sample_companies = [
         {
             "name": row.get("name") or "",

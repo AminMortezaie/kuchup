@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timezone
 
 from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
+from relocation_jobs.core.slug import public_job_slug_base
 
 
 def test_panel_page_keeps_private_app_shell(v2_client, seeded_catalog_v2):
@@ -96,6 +97,10 @@ def test_public_preview_returns_only_positive_sponsorship_positions(
             "sponsorship_signal": "positive",
             "title": "Senior Backend Engineer",
             "url": "https://boards.greenhouse.io/acmebackend/jobs/123456?gh_jid=123456",
+            "public_slug": public_job_slug_base(
+                "Acme Backend Ltd",
+                "Senior Backend Engineer",
+            ),
         }
     ]
 

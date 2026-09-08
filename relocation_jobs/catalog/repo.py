@@ -567,7 +567,7 @@ def list_sponsored_catalog_jobs(
     with db_read() as conn:
         rows = conn.execute(
             f"""
-            SELECT j.title, j.url, j.fetched, j.last_seen, j.location,
+            SELECT j.title, j.url, j.public_slug, j.fetched, j.last_seen, j.location,
                    c.name AS company_name, c.country, c.city
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id

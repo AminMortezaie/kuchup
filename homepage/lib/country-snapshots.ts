@@ -12,6 +12,7 @@ export type CountrySamplePosition = {
   title: string;
   company_name: string;
   location: string;
+  public_slug?: string;
   url: string;
 };
 
