@@ -98,6 +98,13 @@ def test_format_job_description_drops_unrecoverable_chrome():
     readable, display_html = format_job_description(cookie)
     assert readable == ""
     assert display_html == ""
+    german = (
+        "Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung "
+        "mit der Website bieten zu können."
+    )
+    readable, display_html = format_job_description(german)
+    assert readable == ""
+    assert display_html == ""
 
 
 def test_format_job_description_strips_personio_chrome():
@@ -111,3 +118,14 @@ def test_format_job_description_strips_personio_chrome():
     assert "Skip to main content" not in readable
     assert "Back to all jobs" not in readable
     assert display_html
+
+
+def test_format_job_description_strips_single_skip_marker():
+    raw = (
+        "Senior Platform Engineer at Synopsys Skip to main content "
+        "We are looking for an engineer who has owned production systems "
+        "and can drive observability across the platform."
+    )
+    readable, _ = format_job_description(raw)
+    assert "We are looking for an engineer" in readable
+    assert "Skip to main content" not in readable

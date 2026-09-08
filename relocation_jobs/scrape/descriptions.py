@@ -146,6 +146,7 @@ _PAGE_CHROME_MARKERS = (
     "manage cookie preferences",
     "linkedin respects your privacy",
     "skip to main content",
+    "join our talent community",
     "powered by personio",
     "powered by greenhouse",
     "powered by ashby",
@@ -167,6 +168,7 @@ _UNRECOVERABLE_CHROME = (
     "manage cookie preferences",
     "linkedin respects your privacy",
     "this website uses cookies",
+    "wir verwenden cookies",
     "compare personal plans",
     "open bank account",
     "toggle accordion",
@@ -322,10 +324,9 @@ def format_job_description(raw: str) -> tuple[str, str]:
         return "", ""
     if looks_like_unrecoverable_chrome(stripped):
         return "", ""
-    if looks_like_page_chrome(stripped):
-        stripped = strip_page_chrome(stripped)
-        if not stripped:
-            return "", ""
+    stripped = strip_page_chrome(stripped)
+    if not stripped:
+        return "", ""
     recovered = recover_smartrecruiters_plain_text(stripped)
     if recovered:
         stripped = recovered
