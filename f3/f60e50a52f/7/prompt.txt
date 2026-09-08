@@ -1,0 +1,35 @@
+i just opened kuchup on your browser and you can see on mobile version some buttons are not showing correctly.
+
+find them and fix them up.
+
+you can also change the ui and make it more like a professional website.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+what are you doing brother?
+
+---
+
+what are you doing brother?
+
+---
+
+what are you doing brother?
+
+---
+
+what are you doing brother?
+
+---
+
+what are you doing brother?
+
+---
+
+deploy
