@@ -1,0 +1,20 @@
+we have a front problem which is the button sizes are not alligned and consistent.
+
+this is real ux problem and if you open up the website and see the different pages you can see lots of problems like this.
+
+find the and fix them all.
+
+(you can see in image difference between application data and signed out button.)
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+another fix is about button places.
+if you see on this page the open workspace and add credits button are the at the same line and it's a ui problem.
+
+please find them all the plan to fix them.
