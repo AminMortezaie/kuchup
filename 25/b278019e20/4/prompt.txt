@@ -10,3 +10,7 @@ and for coding always using /ponytail
 plan for a great redesign on it.
 
 /codex-token-optimizer also optimize the tokens.
+
+---
+
+create a new branch and start to build
