@@ -1,0 +1,13 @@
+there is a bug in pagination.
+
+it shows 10 pages but after page 4 with my filter which is "hide companies without any open roles" shows nothing.
+
+find the bug and fix it.
+
+you can also search on your browser and i will login there to see the problem.
+before applying any changes.
+
+---
+
+but it did not work correctly, plan to find the source of problem and give me your propsal to fix this forever also use /ponytail 
+during planning.
