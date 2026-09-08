@@ -1,0 +1,5 @@
+plan and then start to optimize the code.
+
+---
+
+/goal make it clean and follow the /ponytail best practice patterns to make it less as you can.
