@@ -6,6 +6,7 @@ from httpx import Response
 
 from relocation_jobs.scrape.boards.lever import (
     fetch_lever_board,
+    lever_posting_api_url,
     lever_postings_api_url,
 )
 
@@ -21,6 +22,7 @@ async def test_fetch_lever_board_parses_jobs():
                     "text": "Senior Backend Engineer",
                     "hostedUrl": "https://jobs.lever.co/acme/backend",
                     "categories": {"location": "London"},
+                    "descriptionPlain": "Build APIs. Visa sponsorship available.",
                 },
                 {"text": "", "hostedUrl": "https://jobs.lever.co/acme/empty"},
             ],
@@ -34,6 +36,7 @@ async def test_fetch_lever_board_parses_jobs():
     assert jobs[0]["title"] == "Senior Backend Engineer"
     assert jobs[0]["location"] == "London"
     assert jobs[0]["url"] == "https://jobs.lever.co/acme/backend"
+    assert jobs[0]["description_text"] == "Build APIs. Visa sponsorship available."
 
 
 @pytest.mark.asyncio
@@ -109,3 +112,12 @@ async def test_fetch_ats_board_dispatches_lever_eu():
     async with httpx.AsyncClient() as client:
         jobs = await fetch_ats_board(client, company)
     assert jobs == []
+
+
+def test_lever_posting_api_url_includes_company_slug():
+    assert lever_posting_api_url(
+        "https://jobs.lever.co/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    ) == "https://api.lever.co/v0/postings/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    assert lever_posting_api_url(
+        "https://jobs.eu.lever.co/tomtom/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    ) == "https://jobs.eu.lever.co/v0/postings/tomtom/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"

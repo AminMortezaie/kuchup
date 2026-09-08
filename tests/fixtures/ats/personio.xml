@@ -4,6 +4,16 @@
     <id>54321</id>
     <name>Platform Engineer</name>
     <office>Munich</office>
+    <jobDescriptions>
+      <jobDescription>
+        <name>Your mission</name>
+        <value><![CDATA[<p>Build APIs and own production.</p>]]></value>
+      </jobDescription>
+      <jobDescription>
+        <name>Your profile</name>
+        <value><![CDATA[<ul><li>Python</li><li>Postgres</li></ul>]]></value>
+      </jobDescription>
+    </jobDescriptions>
   </position>
   <position>
     <id>11111</id>

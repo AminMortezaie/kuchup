@@ -22,7 +22,7 @@ async def test_enrich_jobs_sets_visa_from_description():
     jobs = [{"title": "Engineer", "url": "https://example.com/jobs/1"}]
     company = {"name": "Acme", "ats_type": "generic"}
 
-    async def fake_fetch(_client, url, ats_type=None):
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
         assert url == "https://example.com/jobs/1"
         return "visa sponsorship available for qualified applicants"
 
@@ -59,7 +59,7 @@ async def test_enrich_only_missing_skips_when_visa_description_and_location_pres
     ]
     company = {"name": "Acme", "ats_type": "generic"}
 
-    async def fake_fetch(_client, url, ats_type=None):
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
         raise AssertionError("should not fetch when visa, description, and location exist")
 
     import httpx
@@ -93,7 +93,7 @@ async def test_enrich_only_missing_fetches_when_location_missing():
     ]
     company = {"name": "Acme", "ats_type": "generic"}
 
-    async def fake_fetch(_client, url, ats_type=None):
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
         return "Updated JD with visa sponsorship."
 
     import httpx
@@ -126,7 +126,7 @@ async def test_enrich_only_missing_fetches_when_description_missing():
     ]
     company = {"name": "Acme", "ats_type": "generic"}
 
-    async def fake_fetch(_client, url, ats_type=None):
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
         return "Updated role requirements and visa sponsorship."
 
     import httpx
@@ -173,7 +173,7 @@ async def test_enrich_missing_fetched_sets_today_without_overwriting_existing():
     jobs = [{"title": "Engineer", "url": "https://example.com/jobs/1"}]
     company = {"name": "Acme", "ats_type": "generic"}
 
-    async def fake_fetch(_client, url, ats_type=None):
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
         return "visa sponsorship available"
 
     import httpx
@@ -192,3 +192,41 @@ async def test_enrich_missing_fetched_sets_today_without_overwriting_existing():
             enrich_mod.fetch_job_description_async = original
 
     assert out2[0]["fetched"] == "2025-03-01"
+
+
+@pytest.mark.asyncio
+async def test_enrich_only_missing_refetches_page_chrome_description():
+    from relocation_jobs.scrape.enrich import enrich_jobs
+
+    jobs = [
+        {
+            "title": "Engineer",
+            "url": "https://example.com/jobs/1",
+            "visa_sponsorship": True,
+            "description_text": (
+                "Skip to main content. Powered by Personio. Back to all jobs. "
+                "Some leftover chrome."
+            ),
+            "location": "Berlin, Germany",
+            "fetched": "2025-01-15",
+        },
+    ]
+    company = {"name": "Acme", "ats_type": "generic"}
+
+    async def fake_fetch(_client, url, ats_type=None, board_slug=""):
+        return "About the role. We are looking for engineers. Visa sponsorship available."
+
+    import httpx
+
+    async with httpx.AsyncClient() as client:
+        import relocation_jobs.scrape.enrich as enrich_mod
+
+        original = enrich_mod.fetch_job_description_async
+        try:
+            enrich_mod.fetch_job_description_async = fake_fetch
+            out = await enrich_jobs(client, jobs, company, only_missing=True, concurrency=1)
+        finally:
+            enrich_mod.fetch_job_description_async = original
+
+    assert "About the role" in out[0]["description_text"]
+    assert "Powered by Personio" not in out[0]["description_text"]

@@ -23,31 +23,45 @@ _JUNK_LISTING_TITLE = re.compile(
     r"^(show\s+\d+\s+more|load\s+more|view\s+all(\s+jobs)?|see\s+all(\s+jobs)?)$",
     re.I,
 )
+_TITLE_CUT_RE = re.compile(
+    r"\s+(?:was du mitbringst|view job|view role|view position|apply now|"
+    r"i'm interested)\b",
+    re.I,
+)
 
 
 def _normalize_title(text: str) -> str:
     return " ".join((text or "").split())
 
 
-def _title_from_listing_anchor(a) -> str:
-    title = _normalize_title(a.get_text(" ", strip=True))
-    if title.lower() not in _GENERIC_LINK_LABELS and len(title) >= 5:
-        if "job family" not in title.lower():
-            return title[:150]
+def _clean_listing_title(title: str) -> str:
+    text = _TITLE_CUT_RE.split(_normalize_title(title), maxsplit=1)[0]
+    return text.strip(" -–·|,")[:150]
 
+
+def _title_from_listing_anchor(a) -> str:
+    for heading in (a.find("h3"), a.find("h2"), a.find("h1")):
+        if heading:
+            title = _clean_listing_title(heading.get_text(" ", strip=True))
+            if len(title) >= 5:
+                return title
+    title = _clean_listing_title(a.get_text(" ", strip=True))
+    if title.lower() not in _GENERIC_LINK_LABELS and 5 <= len(title) <= 90:
+        if "job family" not in title.lower():
+            return title
     node = a.parent
-    best = ""
-    for _ in range(8):
+    for _ in range(4):
         if not node:
             break
-        t = _normalize_title(node.get_text(" ", strip=True))
-        lower = t.lower()
-        if "job family" in lower:
-            t = re.split(r"job family", t, maxsplit=1, flags=re.I)[0].strip()
-        if len(t) > len(best):
-            best = t
+        heading = node.find(["h1", "h2", "h3"])
+        if heading:
+            found = _clean_listing_title(heading.get_text(" ", strip=True))
+            if len(found) >= 5:
+                return found
         node = node.parent
-    return best[:150]
+    if title.lower() not in _GENERIC_LINK_LABELS and len(title) >= 5:
+        return title[:90]
+    return ""
 
 
 def _fetch_job_detail_title(url: str) -> str:

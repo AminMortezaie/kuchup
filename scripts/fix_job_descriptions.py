@@ -15,7 +15,9 @@ if str(ROOT) not in sys.path:
 from relocation_jobs.catalog.repo import update_job_description_text
 from relocation_jobs.core.db import db_read
 from relocation_jobs.core.paths import supported_countries
+from relocation_jobs.scrape.boards.greenhouse import greenhouse_board_slug
 from relocation_jobs.scrape.descriptions import (
+    looks_like_page_chrome,
     needs_ashby_refetch,
     needs_getyourguide_refetch,
     needs_pinpointhq_refetch,
@@ -25,12 +27,6 @@ from relocation_jobs.scrape.descriptions import (
 from relocation_jobs.scrape.job_text import _JOB_DETAIL_FETCHERS, fetch_job_description
 
 API_ATS_TYPES = frozenset(_JOB_DETAIL_FETCHERS)
-_BRANDED_CAREERS_URL_MARKERS = (
-    "smartrecruiters.com",
-    "getyourguide.careers",
-    "ashbyhq.com",
-    "pinpointhq.com",
-)
 
 
 def _ats_type_for_job(job: dict) -> str:
@@ -47,19 +43,11 @@ def _ats_type_for_job(job: dict) -> str:
     return ats_type
 
 
-def _is_api_backed_job(job: dict) -> bool:
-    url = (job.get("url") or "").lower()
-    ats_type = _ats_type_for_job(job)
-    if ats_type in API_ATS_TYPES:
-        return True
-    return any(marker in url for marker in _BRANDED_CAREERS_URL_MARKERS)
-
-
 def needs_description_refetch(job: dict) -> bool:
-    if not _is_api_backed_job(job):
-        return False
-    ats_type = _ats_type_for_job(job)
     text = (job.get("description_text") or "").strip()
+    if not text or looks_like_page_chrome(text):
+        return True
+    ats_type = _ats_type_for_job(job)
     url = (job.get("url") or "").lower()
     if "getyourguide.careers" in url or (
         ats_type == "greenhouse" and "getyourguide" in url
@@ -73,21 +61,12 @@ def needs_description_refetch(job: dict) -> bool:
         return needs_recruitee_refetch(text)
     if ats_type == "pinpointhq" or "pinpointhq.com" in url:
         return needs_pinpointhq_refetch(text)
-    if ats_type in API_ATS_TYPES:
-        return not text
     return False
 
 
 def list_jobs(*, country: str | None = None, ats_type: str | None = None) -> list[dict]:
-    clauses = [
-        "("
-        "c.ats_type = ANY(%s)"
-        " OR j.url ILIKE '%%smartrecruiters%%'"
-        " OR j.url ILIKE '%%getyourguide.careers%%'"
-        " OR j.url ILIKE '%%ashbyhq%%'"
-        ")",
-    ]
-    params: list[object] = [list(API_ATS_TYPES)]
+    clauses: list[str] = []
+    params: list[object] = []
     if country:
         clauses.append("c.country = %s")
         params.append(country)
@@ -103,6 +82,7 @@ def list_jobs(*, country: str | None = None, ats_type: str | None = None) -> lis
         else:
             clauses.append("c.ats_type = %s")
         params.append(ats_type)
+    where = " AND ".join(clauses) if clauses else "TRUE"
     sql = f"""
         SELECT
             j.idempotency_key,
@@ -111,10 +91,11 @@ def list_jobs(*, country: str | None = None, ats_type: str | None = None) -> lis
             j.description_text,
             c.name AS company_name,
             c.country,
-            c.ats_type
+            c.ats_type,
+            c.ats_url
         FROM matching_jobs j
         JOIN companies c ON c.id = j.company_id
-        WHERE {" AND ".join(clauses)}
+        WHERE {where}
         ORDER BY c.country, c.name, j.title
     """
     with db_read() as conn:
@@ -128,9 +109,11 @@ def refetch_job_description(job: dict) -> tuple[str, str]:
     ats_type = _ats_type_for_job(job)
     if not key or not url:
         return "fail", "missing idempotency_key or url"
-    if not _is_api_backed_job(job):
-        return "skip", f"unsupported ats_type={ats_type or 'unknown'}"
-    text = fetch_job_description(url, ats_type).strip()
+    text = fetch_job_description(
+        url,
+        ats_type,
+        greenhouse_board_slug(job.get("ats_url") or ""),
+    ).strip()
     if not text:
         return "fail", "empty API response"
     if not update_job_description_text(key, text):
