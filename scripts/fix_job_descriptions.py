@@ -18,11 +18,13 @@ from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.scrape.boards.greenhouse import greenhouse_board_slug
 from relocation_jobs.scrape.descriptions import (
     looks_like_page_chrome,
+    looks_like_unrecoverable_chrome,
     needs_ashby_refetch,
     needs_getyourguide_refetch,
     needs_pinpointhq_refetch,
     needs_recruitee_refetch,
     needs_smartrecruiters_refetch,
+    strip_page_chrome,
 )
 from relocation_jobs.scrape.job_text import _JOB_DETAIL_FETCHERS, fetch_job_description
 
@@ -114,11 +116,21 @@ def refetch_job_description(job: dict) -> tuple[str, str]:
         ats_type,
         greenhouse_board_slug(job.get("ats_url") or ""),
     ).strip()
-    if not text:
-        return "fail", "empty API response"
-    if not update_job_description_text(key, text):
-        return "fail", "database update failed"
-    return "ok", f"{len(text)} chars"
+    if text and not looks_like_unrecoverable_chrome(text):
+        if not update_job_description_text(key, text):
+            return "fail", "database update failed"
+        return "ok", f"{len(text)} chars"
+    current = (job.get("description_text") or "").strip()
+    if looks_like_unrecoverable_chrome(current):
+        if not update_job_description_text(key, ""):
+            return "fail", "database update failed"
+        return "ok", "cleared chrome"
+    recovered = strip_page_chrome(current)
+    if recovered and recovered != current:
+        if not update_job_description_text(key, recovered):
+            return "fail", "database update failed"
+        return "ok", f"stripped {len(recovered)} chars"
+    return "fail", "empty API response"
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -144,27 +144,57 @@ _PINPOINTHQ_NOISE_MARKERS = (
 _PAGE_CHROME_MARKERS = (
     "only necessary cookies",
     "manage cookie preferences",
+    "linkedin respects your privacy",
     "skip to main content",
     "powered by personio",
     "powered by greenhouse",
     "powered by ashby",
     "back to all jobs",
+    "apply for this job",
     "application form",
     "attach file",
     "open bank account",
     "compare personal plans",
+    "toggle accordion",
+    "• all jobs •",
     "i'm interested",
     "create job alert",
     "view all opportunities",
     "share to wechat",
 )
+_UNRECOVERABLE_CHROME = (
+    "only necessary cookies",
+    "manage cookie preferences",
+    "linkedin respects your privacy",
+    "compare personal plans",
+    "open bank account",
+    "toggle accordion",
+)
+
+
+def looks_like_unrecoverable_chrome(text: str) -> bool:
+    lower = (text or "").lower()
+    return bool(lower) and any(marker in lower for marker in _UNRECOVERABLE_CHROME)
 
 
 def looks_like_page_chrome(text: str) -> bool:
     lower = (text or "").lower()
     if not lower:
         return False
+    if looks_like_unrecoverable_chrome(lower):
+        return True
     return sum(marker in lower for marker in _PAGE_CHROME_MARKERS) >= 2
+
+
+def strip_page_chrome(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = text
+    for marker in sorted(_PAGE_CHROME_MARKERS, key=len, reverse=True):
+        cleaned = re.sub(re.escape(marker), " ", cleaned, flags=re.I)
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def html_job_body(html: str) -> str:
@@ -176,6 +206,10 @@ def html_job_body(html: str) -> str:
         "nav", "header", "footer", "form",
     ]):
         tag.decompose()
+    for tag in list(soup.find_all(True)):
+        ident = f"{tag.get('id') or ''} {' '.join(tag.get('class') or [])}".lower()
+        if "cookie" in ident:
+            tag.decompose()
     node = soup.find("article") or soup.find("main") or soup.body or soup
     return html_to_readable(str(node))
 
@@ -285,6 +319,12 @@ def format_job_description(raw: str) -> tuple[str, str]:
     stripped = (raw or "").strip()
     if not stripped:
         return "", ""
+    if looks_like_unrecoverable_chrome(stripped):
+        return "", ""
+    if looks_like_page_chrome(stripped):
+        stripped = strip_page_chrome(stripped)
+        if not stripped:
+            return "", ""
     recovered = recover_smartrecruiters_plain_text(stripped)
     if recovered:
         stripped = recovered

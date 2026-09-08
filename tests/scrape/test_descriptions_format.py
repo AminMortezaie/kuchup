@@ -81,3 +81,26 @@ def test_html_job_body_keeps_article_and_drops_nav():
     assert "Build APIs in Go" in text
     assert "All jobs" not in text
     assert "Powered by Greenhouse" not in text
+
+
+def test_format_job_description_drops_unrecoverable_chrome():
+    raw = (
+        "Apply as a Backend Engineer at N26. Compare personal plans. "
+        "Standard Bank for free. Smart Bank with more control."
+    )
+    readable, display_html = format_job_description(raw)
+    assert readable == ""
+    assert display_html == ""
+
+
+def test_format_job_description_strips_personio_chrome():
+    raw = (
+        "Skip to main content. Back to all jobs. Apply for this job. "
+        "These tasks are waiting for you. You'll be a core contributor "
+        "to the admin experience team."
+    )
+    readable, display_html = format_job_description(raw)
+    assert "These tasks are waiting for you" in readable
+    assert "Skip to main content" not in readable
+    assert "Back to all jobs" not in readable
+    assert display_html

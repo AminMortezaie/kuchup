@@ -23,3 +23,22 @@ def test_personio_xml_board_keeps_job_descriptions(monkeypatch):
     assert "Your mission" in platform["description_text"]
     recruiter = next(job for job in jobs if job["title"] == "Recruiter")
     assert "description_text" not in recruiter
+
+
+def test_fetch_personio_job_detail_reads_xml_by_id(monkeypatch):
+    xml = _FIXTURE.read_text(encoding="utf-8")
+
+    def fake_get(url, *args, **kwargs):
+        assert url.endswith("/xml")
+        return MockResponse(text=xml)
+
+    monkeypatch.setattr("relocation_jobs.scrape.boards.personio.requests.get", fake_get)
+    from relocation_jobs.scrape.boards.personio import fetch_personio_job_detail
+
+    text, location = fetch_personio_job_detail(
+        "https://acme.jobs.personio.de/job/54321"
+    )
+    assert "Build APIs" in text
+    assert location == "Munich"
+    empty, _ = fetch_personio_job_detail("https://acme.jobs.personio.de/job/11111")
+    assert empty == ""

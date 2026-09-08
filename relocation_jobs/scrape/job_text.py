@@ -14,6 +14,9 @@ from relocation_jobs.scrape.boards.greenhouse import (
 from relocation_jobs.scrape.boards.hibob import fetch_hibob_job_detail as hibob_job_detail_fetch
 from relocation_jobs.scrape.boards.join import fetch_join_job_detail as join_job_detail_fetch
 from relocation_jobs.scrape.boards.lever import lever_posting_api_url
+from relocation_jobs.scrape.boards.personio import (
+    fetch_personio_job_detail as personio_job_detail_fetch,
+)
 from relocation_jobs.scrape.boards.pinpointhq import (
     fetch_pinpointhq_job_detail as pinpointhq_job_detail_fetch,
 )
@@ -25,7 +28,13 @@ from relocation_jobs.scrape.boards.smartrecruiters import (
 )
 from relocation_jobs.scrape.boards.workable import fetch_workable_job_detail as workable_job_detail_fetch
 from relocation_jobs.scrape.boards.workday import workday_job_detail_api_url
-from relocation_jobs.scrape.descriptions import html_job_body, html_to_readable, looks_like_page_chrome
+from relocation_jobs.scrape.descriptions import (
+    html_job_body,
+    html_to_readable,
+    looks_like_page_chrome,
+    looks_like_unrecoverable_chrome,
+    strip_page_chrome,
+)
 
 
 class JobFetchResult(NamedTuple):
@@ -241,6 +250,15 @@ def fetch_join_job_text(url: str) -> str:
     return fetch_join_job_detail(url).text
 
 
+def fetch_personio_job_detail(url: str) -> JobFetchResult:
+    text, location = personio_job_detail_fetch(url)
+    return JobFetchResult(text, location)
+
+
+def fetch_personio_job_text(url: str) -> str:
+    return fetch_personio_job_detail(url).text
+
+
 _JOB_DETAIL_FETCHERS = {
     "greenhouse": fetch_greenhouse_job_detail,
     "greenhouse_eu": fetch_greenhouse_job_detail,
@@ -250,6 +268,7 @@ _JOB_DETAIL_FETCHERS = {
     "ashby": fetch_ashby_job_detail,
     "hibob": fetch_hibob_job_detail,
     "join": fetch_join_job_detail,
+    "personio": fetch_personio_job_detail,
     "pinpointhq": fetch_pinpointhq_job_detail,
     "smartrecruiters": fetch_smartrecruiters_job_detail,
     "workable": fetch_workable_job_detail,
@@ -306,6 +325,9 @@ def fetch_job_detail(
         response = requests.get(url, headers=HEADERS, timeout=15)
         if response.ok:
             text = html_job_body(response.text)
+            if looks_like_unrecoverable_chrome(text):
+                return _empty_fetch()
+            text = strip_page_chrome(text)
             if looks_like_page_chrome(text):
                 return _empty_fetch()
             if len(text) > 300 and _looks_like_job_description(text):

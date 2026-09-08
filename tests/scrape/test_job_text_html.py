@@ -50,3 +50,28 @@ def test_fetch_job_detail_keeps_article_body(monkeypatch):
     assert "We are looking for a backend engineer" in result.text
     assert "Skip to main content" not in result.text
     assert "Powered by Personio" not in result.text
+
+
+def test_fetch_job_detail_strips_leftover_ats_chrome(monkeypatch):
+    html = """
+    <html><body>
+      <main>
+        <p>Skip to main content. Back to all jobs. Apply for this job.</p>
+        <p>We are looking for a backend engineer with five years of experience
+        building APIs and owning production systems day to day across our lending
+        platform in Berlin, including on-call ownership and design reviews.</p>
+        <p>Your profile includes Python, Postgres, and distributed systems work
+        across several product teams, plus a track record of shipping well-tested
+        services used by millions of customers every week.</p>
+      </main>
+    </body></html>
+    """
+
+    def fake_get(url, *args, **kwargs):
+        return MockResponse(text=html)
+
+    monkeypatch.setattr("relocation_jobs.scrape.job_text.requests.get", fake_get)
+    result = fetch_job_detail("https://acme.jobs.personio.de/job/1", "generic")
+    assert "We are looking for a backend engineer" in result.text
+    assert "Skip to main content" not in result.text
+    assert "Apply for this job" not in result.text

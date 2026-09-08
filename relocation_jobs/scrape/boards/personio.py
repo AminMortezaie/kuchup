@@ -100,6 +100,25 @@ def _personio_html_board(base: str) -> list[dict]:
     return jobs
 
 
+def fetch_personio_job_detail(url: str) -> tuple[str, str]:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if "jobs.personio." not in host:
+        return "", ""
+    job_id = parsed.path.rstrip("/").split("/")[-1]
+    if not job_id.isdigit():
+        return "", ""
+    base = f"{parsed.scheme or 'https'}://{parsed.netloc}"
+    needle = f"/job/{job_id}"
+    for job in _personio_xml_board(base):
+        if (job.get("url") or "").rstrip("/").endswith(needle):
+            return (
+                (job.get("description_text") or "").strip(),
+                str(job.get("location") or "").strip(),
+            )
+    return "", ""
+
+
 def fetch_personio_board_sync(board_url: str) -> list[dict]:
     if "personio.com/api/careers/jobs" in board_url:
         return _personio_com_api(board_url)
