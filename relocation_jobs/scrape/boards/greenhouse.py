@@ -26,6 +26,7 @@ _CUSTOM_JOB_ID_RE = re.compile(r"/(?:job|jobs|positions)/(\d+)(?:[/?#]|$)", re.I
 _BRANDED_GREENHOUSE_CAREERS = {
     "getyourguide.careers": "getyourguide",
     "workato.com/careers": "workato",
+    "sumup.com/careers": "sumup",
 }
 
 

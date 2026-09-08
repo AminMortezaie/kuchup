@@ -129,3 +129,18 @@ def test_format_job_description_strips_single_skip_marker():
     readable, _ = format_job_description(raw)
     assert "We are looking for an engineer" in readable
     assert "Skip to main content" not in readable
+
+
+def test_format_job_description_recovers_sumup_careers_page():
+    raw = (
+        "Senior Backend Engineer - MarTech in Berlin, Germany | Careers at SumUp "
+        "• • • EN• ES Back to all jobs LoadingApply now About the team: "
+        "The MarTech team builds marketing systems. What you’ll do: Build APIs. "
+        "Job Application Tip We recognise that candidates feel they need to meet "
+        "100% of the job criteria. • About • Contact Cookie Policy"
+    )
+    readable, _ = format_job_description(raw)
+    assert "The MarTech team builds marketing systems" in readable
+    assert "LoadingApply now" not in readable
+    assert "Cookie Policy" not in readable
+    assert "Back to all jobs" not in readable

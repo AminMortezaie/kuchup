@@ -151,6 +151,8 @@ _PAGE_CHROME_MARKERS = (
     "powered by greenhouse",
     "powered by ashby",
     "back to all jobs",
+    "loadingapply now",
+    "| careers at",
     "apply for this job",
     "application form",
     "attach file",
@@ -172,6 +174,11 @@ _UNRECOVERABLE_CHROME = (
     "compare personal plans",
     "open bank account",
     "toggle accordion",
+)
+_BRANDED_APPLY_RE = re.compile(r"loadingapply now", re.I)
+_BRANDED_FOOTER_RE = re.compile(
+    r"(?:job application tip|explore career opportunities with us)",
+    re.I,
 )
 
 
@@ -215,6 +222,16 @@ def html_job_body(html: str) -> str:
             tag.decompose()
     node = soup.find("article") or soup.find("main") or soup.body or soup
     return html_to_readable(str(node))
+
+
+def recover_branded_careers_scrape(text: str) -> str | None:
+    if not text or not _BRANDED_APPLY_RE.search(text):
+        return None
+    body = _BRANDED_APPLY_RE.split(text, maxsplit=1)[-1]
+    footer = _BRANDED_FOOTER_RE.search(body)
+    if footer:
+        body = body[:footer.start()]
+    return strip_page_chrome(body).strip() or None
 
 
 def looks_like_smartrecruiters_page_scrape(text: str) -> bool:
@@ -322,6 +339,9 @@ def format_job_description(raw: str) -> tuple[str, str]:
     stripped = (raw or "").strip()
     if not stripped:
         return "", ""
+    recovered_page = recover_branded_careers_scrape(stripped)
+    if recovered_page:
+        stripped = recovered_page
     if looks_like_unrecoverable_chrome(stripped):
         return "", ""
     stripped = strip_page_chrome(stripped)

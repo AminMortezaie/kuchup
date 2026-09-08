@@ -43,6 +43,11 @@ def test_greenhouse_job_ids_from_branded_workato_gh_jid():
     assert greenhouse_job_ids_from_url(url) == ("workato", "8499680002")
 
 
+def test_greenhouse_job_ids_from_branded_sumup_gh_jid():
+    url = "https://sumup.com/careers/positions/8644922002?gh_jid=8644922002"
+    assert greenhouse_job_ids_from_url(url) == ("sumup", "8644922002")
+
+
 def test_fetch_greenhouse_job_text_getyourguide(monkeypatch):
     payload = json.loads(_FIXTURE.read_text())
 
