@@ -3,7 +3,7 @@
   "checkpoint_id": "25b278019e20",
   "strategy": "manual-commit",
   "branch": "feat/searching-monthly",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "docs/README.md",
     "docs/operations/ec2-panel.md",
@@ -87,13 +87,20 @@
       "compact_transcript": "/25/b278019e20/1/transcript.jsonl",
       "content_hash": "/25/b278019e20/1/content_hash.txt",
       "prompt": "/25/b278019e20/1/prompt.txt"
+    },
+    {
+      "metadata": "/25/b278019e20/2/metadata.json",
+      "transcript": "/25/b278019e20/2/full.jsonl",
+      "compact_transcript": "/25/b278019e20/2/transcript.jsonl",
+      "content_hash": "/25/b278019e20/2/content_hash.txt",
+      "prompt": "/25/b278019e20/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 636238,
+    "input_tokens": 711553,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 11243904,
-    "output_tokens": 54107,
-    "api_call_count": 3
+    "cache_read_tokens": 11540864,
+    "output_tokens": 65342,
+    "api_call_count": 4
   }
 }

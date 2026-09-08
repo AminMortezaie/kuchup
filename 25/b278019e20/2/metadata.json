@@ -1,0 +1,74 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "25b278019e20",
+  "session_id": "78efbb3e-1497-4492-877d-0103e96c7b0a",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T18:07:17.130823Z",
+  "branch": "feat/searching-monthly",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/README.md"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "24994c0e2b69",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 75315,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 296960,
+    "output_tokens": 11235,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 505873,
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T18:07:17.124541Z",
+    "agent_lines": 3,
+    "agent_removed": 3,
+    "human_added": 403,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 406,
+    "total_lines_changed": 554,
+    "agent_percentage": 1.083032490974729,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 553,
+      "user_lines_removed": 65,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/scrape/boards/bol.py": 115,
+        "relocation_jobs/scrape/boards/http_sync.py": 25,
+        "relocation_jobs/scrape/boards/lever.py": 29,
+        "relocation_jobs/scrape/boards/teamtailor.py": 51,
+        "relocation_jobs/scrape/descriptions.py": 69,
+        "relocation_jobs/scrape/job_text.py": 30,
+        "scripts/.claude/settings.local.json": 12,
+        "scripts/fix_job_descriptions.py": 3,
+        "tests/scrape/test_bamboo_job_text.py": 30,
+        "tests/scrape/test_bol_board.py": 63,
+        "tests/scrape/test_descriptions_format.py": 6,
+        "tests/scrape/test_job_text_html.py": 21,
+        "tests/scrape/test_lever_board.py": 40,
+        "tests/scrape/test_recruitee_job_text.py": 3,
+        "tests/scrape/test_teamtailor_job_text.py": 56
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/scrape/boards/bol.py": 1,
+        "relocation_jobs/scrape/boards/lever.py": 2,
+        "relocation_jobs/scrape/descriptions.py": 21,
+        "relocation_jobs/scrape/job_text.py": 25,
+        "scripts/fix_job_descriptions.py": 6,
+        "tests/scrape/test_descriptions_format.py": 10
+      }
+    }
+  ]
+}
