@@ -1,0 +1,27 @@
+you should show the name instead of full email in sign in button also you should seperate it from open workspace button and show the name in other place.
+see this ui.
+
+---
+
+you should show the name instead of full email in sign in button also you should seperate it from open workspace button and show the name in other place.
+see this ui.
+
+---
+
+ok apply it.
+
+---
+
+no the name of user on mobile version is going wrong and also making two buttons was a wrong decision search for best practices and make it correct.
+
+---
+
+do you get in stuck?
+
+---
+
+do you get in stuck?
+
+---
+
+do it
