@@ -1,0 +1,36 @@
+can i add a tool to my application to directly post the jobs to linkedin and not using linkedin job wrapping?
+
+---
+
+you mean that i don't have any solutions for this to post jobs directly on linkedin?
+
+---
+
+how much does it take to post my jobs?
+
+---
+
+no i mean if i wait for linkedin to crawl and post.
+how long does it take?
+
+---
+
+how can i make it faster based on the docs on internet?
+
+---
+
+build a plan and tell me what's the best way to put these jobs on linkedin posting faster .
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+deploy
+
+---
+
+the company page on linkedin is just the first page you mean that change it to jobs page?
