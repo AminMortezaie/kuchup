@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import re
+
 from relocation_jobs.core.ats_detection import HEADERS
 from relocation_jobs.scrape.listing import listing_job
+
+_LEVER_POSTING_RE = re.compile(r"lever\.co/([^/]+)/([0-9a-f-]{36})", re.I)
 
 
 def lever_board_slug(ats_url: str) -> str:
@@ -15,6 +19,21 @@ def lever_api_host(ats_url: str) -> str:
 def lever_postings_api_url(slug: str, *, ats_url: str) -> str:
     host = lever_api_host(ats_url)
     return f"https://{host}/v0/postings/{slug}?mode=json"
+
+
+def lever_posting_ids_from_url(url: str) -> tuple[str, str] | None:
+    match = _LEVER_POSTING_RE.search(url or "")
+    if not match:
+        return None
+    return match.group(1), match.group(2)
+
+
+def lever_posting_api_url(url: str) -> str | None:
+    ids = lever_posting_ids_from_url(url)
+    if not ids:
+        return None
+    slug, posting_id = ids
+    return f"https://{lever_api_host(url)}/v0/postings/{slug}/{posting_id}"
 
 
 async def fetch_lever_board(client, board_url: str, company: dict) -> list[dict]:
@@ -34,5 +53,8 @@ async def fetch_lever_board(client, board_url: str, company: dict) -> list[dict]
         if not title or not url:
             continue
         location = (row.get("categories") or {}).get("location")
-        jobs.append(listing_job(title, url, location=location))
+        plain = (row.get("descriptionPlain") or "").strip()
+        jobs.append(
+            listing_job(title, url, location=location, description_text=plain or None)
+        )
     return jobs

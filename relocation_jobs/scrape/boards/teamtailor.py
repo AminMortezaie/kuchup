@@ -57,12 +57,14 @@ def teamtailor_jobs_from_feed(
             for ref in loc_refs
             if ref.get("id") and loc_by_id.get(ref["id"])
         ]
+        body = ((row.get("attributes") or {}).get("body") or "").strip()
         out.append(
             listing_job(
                 title,
                 row.get("links", {}).get("careersite-job-url", careers_url),
                 location=locs[0] if len(locs) == 1 else None,
                 locations=locs or None,
+                description_text=body or None,
             )
         )
     return out

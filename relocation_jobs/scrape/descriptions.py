@@ -141,6 +141,43 @@ _PINPOINTHQ_NOISE_MARKERS = (
     "view all opportunities",
     "not quite right?",
 )
+_PAGE_CHROME_MARKERS = (
+    "only necessary cookies",
+    "manage cookie preferences",
+    "skip to main content",
+    "powered by personio",
+    "powered by greenhouse",
+    "powered by ashby",
+    "back to all jobs",
+    "application form",
+    "attach file",
+    "open bank account",
+    "compare personal plans",
+    "i'm interested",
+    "create job alert",
+    "view all opportunities",
+    "share to wechat",
+)
+
+
+def looks_like_page_chrome(text: str) -> bool:
+    lower = (text or "").lower()
+    if not lower:
+        return False
+    return sum(marker in lower for marker in _PAGE_CHROME_MARKERS) >= 2
+
+
+def html_job_body(html: str) -> str:
+    if not html:
+        return ""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup([
+        "script", "style", "img", "iframe", "svg", "noscript",
+        "nav", "header", "footer", "form",
+    ]):
+        tag.decompose()
+    node = soup.find("article") or soup.find("main") or soup.body or soup
+    return html_to_readable(str(node))
 
 
 def looks_like_smartrecruiters_page_scrape(text: str) -> bool:

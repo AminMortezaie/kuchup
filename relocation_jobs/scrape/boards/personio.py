@@ -48,8 +48,31 @@ def _personio_xml_board(base: str) -> list[dict]:
         job_id = (pos.findtext("id") or "").strip()
         office = (pos.findtext("office") or "").strip()
         if title and job_id:
-            jobs.append(listing_job(title, f"{base}/job/{job_id}", location=office or None))
+            jobs.append(
+                listing_job(
+                    title,
+                    f"{base}/job/{job_id}",
+                    location=office or None,
+                    description_text=_personio_description_html(pos) or None,
+                )
+            )
     return jobs
+
+
+def _personio_description_html(pos: ElementTree.Element) -> str:
+    block = pos.find("jobDescriptions")
+    if block is None:
+        return ""
+    parts: list[str] = []
+    for desc in block.findall("jobDescription"):
+        name = (desc.findtext("name") or "").strip()
+        value = (desc.findtext("value") or "").strip()
+        if not value:
+            continue
+        if name:
+            parts.append(f"<h3>{name}</h3>")
+        parts.append(value)
+    return "\n".join(parts)
 
 
 def _personio_html_board(base: str) -> list[dict]:

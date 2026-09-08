@@ -77,3 +77,18 @@ def test_needs_getyourguide_refetch_detects_page_scrape():
     )
     assert needs_getyourguide_refetch(noisy) is True
     assert needs_getyourguide_refetch("<h3><strong>Role</strong></h3><p>Build APIs.</p>") is False
+
+
+def test_fetch_greenhouse_job_detail_uses_board_slug(monkeypatch):
+    payload = json.loads(_FIXTURE.read_text())
+    url = "https://careers.hellofresh.com/global/en/job/8007209?gh_jid=8007209"
+
+    def fake_get(api_url, *args, **kwargs):
+        assert "boards-api.greenhouse.io/v1/boards/hellofresh/jobs/8007209" in api_url
+        return MockResponse(json_data=payload)
+
+    monkeypatch.setattr("relocation_jobs.scrape.boards.greenhouse.requests.get", fake_get)
+    from relocation_jobs.scrape.job_text import fetch_greenhouse_job_detail
+
+    result = fetch_greenhouse_job_detail(url, board_slug="hellofresh")
+    assert "Change the way the world travels" in result.text

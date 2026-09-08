@@ -8,7 +8,8 @@ import httpx
 from relocation_jobs.core.scrape_cancel import FetchCancelled, raise_if_cancelled
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.scrape.boards._async import run_sync
-from relocation_jobs.scrape.descriptions import detect_visa_relocation
+from relocation_jobs.scrape.boards.greenhouse import greenhouse_board_slug
+from relocation_jobs.scrape.descriptions import detect_visa_relocation, looks_like_page_chrome
 from relocation_jobs.scrape.job_text import fetch_job_description
 from relocation_jobs.scrape.merge import job_has_listing_location
 
@@ -19,7 +20,8 @@ def _today() -> str:
 
 def _job_enrichment_complete(job: dict) -> bool:
     has_visa = job.get("visa_sponsorship") is not None
-    has_desc = bool((job.get("description_text") or "").strip())
+    text = (job.get("description_text") or "").strip()
+    has_desc = bool(text) and not looks_like_page_chrome(text)
     has_location = job_has_listing_location(job)
     return has_visa and has_desc and has_location
 
@@ -28,8 +30,9 @@ async def fetch_job_description_async(
     client: httpx.AsyncClient,
     url: str,
     ats_type: str | None = None,
+    board_slug: str = "",
 ) -> str:
-    return await run_sync(fetch_job_description, url, ats_type)
+    return await run_sync(fetch_job_description, url, ats_type, board_slug)
 
 
 async def enrich_one_job_async(
@@ -38,11 +41,12 @@ async def enrich_one_job_async(
     ats_type: str | None,
     fetched: str,
     only_missing: bool,
+    board_slug: str = "",
 ) -> None:
     if only_missing and _job_enrichment_complete(job):
         return
 
-    text = await fetch_job_description_async(client, job["url"], ats_type)
+    text = await fetch_job_description_async(client, job["url"], ats_type, board_slug)
     job["visa_sponsorship"] = detect_visa_relocation(text)
     stripped = (text or "").strip()
     if stripped:
@@ -62,6 +66,9 @@ async def enrich_jobs(
     if not jobs:
         return jobs
     ats_type = company.get("ats_type")
+    board_slug = ""
+    if (ats_type or "") in ("greenhouse", "greenhouse_eu"):
+        board_slug = greenhouse_board_slug(company.get("ats_url") or "")
     fetched = _today()
     name = (company.get("name") or "").strip()
     log_event(f"enriching {len(jobs)} job(s)", company=name)
@@ -72,7 +79,7 @@ async def enrich_jobs(
         async with sem:
             raise_if_cancelled()
             await enrich_one_job_async(
-                client, job, ats_type, fetched, only_missing,
+                client, job, ats_type, fetched, only_missing, board_slug,
             )
 
     try:

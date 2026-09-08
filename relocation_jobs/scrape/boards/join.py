@@ -3,8 +3,16 @@ from __future__ import annotations
 import json
 import re
 
+import requests
+
 from relocation_jobs.core.ats_detection import HEADERS, _detect_join_from_url
+from relocation_jobs.scrape.descriptions import html_to_readable
 from relocation_jobs.scrape.listing import listing_job
+
+_JOIN_JOB_URL_RE = re.compile(
+    r"join\.com/companies/([^/]+)/([^/?#]+)",
+    re.I,
+)
 
 
 def parse_join_next_data(html: str) -> tuple[str | None, int | None, list[dict]]:
@@ -40,6 +48,45 @@ def join_jobs_from_items(items: list[dict], slug: str) -> list[dict]:
         seen.add(url)
         jobs.append(listing_job(title, url))
     return jobs
+
+
+def _join_page_job(html: str) -> dict:
+    match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
+    if not match:
+        return {}
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return {}
+    props = data.get("props", {}).get("pageProps", {}) or {}
+    for key in ("job", "jobPosting", "posting"):
+        job = props.get(key)
+        if isinstance(job, dict):
+            return job
+    state = props.get("initialState") or {}
+    job = state.get("job")
+    return job if isinstance(job, dict) else {}
+
+
+def fetch_join_job_detail(url: str) -> tuple[str, str]:
+    if not _JOIN_JOB_URL_RE.search(url or ""):
+        return "", ""
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=15)
+        if not response.ok:
+            return "", ""
+        job = _join_page_job(response.text)
+        html = (job.get("description") or job.get("body") or "").strip()
+        if not html:
+            return "", ""
+        location = (
+            (job.get("location") or {}).get("name")
+            if isinstance(job.get("location"), dict)
+            else (job.get("location") or "")
+        )
+        return html_to_readable(html), str(location or "").strip()
+    except Exception:
+        return "", ""
 
 
 async def fetch_join_board(client, board_url: str, company: dict) -> list[dict]:

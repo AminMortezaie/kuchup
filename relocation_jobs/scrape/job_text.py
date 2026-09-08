@@ -12,6 +12,8 @@ from relocation_jobs.scrape.boards.greenhouse import (
     greenhouse_job_ids_from_url,
 )
 from relocation_jobs.scrape.boards.hibob import fetch_hibob_job_detail as hibob_job_detail_fetch
+from relocation_jobs.scrape.boards.join import fetch_join_job_detail as join_job_detail_fetch
+from relocation_jobs.scrape.boards.lever import lever_posting_api_url
 from relocation_jobs.scrape.boards.pinpointhq import (
     fetch_pinpointhq_job_detail as pinpointhq_job_detail_fetch,
 )
@@ -21,8 +23,9 @@ from relocation_jobs.scrape.boards.smartrecruiters import (
     smartrecruiters_location_text,
     smartrecruiters_posting_detail_url,
 )
+from relocation_jobs.scrape.boards.workable import fetch_workable_job_detail as workable_job_detail_fetch
 from relocation_jobs.scrape.boards.workday import workday_job_detail_api_url
-from relocation_jobs.scrape.descriptions import html_to_readable
+from relocation_jobs.scrape.descriptions import html_job_body, html_to_readable, looks_like_page_chrome
 
 
 class JobFetchResult(NamedTuple):
@@ -44,8 +47,8 @@ def _recruitee_location_label(offer: dict) -> str:
     return ", ".join(dict.fromkeys(parts))
 
 
-def fetch_greenhouse_job_detail(url: str) -> JobFetchResult:
-    ids = greenhouse_job_ids_from_url(url)
+def fetch_greenhouse_job_detail(url: str, board_slug: str = "") -> JobFetchResult:
+    ids = greenhouse_job_ids_from_url(url, board_slug=board_slug)
     if ids:
         content, location = greenhouse_job_detail(ids[0], ids[1])
         if content:
@@ -67,10 +70,9 @@ def fetch_greenhouse_job_text(url: str) -> str:
 
 
 def fetch_lever_job_detail(url: str) -> JobFetchResult:
-    match = re.search(r"lever\.co/[^/]+/([0-9a-f-]{36})", url, re.I)
-    if not match:
+    api = lever_posting_api_url(url)
+    if not api:
         return _empty_fetch()
-    api = f"https://api.lever.co/v0/postings/{match.group(1)}"
     try:
         response = requests.get(api, headers=HEADERS, timeout=10)
         if not response.ok:
@@ -221,6 +223,24 @@ def fetch_workday_job_text(url: str) -> str:
     return fetch_workday_job_detail(url).text
 
 
+def fetch_workable_job_detail(url: str) -> JobFetchResult:
+    text, location = workable_job_detail_fetch(url)
+    return JobFetchResult(text, location)
+
+
+def fetch_workable_job_text(url: str) -> str:
+    return fetch_workable_job_detail(url).text
+
+
+def fetch_join_job_detail(url: str) -> JobFetchResult:
+    text, location = join_job_detail_fetch(url)
+    return JobFetchResult(text, location)
+
+
+def fetch_join_job_text(url: str) -> str:
+    return fetch_join_job_detail(url).text
+
+
 _JOB_DETAIL_FETCHERS = {
     "greenhouse": fetch_greenhouse_job_detail,
     "greenhouse_eu": fetch_greenhouse_job_detail,
@@ -229,8 +249,10 @@ _JOB_DETAIL_FETCHERS = {
     "recruitee": fetch_recruitee_job_detail,
     "ashby": fetch_ashby_job_detail,
     "hibob": fetch_hibob_job_detail,
+    "join": fetch_join_job_detail,
     "pinpointhq": fetch_pinpointhq_job_detail,
     "smartrecruiters": fetch_smartrecruiters_job_detail,
+    "workable": fetch_workable_job_detail,
     "workday": fetch_workday_job_detail,
 }
 
@@ -257,24 +279,35 @@ def _looks_like_job_description(text: str) -> bool:
     return long_lines >= 5 and bullet_count >= 2
 
 
-def fetch_job_detail(url: str, ats_type: str | None = None) -> JobFetchResult:
-    fetcher = _JOB_DETAIL_FETCHERS.get(ats_type or "")
-    if fetcher:
-        result = fetcher(url)
+def fetch_job_detail(
+    url: str,
+    ats_type: str | None = None,
+    board_slug: str = "",
+) -> JobFetchResult:
+    ats = (ats_type or "").strip()
+    if ats in ("greenhouse", "greenhouse_eu"):
+        result = fetch_greenhouse_job_detail(url, board_slug=board_slug)
         if result.text:
             return result
-    if (ats_type or "") not in ("greenhouse", "greenhouse_eu"):
-        result = fetch_greenhouse_job_detail(url)
+    else:
+        fetcher = _JOB_DETAIL_FETCHERS.get(ats)
+        if fetcher:
+            result = fetcher(url)
+            if result.text:
+                return result
+        result = fetch_greenhouse_job_detail(url, board_slug=board_slug)
         if result.text:
             return result
-    if (ats_type or "") != "ashby":
-        result = fetch_ashby_job_detail(url)
-        if result.text:
-            return result
+        if ats != "ashby":
+            result = fetch_ashby_job_detail(url)
+            if result.text:
+                return result
     try:
         response = requests.get(url, headers=HEADERS, timeout=15)
         if response.ok:
-            text = html_to_readable(response.text)
+            text = html_job_body(response.text)
+            if looks_like_page_chrome(text):
+                return _empty_fetch()
             if len(text) > 300 and _looks_like_job_description(text):
                 return JobFetchResult(text, "")
     except Exception:
@@ -282,5 +315,9 @@ def fetch_job_detail(url: str, ats_type: str | None = None) -> JobFetchResult:
     return _empty_fetch()
 
 
-def fetch_job_description(url: str, ats_type: str | None = None) -> str:
-    return fetch_job_detail(url, ats_type).text
+def fetch_job_description(
+    url: str,
+    ats_type: str | None = None,
+    board_slug: str = "",
+) -> str:
+    return fetch_job_detail(url, ats_type, board_slug=board_slug).text
