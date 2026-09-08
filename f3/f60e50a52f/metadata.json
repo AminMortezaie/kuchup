@@ -3,7 +3,7 @@
   "checkpoint_id": "f3f60e50a52f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 36,
+  "checkpoints_count": 45,
   "files_touched": [
     ".env.example",
     "design.md",
@@ -52,6 +52,7 @@
     "relocation_jobs/catalog/service.py",
     "relocation_jobs/core/auth.py",
     "relocation_jobs/core/migrations.py",
+    "relocation_jobs/credits/policy.py",
     "relocation_jobs/credits/repo.py",
     "relocation_jobs/credits/service.py",
     "relocation_jobs/mcp/service.py",
@@ -66,6 +67,8 @@
     "relocation_jobs/static/company.html",
     "relocation_jobs/static/design-tokens.css",
     "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/_next/static/AB1U2hA8mHeybzgdbNgbp/_buildManifest.js",
+    "relocation_jobs/static/homepage/_next/static/AB1U2hA8mHeybzgdbNgbp/_ssgManifest.js",
     "relocation_jobs/static/homepage/_next/static/chunks/775-b7e36c1e6903efbb.js",
     "relocation_jobs/static/homepage/_next/static/chunks/app/how-it-works/page-8f9539c2160fdf31.js",
     "relocation_jobs/static/homepage/_next/static/chunks/app/how-it-works/page-b32f243a29681ae2.js",
@@ -230,13 +233,20 @@
       "compact_transcript": "/f3/f60e50a52f/10/transcript.jsonl",
       "content_hash": "/f3/f60e50a52f/10/content_hash.txt",
       "prompt": "/f3/f60e50a52f/10/prompt.txt"
+    },
+    {
+      "metadata": "/f3/f60e50a52f/11/metadata.json",
+      "transcript": "/f3/f60e50a52f/11/full.jsonl",
+      "compact_transcript": "/f3/f60e50a52f/11/transcript.jsonl",
+      "content_hash": "/f3/f60e50a52f/11/content_hash.txt",
+      "prompt": "/f3/f60e50a52f/11/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1781046,
+    "input_tokens": 2715063,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 30083456,
-    "output_tokens": 137726,
-    "api_call_count": 23
+    "cache_read_tokens": 52831232,
+    "output_tokens": 224046,
+    "api_call_count": 32
   }
 }

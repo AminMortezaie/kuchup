@@ -1,0 +1,40 @@
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+ok now open up NOWPayments,  i will login and setup the remaning things.
+
+---
+
+before start we need to implement IPN url.
+
+https://documenter.getpostman.com/view/7907941/2s93JusNJt#api-documentation
+
+---
+
+it's the url for $4.99
+https://nowpayments.io/payment/?iid=4667644417
+
+---
+
+ok deploy to check.
+
+---
+
+where did you put the iid?
+
+---
+
+show me the code u wrote on this.
+
+---
+
+got it.
+
+add a new option 10 credits $0.99
+
+---
+
+deploy
