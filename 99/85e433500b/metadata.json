@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "9985e433500b",
+  "strategy": "manual-commit",
+  "branch": "fix/jd-parsing",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/scrape/boards/join.py",
+    "relocation_jobs/scrape/boards/lever.py",
+    "relocation_jobs/scrape/boards/personio.py",
+    "relocation_jobs/scrape/boards/teamtailor.py",
+    "relocation_jobs/scrape/boards/workable.py",
+    "relocation_jobs/scrape/descriptions.py",
+    "relocation_jobs/scrape/dom_listing.py",
+    "relocation_jobs/scrape/enrich.py",
+    "relocation_jobs/scrape/job_text.py",
+    "scripts/fix_job_descriptions.py",
+    "tests/fixtures/ats/personio.xml",
+    "tests/scrape/test_descriptions_format.py",
+    "tests/scrape/test_dom_listing.py",
+    "tests/scrape/test_enrich.py",
+    "tests/scrape/test_greenhouse_job_text.py",
+    "tests/scrape/test_job_text_html.py",
+    "tests/scrape/test_join_job_text.py",
+    "tests/scrape/test_lever_board.py",
+    "tests/scrape/test_personio_board.py",
+    "tests/scrape/test_workable_board.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/99/85e433500b/0/metadata.json",
+      "transcript": "/99/85e433500b/0/full.jsonl",
+      "compact_transcript": "/99/85e433500b/0/transcript.jsonl",
+      "content_hash": "/99/85e433500b/0/content_hash.txt",
+      "prompt": "/99/85e433500b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 550329,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8480512,
+    "output_tokens": 59003,
+    "api_call_count": 2
+  }
+}
