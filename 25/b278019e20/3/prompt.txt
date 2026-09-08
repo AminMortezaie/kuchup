@@ -1,0 +1,54 @@
+there is a problem with JDs.
+if you see for example jobs we have in germany relocation jobs page you can see lots of them has problem in JD parsing find the problem with JD parsing in all ATS we have and then please create a plan to solve this problem.
+use /ponytail  for it.
+
+---
+
+create a branch from main and start to build it
+
+---
+
+ok deploy and merge then run the script to see the changes.
+
+---
+
+check sumup company you can see the problem is still there.
+
+---
+
+/ponytail-review review the whole process we did on this and if overengineering happened make this correct.
+
+---
+
+/goal  i see other company pages and postions have the same problem we had before you need to check at least one position from each ats to make sure that every ats working fine.
+
+---
+
+/goal  i see other company pages and postions have the same problem we had before you need to check at least one position from each ats to make sure that every ats working fine.
+
+/ponytail you need to be careful to not create more codes than what we need there.
+
+---
+
+deploy it to see what happened.
+
+---
+
+see levers jobs on insify we have the problem with JD again i think you did not check correctly,
+create a plan to check completely all the ats with at least 5 jobs there.
+
+and make sure that all of the working and jd working correctly.
+
+---
+
+add to this plan that implementation should be used by the help of /ponytail
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+wtf, see the inverid jd.
