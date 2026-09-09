@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "4a3854b50788",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/reference/business-rules.md",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/companies/service.py",
+    "relocation_jobs/panel/flatten.py",
+    "relocation_jobs/positions/repo.py",
+    "relocation_jobs/positions/service.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/events.js",
+    "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/web/deps.py",
+    "relocation_jobs/web/routes/companies.py",
+    "tests/helpers/route_manifest.py",
+    "tests/positions/test_workflows.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4a/3854b50788/0/metadata.json",
+      "transcript": "/4a/3854b50788/0/full.jsonl",
+      "compact_transcript": "/4a/3854b50788/0/transcript.jsonl",
+      "content_hash": "/4a/3854b50788/0/content_hash.txt",
+      "prompt": "/4a/3854b50788/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 118721,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 460928,
+    "output_tokens": 896,
+    "api_call_count": 1
+  }
+}

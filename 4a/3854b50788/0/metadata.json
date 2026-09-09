@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "4a3854b50788",
+  "session_id": "21f26649-3cd7-451d-82fd-1348c567d355",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T21:30:50.430805Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/reference/business-rules.md",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/companies/service.py",
+    "relocation_jobs/panel/flatten.py",
+    "relocation_jobs/positions/repo.py",
+    "relocation_jobs/positions/service.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/events.js",
+    "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/web/deps.py",
+    "relocation_jobs/web/routes/companies.py",
+    "tests/helpers/route_manifest.py",
+    "tests/positions/test_workflows.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "b258026ef33f",
+  "checkpoint_transcript_start": 62,
+  "transcript_lines_at_start": 62,
+  "compact_transcript_start": 5,
+  "token_usage": {
+    "input_tokens": 118721,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 460928,
+    "output_tokens": 896,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 1201073,
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T21:30:50.418831Z",
+    "agent_lines": 126,
+    "agent_removed": 216,
+    "human_added": 1,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 127,
+    "total_lines_changed": 415,
+    "agent_percentage": 82.40963855421687,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
