@@ -1,18 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
 from relocation_jobs.core.location_tags import filter_jobs_by_expected_locations
 from relocation_jobs.core.scrape_cancel import FetchCancelled, raise_if_cancelled
 from relocation_jobs.fetch.log import log_event
-from relocation_jobs.fetch.ports import (
-    BoardEnricher,
-    BoardFetcher,
-    SyncBoardToCatalog,
-    OnCompanyResult,
-    OnReview,
-)
 from relocation_jobs.fetch.types import is_infra_fetch_error
 from relocation_jobs.scrape.aggregator_sync import (
     aggregator_success_line,
@@ -38,7 +32,7 @@ class _ScrapeLineContext:
 class _EnrichContext:
     prefix: str
     jobs: list[dict]
-    enrich_board: BoardEnricher | None
+    enrich_board: Callable | None
 
 
 @dataclass(frozen=True)
@@ -67,7 +61,7 @@ _ENRICH_EARLY_EXIT: tuple[
     ),
 )
 
-_SKIP_POST_SCRAPE_ENRICH: tuple[Callable[[BoardEnricher | None], bool], ...] = (
+_SKIP_POST_SCRAPE_ENRICH: tuple[Callable, ...] = (
     lambda board: board is None,
 )
 
@@ -86,7 +80,7 @@ def _company_line(company: dict, index: int, total: int) -> str:
     return f"[{index}/{total}] {name} ({city})"
 
 
-def _call_sync_board(sync_board: SyncBoardToCatalog) -> None:
+def _call_sync_board(sync_board: Callable | None) -> None:
     if sync_board:
         sync_board()
 
@@ -151,7 +145,7 @@ async def _filter_board_listings(
     client,
     company: dict,
     *,
-    fetch_board: BoardFetcher,
+    fetch_board: Callable,
     catalog_country: str,
 ) -> tuple[list[dict], list[dict]]:
     name = company.get("name") or ""
@@ -171,7 +165,7 @@ async def _maybe_enrich_scraped_board(
     jobs: list[dict],
     company: dict,
     *,
-    enrich_board: BoardEnricher | None,
+    enrich_board: Callable | None,
     enrich_concurrency: int,
 ) -> list[dict]:
     if any_of(enrich_board, _SKIP_POST_SCRAPE_ENRICH):
@@ -188,10 +182,10 @@ async def enrich_company_board(
     company: dict,
     prefix: str,
     *,
-    enrich_board: BoardEnricher | None,
+    enrich_board: Callable | None,
     skip_enriched: bool,
     enrich_concurrency: int,
-    sync_board: SyncBoardToCatalog,
+    sync_board: Callable,
 ) -> tuple[str, int]:
     ctx = _EnrichContext(
         prefix=prefix,
@@ -222,14 +216,14 @@ async def scrape_company_board(
     company: dict,
     prefix: str,
     *,
-    fetch_board: BoardFetcher,
-    enrich_board: BoardEnricher | None,
+    fetch_board: Callable,
+    enrich_board: Callable | None,
     enrich_concurrency: int,
     catalog_country: str,
-    sync_board: SyncBoardToCatalog,
+    sync_board: Callable,
     review_mode: bool = False,
-    on_review: OnReview = None,
-    on_company_result: OnCompanyResult = None,
+    on_review: Callable | None = None,
+    on_company_result: Callable | None = None,
 ) -> tuple[str, int]:
     raise_if_cancelled()
     name = company.get("name") or ""
@@ -288,12 +282,12 @@ async def _scrape_aggregator_board(
     company: dict,
     prefix: str,
     *,
-    fetch_board: BoardFetcher,
+    fetch_board: Callable,
     catalog_country: str,
-    sync_board: SyncBoardToCatalog,
+    sync_board: Callable,
     review_mode: bool = False,
-    on_review: OnReview = None,
-    on_company_result: OnCompanyResult = None,
+    on_review: Callable | None = None,
+    on_company_result: Callable | None = None,
 ) -> tuple[str, int]:
     name = company.get("name") or ""
     raw = await fetch_board(client, company)
@@ -330,16 +324,16 @@ async def process_company(
     index: int,
     total: int,
     *,
-    fetch_board: BoardFetcher,
-    enrich_board: BoardEnricher | None = None,
-    sync_board: SyncBoardToCatalog = None,
+    fetch_board: Callable,
+    enrich_board: Callable | None = None,
+    sync_board: Callable | None = None,
     enrich_only: bool = False,
     skip_enriched: bool = False,
     enrich_concurrency: int = 8,
     catalog_country: str = "",
     review_mode: bool = False,
-    on_review: OnReview = None,
-    on_company_result: OnCompanyResult = None,
+    on_review: Callable | None = None,
+    on_company_result: Callable | None = None,
 ) -> tuple[str, int]:
     company["updated"] = now_iso()
     prefix = _company_line(company, index, total)

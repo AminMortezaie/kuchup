@@ -8,7 +8,7 @@
 #   ./scripts/ec2_app_deploy.sh prune             # free dangling images + trim builder cache
 #   ./scripts/ec2_app_deploy.sh open-sg           # open HTTP/HTTPS on security group (manual)
 #   ./scripts/ec2_app_deploy.sh status            # doctor: containers, disk/RAM, health, verdict
-#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|alloy|all
+#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|propagator|alloy|all
 #   ./scripts/ec2_app_deploy.sh worker-logs       # tail fetch scheduler logs (alias)
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
@@ -38,6 +38,8 @@ PANEL_CONTAINER=relocation-panel
 MCP_CONTAINER=relocation-mcp
 WORKER_IMAGE=relocation-fetch-worker:ec2
 WORKER_CONTAINER=relocation-fetch-worker
+PROPAGATOR_IMAGE=relocation-role-propagator:ec2
+PROPAGATOR_CONTAINER=relocation-role-propagator
 CADDY_CONTAINER=relocation-caddy
 ALLOY_CONTAINER=relocation-alloy
 ALLOY_IMAGE="${ALLOY_IMAGE:-grafana/alloy:v1.8.3}"
@@ -185,6 +187,24 @@ _dotenv_value() {
   grep -E "^${key}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true
 }
 
+sqs_queue_url() {
+  printf '%s' "${SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL:-$(_dotenv_value SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL)}"
+}
+
+aws_access_key() {
+  printf '%s' "${AWS_ACCESS_KEY_ID:-$(_dotenv_value AWS_ACCESS_KEY_ID)}"
+}
+
+aws_secret_key() {
+  printf '%s' "${AWS_SECRET_ACCESS_KEY:-$(_dotenv_value AWS_SECRET_ACCESS_KEY)}"
+}
+
+aws_region_name() {
+  local value
+  value="${AWS_REGION:-$(_dotenv_value AWS_REGION)}"
+  printf '%s' "${value:-eu-central-1}"
+}
+
 grafana_cloud_configured() {
   local url user token
   url="${GRAFANA_CLOUD_PROMETHEUS_URL:-$(_dotenv_value GRAFANA_CLOUD_PROMETHEUS_URL)}"
@@ -226,6 +246,7 @@ container_for_log_service() {
     caddy) printf '%s' "$CADDY_CONTAINER" ;;
     mcp) printf '%s' "$MCP_CONTAINER" ;;
     worker) printf '%s' "$WORKER_CONTAINER" ;;
+    propagator) printf '%s' "$PROPAGATOR_CONTAINER" ;;
     alloy) printf '%s' "$ALLOY_CONTAINER" ;;
     pg) printf '%s' "pg" ;;
     redis) printf '%s' "relocation-redis" ;;
@@ -400,6 +421,9 @@ list_paths() {
            -o -name '__pycache__' -o -name '*.pyc' \) -prune \
         -o -type f -print
       ;;
+    propagator)
+      find apps/role-propagator -type f ! -name 'role-propagator' -print
+      ;;
     *)
       echo "unknown hash kind: $kind" >&2
       exit 1
@@ -486,6 +510,10 @@ cmd_deploy() {
   nowpayments_key="$(nowpayments_api_key)"
   nowpayments_secret="$(nowpayments_ipn_secret)"
   nowpayments_sandbox_flag="$(nowpayments_sandbox)"
+  sqs_url="$(sqs_queue_url)"
+  aws_key="$(aws_access_key)"
+  aws_secret="$(aws_secret_key)"
+  aws_region="$(aws_region_name)"
   db_url="postgresql://${DB_USER:-relocation}:${DB_PASSWORD}@172.17.0.1:5432/${DB_NAME:-relocation_jobs}?sslmode=prefer"
   redis_url="redis://:${redis_pass}@172.17.0.1:6379/0"
 
@@ -541,6 +569,10 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
   -e MCP_PUBLIC_BASE_URL='${MCP_PUBLIC_BASE_URL}' \\
+  -e AWS_REGION='${aws_region}' \\
+  -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
+  -e AWS_ACCESS_KEY_ID='${aws_key}' \\
+  -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${PANEL_IMAGE}
 EOF
 
@@ -578,6 +610,44 @@ EOF
   fi
   remote_save_hash worker "$worker_hash"
 
+  if [[ -n "${sqs_url}" ]]; then
+    propagator_hash="$(remote_image_hash propagator)"
+    if image_needs_rebuild propagator "$PROPAGATOR_IMAGE" "$propagator_hash"; then
+      log "Building ${PROPAGATOR_IMAGE} on EC2..."
+      ssh_cmd bash -s <<EOF
+set -euo pipefail
+cd ${REMOTE_DIR}/apps/role-propagator
+cache_args=()
+if docker image inspect ${PROPAGATOR_IMAGE} >/dev/null 2>&1; then
+  cache_args=(--cache-from ${PROPAGATOR_IMAGE})
+fi
+DOCKER_BUILDKIT=1 docker build \\
+  --build-arg BUILDKIT_INLINE_CACHE=1 \\
+  "\${cache_args[@]}" \\
+  -t ${PROPAGATOR_IMAGE} .
+EOF
+    fi
+    remote_save_hash propagator "$propagator_hash"
+    log "Starting role propagator container..."
+    ssh_cmd bash -s <<EOF
+set -euo pipefail
+docker rm -f ${PROPAGATOR_CONTAINER} 2>/dev/null || true
+docker run -d --name ${PROPAGATOR_CONTAINER} --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
+  -e DATABASE_URL='${db_url}' \\
+  -e AWS_REGION='${aws_region}' \\
+  -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
+  -e AWS_ACCESS_KEY_ID='${aws_key}' \\
+  -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
+  -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
+  -e PANEL_ADMIN_USER=admin \\
+  ${PROPAGATOR_IMAGE}
+EOF
+  else
+    log "Role propagator skipped — set SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL in .env"
+    ssh_cmd "docker rm -f ${PROPAGATOR_CONTAINER} 2>/dev/null || true" || true
+  fi
+
   log "Starting fetch worker container..."
   ssh_cmd bash -s <<EOF
 set -euo pipefail
@@ -594,6 +664,10 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e PANEL_ADMIN_USER=admin \\
   -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
   -e DATABASE_URL='${db_url}' \\
+  -e AWS_REGION='${aws_region}' \\
+  -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
+  -e AWS_ACCESS_KEY_ID='${aws_key}' \\
+  -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${WORKER_IMAGE}
 EOF
 
@@ -678,9 +752,9 @@ cmd_logs() {
   local follow_flag="" svc containers c
   [[ "$LOG_FOLLOW" == "1" ]] && follow_flag="-f"
   if [[ "$LOG_SERVICE" == "all" ]]; then
-    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $ALLOY_CONTAINER"
+    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $PROPAGATOR_CONTAINER $ALLOY_CONTAINER"
   else
-    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|alloy|pg|redis|all)"
+    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|propagator|alloy|pg|redis|all)"
     containers="$c"
   fi
   for c in $containers; do
@@ -714,7 +788,7 @@ cmd_status() {
   ssh_cmd "docker ps -a --filter name=^pg\$ --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" || true
   log "Restart / OOM:"
   ssh_cmd bash -s <<'EOF' || true
-for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-alloy pg relocation-redis; do
+for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-role-propagator relocation-alloy pg relocation-redis; do
   docker inspect -f '{{.Name}} restart={{.RestartCount}} oom={{.State.OOMKilled}} exit={{.State.ExitCode}} status={{.State.Status}}' "$c" 2>/dev/null || true
 done
 EOF
@@ -724,6 +798,8 @@ EOF
   ssh_cmd "docker logs ${CADDY_CONTAINER} --tail 20 2>&1" || log "  caddy not running"
   log "Fetch worker logs (last 20 lines):"
   ssh_cmd "docker logs ${WORKER_CONTAINER} --tail 20 2>&1" || log "  worker not running"
+  log "Role propagator logs (last 20 lines):"
+  ssh_cmd "docker logs ${PROPAGATOR_CONTAINER} --tail 20 2>&1" || log "  propagator not running"
 
   log "Panel health (localhost:${PANEL_PORT} on EC2):"
   panel_code="$(ssh_cmd "curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1:${PANEL_PORT}/api/health" 2>/dev/null || echo 000)"

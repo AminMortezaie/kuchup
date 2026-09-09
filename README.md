@@ -85,7 +85,7 @@ submit — Kuchup never auto-applies.
 One product, one repo. Panel, workers, and MCP share Postgres, `core/`, and migrations.
 
 ```
-apps/                 deployables — panel, fetch-worker, opportunity-worker, mcp
+apps/                 deployables — panel, fetch-worker, role-propagator, mcp
 relocation_jobs/      domains — catalog, positions, panel, fetch, scrape, users, …
 frontend/             React board widget → relocation_jobs/static/dist/
 homepage/             marketing site (Next.js; same-origin /api/public/*)
@@ -97,7 +97,7 @@ tests/                pytest (mirrors relocation_jobs/ domains)
 | I want to… | Go here |
 |------------|---------|
 | Run the panel | `python3 apps/panel/run.py` (or `scripts/panel_server.py`) |
-| Run a worker | `apps/fetch-worker/`, `apps/opportunity-worker/` |
+| Run a worker | `apps/fetch-worker/`, `apps/role-propagator/` |
 | Run MCP | `apps/mcp/run.py` (stdio) / `apps/mcp/run_http.py` |
 | Change domain logic | `relocation_jobs/<domain>/` |
 | Full app list | [`apps/README.md`](apps/README.md) |

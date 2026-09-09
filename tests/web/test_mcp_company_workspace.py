@@ -510,7 +510,7 @@ def _expand_acme_to_five_jobs() -> list[dict]:
 
 
 def test_free_user_workspace_caps_positions(seeded_catalog_v2):
-    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from tests.helpers.seed import seed_free_assignments
     from relocation_jobs.users.repo import create_user
 
     jobs = _expand_acme_to_five_jobs()
@@ -520,7 +520,7 @@ def test_free_user_workspace_caps_positions(seeded_catalog_v2):
         google_sub="sub-free-workspace",
     )
     uid = int(user["id"])
-    save_preferences_and_refresh(uid, target_countries=["uk"])
+    seed_free_assignments(uid, ["uk"])
     payload = service.list_company_applications(COUNTRY, COMPANY, user_id=uid)
     assert len(payload.positions) == 3
     assert payload.jobs_hidden_count == 2
@@ -537,7 +537,7 @@ def test_free_user_workspace_caps_positions(seeded_catalog_v2):
 
 
 def test_full_user_workspace_lists_all_positions(seeded_catalog_v2):
-    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from tests.helpers.seed import seed_free_assignments
     from relocation_jobs.users.entitlements import set_plan
     from relocation_jobs.users.repo import create_user
 
@@ -549,7 +549,7 @@ def test_full_user_workspace_lists_all_positions(seeded_catalog_v2):
     )
     uid = int(user["id"])
     set_plan(uid, "full")
-    save_preferences_and_refresh(uid, target_countries=["uk"])
+    seed_free_assignments(uid, ["uk"])
     payload = service.list_company_applications(COUNTRY, COMPANY, user_id=uid)
     assert len(payload.positions) == len(jobs)
     assert payload.jobs_hidden_count == 0

@@ -8,6 +8,7 @@ from relocation_jobs.broadcast.types import (
     PositionAssignment,
     RevealEvent,
 )
+from relocation_jobs.async_jobs.enqueue import enqueue_replace_assignment
 from relocation_jobs.catalog.repo import get_company, list_jobs_for_company_keys
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from relocation_jobs.credits.service import (
@@ -42,8 +43,6 @@ def capacity_meta_for_user(user_id: int) -> BoardCapacityMeta:
     full_access = is_user_admin(user_id) or plan_is_full_access(
         user.get("plan"), user_id=user_id,
     )
-    if not full_access:
-        _import_month_usage(user_id, period)
     balance = credit_balance(user_id)
     if full_access:
         return BoardCapacityMeta(
@@ -95,16 +94,7 @@ def _raw_jobs(country: str, company_name: str) -> list[dict]:
     return list(company.get("matching_jobs") or [])
 
 
-def _ensure_page_assignments(
-    user_id: int,
-    companies: list[dict],
-    *,
-    limits: CapacityLimits,
-) -> tuple[list[PositionAssignment], set[tuple[str, str, str]]]:
-    period = broadcast_repo.current_period_key()
-    assignments = broadcast_repo.list_assignments(user_id, period_key=period)
-    if limits.jobs_per_company is None:
-        return assignments, set()
+def _current_catalog_assignment_keys(companies: list[dict]) -> set[tuple[str, str, str]]:
     company_keys = [
         (
             (company.get("country") or "").strip().lower(),
@@ -113,31 +103,20 @@ def _ensure_page_assignments(
         for company in companies
     ]
     jobs_by_company = list_jobs_for_company_keys(company_keys)
-    current_assignment_keys = {
+    return {
         (*company_key, (job.get("idempotency_key") or "").strip())
         for company_key, jobs in jobs_by_company.items()
         for job in jobs
         if (job.get("idempotency_key") or "").strip()
     }
-    for company in companies:
-        country = (company.get("country") or "").strip().lower()
-        name = (company.get("name") or "").strip()
-        assignments = broadcast_repo.ensure_company_assignments(
-            user_id,
-            country,
-            name,
-            jobs_by_company.get((country, name.lower()), []),
-            active_target=limits.jobs_per_company,
-            period_key=period,
-        )
-    return assignments, current_assignment_keys
 
 
 def apply_capacity_to_board_page(user_id: int, companies: list[dict]) -> list[dict]:
     limits = limits_for_user_id(user_id)
-    assignments, current_assignment_keys = _ensure_page_assignments(
-        user_id, companies, limits=limits,
-    )
+    assignments = broadcast_repo.list_assignments(user_id)
+    current_assignment_keys = set()
+    if limits.jobs_per_company is not None:
+        current_assignment_keys = _current_catalog_assignment_keys(companies)
     return apply_capacity_to_companies(
         companies,
         limits=limits,
@@ -243,7 +222,8 @@ def _role_delivery_key(
     )
 
 
-def _import_month_usage(user_id: int, period: str) -> None:
+def import_month_usage(user_id: int, period: str | None = None) -> None:
+    period = period or broadcast_repo.current_period_key()
     if usage_migration_done(user_id, period):
         return
     for assignment in broadcast_repo.list_assignments(user_id, period_key=period):
@@ -286,7 +266,7 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
     key = event.job_key.strip() or job_idempotency_key(event.job_url)
     if not key:
         return {"expanded": False, "reason": "missing_job_key"}
-    _import_month_usage(user_id, period)
+    import_month_usage(user_id, period)
     newly_consumed = broadcast_repo.mark_assignment_consumed(
         user_id,
         country=event.country,
@@ -333,19 +313,29 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "reason": "already_counted" if spent["deduplicated"] else "credits_exhausted",
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
-    replacement_revealed = broadcast_repo.assign_position(
-        user_id,
-        event.country,
-        event.company_name,
-        candidate,
-        period_key=period,
-    )
+    try:
+        queued = enqueue_replace_assignment(
+            user_id,
+            country=event.country,
+            company_name=event.company_name,
+            source_job_key=key,
+        )
+    except RuntimeError:
+        refund_operation(user_id, spend_key=spend_key, reason="replacement_assignment_failed")
+        return {
+            "expanded": False,
+            "consumed": False,
+            "reason": "replacement_assignment_failed",
+            "capacity": capacity_meta_for_user(user_id).as_dict(),
+        }
+    replacement_revealed = bool(queued.get("queued") or queued.get("synced"))
     if not replacement_revealed:
         refund_operation(user_id, spend_key=spend_key, reason="replacement_assignment_failed")
     return {
         "expanded": replacement_revealed,
         "consumed": replacement_revealed,
         "credits_spent": 1 if replacement_revealed else 0,
+        "queued": bool(queued.get("queued")),
         "position_period": period,
         "capacity": capacity_meta_for_user(user_id).as_dict(),
     }

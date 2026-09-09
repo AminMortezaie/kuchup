@@ -18,6 +18,10 @@ def test_oauth_state_roundtrip():
 def test_login_or_register_google_creates_and_promotes_admin(db, monkeypatch):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     monkeypatch.setenv("PANEL_ADMIN_EMAILS", "owner@example.com")
+    monkeypatch.setattr(
+        "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "user_id": uid},
+    )
     before = user_count()
     user = login_or_register_google(
         {
@@ -56,9 +60,32 @@ def test_login_or_register_google_respects_allow_register(db, monkeypatch):
     assert get_user_by_email("blocked@example.com") is None
 
 
+def test_auth_disabled_auto_logins_admin_on_localhost(client, db, monkeypatch):
+    monkeypatch.setenv("PANEL_AUTH_DISABLED", "1")
+    monkeypatch.setenv("PANEL_ADMIN_EMAILS", "admin@example.com")
+    monkeypatch.setattr(
+        "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "user_id": uid},
+    )
+    body = client.get("/api/auth/status").get_json()
+    assert body["authenticated"] is True
+    assert body["user"]["email"] == "admin@example.com"
+    assert body["user"]["is_admin"] is True
+
+
+def test_auth_disabled_ignored_off_localhost(client, db, monkeypatch):
+    monkeypatch.setenv("PANEL_AUTH_DISABLED", "1")
+    body = client.get("/api/auth/status", headers={"Host": "kuchup.com"}).get_json()
+    assert body["authenticated"] is False
+
+
 def test_google_callback_sets_session(client, db, monkeypatch):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     monkeypatch.setenv("PANEL_ADMIN_EMAILS", "")
+    monkeypatch.setattr(
+        "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "user_id": uid},
+    )
 
     def fake_profile(*, code: str, redirect_uri: str):
         assert code == "ok-code"

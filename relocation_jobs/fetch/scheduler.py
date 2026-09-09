@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import logging
 import os
 import time
@@ -12,7 +13,7 @@ from relocation_jobs.users.repo import resolve_scheduler_user_id
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch import state as fetch_state
-from relocation_jobs.fetch.runner import start_country_fetch
+from relocation_jobs.fetch.runner import run_country_fetch_blocking
 from relocation_jobs.fetch.listing_check import run_listing_check_cycle
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
@@ -78,7 +79,6 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
         return {"skipped": True, "reason": "fetch_busy"}
 
     resolved_user_id = user_id if user_id is not None else resolve_scheduler_user_id()
-    listing_check = _run_listing_check()
     countries = schedule_countries()
     concurrency = schedule_concurrency()
     started: list[str] = []
@@ -101,10 +101,11 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
             break
 
         try:
-            run_id = start_country_fetch(
+            run_id = run_country_fetch_blocking(
                 user_id=resolved_user_id,
                 country_key=country,
                 concurrency=concurrency,
+                timeout=country_timeout_seconds(),
             )
         except RuntimeError as exc:
             skipped.append(country)
@@ -114,32 +115,26 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
                 level=logging.WARNING,
             )
             continue
-
-        started.append(country)
-        log_event(
-            "Scheduled country fetch started",
-            run_id=run_id,
-            country=country,
-            user_id=resolved_user_id,
-            concurrency=concurrency,
-        )
-        joined = fetch_state.wait_for_fetch_thread(timeout=country_timeout_seconds())
-        if not joined:
+        except TimeoutError:
+            skipped.append(country)
             log_event(
                 "Scheduled country fetch timed out",
-                run_id=run_id,
                 country=country,
                 level=logging.ERROR,
             )
             fetch_state.abandon_fetch_after_timeout(
                 result_line=f"Country fetch timed out after {country_timeout_seconds()}s",
             )
-        else:
-            log_event(
-                "Scheduled country fetch finished",
-                run_id=run_id,
-                country=country,
-            )
+            continue
+
+        started.append(country)
+        log_event(
+            "Scheduled country fetch finished",
+            run_id=run_id,
+            country=country,
+            user_id=resolved_user_id,
+            concurrency=concurrency,
+        )
 
     result = {
         "skipped": False,
@@ -147,7 +142,6 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
         "not_started": skipped,
         "countries": list(countries),
         "concurrency": concurrency,
-        "listing_check": listing_check,
     }
     log_event(
         "Scheduled fetch cycle finished",
@@ -172,6 +166,12 @@ def _run_listing_check() -> dict:
     return result
 
 
+def run_scheduled_pass(*, user_id: int | None = None) -> dict:
+    listing_check = _run_listing_check()
+    result = run_fetch_cycle(user_id=user_id)
+    return {**result, "listing_check": listing_check}
+
+
 def run_scheduler_loop() -> None:
     bootstrap_scheduler()
     if not schedule_enabled():
@@ -187,7 +187,28 @@ def run_scheduler_loop() -> None:
 
     while True:
         try:
-            run_fetch_cycle()
+            run_scheduled_pass()
         except Exception as exc:
             log_event(f"Scheduled fetch cycle failed: {exc}", level=logging.ERROR)
         time.sleep(interval_seconds)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run scheduled country job fetches.")
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run a single fetch cycle and exit.",
+    )
+    args = parser.parse_args()
+
+    if args.once:
+        bootstrap_scheduler()
+        if not schedule_enabled():
+            LOGGER.error("FETCH_SCHEDULE_ENABLED is off")
+            return 1
+        print(run_scheduled_pass())
+        return 0
+
+    run_scheduler_loop()
+    return 0

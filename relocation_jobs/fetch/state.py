@@ -229,15 +229,6 @@ def guard_fetch_start() -> bool:
     return fetch_repo.get_running_fetch_run() is None
 
 
-def wait_for_fetch_thread(timeout: float | None = None) -> bool:
-    with _fetch_lock:
-        thread = _fetch_state.get("thread")
-    if thread is None:
-        return True
-    thread.join(timeout=timeout)
-    return not thread.is_alive()
-
-
 def abandon_fetch_after_timeout(*, result_line: str) -> None:
     request_fetch_cancel()
     with _fetch_lock:

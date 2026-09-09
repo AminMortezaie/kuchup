@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Fetch scheduler worker — discoverable entry. Docker/ops: scripts/fetch_scheduler_worker.py."""
+"""Fetch scheduler worker."""
 
 from __future__ import annotations
 
-import runpy
 import sys
 from pathlib import Path
 
@@ -11,5 +10,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from relocation_jobs.fetch.scheduler import main
+
 if __name__ == "__main__":
-    runpy.run_path(str(_ROOT / "scripts" / "fetch_scheduler_worker.py"), run_name="__main__")
+    raise SystemExit(main())

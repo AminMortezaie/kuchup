@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Union
 
 MSG_RECONCILE_USER = "user"
 MSG_RECONCILE_COUNTRY = "country"
+MSG_REPLACE = "replace"
 
 
 @dataclass(frozen=True)
@@ -25,13 +27,21 @@ class ReconcileCountryOpportunities:
         }
 
 
-def parse_message(body: dict) -> ReconcileUserOpportunities | ReconcileCountryOpportunities:
-    message_type = (body.get("type") or "").strip().lower()
-    if message_type == MSG_RECONCILE_USER:
-        return ReconcileUserOpportunities(user_id=int(body["user_id"]))
-    if message_type == MSG_RECONCILE_COUNTRY:
-        country = (body.get("country") or "").strip().lower()
-        if not country:
-            raise ValueError("country message missing country")
-        return ReconcileCountryOpportunities(country=country)
-    raise ValueError(f"Unknown async job message type: {message_type}")
+@dataclass(frozen=True)
+class ReplaceAssignment:
+    user_id: int
+    country: str
+    company_name: str
+    source_job_key: str = ""
+
+    def to_payload(self) -> dict:
+        return {
+            "type": MSG_REPLACE,
+            "user_id": int(self.user_id),
+            "country": (self.country or "").strip().lower(),
+            "company_name": (self.company_name or "").strip(),
+            "source_job_key": (self.source_job_key or "").strip(),
+        }
+
+
+JobMessage = Union[ReconcileUserOpportunities, ReconcileCountryOpportunities, ReplaceAssignment]

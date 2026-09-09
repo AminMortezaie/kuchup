@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from datetime import date
 
 from relocation_jobs.core.scrape_cancel import FetchCancelled
 from relocation_jobs.fetch import repo
-from relocation_jobs.fetch.ports import ProcessCompany
 from relocation_jobs.fetch.types import AttemptStatus, is_infra_fetch_error
+
 _ERROR_RE = re.compile(r" — Error: (.+)$")
 
 
@@ -44,44 +45,31 @@ def _record_finish(
     )
 
 
-async def fetch_company(
-    client,
+def start_company_attempt(
     company: dict,
-    index: int,
-    total: int,
     *,
     country_key: str,
-    process_company: ProcessCompany,
-    sync_board,
-    enrich_only: bool,
-    skip_enriched: bool,
-    enrich_concurrency: int,
     fetch_run_id: int | None = None,
-) -> tuple[str, int]:
-    name = company.get("name") or ""
-    attempt_id = repo.insert_attempt(
+) -> int:
+    return repo.insert_attempt(
         country=country_key,
-        company_name=name,
+        company_name=company.get("name") or "",
         careers_url=company.get("careers_url") or "",
         ats_type=_company_ats_type(company),
         fetch_run_id=fetch_run_id,
     )
-    try:
-        msg, new_count = await process_company(
-            client,
-            company,
-            index,
-            total,
-            sync_board=sync_board,
-            enrich_only=enrich_only,
-            skip_enriched=skip_enriched,
-            enrich_concurrency=enrich_concurrency,
-            catalog_country=country_key,
-        )
-    except FetchCancelled:
-        _record_finish(attempt_id, status=AttemptStatus.CANCELLED, message="cancelled")
-        raise
 
+
+def finish_cancelled_attempt(attempt_id: int) -> None:
+    _record_finish(attempt_id, status=AttemptStatus.CANCELLED, message="cancelled")
+
+
+def finish_company_attempt(
+    attempt_id: int,
+    company: dict,
+    msg: str,
+    new_count: int,
+) -> tuple[str, int]:
     err_match = _ERROR_RE.search(msg)
     if err_match:
         error_message = err_match.group(1)
@@ -110,3 +98,38 @@ async def fetch_company(
         message=msg,
     )
     return msg, new_count
+
+
+async def fetch_company(
+    client,
+    company: dict,
+    index: int,
+    total: int,
+    *,
+    country_key: str,
+    process_company: Callable,
+    sync_board,
+    enrich_only: bool,
+    skip_enriched: bool,
+    enrich_concurrency: int,
+    fetch_run_id: int | None = None,
+) -> tuple[str, int]:
+    attempt_id = start_company_attempt(
+        company, country_key=country_key, fetch_run_id=fetch_run_id,
+    )
+    try:
+        msg, new_count = await process_company(
+            client,
+            company,
+            index,
+            total,
+            sync_board=sync_board,
+            enrich_only=enrich_only,
+            skip_enriched=skip_enriched,
+            enrich_concurrency=enrich_concurrency,
+            catalog_country=country_key,
+        )
+    except FetchCancelled:
+        finish_cancelled_attempt(attempt_id)
+        raise
+    return finish_company_attempt(attempt_id, company, msg, new_count)
