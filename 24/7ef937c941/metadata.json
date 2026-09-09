@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "247ef937c941",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/static/js/position-card.js",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/24/7ef937c941/0/metadata.json",
+      "transcript": "/24/7ef937c941/0/full.jsonl",
+      "compact_transcript": "/24/7ef937c941/0/transcript.jsonl",
+      "content_hash": "/24/7ef937c941/0/content_hash.txt",
+      "prompt": "/24/7ef937c941/0/prompt.txt"
+    }
+  ]
+}
