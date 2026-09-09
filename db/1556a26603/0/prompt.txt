@@ -1,0 +1,11 @@
+@kuchup_backend_refactor_plan.md (1-999) use multi agents and git work tree and new branch and also use /ponytail  as mentioned in document to complete the refactoring also the /goal is proposed on md file.
+
+---
+
+you just deleted unused files and you didnot change the whole soul of application to what we talked about and what we requested.
+
+read again the doc i gave you and find the places you did not go through them and then create a plan to make the goal deliver.
+
+---
+
+start to build using /ponytail  and /goal is defenition of done.
