@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "17a78a6f0ef8",
+  "strategy": "manual-commit",
+  "branch": "fix/hide-empty-pagination",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/reference/board.md",
+    "relocation_jobs/panel/board.py",
+    "relocation_jobs/panel/flatten_rules.py",
+    "relocation_jobs/panel/service.py",
+    "relocation_jobs/web/routes/board.py",
+    "relocation_jobs/web/routes/jobs.py",
+    "tests/panel/test_hide_empty.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/17/a78a6f0ef8/0/metadata.json",
+      "transcript": "/17/a78a6f0ef8/0/full.jsonl",
+      "compact_transcript": "/17/a78a6f0ef8/0/transcript.jsonl",
+      "content_hash": "/17/a78a6f0ef8/0/content_hash.txt",
+      "prompt": "/17/a78a6f0ef8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 206062,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9414784,
+    "output_tokens": 20360,
+    "api_call_count": 2
+  }
+}
