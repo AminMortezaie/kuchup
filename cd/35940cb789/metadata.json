@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "cd35940cb789",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/fetch/runner.py",
+    "tests/web/test_fetch_api.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/cd/35940cb789/0/metadata.json",
+      "transcript": "/cd/35940cb789/0/full.jsonl",
+      "compact_transcript": "/cd/35940cb789/0/transcript.jsonl",
+      "content_hash": "/cd/35940cb789/0/content_hash.txt",
+      "prompt": "/cd/35940cb789/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 27125,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2292992,
+    "output_tokens": 7346,
+    "api_call_count": 1
+  }
+}
