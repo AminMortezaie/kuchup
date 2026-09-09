@@ -1,0 +1,11 @@
+when we get rejection from a position which was waiting for it awaiting should be cleared.
+also the role applied tagged should not have date cause it just for counting the applied positions on a specific company, and you should add a new tag which is the last applied date on a company which is the last position date for apply.
+(it's for measuring that you should not apply again for a company if a time period is not passed for example 2 months and then apply again to get block listed on that company)
+
+also the company tags should like positions tags ( i mean the ui) 
+
+make this changes i will check again and tell you about.
+
+---
+
+ok commit it it's fine now.
