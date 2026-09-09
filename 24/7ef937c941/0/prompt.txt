@@ -1,5 +1,3 @@
-substitude the place of want to apply and not for me buttons on panel
-
----
+<timestamp>Thursday, Sep 10, 2026, 1:17 AM (UTC+4)</timestamp>
 
 commit it.
