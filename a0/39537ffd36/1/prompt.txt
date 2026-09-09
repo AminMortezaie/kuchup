@@ -1,6 +1,3 @@
-we have changed the admin panel and it shows by tab but the backend loads all the data in one call make these calls seperated to make it optimized.
-/ponytail implement it.
-
----
+<timestamp>Wednesday, Sep 9, 2026, 11:52 PM (UTC+4)</timestamp>
 
 commit and push and deploy
