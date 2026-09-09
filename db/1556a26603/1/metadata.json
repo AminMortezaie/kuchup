@@ -1,16 +1,18 @@
 {
   "cli_version": "0.8.42",
   "checkpoint_id": "db1556a26603",
+  "session_id": "573a3288-b7a8-4e43-b620-49bf3eaca22d",
   "strategy": "manual-commit",
+  "created_at": "2026-09-09T17:01:10.747141Z",
   "branch": "main",
-  "checkpoints_count": 11,
+  "checkpoints_count": 8,
+  "save_step_count": 1,
   "files_touched": [
     ".env.example",
     ".github/workflows/ci.yml",
     ".gitignore",
     "README.md",
     "apps/README.md",
-    "apps/fetch-worker/run.py",
     "apps/opportunity-worker/run.py",
     "apps/role-propagator/Dockerfile",
     "apps/role-propagator/assign.go",
@@ -24,69 +26,65 @@
     "docs/operations/sqs-opportunity-refresh.md",
     "docs/reference/architecture.md",
     "docs/reference/entitlements-and-opportunities.md",
-    "docs/reference/rules.md",
     "relocation_jobs/async_jobs/dispatch.py",
     "relocation_jobs/async_jobs/enqueue.py",
     "relocation_jobs/async_jobs/handlers.py",
     "relocation_jobs/async_jobs/types.py",
-    "relocation_jobs/broadcast/capacity.py",
-    "relocation_jobs/broadcast/repo.py",
     "relocation_jobs/broadcast/service.py",
     "relocation_jobs/core/auth.py",
-    "relocation_jobs/fetch/__init__.py",
-    "relocation_jobs/fetch/country_runner.py",
-    "relocation_jobs/fetch/pipeline.py",
-    "relocation_jobs/fetch/ports.py",
-    "relocation_jobs/fetch/runner.py",
-    "relocation_jobs/fetch/scheduler.py",
-    "relocation_jobs/fetch/service.py",
-    "relocation_jobs/fetch/state.py",
     "relocation_jobs/opportunities/repo.py",
     "relocation_jobs/opportunities/service.py",
     "relocation_jobs/payments/service.py",
-    "relocation_jobs/scrape/company.py",
     "relocation_jobs/web/routes/admin.py",
-    "relocation_jobs/web/routes/preferences.py",
-    "relocation_jobs/web/server.py",
     "scripts/aws_sqs_opportunity_queue.sh",
     "scripts/ec2_app_deploy.sh",
-    "scripts/fetch_scheduler_worker.py",
     "scripts/opportunity_sqs_worker.py",
-    "tests/conftest.py",
-    "tests/fetch/test_pipeline.py",
-    "tests/fetch/test_scheduler.py",
     "tests/helpers/seed.py",
     "tests/payments/test_payment_service.py",
     "tests/test_broadcast_capacity.py",
     "tests/test_entitlements.py",
-    "tests/test_google_auth.py",
     "tests/test_opportunities.py",
     "tests/web/test_catalog_api.py",
     "tests/web/test_jobs_api.py",
     "tests/web/test_mcp_company_workspace.py",
     "tests/web/test_personalized_board.py"
   ],
-  "sessions": [
-    {
-      "metadata": "/db/1556a26603/0/metadata.json",
-      "transcript": "/db/1556a26603/0/full.jsonl",
-      "compact_transcript": "/db/1556a26603/0/transcript.jsonl",
-      "content_hash": "/db/1556a26603/0/content_hash.txt",
-      "prompt": "/db/1556a26603/0/prompt.txt"
-    },
-    {
-      "metadata": "/db/1556a26603/1/metadata.json",
-      "transcript": "/db/1556a26603/1/full.jsonl",
-      "compact_transcript": "/db/1556a26603/1/transcript.jsonl",
-      "content_hash": "/db/1556a26603/1/content_hash.txt",
-      "prompt": "/db/1556a26603/1/prompt.txt"
-    }
-  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "5aaeaccdeab0",
+  "compact_transcript_start": 0,
   "token_usage": {
-    "input_tokens": 1063596,
+    "input_tokens": 221643,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 27578368,
-    "output_tokens": 159749,
-    "api_call_count": 4
-  }
+    "cache_read_tokens": 12315776,
+    "output_tokens": 45779,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T17:01:10.68561Z",
+    "agent_lines": 1564,
+    "agent_removed": 458,
+    "human_added": 338,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1902,
+    "total_lines_changed": 2796,
+    "agent_percentage": 72.3175965665236,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
 }
