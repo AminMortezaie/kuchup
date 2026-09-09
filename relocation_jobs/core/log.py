@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import sys
 
 import structlog
-
-_configured = False
 
 _LEVELS = {
     "DEBUG": logging.DEBUG,
@@ -67,10 +66,8 @@ def _install_stderr_handler(*, json_logs: bool, shared: list) -> None:
     root.setLevel(_log_level())
 
 
+@functools.cache
 def configure_logging() -> None:
-    global _configured
-    if _configured:
-        return
     json_logs = _use_json_logs()
     shared = _shared_processors(json_logs=json_logs)
     structlog.configure(
@@ -80,4 +77,3 @@ def configure_logging() -> None:
         cache_logger_on_first_use=False,
     )
     _install_stderr_handler(json_logs=json_logs, shared=shared)
-    _configured = True

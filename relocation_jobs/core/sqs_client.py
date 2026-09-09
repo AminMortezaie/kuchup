@@ -1,14 +1,11 @@
 from __future__ import annotations
 
+import functools
 import json
 import os
-import threading
 from typing import Any
 
 _OPPORTUNITY_REFRESH_ENV = "SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL"
-
-_lock = threading.Lock()
-_client = None
 
 
 def queue_url_from_env(env_key: str) -> str:
@@ -27,24 +24,19 @@ def sqs_enabled() -> bool:
     return sqs_enabled_for(_OPPORTUNITY_REFRESH_ENV)
 
 
+@functools.cache
 def get_sqs():
-    global _client
-    with _lock:
-        if _client is None:
-            import boto3
+    import boto3
 
-            _client = boto3.client(
-                "sqs",
-                region_name=(os.environ.get("AWS_REGION") or "eu-central-1").strip()
-                or "eu-central-1",
-            )
-        return _client
+    return boto3.client(
+        "sqs",
+        region_name=(os.environ.get("AWS_REGION") or "eu-central-1").strip()
+        or "eu-central-1",
+    )
 
 
 def reset_sqs_client() -> None:
-    global _client
-    with _lock:
-        _client = None
+    get_sqs.cache_clear()
 
 
 def send_json_message(queue_url: str, payload: dict[str, Any]) -> str:

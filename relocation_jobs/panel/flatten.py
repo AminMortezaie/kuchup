@@ -197,21 +197,19 @@ def _visible_jobs(
     return jobs, not_for_me, rejected, nfm_count, hidden
 
 
-def flatten_company(
+def _prefilter_company(
     company: dict,
     *,
     country_key: str,
-    country_label: str,
     filters: FlattenFilters,
     ctx: PanelContext,
-) -> dict | None:
+) -> tuple[str, list, dict] | None:
     company_name = company.get("name", "")
     if filters.country_key and filters.country_key != "all":
         if not company_visible_for_country_filter(
             company, filters.country_key, catalog_country=country_key,
         ):
             return None
-
     stored_jobs = company.get("matching_jobs") or []
     header = _company_header_state(
         user_id=ctx.user_id,
@@ -231,7 +229,23 @@ def flatten_company(
         header=header,
     ):
         return None
+    return company_name, stored_jobs, header
 
+
+def flatten_company(
+    company: dict,
+    *,
+    country_key: str,
+    country_label: str,
+    filters: FlattenFilters,
+    ctx: PanelContext,
+) -> dict | None:
+    pre = _prefilter_company(
+        company, country_key=country_key, filters=filters, ctx=ctx,
+    )
+    if pre is None:
+        return None
+    company_name, stored_jobs, header = pre
     jobs, not_for_me, rejected, nfm_count, hidden = _visible_jobs(
         stored_jobs=stored_jobs,
         ctx=ctx,
@@ -274,33 +288,12 @@ def preview_board_company(
     filters: FlattenFilters,
     ctx: PanelContext,
 ) -> tuple[str, str, dict] | None:
-    company_name = company.get("name", "")
-    if filters.country_key and filters.country_key != "all":
-        if not company_visible_for_country_filter(
-            company, filters.country_key, catalog_country=country_key,
-        ):
-            return None
-
-    stored_jobs = company.get("matching_jobs") or []
-    header = _company_header_state(
-        user_id=ctx.user_id,
-        country_key=country_key,
-        company_name=company_name,
-        company=company,
-        stored_jobs=stored_jobs,
-        job_tracking=ctx.job_tracking,
-        company_tracking=ctx.company_tracking,
+    pre = _prefilter_company(
+        company, country_key=country_key, filters=filters, ctx=ctx,
     )
-    if skip_company_before_jobs(
-        company,
-        filters=filters,
-        country_key=country_key,
-        country_filter=filters.country_key,
-        location_filter=filters.location_filter,
-        header=header,
-    ):
+    if pre is None:
         return None
-
+    company_name, stored_jobs, header = pre
     jobs, not_for_me, rejected, _nfm_count, _hidden = _visible_jobs(
         stored_jobs=stored_jobs,
         ctx=ctx,
@@ -331,33 +324,12 @@ def summarize_company_for_stats(
     ctx: PanelContext,
     alias_index: dict[tuple[str, str, str], dict],
 ) -> dict | None:
-    company_name = company.get("name", "")
-    if filters.country_key and filters.country_key != "all":
-        if not company_visible_for_country_filter(
-            company, filters.country_key, catalog_country=country_key,
-        ):
-            return None
-
-    stored_jobs = company.get("matching_jobs") or []
-    header = _company_header_state(
-        user_id=ctx.user_id,
-        country_key=country_key,
-        company_name=company_name,
-        company=company,
-        stored_jobs=stored_jobs,
-        job_tracking=ctx.job_tracking,
-        company_tracking=ctx.company_tracking,
+    pre = _prefilter_company(
+        company, country_key=country_key, filters=filters, ctx=ctx,
     )
-    if skip_company_before_jobs(
-        company,
-        filters=filters,
-        country_key=country_key,
-        country_filter=filters.country_key,
-        location_filter=filters.location_filter,
-        header=header,
-    ):
+    if pre is None:
         return None
-
+    company_name, stored_jobs, header = pre
     jobs, rejected, not_for_me_count = partition_stored_jobs_for_stats(
         stored_jobs,
         user_id=ctx.user_id,

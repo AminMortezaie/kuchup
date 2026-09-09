@@ -15,9 +15,8 @@ from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jo
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_RELOCATION,
-    board_page_payload,
 )
-from relocation_jobs.web.query import catalog_scope_flags, query_flags
+from relocation_jobs.web.query import query_flags
 
 
 def _latest_fetch_new_jobs(
@@ -56,7 +55,7 @@ def register(app):
     @app.get("/api/board")
     @login_required
     def api_board():
-        scope = catalog_scope_flags()
+        scope = query_flags()
         timezone_name = (request.args.get("timezone") or "").strip() or None
         search = (request.args.get("q") or "").strip() or None
         page = max(request.args.get("page", 1, type=int) or 1, 1)
@@ -112,9 +111,9 @@ def register(app):
         total_pages = None
         if total_visible is not None:
             total_pages = max(1, math.ceil(total_visible / page_size))
-        return jsonify(board_page_payload(
-            companies=companies,
-            meta={
+        return jsonify({
+            "companies": companies,
+            "meta": {
                 "country": request.args.get("country", "all"),
                 "ats_type": scope["ats_type"],
                 "location": scope["location"],
@@ -130,18 +129,18 @@ def register(app):
                 **board_scope_meta(opportunity_scope),
                 **capacity_meta,
             },
-            user_stats=compute_user_board_stats(
+            "user_stats": compute_user_board_stats(
                 user_id=g.user_id,
                 country_key=scope["country_key"],
                 timezone_name=timezone_name,
                 latest_fetch_new_jobs=latest_fetch_new_jobs,
             ),
-        ))
+        })
 
     @app.get("/api/board/stats")
     @login_required
     def api_board_stats():
-        scope = catalog_scope_flags()
+        scope = query_flags()
         timezone_name = (request.args.get("timezone") or "").strip() or None
         latest_fetch_new_jobs = request.args.get("latest_fetch_new_jobs", type=int) or 0
         return jsonify(compute_user_board_stats(

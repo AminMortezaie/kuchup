@@ -15,7 +15,7 @@ Tests: `pytest tests -o addopts=`. Do not commit unless the user asks.
 
 | Layer | SQL? |
 |----|---|
-| `*/repo.py`, `db/migrate.py` | **Yes — only here** |
+| `*/repo.py`, `core/migrations.py` | **Yes — only here** |
 | `*/service.py`, `*/pipeline.py`, `web/routes/*`, `shared/` | No |
 
 ## Module order (do not interleave)

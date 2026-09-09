@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 DEFAULT_TARGET_COUNTRIES: tuple[str, ...] = ("germany",)
 
@@ -32,16 +32,6 @@ class OpportunityRow:
     newest_fetched: str = ""
     revealed_job_count: int = 0
     engaged: bool = False
-
-
-@dataclass(frozen=True)
-class MatchInput:
-    plan: str
-    is_admin: bool
-    preferences: UserPreferences
-    board_company_cap: int | None
-    candidates: tuple[CompanyCandidate, ...] = field(default_factory=tuple)
-    require_open_roles: bool = True
 
 
 @dataclass(frozen=True)

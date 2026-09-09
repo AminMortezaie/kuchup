@@ -86,7 +86,7 @@ relocation_jobs/
 ## Panel read path
 
 **Main board:** `GET /api/board` → `panel/board.load_catalog_board_page(catalog_kind=relocation)` → `flatten_companies_page()`.
-**Remote board:** `GET /api/remote/board` → `remote/board.load_remote_board_page()` (same flatten contract, `catalog_kind=remote`). See [board.md](board.md).
+**Remote board:** `GET /api/remote/board` → `panel/board.load_catalog_board_page(catalog_kind=remote)` (same flatten contract). See [board.md](board.md).
 
 1. Load catalog for **selected country only**
 2. Load per-user tracking scoped to that country

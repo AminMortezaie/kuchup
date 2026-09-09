@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from relocation_jobs.shared.schema import BaseSchema
-
 CATALOG_KIND_RELOCATION = "relocation"
 CATALOG_KIND_REMOTE = "remote"
 CATALOG_KINDS = frozenset({CATALOG_KIND_RELOCATION, CATALOG_KIND_REMOTE})
@@ -13,20 +11,6 @@ REMOTE_COUNTRY_KEYS = frozenset({"remote-ok", "remote-dxb", "remote-joblet"})
 AGGREGATOR_ATS_TYPES = frozenset({"remoteok", "remotedxb", "joblet"})
 AGGREGATOR_SOURCE_KEYS = frozenset({"remoteok", "remotedxb", "joblet", "aggregator"})
 SOURCED_ATS_TYPE = "sourced"
-
-
-class BoardMeta(BaseSchema):
-    country: str = "all"
-    ats_type: str | None = None
-    location: str | None = None
-    fetch_problem_total: int = 0
-    latest_fetch_new_jobs: int = 0
-    page: int = 1
-    page_size: int = 25
-    total_companies: int | None = None
-    total_pages: int | None = None
-    has_more: bool = False
-    sort: str = "newest"
 
 
 def is_remote_country_key(country_key: str | None) -> bool:
@@ -78,19 +62,6 @@ def infer_catalog_kind_from_row(
         ats_type=ats_type,
         sources=sources,
     )
-
-
-def board_page_payload(
-    *,
-    companies: list[dict],
-    meta: dict,
-    user_stats: dict,
-) -> dict:
-    return {
-        "companies": companies,
-        "meta": meta,
-        "user_stats": user_stats,
-    }
 
 
 def countries_for_kind(kind: str, all_labels: dict[str, str]) -> list[dict[str, str]]:
