@@ -399,7 +399,7 @@ def test_mcp_profile_isolated_per_user(v2_auth_client, client, db):
 def test_apply_page_served(v2_client):
     resp = v2_client.get("/apply")
     assert resp.status_code == 200
-    assert b"Materials" in resp.data
+    assert b"Resumes & interview notes" in resp.data
     assert b"Interview notes" in resp.data
 
 

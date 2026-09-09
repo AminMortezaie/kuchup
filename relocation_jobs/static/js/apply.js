@@ -1,4 +1,4 @@
-/** Materials — profile + resumes + project masters + interview notes for MCP (per logged-in user). */
+/** Resumes & interview notes — profile + resumes + project masters + interview notes for MCP (per logged-in user). */
 
 import { createSlugDocumentEditor } from "./apply-documents.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
@@ -141,9 +141,15 @@ const noteEditor = createSlugDocumentEditor({
   ...editorDeps,
 });
 
+const APPLY_TABS = ["profile", "masters", "projects", "notes", "connect"];
+
 function setTab(tab) {
-  for (const btn of document.querySelectorAll(".apply-tab")) {
-    btn.classList.toggle("apply-tab--active", btn.dataset.tab === tab);
+  if (!APPLY_TABS.includes(tab)) tab = "profile";
+  for (const item of document.querySelectorAll("[data-apply-tab]")) {
+    const on = item.dataset.applyTab === tab;
+    item.classList.toggle("is-active", on);
+    if (on) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
   }
   const profile = $("applyProfilePanel");
   const masters = $("applyMastersPanel");
@@ -156,19 +162,11 @@ function setTab(tab) {
   if (notes) notes.hidden = tab !== "notes";
   if (connect) connect.hidden = tab !== "connect";
 
-  const active = document.querySelector(`.apply-tab[data-tab="${tab}"]`);
-  const rail = active?.closest(".tab-rail");
-  if (active && rail) {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const railRect = rail.getBoundingClientRect();
-    const btnRect = active.getBoundingClientRect();
-    if (btnRect.left < railRect.left || btnRect.right > railRect.right) {
-      rail.scrollBy({
-        left: btnRect.left - railRect.left - 12,
-        behavior: reduceMotion ? "auto" : "smooth",
-      });
-    }
-  }
+  const url = new URL(window.location);
+  if (tab === "profile") url.searchParams.delete("tab");
+  else url.searchParams.set("tab", tab);
+  history.replaceState(null, "", url);
+  window.scrollTo(0, 0);
 
   if (tab === "connect") {
     loadConnectPanel().catch((err) => showError(err.message || "Failed to load MCP connect info"));
@@ -423,8 +421,11 @@ function bindEvents() {
   projectEditor.bind();
   noteEditor.bind();
 
-  for (const tabBtn of document.querySelectorAll(".apply-tab")) {
-    tabBtn.addEventListener("click", () => setTab(tabBtn.dataset.tab));
+  for (const item of document.querySelectorAll("[data-apply-tab]")) {
+    item.addEventListener("click", (event) => {
+      event.preventDefault();
+      setTab(item.dataset.applyTab);
+    });
   }
 
   $("applyMcpUrlCopyBtn")?.addEventListener("click", () => {
@@ -450,9 +451,7 @@ async function init() {
     try {
       await loadData();
       const tab = new URLSearchParams(window.location.search).get("tab");
-      if (tab === "connect" || tab === "masters" || tab === "projects" || tab === "notes" || tab === "profile") {
-        setTab(tab);
-      }
+      if (APPLY_TABS.includes(tab)) setTab(tab);
     } catch (err) {
       showError(err.message || "Failed to load application data");
     }

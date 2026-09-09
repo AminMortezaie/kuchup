@@ -239,12 +239,6 @@
   max-width: 22rem;
 }
 
-.app-shell .apply-tabs {
-  top: 3.5rem;
-  background: var(--color-paper);
-  scrollbar-width: none;
-}
-
 .app-shell .filter-chip {
   color: var(--color-ink);
   background: var(--color-paper-2);
