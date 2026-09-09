@@ -9,18 +9,17 @@ from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.catalog.locations import list_company_locations
 from relocation_jobs.opportunities.service import board_scope_meta, resolve_board_opportunity_scope
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
-from relocation_jobs.remote.board import (
+from relocation_jobs.panel.board import (
     DEFAULT_BOARD_PAGE_SIZE,
     MAX_BOARD_PAGE_SIZE,
-    load_remote_board_page,
+    load_catalog_board_page,
 )
 from relocation_jobs.remote.countries import list_remote_ats_types, list_remote_countries
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_REMOTE,
-    board_page_payload,
     is_remote_country_key,
 )
-from relocation_jobs.web.query import catalog_scope_flags, query_flags
+from relocation_jobs.web.query import query_flags
 
 
 def _panel_flags() -> dict:
@@ -59,7 +58,7 @@ def register(app):
     @app.get("/api/remote/board")
     @login_required
     def api_remote_board():
-        scope = catalog_scope_flags()
+        scope = query_flags()
         country_key = scope["country_key"]
         if country_key and not is_remote_country_key(country_key):
             return jsonify({"error": f"Unknown remote board: {country_key}"}), 400
@@ -74,7 +73,7 @@ def register(app):
             sort = "newest"
 
         opportunity_scope = resolve_board_opportunity_scope(g.user_id)
-        companies, file_meta, fetch_problem_count, total_visible, has_more = load_remote_board_page(
+        companies, file_meta, fetch_problem_count, total_visible, has_more = load_catalog_board_page(
             country_key,
             ats_type=scope["ats_type"],
             location=scope["location"],
@@ -85,6 +84,7 @@ def register(app):
             panel_flags=_panel_flags(),
             count_total=(page == 1),
             sort=sort,
+            catalog_kind=CATALOG_KIND_REMOTE,
             opportunity_scope=opportunity_scope,
         )
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
@@ -96,9 +96,9 @@ def register(app):
         total_pages = None
         if total_visible is not None:
             total_pages = max(1, math.ceil(total_visible / page_size))
-        return jsonify(board_page_payload(
-            companies=companies,
-            meta={
+        return jsonify({
+            "companies": companies,
+            "meta": {
                 "country": request.args.get("country", "all"),
                 "ats_type": scope["ats_type"],
                 "location": scope["location"],
@@ -113,18 +113,18 @@ def register(app):
                 "sort": sort,
                 **board_scope_meta(opportunity_scope),
             },
-            user_stats=compute_user_board_stats(
+            "user_stats": compute_user_board_stats(
                 user_id=g.user_id,
                 country_key=country_key,
                 timezone_name=timezone_name,
                 latest_fetch_new_jobs=latest_fetch_new_jobs,
             ),
-        ))
+        })
 
     @app.get("/api/remote/board/stats")
     @login_required
     def api_remote_board_stats():
-        scope = catalog_scope_flags()
+        scope = query_flags()
         country_key = scope["country_key"]
         if country_key and not is_remote_country_key(country_key):
             return jsonify({"error": f"Unknown remote board: {country_key}"}), 400

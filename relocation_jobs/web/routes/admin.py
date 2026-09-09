@@ -12,7 +12,7 @@ from relocation_jobs.admin import service as admin_service
 from relocation_jobs.catalog.repo import get_catalog_overview
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch import state as fetch_state
-from relocation_jobs.web.query import catalog_scope_flags
+from relocation_jobs.web.query import query_flags
 
 
 def register(app):
@@ -110,7 +110,7 @@ def register(app):
     @admin_required
     def api_admin_panel_stats():
         try:
-            scope = catalog_scope_flags()
+            scope = query_flags()
             timezone_name = (request.args.get("timezone") or "").strip() or None
             return jsonify(admin_service.compute_admin_panel_stats(
                 user_id=g.user_id,

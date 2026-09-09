@@ -15,9 +15,7 @@ except ImportError:  # pragma: no cover
     _PgOperationalError = Exception  # type: ignore[misc,assignment]
 
 _db_lock = threading.RLock()
-_pg_conn = None
-_pg_conn_last_used: float = 0.0
-_db_initialized = False
+_pg = {"conn": None, "last_used": 0.0, "initialized": False}
 
 # Thread-local storage: each thread gets its own DB connection.
 _thread_local = threading.local()
@@ -67,8 +65,7 @@ class _RetryConnection:
 
 
 def reset_db_initialized() -> None:
-    global _db_initialized
-    _db_initialized = False
+    _pg["initialized"] = False
 
 
 def _utc_now() -> str:
@@ -98,35 +95,33 @@ def _connect_postgres():
 
 
 def _reset_pg_connection() -> None:
-    global _pg_conn, _pg_conn_last_used
-    if _pg_conn is not None:
+    if _pg["conn"] is not None:
         try:
-            _pg_conn.close()
+            _pg["conn"].close()
         except Exception:
             pass
-    _pg_conn = None
-    _pg_conn_last_used = 0.0
+    _pg["conn"] = None
+    _pg["last_used"] = 0.0
 
 
 def _acquire_connection():
     """Return the shared connection, reconnecting when idle or closed."""
     import time
 
-    global _pg_conn, _pg_conn_last_used
     now = time.monotonic()
-    if _pg_conn is None or _pg_conn.closed:
-        _pg_conn = _connect_postgres()
-        _pg_conn_last_used = now
-    elif now - _pg_conn_last_used > _IDLE_PING_THRESHOLD_S:
+    if _pg["conn"] is None or _pg["conn"].closed:
+        _pg["conn"] = _connect_postgres()
+        _pg["last_used"] = now
+    elif now - _pg["last_used"] > _IDLE_PING_THRESHOLD_S:
         try:
-            _pg_conn.execute("SELECT 1")
+            _pg["conn"].execute("SELECT 1")
         except Exception:
             _reset_pg_connection()
-            _pg_conn = _connect_postgres()
-        _pg_conn_last_used = now
+            _pg["conn"] = _connect_postgres()
+        _pg["last_used"] = now
     else:
-        _pg_conn_last_used = now
-    return _pg_conn
+        _pg["last_used"] = now
+    return _pg["conn"]
 
 
 def _acquire_thread_connection():
@@ -240,8 +235,7 @@ def db_transaction():
 
 
 def init_db(*, force: bool = False) -> None:
-    global _db_initialized
-    if _db_initialized and not force:
+    if _pg["initialized"] and not force:
         return
 
     # Lazy imports to break the core → migrations → events → core cycle.
@@ -320,4 +314,4 @@ def init_db(*, force: bool = False) -> None:
             """
         )
         _migrate_schema(conn)
-    _db_initialized = True
+    _pg["initialized"] = True

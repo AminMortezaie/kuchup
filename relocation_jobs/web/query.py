@@ -7,19 +7,6 @@ def query_bool(name: str) -> bool:
     return request.args.get(name, "").lower() in ("1", "true", "yes")
 
 
-def catalog_scope_flags() -> dict:
-    country = request.args.get("country", "all")
-    country_key = country if country != "all" else None
-    location = (request.args.get("location") or "").strip() or None
-    ats = (request.args.get("ats_type") or request.args.get("ats") or "all").strip()
-    ats_type = ats if ats and ats != "all" else None
-    return {
-        "country_key": country_key,
-        "location": location,
-        "ats_type": ats_type,
-    }
-
-
 def query_flags() -> dict:
     country = request.args.get("country", "all")
     country_key = country if country != "all" else None

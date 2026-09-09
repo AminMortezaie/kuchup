@@ -125,6 +125,31 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "mcp_oauth_remote_v1", _ensure_mcp_oauth_remote_tables)
     run_migration_once(conn, "location_gate_override_v1", _apply_location_gate_override_column)
     run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
+    run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
+
+
+def _company_fetch_attempts_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS company_fetch_attempts (
+            id SERIAL PRIMARY KEY,
+            fetch_run_id INTEGER,
+            country TEXT NOT NULL,
+            company_name TEXT NOT NULL,
+            careers_url TEXT,
+            ats_type TEXT,
+            started_at TEXT NOT NULL,
+            finished_at TEXT,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            jobs_total INTEGER,
+            jobs_new INTEGER,
+            jobs_preserved INTEGER,
+            message TEXT,
+            duration_seconds DOUBLE PRECISION
+        )
+        """
+    )
 
 
 def _ensure_public_job_saves_table(conn) -> None:

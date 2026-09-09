@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import functools
 import os
-import threading
 
-_lock = threading.Lock()
-_client = None
+import redis
 
 
 def redis_url() -> str:
@@ -15,16 +14,11 @@ def redis_enabled() -> bool:
     return bool(redis_url())
 
 
+@functools.cache
 def get_redis():
-    global _client
     if not redis_enabled():
         raise RuntimeError("REDIS_URL is not configured")
-    with _lock:
-        if _client is None:
-            import redis
-
-            _client = redis.from_url(redis_url(), decode_responses=True)
-        return _client
+    return redis.from_url(redis_url(), decode_responses=True)
 
 
 def ping_redis() -> bool:
@@ -37,6 +31,4 @@ def ping_redis() -> bool:
 
 
 def reset_redis_client() -> None:
-    global _client
-    with _lock:
-        _client = None
+    get_redis.cache_clear()

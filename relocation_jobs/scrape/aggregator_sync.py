@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
 
 from relocation_jobs.catalog.repo import sync_aggregator_employer_jobs
 from relocation_jobs.fetch.log import log_event
@@ -86,7 +85,3 @@ def sync_aggregator_board(
 
 def aggregator_success_line(prefix: str, employers: int, jobs: int) -> str:
     return f"{prefix} — aggregator: {jobs} job(s) across {employers} employer(s)"
-
-
-def today_iso() -> str:
-    return date.today().isoformat()

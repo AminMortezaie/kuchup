@@ -39,7 +39,7 @@ GET /api/board
 
 GET /api/remote/board
   → same opportunity scope
-  → remote/board.load_remote_board_page()
+  → panel/board.load_catalog_board_page(catalog_kind=remote)
   → same flatten path with catalog_kind=remote
 ```
 

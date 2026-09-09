@@ -1,45 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from flask import jsonify
 
 from relocation_jobs.core.paths import supported_countries
 
-_JOB_MUTATION_ERROR_RULES: tuple[Callable[[tuple[str, str, str]], tuple | None], ...] = (
-    lambda ctx: (
-        jsonify({"error": "country is required (not 'all')"}),
-        400,
-    )
-    if not ctx[0] or ctx[0] == "all"
-    else None,
-    lambda ctx: (
-        jsonify({"error": f"Unknown country: {ctx[0]}"}),
-        400,
-    )
-    if ctx[0] not in supported_countries()
-    else None,
-    lambda ctx: (
-        jsonify({"error": "company and url are required"}),
-        400,
-    )
-    if not ctx[1] or not ctx[2]
-    else None,
-)
-
-
-def job_mutation_error(body: dict) -> tuple | None:
-    ctx = (
-        body.get("country", ""),
-        body.get("company", ""),
-        body.get("url", ""),
-    )
-    for rule in _JOB_MUTATION_ERROR_RULES:
-        err = rule(ctx)
-        if err is not None:
-            return err
-    return None
-
 
 def job_mutation_fields(body: dict) -> tuple[str, str, str]:
     return body.get("country", ""), body.get("company", ""), body.get("url", "")
+
+
+def job_mutation_error(body: dict) -> tuple | None:
+    country, company, url = job_mutation_fields(body)
+    if not country or country == "all":
+        return jsonify({"error": "country is required (not 'all')"}), 400
+    if country not in supported_countries():
+        return jsonify({"error": f"Unknown country: {country}"}), 400
+    if not company or not url:
+        return jsonify({"error": "company and url are required"}), 400
+    return None

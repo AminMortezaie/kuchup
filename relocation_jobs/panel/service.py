@@ -193,7 +193,35 @@ def flatten_companies(
         opportunity_company_keys=opportunity_company_keys,
         opportunity_country_keys=opportunity_country_keys,
     )
-    return flatten_with_filters(filters)
+    ctx = load_context(filters.user_id, filters.country_key)
+    country_cache: dict[str, dict] = {}
+    country_keys = _country_keys_for_filters(filters)
+    file_meta = _collect_file_meta(country_keys)
+    companies_out: list[dict] = []
+    fetch_problem_count = 0
+
+    for key in country_keys:
+        data = load_country(key, cache=country_cache)
+        if not data.get("companies") and not data.get("source"):
+            continue
+        label = country_label(key)
+
+        for company in data.get("companies", []):
+            if company.get("fetch_problem"):
+                fetch_problem_count += 1
+            if not _company_allowed_by_opportunities(filters, key, company):
+                continue
+            row = flatten_company(
+                company,
+                country_key=key,
+                country_label=label,
+                filters=filters,
+                ctx=ctx,
+            )
+            if row:
+                companies_out.append(row)
+
+    return companies_out, file_meta, fetch_problem_count
 
 
 def flatten_companies_for_stats(
@@ -413,35 +441,3 @@ def _country_keys_for_filters(filters: FlattenFilters) -> list[str]:
         allowed = filters.opportunity_country_keys
         keys = [k for k in keys if k in allowed]
     return keys
-
-
-def flatten_with_filters(filters: FlattenFilters) -> tuple[list[dict], list[dict], int]:
-    ctx = load_context(filters.user_id, filters.country_key)
-    country_cache: dict[str, dict] = {}
-    country_keys = _country_keys_for_filters(filters)
-    file_meta = _collect_file_meta(country_keys)
-    companies_out: list[dict] = []
-    fetch_problem_count = 0
-
-    for key in country_keys:
-        data = load_country(key, cache=country_cache)
-        if not data.get("companies") and not data.get("source"):
-            continue
-        label = country_label(key)
-
-        for company in data.get("companies", []):
-            if company.get("fetch_problem"):
-                fetch_problem_count += 1
-            if not _company_allowed_by_opportunities(filters, key, company):
-                continue
-            row = flatten_company(
-                company,
-                country_key=key,
-                country_label=label,
-                filters=filters,
-                ctx=ctx,
-            )
-            if row:
-                companies_out.append(row)
-
-    return companies_out, file_meta, fetch_problem_count

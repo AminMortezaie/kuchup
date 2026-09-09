@@ -13,11 +13,11 @@ How we build `relocation_jobs/`. Also read [`parity.md`](parity.md).
 | **`shared/`** | Small cross-cutting helpers (no domain rules) | No | stdlib, `core` if needed |
 | **`types.py`** | Pydantic models at domain boundaries | No | `shared.schema` |
 
-**Do not** put `conn.execute`, `db_transaction`, or `get_connection` outside a domain’s `repo.py` (and `db/migrate.py` for app schema).
+**Do not** put `conn.execute`, `db_transaction`, or `get_connection` outside a domain’s `repo.py` (and `core/migrations.py` for app schema).
 
 **Do not** import legacy shims or duplicate SQL outside repos.
 
-**OK to import** `relocation_jobs.core.*` and `relocation_jobs.db.init_db` (bootstrap only). Domain repos (`users/repo.py`, `positions/repo.py`, etc.) — import directly, not via `db/__init__.py`.
+**OK to import** `relocation_jobs.core.*`. Domain repos (`users/repo.py`, `positions/repo.py`, etc.) — import directly.
 
 ## Imports
 

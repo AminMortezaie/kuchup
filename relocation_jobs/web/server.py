@@ -3,23 +3,18 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from email.utils import formatdate
+from functools import cache
 from pathlib import Path
 
 from flask import Flask, Response, redirect, request, send_from_directory
+from dotenv import load_dotenv
 
 from relocation_jobs.core.auth import init_auth
-from relocation_jobs.core.db import get_connection
+from relocation_jobs.core.db import init_db
 from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.paths import PROJECT_ROOT, STATIC_DIR
-from relocation_jobs.db import init_db
-from relocation_jobs.db.migrate import apply_v2_migrations
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
 from relocation_jobs.web.routes import register_routes
-
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    load_dotenv = None
 
 ROOT = PROJECT_ROOT
 STATIC = STATIC_DIR
@@ -184,22 +179,16 @@ app = Flask(
     template_folder=str(Path(__file__).resolve().parent / "templates"),
 )
 app.secret_key = os.environ.get("PANEL_SECRET_KEY", "").strip() or "dev-fallback-key"
-_bootstrapped = False
 
 
+@cache
 def bootstrap_app() -> None:
-    global _bootstrapped
-    if _bootstrapped:
-        return
     STATIC.mkdir(exist_ok=True)
-    if load_dotenv is not None:
-        load_dotenv(ROOT / ".env")
+    load_dotenv(ROOT / ".env")
     init_db()
     configure_logging()
-    apply_v2_migrations(get_connection())
     ensure_aggregator_seeds()
     init_auth(app)
-    _bootstrapped = True
 
 
 @app.before_request

@@ -77,8 +77,6 @@ Search in Grafana → **Explore** → datasource **Loki**. Container recreate on
 
 App processes emit **JSON lines on stderr** (`LOG_FORMAT=json` in Docker / when stderr is not a TTY; `console` on a local TTY). Set `LOG_LEVEL` (default `INFO`). Explore `{name="relocation-panel"}` and `{name="relocation-fetch-worker"}` — fetch events carry fields such as `run_id` and `country`. The fetch modal still polls a capped `log_json` buffer (last 200 lines); Loki is the archive. Gunicorn access stays CLF on stdout.
 
-Worker HTTP body previews can be chatty during a country cycle. If Free ingest looks high, lower `FETCH_LOG_BODY_LIMIT` — do not ship Postgres or Redis logs.
-
 **Live tail** (this moment, this box) is still SSH:
 
 ```bash

@@ -7,7 +7,6 @@ from relocation_jobs.core.panel_flags import fetch_process_may_reap_orphans
 from relocation_jobs.fetch import repo as fetch_repo
 
 _fetch_lock = threading.RLock()
-_fetch_thread: threading.Thread | None = None
 _fetch_state: dict = {
     "running": False,
     "run_id": None,
@@ -181,7 +180,7 @@ def reap_zombie_fetch() -> None:
     should_finalize = False
     with _fetch_lock:
         if _fetch_state.get("running"):
-            thread = _fetch_thread
+            thread = _fetch_state.get("thread")
             if thread is None:
                 return
             if thread.is_alive():
@@ -232,7 +231,7 @@ def guard_fetch_start() -> bool:
 
 def wait_for_fetch_thread(timeout: float | None = None) -> bool:
     with _fetch_lock:
-        thread = _fetch_thread
+        thread = _fetch_state.get("thread")
     if thread is None:
         return True
     thread.join(timeout=timeout)
@@ -277,8 +276,6 @@ def reset_for_run(
     company: str | None = None,
     ats_type: str | None = None,
 ) -> int:
-    global _fetch_thread
-    _fetch_thread = None
     started_at = utc_now()
     row = fetch_repo.create_fetch_run(
         user_id=user_id,
@@ -318,8 +315,7 @@ def reset_for_run(
 
 
 def set_fetch_thread(thread: threading.Thread | None) -> None:
-    global _fetch_thread
-    _fetch_thread = thread
+    _fetch_state["thread"] = thread
 
 
 def update_progress(progress: dict) -> None:
@@ -446,8 +442,7 @@ def fetch_lock():
 
 
 def reset_for_tests() -> None:
-    global _fetch_thread
     with _fetch_lock:
         _fetch_state.clear()
         _fetch_state.update(idle_fetch_status())
-        _fetch_thread = None
+        _fetch_state["thread"] = None

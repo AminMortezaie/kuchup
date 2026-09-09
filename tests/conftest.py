@@ -76,7 +76,7 @@ def _session_postgres(_session_env):
 
     fake.close()
     core._connect_postgres = original_connect
-    core._pg_conn = None
+    core._pg["conn"] = None
     core.reset_db_initialized()
     if saved_url is None:
         os.environ.pop("DATABASE_URL", None)
@@ -124,11 +124,9 @@ def reset_custom_cities_cache():
 @pytest.fixture(autouse=True)
 def _app_schema(db):
     from relocation_jobs.core.db import get_connection
-    from relocation_jobs.db.migrate import apply_v2_migrations
     from relocation_jobs.fetch import state as fetch_state
     from relocation_jobs.fetch.repo import clear_running_fetch_runs_for_tests
 
-    apply_v2_migrations(get_connection())
     get_connection().execute("DELETE FROM company_fetch_attempts")
     clear_running_fetch_runs_for_tests()
     fetch_state.reset_for_tests()
@@ -158,7 +156,7 @@ def db(tmp_data_dir, _session_postgres, request):
         _session_postgres.clear_data()
     else:
         _session_postgres.clear_tracking()
-    core._pg_conn = _session_postgres
+    core._pg["conn"] = _session_postgres
     yield
     if request.node.get_closest_marker("fresh_db"):
         _session_postgres.clear_data()
@@ -173,12 +171,12 @@ def app(_session_postgres):
 
     import relocation_jobs.web.server as panel
 
-    panel._bootstrapped = False
-    with patch("relocation_jobs.db.init_db"):
+    panel.bootstrap_app.cache_clear()
+    with patch("relocation_jobs.web.server.init_db"):
         panel.bootstrap_app()
     panel.app.config["TESTING"] = True
     yield panel.app
-    panel._bootstrapped = False
+    panel.bootstrap_app.cache_clear()
 
 
 @pytest.fixture
@@ -190,7 +188,7 @@ def client(app):
 def auth_client(client, db):
     import relocation_jobs.core.db as core
 
-    core._pg_conn = core.get_connection()
+    core._pg["conn"] = core.get_connection()
     admin = _seed_admin_user()
     with client.session_transaction() as sess:
         sess.clear()
