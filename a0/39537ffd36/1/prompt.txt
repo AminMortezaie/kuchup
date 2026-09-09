@@ -1,0 +1,6 @@
+we have changed the admin panel and it shows by tab but the backend loads all the data in one call make these calls seperated to make it optimized.
+/ponytail implement it.
+
+---
+
+commit and push and deploy
