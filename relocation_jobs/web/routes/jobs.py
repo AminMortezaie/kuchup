@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask import g, jsonify, request
 
 from relocation_jobs.core.auth import login_required
+from relocation_jobs.panel.flatten_rules import company_has_open_roles
 from relocation_jobs.panel.service import flatten_companies
 from relocation_jobs.panel.stats import compute_stats
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, record_touch_and_maybe_reveal
@@ -37,7 +38,12 @@ def register(app):
         flags = query_flags()
         opportunity_scope = resolve_board_opportunity_scope(g.user_id)
         requested_hide_empty = flags["hide_empty"]
-        hide_empty = False if opportunity_scope.plan == "free" else requested_hide_empty
+        defer_empty = (
+            requested_hide_empty
+            and opportunity_scope.plan == "free"
+            and not opportunity_scope.bypass
+        )
+        hide_empty = False if defer_empty else requested_hide_empty
         opportunity_company_keys = None
         opportunity_country_keys = None
         if not opportunity_scope.bypass:
@@ -64,14 +70,14 @@ def register(app):
             opportunity_country_keys=opportunity_country_keys,
         )
         companies = apply_capacity_to_board_page(g.user_id, companies)
-        if opportunity_scope.plan == "free" and requested_hide_empty:
+        if defer_empty:
             companies = [
                 company
                 for company in companies
-                if company.get("jobs")
-                or (
-                    flags["position_rejected_only"]
-                    and company.get("rejected_jobs")
+                if company_has_open_roles(
+                    company.get("jobs"),
+                    company.get("rejected_jobs"),
+                    rejected_only=flags["position_rejected_only"],
                 )
             ]
         stats = compute_stats(

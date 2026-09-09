@@ -146,7 +146,7 @@ After a fetch, a company rises in sort order only when it has a **new or updated
 
 `flatten_companies_page` scans the scoped catalog in DB order, applies flatten + panel filters, counts **visible** companies, skips `visible_offset`, returns up to `limit` rows.
 
-- Filters and search affect which companies count toward pages.
+- Filters and search affect which companies count toward pages. Hide-empty (after free-plan capacity re-inject) runs before the page slice so `total_pages` matches the rendered list.
 - `meta.total_companies` / `total_pages` reflect visible count (computed on page 1).
 - Catalog SQL order: `catalog/repo.py` → `ORDER BY c.country, c.name`.
 

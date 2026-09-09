@@ -279,7 +279,7 @@ def flatten_companies_page(
     filters: FlattenFilters,
     *,
     visible_offset: int,
-    limit: int,
+    limit: int | None,
     search: str | None = None,
     count_total: bool = False,
     sort: str | None = "newest",
@@ -305,7 +305,7 @@ def _flatten_companies_page_streaming(
     filters: FlattenFilters,
     *,
     visible_offset: int,
-    limit: int,
+    limit: int | None,
     search: str | None,
     count_total: bool,
 ) -> tuple[list[dict], list[dict], int, int | None, bool]:
@@ -323,10 +323,11 @@ def _flatten_companies_page_streaming(
     companies_out: list[dict] = []
     visible_index = 0
     catalog_offset = 0
-    batch_size = max(limit, 25)
+    batch_size = max(limit or 25, 25)
     start = max(visible_offset, 0)
     has_more = False
     scanning_for_more = False
+    unsliced = limit is None
 
     while catalog_offset < total_catalog:
         if has_more:
@@ -359,15 +360,17 @@ def _flatten_companies_page_streaming(
             if scanning_for_more:
                 has_more = True
                 break
-            if visible_index >= start and len(companies_out) < limit:
+            if visible_index >= start and (unsliced or len(companies_out) < limit):
                 companies_out.append(row)
             visible_index += 1
-            if len(companies_out) >= limit and not count_total:
+            if not unsliced and len(companies_out) >= limit and not count_total:
                 scanning_for_more = True
         catalog_offset += len(batch)
 
-    total_visible = visible_index if count_total else None
-    if len(companies_out) < limit:
+    total_visible = visible_index if count_total or unsliced else None
+    if unsliced:
+        has_more = False
+    elif len(companies_out) < limit:
         has_more = False
     elif count_total:
         has_more = start + len(companies_out) < visible_index
@@ -379,7 +382,7 @@ def _flatten_companies_page_by_activity(
     filters: FlattenFilters,
     *,
     visible_offset: int,
-    limit: int,
+    limit: int | None,
     search: str | None,
 ) -> tuple[list[dict], list[dict], int, int | None, bool]:
     ctx = load_context(filters.user_id, filters.country_key)
@@ -415,9 +418,10 @@ def _flatten_companies_page_by_activity(
 
     _sort_board_page_rows(visible_rows)
     start = max(visible_offset, 0)
-    companies_out = visible_rows[start:start + limit]
+    end = None if limit is None else start + limit
+    companies_out = visible_rows[start:end]
     total_visible = len(visible_rows)
-    has_more = start + len(companies_out) < total_visible
+    has_more = False if limit is None else start + len(companies_out) < total_visible
     return companies_out, file_meta, fetch_problem_count, total_visible, has_more
 
 

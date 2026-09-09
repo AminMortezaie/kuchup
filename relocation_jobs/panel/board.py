@@ -16,7 +16,7 @@ def load_catalog_board_page(
     location: str | None,
     user_id: int | None,
     visible_offset: int,
-    limit: int,
+    limit: int | None,
     search: str | None = None,
     panel_flags: dict | None = None,
     count_total: bool = False,

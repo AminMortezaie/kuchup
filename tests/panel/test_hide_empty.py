@@ -154,3 +154,55 @@ def test_flatten_companies_page_has_more_uses_filtered_stream(db, tmp_path):
     )
     assert [row["name"] for row in page_two] == ["Charlie Co"]
     assert has_more_page_two is False
+
+
+@pytest.mark.fresh_db
+def test_board_hide_empty_pagination_counts_visible_companies(v2_auth_client, db, tmp_path):
+    from tests.helpers.seed import seed_country
+
+    data = {
+        "source": "test",
+        "companies": [
+            {
+                "name": "Alpha Co",
+                "matching_jobs": [{
+                    "title": "Eng",
+                    "url": "https://example.com/alpha",
+                    "fetched": "2026-09-02T00:00:00+00:00",
+                }],
+            },
+            {"name": "Bravo Empty", "matching_jobs": []},
+            {
+                "name": "Charlie Co",
+                "matching_jobs": [{
+                    "title": "Eng",
+                    "url": "https://example.com/charlie",
+                    "fetched": "2026-09-01T00:00:00+00:00",
+                }],
+            },
+            {"name": "Delta Empty", "matching_jobs": []},
+        ],
+    }
+    path = tmp_path / "hide_empty_board_pages.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    seed_country("uk", path)
+
+    page_one = v2_auth_client.get(
+        "/api/board?country=uk&hide_empty=1&page_size=1&page=1",
+    ).get_json()
+    assert [row["name"] for row in page_one["companies"]] == ["Alpha Co"]
+    assert page_one["meta"]["total_companies"] == 2
+    assert page_one["meta"]["total_pages"] == 2
+    assert page_one["meta"]["has_more"] is True
+
+    page_two = v2_auth_client.get(
+        "/api/board?country=uk&hide_empty=1&page_size=1&page=2",
+    ).get_json()
+    assert [row["name"] for row in page_two["companies"]] == ["Charlie Co"]
+    assert page_two["meta"]["total_pages"] == 2
+
+    page_three = v2_auth_client.get(
+        "/api/board?country=uk&hide_empty=1&page_size=1&page=3",
+    ).get_json()
+    assert page_three["companies"] == []
+    assert page_three["meta"]["total_pages"] == 2

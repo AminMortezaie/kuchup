@@ -85,6 +85,15 @@ COMPANY_SKIP_BEFORE_RULES: tuple[Callable[[CompanySkipContext], bool], ...] = (
 )
 
 
+def company_has_open_roles(
+    jobs: list[dict] | None,
+    rejected_jobs: list[dict] | None,
+    *,
+    rejected_only: bool = False,
+) -> bool:
+    return bool(jobs or (rejected_only and rejected_jobs))
+
+
 COMPANY_SKIP_AFTER_RULES: tuple[Callable[[CompanySkipAfterContext], bool], ...] = (
     lambda ctx: bool(ctx.filters.visa_only and not ctx.jobs and not ctx.rejected_jobs),
     lambda ctx: bool(ctx.filters.position_filters.rejected_only and not ctx.rejected_jobs),
@@ -94,8 +103,11 @@ COMPANY_SKIP_AFTER_RULES: tuple[Callable[[CompanySkipAfterContext], bool], ...] 
     ),
     lambda ctx: bool(
         ctx.filters.hide_empty
-        and not ctx.jobs
-        and not (ctx.filters.position_filters.rejected_only and ctx.rejected_jobs)
+        and not company_has_open_roles(
+            ctx.jobs,
+            ctx.rejected_jobs,
+            rejected_only=ctx.filters.position_filters.rejected_only,
+        )
     ),
     lambda ctx: bool(ctx.filters.not_applied_only and (ctx.header["company_applied"] or not ctx.jobs)),
 )
