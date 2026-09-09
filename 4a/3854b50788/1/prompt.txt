@@ -5,3 +5,7 @@ also the role applied tagged should not have date cause it just for counting the
 also the company tags should like positions tags ( i mean the ui) 
 
 make this changes i will check again and tell you about.
+
+---
+
+ok commit it it's fine now.
