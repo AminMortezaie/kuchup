@@ -68,16 +68,17 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 | Kind | Location | Role |
 |------|----------|------|
 | **Apps (deployables)** | [`apps/`](../apps/) | How you run it — see [apps/README.md](../apps/README.md) |
-| **Domains** | `relocation_jobs/` | Business logic (below) |
+| **Domains** | `relocation_jobs/`, `role_propagator/` | Python business logic; Go assignment writer |
 | **Ops scripts** | `scripts/` | Deploy helpers + Docker entry paths |
 | **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel JS, React board, marketing |
 
 ```
 apps/panel/run.py              Flask panel
 apps/fetch-worker/run.py       Scheduled country scrape
-apps/role-propagator           Go SQS role assignment writer
+apps/role-propagator/run.py    Go SQS role assignment writer
 apps/mcp/run.py                Claude Desktop MCP (stdio)
 apps/mcp/run_http.py           HTTP MCP + OAuth
+role_propagator/               Go domain (sticky slots + role assignment)
 ```
 
 ### Domains (`relocation_jobs/`)
@@ -99,6 +100,10 @@ db/           v2-only migrations
 ```
 
 **Rules:** [reference/rules.md](reference/rules.md) — SQL **only** in `*/repo.py`.
+
+### Domain (`role_propagator/`)
+
+Go assignment writer (sticky company slots + free-tier job picks). Run via `python3 apps/role-propagator/run.py`.
 
 ### Client
 

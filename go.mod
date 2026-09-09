@@ -1,4 +1,4 @@
-module kuchup/role-propagator
+module kuchup
 
 go 1.25.0
 

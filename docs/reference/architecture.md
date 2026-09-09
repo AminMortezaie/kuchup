@@ -13,16 +13,17 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 | Kind | Location | Role |
 |------|----------|------|
 | **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, role-propagator, mcp |
-| **Domains** | [`relocation_jobs/`](../../relocation_jobs/) | Domain packages (catalog, fetch, scrape, …) |
+| **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/) | Python domains (catalog, fetch, scrape, …); Go assignment writer |
 | **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
 | **UI** | `static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
 
 ```
 apps/panel/run.py
 apps/fetch-worker/run.py
-apps/role-propagator/          # Go SQS assignment writer
+apps/role-propagator/run.py    # Go SQS assignment writer
 apps/mcp/run.py          # stdio
 apps/mcp/run_http.py     # HTTP + OAuth
+role_propagator/               # Go domain (assignment writes)
 ```
 
 Full table: [apps/README.md](../../apps/README.md).
@@ -91,11 +92,11 @@ relocation_jobs/
 | Catalog | `catalog/` | companies, matching jobs |
 | User prefs / plan | `users/` + `opportunities/service.py` | prefs, plan |
 | Credits / payments | `credits/`, `payments/` | wallet, orders |
-| Opportunity + role assignment rows | Go `apps/role-propagator` | `user_opportunities`, `position_broadcast_assignments` |
+| Opportunity + role assignment rows | Go `role_propagator/` | `user_opportunities`, `position_broadcast_assignments` |
 | Consume / peek | `broadcast/` | `consumed_at` on user action |
 | Async transport | `async_jobs/enqueue.py` | SQS (or local `ROLE_PROPAGATOR_BIN`) |
 
-Python board/API **reads** assignment state. Board GET does not enqueue. Login, prefs PUT, payment, plan change, and finished fetch jobs enqueue `type=user|country|replace`. Assignment **creation** is Go (`ReconcileSticky` in `apps/role-propagator`). Python `opportunities/reconcile.py` is **test-only**. User actions may mark `consumed_at` on existing rows only (`UPDATE`, no insert). Limits: `users/entitlements.py` (Go reads the same env vars).
+Python board/API **reads** assignment state. Board GET does not enqueue. Login, prefs PUT, payment, plan change, and finished fetch jobs enqueue `type=user|country|replace`. Assignment **creation** is Go (`ReconcileSticky` in `role_propagator/`). Python `opportunities/reconcile.py` is **test-only**. User actions may mark `consumed_at` on existing rows only (`UPDATE`, no insert). Limits: `users/entitlements.py` (Go reads the same env vars).
 
 ---
 
@@ -166,7 +167,7 @@ After a country or company **run** finishes (`fetch/runner.py`), enqueue `type=c
 
 Messages (`async_jobs/types.py`): `{type:user,user_id}`, `{type:country,country}`, `{type:replace,...}`.
 
-Producer: `async_jobs/enqueue.py`. Requires `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` or `ROLE_PROPAGATOR_BIN` (raises otherwise). Consumer: `go run ./apps/role-propagator`. Failure: SQS visibility + DLQ (`maxReceiveCount=3`). Ops: [sqs-opportunity-refresh.md](../operations/sqs-opportunity-refresh.md).
+Producer: `async_jobs/enqueue.py`. Requires `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` or `ROLE_PROPAGATOR_BIN` (raises otherwise). Consumer: `python3 apps/role-propagator/run.py`. Failure: SQS visibility + DLQ (`maxReceiveCount=3`). Ops: [sqs-opportunity-refresh.md](../operations/sqs-opportunity-refresh.md).
 
 ## Users, entitlements, payments
 

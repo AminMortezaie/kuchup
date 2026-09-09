@@ -58,4 +58,4 @@ echo "Add to gitignored .env (do not commit):"
 echo "AWS_REGION=$REGION"
 echo "SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL=$QUEUE_URL"
 echo
-echo "Worker: go run ./apps/role-propagator --once"
+echo "Worker: python3 apps/role-propagator/run.py --once"

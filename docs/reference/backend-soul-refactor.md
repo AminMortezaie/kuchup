@@ -19,7 +19,7 @@ The refactor did **not** add a framework, CQRS, DI, schema change, or frontend. 
 |------|--------|------|
 | Fetch | `apps/fetch-worker` → `fetch/scheduler` → `country_runner` | When / what to scrape; persist catalog |
 | Panel reads | `GET /api/board` | Scope + flatten + peek. No writes. |
-| Assignment **create** | Go `apps/role-propagator` | `user_opportunities`, `position_broadcast_assignments` |
+| Assignment **create** | Go `role_propagator/` | `user_opportunities`, `position_broadcast_assignments` |
 | Assignment **consume** | Python `broadcast/repo.mark_assignment_consumed` | `UPDATE consumed_at` on an existing row |
 | Limits | `users/entitlements.py` | Caps / plan. Go reads the same env vars. |
 | Queue | `async_jobs/enqueue.py` | Typed SQS (or local `ROLE_PROPAGATOR_BIN`). No Python consumer. |
@@ -78,7 +78,7 @@ Enqueue `type=country` happens after a **finished run** in `fetch/runner.py` (co
 | Lines removed | 836 |
 | Net | **+1,066** |
 
-Most of the addition is the new Go app (`apps/role-propagator/`, **932** lines including tests, Dockerfile, `go.mod`/`go.sum`). Python domain code is a net **delete** of dual write paths.
+Most of the addition is the Go assignment writer (`role_propagator/` domain + thin `apps/role-propagator/` entry). Python domain code is a net **delete** of dual write paths.
 
 ---
 
@@ -90,11 +90,12 @@ Most of the addition is the new Go app (`apps/role-propagator/`, **932** lines i
 
 | File | + | − | What |
 |------|--:|--:|------|
-| [`apps/role-propagator/main.go`](../../apps/role-propagator/main.go) | 223 | 0 | SQS poll + `--once` / `--user` / `--country` / `--replace` CLI |
-| [`apps/role-propagator/store.go`](../../apps/role-propagator/store.go) | 356 | 0 | Postgres load + write slots and assignments |
-| [`apps/role-propagator/assign.go`](../../apps/role-propagator/assign.go) | 151 | 0 | `ReconcileSticky` + pick jobs |
-| [`apps/role-propagator/assign_test.go`](../../apps/role-propagator/assign_test.go) | 106 | 0 | Sticky unit tests |
-| [`apps/role-propagator/go.mod`](../../apps/role-propagator/go.mod) / [`go.sum`](../../apps/role-propagator/go.sum) | 84 | 0 | Go 1.25 module |
+| [`apps/role-propagator/main.go`](../../apps/role-propagator/main.go) / [`run.py`](../../apps/role-propagator/run.py) | thin | 0 | Discoverable entry (`python3 apps/role-propagator/run.py`) |
+| [`role_propagator/run.go`](../../role_propagator/run.go) | 223 | 0 | SQS poll + `--once` / `--user` / `--country` / `--replace` CLI |
+| [`role_propagator/store.go`](../../role_propagator/store.go) | 356 | 0 | Postgres load + write slots and assignments |
+| [`role_propagator/assign.go`](../../role_propagator/assign.go) | 151 | 0 | `ReconcileSticky` + pick jobs |
+| [`role_propagator/assign_test.go`](../../role_propagator/assign_test.go) | 106 | 0 | Sticky unit tests |
+| [`go.mod`](../../go.mod) / [`go.sum`](../../go.sum) | 84 | 0 | Go 1.25 module (`kuchup`) |
 | [`apps/role-propagator/Dockerfile`](../../apps/role-propagator/Dockerfile) | 12 | 0 | Alpine image, `ENTRYPOINT role-propagator` |
 
 ### Deleted — dual path / unused
@@ -157,7 +158,7 @@ Most of the addition is the new Go app (`apps/role-propagator/`, **932** lines i
 | File | + | − | What |
 |------|--:|--:|------|
 | [`scripts/ec2_app_deploy.sh`](../../scripts/ec2_app_deploy.sh) | 80 | 4 | Build/run `relocation-role-propagator`; pass SQS env to panel + worker |
-| [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | 7 | 0 | `go test ./apps/role-propagator` |
+| [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | 7 | 0 | `go test ./role_propagator` |
 | [`.env.example`](../../.env.example) | 7 | 2 | Enqueue requires SQS URL or `ROLE_PROPAGATOR_BIN` |
 | [`.gitignore`](../../.gitignore) | 1 | 0 | Ignore built `apps/role-propagator/role-propagator` |
 | [`docs/reference/architecture.md`](architecture.md) | 65 | 14 | Call graph after the move |
@@ -175,7 +176,7 @@ Work followed the original plan’s phase order (characterization first, then fe
 4. **Go is the only creator** — Python consume is `consumed_at` only. Create SQL lives in the test helper.
 5. **Async transports intent** — Missing writer is an error on explicit write paths (board GET no longer enqueues, so the old silent no-op there is gone).
 6. **Dead code** — Python consumer, ports, opportunity-worker, `refresh_opportunities` / `ensure_fresh`.
-7. **Docs + verify** — Architecture matches this graph. Pytest `not scrape`: **559 passed**. `go test` in `apps/role-propagator`: **ok**.
+7. **Docs + verify** — Architecture matches this graph. Pytest `not scrape`: **559 passed**. `go test ./role_propagator`: **ok**.
 
 ---
 
@@ -189,7 +190,7 @@ Answerable from the call graph, not tribal knowledge:
 | Where is concurrency? | Country `asyncio.Semaphore` only |
 | Where does persist happen? | `pipeline` / `service` → `sync_company_board_to_catalog` |
 | Does board GET write slots or enqueue? | No |
-| Who creates assignments? | Go `apps/role-propagator` |
+| Who creates assignments? | Go `role_propagator/` |
 | What may Python write on a user action? | `consumed_at` (and `engaged`) on an existing row |
 | Who owns limits? | `users/entitlements.py` (Go reads the same env vars) |
 | What is on the queue? | `{type:user\|country\|replace}` |
@@ -213,11 +214,11 @@ FETCH_SCHEDULE_ENABLED=1 python3 apps/fetch-worker/run.py --once
 # Assignment writer (local, no SQS)
 ROLE_PROPAGATOR_BIN=./apps/role-propagator/role-propagator
 # or
-go run ./apps/role-propagator --once
+python3 apps/role-propagator/run.py --once
 
 # Tests
 .venv/bin/pytest tests -m 'not scrape' -o addopts=
-go test ./apps/role-propagator
+go test ./role_propagator
 ```
 
 Local login / prefs PUT / payment **raise** if neither `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` nor `ROLE_PROPAGATOR_BIN` is set. That is intentional.

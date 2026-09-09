@@ -96,7 +96,7 @@ Ops: [`docs/operations/nowpayments.md`](../operations/nowpayments.md).
   `position_broadcast_assignments` (stable monthly job assignments),
   `credit_grants`, `credit_ledger`, `credit_orders`, and `payment_events`
 - Domains: [`opportunities/`](../../relocation_jobs/opportunities/), [`broadcast/`](../../relocation_jobs/broadcast/), [`async_jobs/`](../../relocation_jobs/async_jobs/)
-- SQS: `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` + [`apps/role-propagator/`](../../apps/role-propagator/) (Go, sole assignment writer)
+- SQS: `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` + [`role_propagator/`](../../role_propagator/) via [`apps/role-propagator/run.py`](../../apps/role-propagator/run.py) (Go, sole assignment writer)
 - When SQS unset: `ROLE_PROPAGATOR_BIN` runs the Go one-shot; if both are unset, enqueue raises
 - Producers: login, prefs save, fetch run finish (`fetch/runner.py`), admin plan, payments, role replacement, `build_companies`. Not board GET.
 - Caps live in [`users/entitlements.py`](../../relocation_jobs/users/entitlements.py); Go reads the same env vars (`FREE_BOARD_COMPANY_CAP`, …).

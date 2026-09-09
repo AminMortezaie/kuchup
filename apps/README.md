@@ -1,22 +1,23 @@
 # Apps (deployables)
 
-Thin, discoverable entrypoints for the product’s runnable services. Domain logic stays in [`relocation_jobs/`](../relocation_jobs/). Docker and existing ops scripts still call [`scripts/`](../scripts/); these folders exist so “where do I run X?” is obvious.
+Thin, discoverable entrypoints for the product’s runnable services. Python domain logic stays in [`relocation_jobs/`](../relocation_jobs/); Go assignment logic stays in [`role_propagator/`](../role_propagator/). Docker and existing ops scripts still call [`scripts/`](../scripts/); these folders exist so “where do I run X?” is obvious.
 
 | App | Run locally | What it is |
 |-----|-------------|------------|
 | **panel** | `python3 apps/panel/run.py` | Flask job board + API (`:5051`) |
 | **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker |
-| **role-propagator** | `go run ./apps/role-propagator` | SQS assignment writer (company slots + roles) |
+| **role-propagator** | `python3 apps/role-propagator/run.py` | SQS assignment writer (company slots + roles) |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 
-Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Go propagator: `apps/role-propagator`.
+Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Go propagator: `python3 apps/role-propagator/run.py` (or `go run ./apps/role-propagator`).
 
 ## Domains vs apps
 
 ```
 apps/                  ← how you run it (deployables)
-relocation_jobs/       ← domain code (catalog, panel, fetch, scrape, …)
+relocation_jobs/       ← Python domain (catalog, panel, fetch, scrape, …)
+role_propagator/       ← Go domain (sticky slots + role assignment)
 frontend/              ← React board widget → static/dist/
 homepage/              ← marketing site (Next.js; same-origin /api/public/*)
 scripts/               ← ops + legacy entry paths for Docker

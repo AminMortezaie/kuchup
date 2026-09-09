@@ -422,7 +422,8 @@ list_paths() {
         -o -type f -print
       ;;
     propagator)
-      find apps/role-propagator -type f ! -name 'role-propagator' -print
+      printf '%s\n' go.mod go.sum
+      find apps/role-propagator role_propagator -type f ! -name 'role-propagator' -print
       ;;
     *)
       echo "unknown hash kind: $kind" >&2
@@ -616,7 +617,7 @@ EOF
       log "Building ${PROPAGATOR_IMAGE} on EC2..."
       ssh_cmd bash -s <<EOF
 set -euo pipefail
-cd ${REMOTE_DIR}/apps/role-propagator
+cd ${REMOTE_DIR}
 cache_args=()
 if docker image inspect ${PROPAGATOR_IMAGE} >/dev/null 2>&1; then
   cache_args=(--cache-from ${PROPAGATOR_IMAGE})
@@ -624,7 +625,7 @@ fi
 DOCKER_BUILDKIT=1 docker build \\
   --build-arg BUILDKIT_INLINE_CACHE=1 \\
   "\${cache_args[@]}" \\
-  -t ${PROPAGATOR_IMAGE} .
+  -f apps/role-propagator/Dockerfile -t ${PROPAGATOR_IMAGE} .
 EOF
     fi
     remote_save_hash propagator "$propagator_hash"

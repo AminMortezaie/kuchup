@@ -97,9 +97,9 @@ tests/                pytest (mirrors relocation_jobs/ domains)
 | I want to… | Go here |
 |------------|---------|
 | Run the panel | `python3 apps/panel/run.py` (or `scripts/panel_server.py`) |
-| Run a worker | `apps/fetch-worker/`, `apps/role-propagator/` |
+| Run a worker | `python3 apps/fetch-worker/run.py`, `python3 apps/role-propagator/run.py` |
 | Run MCP | `apps/mcp/run.py` (stdio) / `apps/mcp/run_http.py` |
-| Change domain logic | `relocation_jobs/<domain>/` |
+| Change domain logic | `relocation_jobs/<domain>/` (Python) · `role_propagator/` (Go assignments) |
 | Full app list | [`apps/README.md`](apps/README.md) |
 
 ---

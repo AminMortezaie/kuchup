@@ -3,10 +3,10 @@
 **Region:** `eu-central-1` (same as EC2 Postgres)  
 **Product queue:** `user-opportunity-refresh`  
 **Env var:** `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL`  
-**Worker:** `go run ./apps/role-propagator`  
-**Code:** [`apps/role-propagator/`](../../apps/role-propagator/), enqueue in [`relocation_jobs/async_jobs/enqueue.py`](../../relocation_jobs/async_jobs/enqueue.py)
+**Worker:** `python3 apps/role-propagator/run.py`  
+**Code:** [`role_propagator/`](../../role_propagator/), entry [`apps/role-propagator/run.py`](../../apps/role-propagator/run.py), enqueue in [`relocation_jobs/async_jobs/enqueue.py`](../../relocation_jobs/async_jobs/enqueue.py)
 
-When the env var is **unset**, Python does **not** write assignments. Local one-shot: `ROLE_PROPAGATOR_BIN` or `go run ./apps/role-propagator --user N`.
+When the env var is **unset**, Python does **not** write assignments. Local one-shot: `ROLE_PROPAGATOR_BIN` or `python3 apps/role-propagator/run.py --user N`.
 
 **Production:** set `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` on panel, fetch worker, and `relocation-role-propagator`. Do not run a Python consumer on this queue.
 
@@ -99,13 +99,13 @@ Grant the CLI/EC2 identity:
 
 ```bash
 # one poll batch
-go run ./apps/role-propagator --once
+python3 apps/role-propagator/run.py --once
 
 # long-running
-go run ./apps/role-propagator
+python3 apps/role-propagator/run.py
 
 # local without SQS
-go run ./apps/role-propagator --user 123
+python3 apps/role-propagator/run.py --user 123
 ```
 
 Message bodies:

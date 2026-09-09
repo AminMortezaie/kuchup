@@ -16,8 +16,7 @@ jobs:
           go-version: "1.25"
 
       - name: Role propagator tests
-        working-directory: apps/role-propagator
-        run: go test
+        run: go test ./role_propagator
 
       - uses: actions/setup-python@v5
         with:
