@@ -23,3 +23,7 @@ create a new branch and start to build this.
 ---
 
 test on localhost to see what was the result /ponytail-review review it
+
+---
+
+commit and push and deploy
