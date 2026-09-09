@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "c0cf9267e173",
+  "session_id": "09f93dbc-a5c2-4ee0-a484-69b015772a35",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T19:42:39.389936Z",
+  "branch": "fix/hide-empty-pagination",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/static/company.html",
+    "relocation_jobs/static/js/company.js",
+    "relocation_jobs/static/styles.css"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-xhigh",
+  "turn_id": "bde589db9ff1",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "duration_ms": 82417750,
+    "turn_count": 5,
+    "context_tokens": 234312,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T19:42:39.343213Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 374,
+    "human_modified": 84,
+    "human_removed": 0,
+    "total_committed": 374,
+    "total_lines_changed": 487,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}

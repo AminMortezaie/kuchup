@@ -1,0 +1,32 @@
+how do you think about google ads on this website?
+
+---
+
+what's your expection about this product?
+do you think Kuchup will have place in market by these strategies we have currently?
+
+---
+
+would a senior Iranian/Indian/Brazilian engineer in an active Germany search open Kuchup every day instead of LinkedIn + a spreadsheet? Today, only if they already bought into the workspace/MCP loop. The catalog alone is not enough? 
+
+yes,  i want it to use more credits and buy credits and make money
+
+---
+
+if you want to business plan for it what would be it and what are the changes should be applied there in businessflow?
+
+---
+
+create a new branch and start to work on it and build it.
+
+---
+
+ok if its ready to commit and deploy please /ponytail-review review and if everything is fine commit and merge with main and then deploy it.
+
+---
+
+Also I saw your implementation on this plans and new you know, strategy for marketing, but it's so incomplete and the users cannot engage with these types of plan panels because they would not pay for something that just shows them one job and if they start to track another jobs from, for example, jobs page , they would not see this on their panel. So, it would not work on anyone because it's so simple that no one wants to continue with Kujo. You, you just want to you know, you just want to sell them the product. And it's not the product that we want to apply on them. We, we want to sell credits , but we need to you know, implement this strategy, something that the users firstly engage with the panel and then start to sell them the credits. If they don't engage and don't impress on the first site, for example, they just see one position on their own boards , they would not continue with this application anymore because we have lots of competitors on this field and they would you know, trust on different platforms, not Kujo. You just made an strategy that, that would not work , and you just want to you know, sell them the the, the product and, you know, start searching them, and also the credits cannot be used, for example as a user if I want to you know Apply for different positions that I cannot use my credits. I just have, for example, 37 credits on my own credits. But I cannot, you know, add more positions. Based on my, you know, resume or anything else. So it would not work. I think that we should revert to the previous version. Firstly, but we can think about different strategies on marketing and, you know, different on plans or anything else you think. But it cannot work because it's quite simple that no one wants to continue with coach up. As I can see on my panel with one position and one , you know, company. So why they want to continue with coach up?
+
+---
+
+do it now.
