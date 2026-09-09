@@ -1,16 +1,3 @@
-[Image]
-<image_files>
-The following images were provided by the user and saved to disk for future use:
-1. /Users/amin/.cursor/projects/Users-amin-dev-p-projects-armenia-kuchup/assets/image-39b52503-7ce9-43e4-8bf6-d5f26c622789.png
+<timestamp>Wednesday, Sep 9, 2026, 9:18 PM (UTC+4)</timestamp>
 
-These files can be read with tools, copied to other locations, or attached to subagents using the file_attachments parameter.
-</image_files>
-<timestamp>Wednesday, Sep 9, 2026, 9:00 PM (UTC+4)</timestamp>
-
-mother fucker this is again the previous version.
-
----
-
-this should be a guide not like this raw data on ground.
-
-the job original posting url should be removed and the button we have upside should be colored to show that u can have apply on company website by this button.
+no for the guide you should put a button which is simple and clickable and everyone can find it and then when click on them they would see the introduction to it use the application.
