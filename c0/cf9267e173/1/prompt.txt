@@ -1,0 +1,20 @@
+<timestamp>Wednesday, Sep 9, 2026, 9:43 PM (UTC+4)</timestamp>
+
+ok shutdown the app on local.
+merge these big change on main on github and then deploy on server to live on server
+
+---
+
+3 things:
+1- seen before should be automatically marked and show on the postion tags.
+so the button is redundant.
+
+2- waiting referal can be emitted and in more options with a simple hamburg option in position showing this option 
+
+3- when some one choose want to apply the button should be changed and shows the from date on button and shows differently to be recegnozied beyone the positions.
+
+please run the local host again and apply these changes and i will tell you my idea about.
+
+---
+
+fix the mobile version
