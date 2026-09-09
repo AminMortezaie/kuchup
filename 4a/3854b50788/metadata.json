@@ -3,7 +3,7 @@
   "checkpoint_id": "4a3854b50788",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "docs/reference/business-rules.md",
     "frontend/src/CompanyCard.jsx",
@@ -11,10 +11,12 @@
     "relocation_jobs/panel/flatten.py",
     "relocation_jobs/positions/repo.py",
     "relocation_jobs/positions/service.py",
+    "relocation_jobs/static/app-shell.css",
     "relocation_jobs/static/dist/board.js",
     "relocation_jobs/static/js/api.js",
     "relocation_jobs/static/js/events.js",
     "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/static/styles.css",
     "relocation_jobs/web/deps.py",
     "relocation_jobs/web/routes/companies.py",
     "tests/helpers/route_manifest.py",
@@ -27,13 +29,20 @@
       "compact_transcript": "/4a/3854b50788/0/transcript.jsonl",
       "content_hash": "/4a/3854b50788/0/content_hash.txt",
       "prompt": "/4a/3854b50788/0/prompt.txt"
+    },
+    {
+      "metadata": "/4a/3854b50788/1/metadata.json",
+      "transcript": "/4a/3854b50788/1/full.jsonl",
+      "compact_transcript": "/4a/3854b50788/1/transcript.jsonl",
+      "content_hash": "/4a/3854b50788/1/content_hash.txt",
+      "prompt": "/4a/3854b50788/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 118721,
+    "input_tokens": 363963,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 460928,
-    "output_tokens": 896,
-    "api_call_count": 1
+    "cache_read_tokens": 10811648,
+    "output_tokens": 46104,
+    "api_call_count": 3
   }
 }
