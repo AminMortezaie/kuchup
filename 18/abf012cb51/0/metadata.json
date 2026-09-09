@@ -1,0 +1,63 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "18abf012cb51",
+  "session_id": "09f93dbc-a5c2-4ee0-a484-69b015772a35",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T13:31:01.196234Z",
+  "branch": "chore/dead-code-cleanup",
+  "checkpoints_count": 3,
+  "save_step_count": 2,
+  "files_touched": [
+    "docs/reference/rules.md"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-xhigh",
+  "turn_id": "bde589db9ff1",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 253400,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 240640,
+    "output_tokens": 3012,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 5,
+    "context_tokens": 234312,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T13:31:01.149958Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 208,
+    "human_modified": 5,
+    "human_removed": 0,
+    "total_committed": 211,
+    "total_lines_changed": 1343,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 395,
+      "agent_lines_removed": 142,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
