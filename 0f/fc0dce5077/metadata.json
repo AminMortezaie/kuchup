@@ -24,5 +24,17 @@
       "content_hash": "/0f/fc0dce5077/1/content_hash.txt",
       "prompt": "/0f/fc0dce5077/1/prompt.txt"
     }
-  ]
+  ],
+  "combined_attribution": {
+    "calculated_at": "2026-09-09T17:20:12.754895Z",
+    "agent_lines": 228,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 228,
+    "total_lines_changed": 230,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
 }
