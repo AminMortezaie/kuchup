@@ -170,6 +170,7 @@ function CompanyCard({ company, ui }) {
     company.awaiting_response ? " company-awaiting-response" : "",
     company.fetch_problem ? " fetch-problem" : "",
     company.fetch_ok && !company.fetch_problem ? " fetch-ok" : "",
+    (company.jobs || []).some((j) => j.looking_to_apply && !j.applied) ? " company-looking-to-apply" : "",
   ].join("");
   const cityLabels = companyLocationLabels(company);
   const cityDisplay = formatCityLabels(cityLabels, { expanded: citiesExpanded });
@@ -193,6 +194,12 @@ function CompanyCard({ company, ui }) {
     company.company_applied_date || companyAppliedAt,
   );
   const openJobs = sortJobsForDisplay(company.jobs || []);
+  const lookingJobs = openJobs.filter((j) => j.looking_to_apply && !j.applied);
+  const lookingCount = lookingJobs.length;
+  const lookingSince = lookingJobs
+    .map((j) => j.looking_to_apply_date)
+    .filter(Boolean)
+    .sort()[0];
   const sortedNotForMe = sortJobsForDisplay(notForMeJobs);
   const openPreview = previewJobs(openJobs, { isMobile, expanded: rolesExpanded });
   const rejectedPreview = previewJobs(rejectedJobs, { isMobile, expanded: rolesExpanded });
@@ -296,6 +303,16 @@ function CompanyCard({ company, ui }) {
                 </span>
                 {companyAppliedAtCompact ? (
                   <span className="company-status-date">{companyAppliedAtCompact}</span>
+                ) : null}
+              </span>
+            ) : null}
+            {lookingCount > 0 ? (
+              <span className="badge looking-to-apply">
+                <span className="company-status-label">
+                  {lookingCount > 1 ? `${lookingCount} want to apply` : "Want to apply"}
+                </span>
+                {lookingSince ? (
+                  <span className="company-status-date">{formatCompactDateTime(lookingSince)}</span>
                 ) : null}
               </span>
             ) : null}

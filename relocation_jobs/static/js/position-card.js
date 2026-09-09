@@ -236,7 +236,8 @@ class PositionCard extends HTMLElement {
     });
     if (!data) return;
     this._apply(data);
-    this._toast(looking ? "Marked as looking to apply" : "Looking-to-apply cleared");
+    this._toast(looking ? "Want to apply" : "Want to apply cleared");
+    if (looking) void this._markSeenOnOpen();
   }
 
   async _toggleSeen() {
@@ -397,12 +398,10 @@ class PositionCard extends HTMLElement {
           <span class="position-application-date">${escapeHtml(label.replace(/^Applied\s*·?\s*/, ""))}</span>
         </div>`
       : "";
+    const lookingDate = j.looking_to_apply_date ? formatActivityBadge(j.looking_to_apply_date) : "";
     const lookingControl = j.applied ? "" : (j.looking_to_apply
-      ? `<button type="button" class="looking-to-apply-btn active" data-looking="1" aria-pressed="true" title="${j.looking_to_apply_date ? `Want to apply since ${escapeHtml(j.looking_to_apply_date)}` : "Clear want-to-apply mark"}">Want to apply</button>`
+      ? `<button type="button" class="looking-to-apply-btn active" data-looking="1" aria-pressed="true" title="Clear want-to-apply mark">Want to apply${lookingDate ? ` · ${escapeHtml(lookingDate)}` : ""}</button>`
       : '<button type="button" class="looking-to-apply-btn" data-looking="0" aria-pressed="false" title="Mark this role as one you want to apply to">Want to apply</button>');
-    const seenControl = j.seen
-      ? `<button type="button" class="saw-before-btn active" data-seen="1" aria-pressed="true" title="${j.seen_date ? `Seen on ${escapeHtml(j.seen_date)}` : "Clear seen-before mark"}">Seen before</button>`
-      : '<button type="button" class="saw-before-btn" data-seen="0" aria-pressed="false" title="Mark that you saw this position before">Seen before</button>';
 
     return `<div class="position-card${posCls(j)}" ${this._attrRow()}>
       <div class="position-top">
@@ -410,6 +409,8 @@ class PositionCard extends HTMLElement {
           ${this._titleRow(j)}
           <div class="position-badges">
             ${j.visa_sponsorship === true ? '<span class="badge visa">Visa / relocation</span>' : ""}
+            ${j.looking_to_apply && !j.applied ? `<span class="badge looking-to-apply">${j.looking_to_apply_date ? `Want to apply · ${escapeHtml(formatActivityBadge(j.looking_to_apply_date))}` : "Want to apply"}</span>` : ""}
+            ${j.seen ? `<span class="badge seen">Seen${j.seen_date ? ` · ${escapeHtml(formatActivityBadge(j.seen_date))}` : ""}</span>` : ""}
             ${!j.applied && latest ? `<span class="badge applied" title="${escapeHtml(formatAppliedHistoryTitle(evts.length ? evts : hist))}">${escapeHtml(formatAppliedLabel({ date: latest, at: j.applied_at || "" }, { before: true }))}</span>` : ""}
             ${cvBadges(j)}
             <span class="badge date">${formatActivityBadge(jobActivityTs(j))}</span>
@@ -421,14 +422,13 @@ class PositionCard extends HTMLElement {
       <div class="position-actions-primary">
         ${j.applied ? "" : appliedControl}
         ${j.applied ? '<button type="button" class="rejected-btn" data-rejected="0" title="Mark that you got a rejection">Mark rejected</button>' : this._hideReason()}
-        <button type="button" class="position-more-btn" aria-expanded="false" aria-label="Show more role actions" title="More role actions">
+        ${lookingControl}
+        <button type="button" class="position-more-btn" aria-expanded="false" aria-label="More role actions" title="More role actions">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>More</span>
         </button>
       </div>
-      <div class="position-actions-secondary" aria-label="More role actions">
+      <div class="position-actions-secondary" hidden aria-label="More role actions">
         ${j.applied ? appliedControl : ""}
-        ${lookingControl}
-        ${seenControl}
         ${this._referralTrigger()}
         ${!j.applied ? '<button type="button" class="rejected-btn" data-rejected="0" title="Mark that you got a rejection">Mark rejected</button>' : ""}
       </div>
@@ -454,7 +454,7 @@ class PositionCard extends HTMLElement {
             <span class="badge rejected"${rTitle ? ` title="Rejected on: ${escapeHtml(rTitle)}"` : ""}>${escapeHtml(rLabel)}</span>
             ${latestA ? `<span class="badge applied"${aTitle ? ` title="${escapeHtml(aTitle)}"` : ""}>${escapeHtml(formatAppliedLabel({ date: latestA, at: j.applied_at || "" }))}</span>` : ""}
             ${j.visa_sponsorship === true ? '<span class="badge visa">Visa / relocation</span>' : ""}
-            ${j.seen ? `<span class="badge seen">Saw before${j.seen_date ? ` · ${escapeHtml(j.seen_date)}` : ""}</span>` : ""}
+            ${j.seen ? `<span class="badge seen">Seen${j.seen_date ? ` · ${escapeHtml(formatActivityBadge(j.seen_date))}` : ""}</span>` : ""}
             ${cvBadges(j)}
             <span class="badge date">${formatActivityBadge(jobActivityTs(j))}</span>
           </div>
@@ -577,6 +577,8 @@ class PositionCard extends HTMLElement {
       const open = !card?.classList.contains("position-more-open");
       card?.classList.toggle("position-more-open", open);
       t.setAttribute("aria-expanded", open ? "true" : "false");
+      const extra = card?.querySelector(".position-actions-secondary");
+      if (extra) extra.hidden = !open;
       return;
     }
 
@@ -642,6 +644,8 @@ class PositionCard extends HTMLElement {
       if (card) {
         card.classList.remove("position-more-open");
         const trigger = card.querySelector(".position-more-btn");
+        const extra = card.querySelector(".position-actions-secondary");
+        if (extra) extra.hidden = true;
         trigger?.setAttribute("aria-expanded", "false");
         trigger?.focus();
         e.stopPropagation();

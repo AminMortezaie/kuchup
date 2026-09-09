@@ -264,7 +264,7 @@
     flex: 0 1 auto;
   }
 
-  .app-shell .position-actions-secondary {
+  .app-shell .position-card.position-more-open .position-actions-secondary {
     display: flex;
     flex-wrap: wrap;
     grid-template-columns: unset;

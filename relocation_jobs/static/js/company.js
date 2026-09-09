@@ -150,7 +150,14 @@ function positionBadges(position) {
   } else if (position.has_cover_letter_tex) {
     badges.push('<span class="company-position-badge company-position-badge--cl-tex">CL</span>');
   }
-  if (position.looking_to_apply) badges.push('<span class="company-position-badge company-position-badge--queue">Queue</span>');
+  if (position.looking_to_apply) {
+    const since = position.looking_to_apply_date ? ` · ${position.looking_to_apply_date}` : "";
+    badges.push(`<span class="company-position-badge company-position-badge--queue">Want to apply${since}</span>`);
+  }
+  if (position.seen) {
+    const seenOn = position.seen_date ? ` · ${position.seen_date}` : "";
+    badges.push(`<span class="company-position-badge company-position-badge--seen">Seen${seenOn}</span>`);
+  }
   if (position.pinned) badges.push('<span class="company-position-badge company-position-badge--pin">Pinned</span>');
   return badges.join("");
 }

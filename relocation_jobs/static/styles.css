@@ -1735,12 +1735,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   border-color: var(--border-hover, var(--border-strong));
 }
 
-.company-card.company-applied {
+.company-card.company-looking-to-apply {
+  border-color: color-mix(in srgb, var(--intent) 40%, var(--border));
+}
   opacity: 1;
 }
 
 .company-card.company-awaiting-response {
   background: var(--bg-surface, var(--surface));
+}
+
+.company-card.company-looking-to-apply {
+  border-color: color-mix(in srgb, var(--intent) 40%, var(--border));
 }
 
 .company-header {
@@ -2331,16 +2337,23 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--intent);
 }
 
-.looking-to-apply-btn:hover:not(:disabled) {
+.looking-to-apply-btn:hover:not(:disabled):not(.active) {
   background: color-mix(in srgb, var(--intent) 14%, var(--color-paper));
   border-color: color-mix(in srgb, var(--intent) 50%, transparent);
   color: var(--intent);
 }
 
 .looking-to-apply-btn.active {
-  border-color: color-mix(in srgb, var(--intent) 55%, transparent);
-  background: color-mix(in srgb, var(--intent) 20%, var(--color-paper));
-  color: var(--intent);
+  border-color: var(--intent);
+  background: var(--intent);
+  color: var(--color-paper);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--intent) 40%, transparent);
+}
+
+.looking-to-apply-btn.active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--intent) 88%, #000);
+  border-color: color-mix(in srgb, var(--intent) 88%, #000);
+  color: var(--color-paper);
 }
 
 .saw-before-btn {
@@ -2409,8 +2422,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .saw-before-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .position-card.position-looking-to-apply {
-  border-color: color-mix(in srgb, var(--intent) 30%, var(--border));
-  background: color-mix(in srgb, var(--intent-soft) 55%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--intent) 45%, var(--border));
+  background: color-mix(in srgb, var(--intent-soft) 70%, var(--bg-elevated));
+  box-shadow: inset 3px 0 0 var(--intent);
 }
 
 .hide-reason-wrap {
@@ -7001,9 +7015,9 @@ body.scroll-locked {
   border-color: rgba(217, 119, 6, 0.35);
 }
 
-.company-position-badge--pin {
-  color: #7c3aed;
-  border-color: rgba(124, 58, 237, 0.35);
+.company-position-badge--seen {
+  color: var(--memory);
+  border-color: color-mix(in srgb, var(--memory) 35%, transparent);
 }
 
 .company-artifact-tabs {
@@ -7558,10 +7572,14 @@ body.scroll-locked {
 }
 
 .position-actions-secondary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding-top: 0.65rem;
   border-top: 1px solid var(--border);
+}
+
+.position-card.position-more-open .position-actions-secondary {
+  display: grid;
 }
 
 .position-actions-secondary > button,
@@ -7594,7 +7612,7 @@ body.scroll-locked {
 }
 
 .position-more-btn {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--control-height);
@@ -7611,6 +7629,15 @@ body.scroll-locked {
   font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
+}
+
+.position-more-btn span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .position-actions-primary > button,
@@ -7666,16 +7693,25 @@ body.scroll-locked {
   }
 
   .position-actions-primary {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--control-height);
     gap: 0.5rem;
   }
 
   .position-actions-primary > button:not(.position-more-btn),
   .position-actions-primary > .hide-reason-wrap {
-    flex: 1 1 0;
     min-width: 0;
     min-height: var(--control-height);
+    width: 100%;
+  }
+
+  .position-actions-primary .position-more-btn {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .position-actions-primary .looking-to-apply-btn {
+    grid-column: 1 / -1;
   }
 
   .position-actions-primary .hide-reason-wrap {
