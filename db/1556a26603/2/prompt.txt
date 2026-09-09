@@ -1,0 +1,80 @@
+see the brevo application i would login on it.
+i want to redesign kuch ux like this.
+
+all the features are completely in minimal and clean style there and it's so user friendly.
+
+open it up on browser and i will login into and then start to take screenshots and start to make my panels like this but keeping the brand authority like colors and these same as what we have now.
+ready?
+
+---
+
+make it full screen and see desktop version to see.
+
+---
+
+yes you can start screen shoting for kuchup redesign see all the places like they have free tier account and how they show it right now.
+
+start to explore everything and then i will accept it to start redesign.
+
+---
+
+also do this for admin panel which is so dirty.
+
+lets start with a plan and then use multi agents to /ponytail and create what you want to create here, also use git work tree to not suspend other agents work.
+
+also about business stuff you should not change anything it just about the design system that we want to apply this on it.
+
+no colors will change by this apply and also we need to make our system like a professional UX which brevo does have it.
+
+---
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+deploy please to see on production
+
+---
+
+this is your final design wtf is this.
+
+---
+
+here is the mobile version also the top buttons should be put in sandwich menu on mobile version and all the devices that have no job to put these buttons there.
+
+also about the company page you did not apply anything and change nothing.
+
+---
+
+see what you've made now!
+
+---
+
+start to screen shot of different parts test all the buttons and see what will happen , your /goal is to deliver real professional panel without any ui bugs.
+you have to screenshot everywhere and fix any bugs you might find there.
+
+---
+
+start to screen shot of different parts test all the buttons and see what will happen , your /goal is to deliver real professional panel without any ui bugs.
+you have to screenshot everywhere and fix any bugs you might find there.
+
+---
+
+what the fuck is this?
+
+---
+
+wtf is this
+
+---
+
+check for it non of the edits was applied there
+
+---
+
+wtf is this.
+review all the features using screenshots to make sure everything works fine and correct.
+
+/goal definition of done should be applied everything looks correct and nothing is broken if i touched it.

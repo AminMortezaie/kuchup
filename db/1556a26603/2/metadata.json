@@ -1,0 +1,248 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "db1556a26603",
+  "session_id": "8597c6cc-c078-4933-b848-9787dfebc6df",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T17:01:11.100066Z",
+  "branch": "main",
+  "checkpoints_count": 14,
+  "save_step_count": 10,
+  "files_touched": [
+    ".env.example",
+    ".github/workflows/ci.yml",
+    ".gitignore",
+    "README.md",
+    "apps/README.md",
+    "apps/fetch-worker/run.py",
+    "apps/opportunity-worker/run.py",
+    "apps/role-propagator/Dockerfile",
+    "apps/role-propagator/assign.go",
+    "apps/role-propagator/assign_test.go",
+    "apps/role-propagator/go.mod",
+    "apps/role-propagator/go.sum",
+    "apps/role-propagator/main.go",
+    "apps/role-propagator/store.go",
+    "docs/contributing.md",
+    "docs/operations/ec2-panel.md",
+    "docs/operations/sqs-opportunity-refresh.md",
+    "docs/reference/architecture.md",
+    "docs/reference/entitlements-and-opportunities.md",
+    "docs/reference/rules.md",
+    "relocation_jobs/async_jobs/dispatch.py",
+    "relocation_jobs/async_jobs/enqueue.py",
+    "relocation_jobs/async_jobs/handlers.py",
+    "relocation_jobs/async_jobs/types.py",
+    "relocation_jobs/broadcast/capacity.py",
+    "relocation_jobs/broadcast/repo.py",
+    "relocation_jobs/broadcast/service.py",
+    "relocation_jobs/core/auth.py",
+    "relocation_jobs/fetch/__init__.py",
+    "relocation_jobs/fetch/country_runner.py",
+    "relocation_jobs/fetch/pipeline.py",
+    "relocation_jobs/fetch/ports.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/fetch/scheduler.py",
+    "relocation_jobs/fetch/service.py",
+    "relocation_jobs/fetch/state.py",
+    "relocation_jobs/opportunities/repo.py",
+    "relocation_jobs/opportunities/service.py",
+    "relocation_jobs/payments/service.py",
+    "relocation_jobs/scrape/company.py",
+    "relocation_jobs/web/routes/admin.py",
+    "relocation_jobs/web/routes/preferences.py",
+    "relocation_jobs/web/server.py",
+    "scripts/aws_sqs_opportunity_queue.sh",
+    "scripts/ec2_app_deploy.sh",
+    "scripts/fetch_scheduler_worker.py",
+    "scripts/opportunity_sqs_worker.py",
+    "tests/conftest.py",
+    "tests/fetch/test_pipeline.py",
+    "tests/fetch/test_scheduler.py",
+    "tests/helpers/seed.py",
+    "tests/payments/test_payment_service.py",
+    "tests/test_broadcast_capacity.py",
+    "tests/test_entitlements.py",
+    "tests/test_google_auth.py",
+    "tests/test_opportunities.py",
+    "tests/web/test_catalog_api.py",
+    "tests/web/test_jobs_api.py",
+    "tests/web/test_mcp_company_workspace.py",
+    "tests/web/test_personalized_board.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "ca7da919e320",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 1568769,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 39859072,
+    "output_tokens": 124468,
+    "api_call_count": 9
+  },
+  "session_metrics": {
+    "turn_count": 14,
+    "context_tokens": 233101,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T17:01:10.941768Z",
+    "agent_lines": 1565,
+    "agent_removed": 784,
+    "human_added": 64,
+    "human_modified": 145,
+    "human_removed": 0,
+    "total_committed": 1774,
+    "total_lines_changed": 2558,
+    "agent_percentage": 91.8295543393276,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1260,
+      "agent_lines_removed": 332,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1260,
+      "agent_lines_removed": 332,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 78,
+      "user_lines_removed": 26,
+      "agent_lines_added": 1284,
+      "agent_lines_removed": 343,
+      "user_added_per_file": {
+        ".env.example": 3,
+        "relocation_jobs/core/auth.py": 33,
+        "relocation_jobs/web/server.py": 7,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/conftest.py": 8,
+        "tests/test_google_auth.py": 15
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/core/auth.py": 1,
+        "relocation_jobs/web/server.py": 17,
+        "tests/conftest.py": 8
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1315,
+      "agent_lines_removed": 334,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1315,
+      "agent_lines_removed": 334,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1408,
+      "agent_lines_removed": 505,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1408,
+      "agent_lines_removed": 505,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1408,
+      "agent_lines_removed": 505,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 155,
+      "user_lines_removed": 119,
+      "agent_lines_added": 1408,
+      "agent_lines_removed": 505,
+      "user_added_per_file": {
+        "apps/fetch-worker/run.py": 4,
+        "relocation_jobs/async_jobs/enqueue.py": 5,
+        "relocation_jobs/broadcast/repo.py": 13,
+        "relocation_jobs/broadcast/service.py": 18,
+        "relocation_jobs/core/auth.py": 8,
+        "relocation_jobs/fetch/__init__.py": 7,
+        "relocation_jobs/fetch/pipeline.py": 1,
+        "relocation_jobs/fetch/runner.py": 26,
+        "relocation_jobs/fetch/scheduler.py": 44,
+        "relocation_jobs/opportunities/service.py": 13,
+        "relocation_jobs/web/routes/preferences.py": 2,
+        "scripts/.claude/settings.local.json": 12,
+        "scripts/fetch_scheduler_worker.py": 2
+      },
+      "user_removed_per_file": {
+        "apps/fetch-worker/run.py": 3,
+        "relocation_jobs/async_jobs/enqueue.py": 4,
+        "relocation_jobs/broadcast/repo.py": 20,
+        "relocation_jobs/broadcast/service.py": 10,
+        "relocation_jobs/core/auth.py": 3,
+        "relocation_jobs/fetch/country_runner.py": 4,
+        "relocation_jobs/fetch/pipeline.py": 6,
+        "relocation_jobs/fetch/runner.py": 3,
+        "relocation_jobs/fetch/scheduler.py": 23,
+        "relocation_jobs/opportunities/service.py": 10,
+        "relocation_jobs/web/routes/preferences.py": 2,
+        "scripts/fetch_scheduler_worker.py": 31
+      }
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1902,
+      "agent_lines_removed": 836,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
