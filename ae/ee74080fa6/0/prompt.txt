@@ -1,0 +1,14 @@
+this navbar is moving with scroll fix this using /ponytail skill.
+
+---
+
+it's not something professional with scroll it should be vanished and if user wants scroll to top again and see them
+
+---
+
+we can change the materials name which is not clear for user to what are these materials.
+change to something that clear and user can get the intent.
+
+---
+
+yes do it

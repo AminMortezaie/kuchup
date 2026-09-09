@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "aeee74080fa6",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/static/apply.html",
+    "relocation_jobs/static/company.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/apply.js",
+    "relocation_jobs/static/styles.css",
+    "tests/web/test_mcp_panel.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ae/ee74080fa6/0/metadata.json",
+      "transcript": "/ae/ee74080fa6/0/full.jsonl",
+      "compact_transcript": "/ae/ee74080fa6/0/transcript.jsonl",
+      "content_hash": "/ae/ee74080fa6/0/content_hash.txt",
+      "prompt": "/ae/ee74080fa6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 358176,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7515904,
+    "output_tokens": 33110,
+    "api_call_count": 4
+  }
+}
