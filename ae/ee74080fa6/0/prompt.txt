@@ -1,14 +1,9 @@
-this navbar is moving with scroll fix this using /ponytail skill.
+<timestamp>Thursday, Sep 10, 2026, 1:54 AM (UTC+4)</timestamp>
+
+commit and push and deploy
 
 ---
 
-it's not something professional with scroll it should be vanished and if user wants scroll to top again and see them
+<timestamp>Thursday, Sep 10, 2026, 1:56 AM (UTC+4)</timestamp>
 
----
-
-we can change the materials name which is not clear for user to what are these materials.
-change to something that clear and user can get the intent.
-
----
-
-yes do it
+then shutdown the localhost gracefully.
