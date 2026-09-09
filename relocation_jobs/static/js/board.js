@@ -124,7 +124,7 @@ export async function loadBoard(options = {}) {
   }
 
   const preserveContent = options.preserveContent === true;
-  const useOverlay = options.noOverlay !== true;
+  const useOverlay = options.noOverlay !== true && !state.boardCatalog.length;
   const useTopBar = !useOverlay;
   const enterAnimation = options.enterAnimation !== false && !preserveContent;
   if (useOverlay) {
@@ -164,6 +164,7 @@ export async function loadBoard(options = {}) {
   } finally {
     if (useOverlay) endScreenLoad();
     else if (useTopBar) finishLoadingProgress();
+    if (state.boardCatalog.length) endScreenLoad();
   }
 }
 

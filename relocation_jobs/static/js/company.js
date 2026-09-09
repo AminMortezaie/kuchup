@@ -1,5 +1,6 @@
 /** Company workspace — per-position tailored CV / cover letter + PDF preview. */
 
+import { initAppShell } from "./app-shell.js";
 import { companyWorkspacePath } from "./company-workspace.js";
 import { beginScreenLoad, endScreenLoad, setScreenLoadProgress } from "./screen-loader.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
@@ -176,19 +177,23 @@ function renderPositionList() {
 
   if (!positions.length) {
     list.innerHTML = `<li class="company-position-empty">No open positions in catalog.</li>`;
-    if (hint) hint.textContent = "Fetch jobs from the panel if this company should have roles.";
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = "Refresh jobs from Jobs if this company should have roles.";
+    }
     return;
   }
 
   const withCv = positions.filter((p) => p.has_tailored_tex || p.has_pdf).length;
   const withCl = positions.filter((p) => p.has_cover_letter_tex || p.has_cover_letter_pdf).length;
+  const parts = [];
+  if (withCv) parts.push(`${withCv} tailored CV`);
+  if (withCl) parts.push(`${withCl} cover letter`);
   if (hint) {
-    const parts = [];
-    if (withCv) parts.push(`${withCv} tailored CV`);
-    if (withCl) parts.push(`${withCl} cover letter`);
-    hint.innerHTML = parts.length
+    hint.hidden = false;
+    hint.textContent = parts.length
       ? `${parts.join(" · ")} across ${positions.length} roles.`
-      : 'No tailored CVs or cover letters yet — <a href="/apply?tab=connect">Connect MCP</a> (Claude or Cursor), mark roles looking to apply on the board, then generate docs. <a href="/mcp">How it works</a>.';
+      : "Select a role to preview its tailored CV.";
   }
 
   list.innerHTML = positions.map((position) => {
@@ -500,7 +505,6 @@ function clearDetail() {
   $("companyPdfFrame")?.removeAttribute("src");
   $("companyOpenPdf")?.setAttribute("hidden", "");
   $("companyApplyLink")?.setAttribute("hidden", "");
-  $("companyApplyHint")?.setAttribute("hidden", "");
   const pdfMissing = $("companyPdfMissing");
   if (pdfMissing) pdfMissing.hidden = true;
   resetJobDescription();
@@ -631,7 +635,7 @@ async function loadPositionDetail(idempotencyKey, position, { quiet = false } = 
     position.location,
     position.master_resume_slug ? `master: ${position.master_resume_slug}` : "",
     position.applied ? "Applied" : "",
-    position.looking_to_apply ? "Looking to apply" : "",
+    position.looking_to_apply ? "Want to apply" : "",
   ].filter(Boolean);
   $("companyPositionMeta").textContent = metaParts.join(" · ");
   updateJdToggleButton(position);
@@ -639,23 +643,10 @@ async function loadPositionDetail(idempotencyKey, position, { quiet = false } = 
 
   const hasUrl = Boolean(position.url);
   const applyLink = $("companyApplyLink");
-  const applyHint = $("companyApplyHint");
-  const applyHintText = $("companyApplyHintText");
-  const applyUrl = $("companyApplyUrl");
   const hasPdf = artifactHasPdf(position);
   if (applyLink) {
     applyLink.href = position.url || "#";
     applyLink.hidden = !hasUrl;
-  }
-  if (applyHint && applyHintText && applyUrl) {
-    applyHint.hidden = !hasUrl;
-    if (hasUrl) {
-      applyHintText.textContent = hasPdf
-        ? "After downloading your PDF, apply at the original posting: "
-        : "Apply at the original posting: ";
-      applyUrl.href = position.url;
-      applyUrl.textContent = position.url;
-    }
   }
 
   const download = $("companyDownloadPdf");
@@ -851,6 +842,13 @@ async function logout() {
 
 function bindEvents() {
   $("companyLogoutBtn")?.addEventListener("click", logout);
+  const guideDialog = $("companyGuideDialog");
+  document.querySelectorAll("[data-company-guide]").forEach((btn) => {
+    btn.addEventListener("click", () => guideDialog?.showModal());
+  });
+  guideDialog?.addEventListener("click", (event) => {
+    if (event.target === guideDialog) guideDialog.close();
+  });
   $("companyJdToggleBtn")?.addEventListener("click", toggleJobDescription);
   $("companyJdFetchBtn")?.addEventListener("click", fetchJobDescription);
   $("companyJdEditBtn")?.addEventListener("click", startJobDescriptionEdit);
@@ -885,6 +883,7 @@ function bindEvents() {
 }
 
 async function init() {
+  initAppShell();
   bindEvents();
   try {
     parseRoute();

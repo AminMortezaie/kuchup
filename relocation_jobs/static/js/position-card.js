@@ -398,8 +398,8 @@ class PositionCard extends HTMLElement {
         </div>`
       : "";
     const lookingControl = j.applied ? "" : (j.looking_to_apply
-      ? `<button type="button" class="looking-to-apply-btn active" data-looking="1" aria-pressed="true" title="${j.looking_to_apply_date ? `Interested since ${escapeHtml(j.looking_to_apply_date)}` : "Clear looking-to-apply mark"}">Interested</button>`
-      : '<button type="button" class="looking-to-apply-btn" data-looking="0" aria-pressed="false" title="Mark as interested in applying">Looking to apply</button>');
+      ? `<button type="button" class="looking-to-apply-btn active" data-looking="1" aria-pressed="true" title="${j.looking_to_apply_date ? `Want to apply since ${escapeHtml(j.looking_to_apply_date)}` : "Clear want-to-apply mark"}">Want to apply</button>`
+      : '<button type="button" class="looking-to-apply-btn" data-looking="0" aria-pressed="false" title="Mark this role as one you want to apply to">Want to apply</button>');
     const seenControl = j.seen
       ? `<button type="button" class="saw-before-btn active" data-seen="1" aria-pressed="true" title="${j.seen_date ? `Seen on ${escapeHtml(j.seen_date)}` : "Clear seen-before mark"}">Seen before</button>`
       : '<button type="button" class="saw-before-btn" data-seen="0" aria-pressed="false" title="Mark that you saw this position before">Seen before</button>';

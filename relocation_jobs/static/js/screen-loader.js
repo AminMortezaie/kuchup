@@ -7,6 +7,7 @@ let depth = 0;
 let displayPct = 0;
 let targetPct = 0;
 let rafId = null;
+let showRaf = null;
 let finishTimer = null;
 
 function elements() {
@@ -81,23 +82,23 @@ export function isScreenLoadActive() {
 }
 
 export function beginScreenLoad(label = "Loading…") {
-  depth += 1;
   const { root, label: labelEl } = elements();
   if (!root) return;
+  if (labelEl) labelEl.textContent = label;
+  if (depth > 0) return;
 
-  if (depth === 1) {
-    resetSession();
-    if (labelEl) labelEl.textContent = label;
-    root.hidden = false;
-    root.classList.remove("is-done");
-    document.body.classList.add("screen-loading");
-    requestAnimationFrame(() => root.classList.add("is-visible"));
-    bumpTarget(12);
-    startLoop();
-  } else if (labelEl) {
-    labelEl.textContent = label;
-    bumpTarget(displayPct + 4);
-  }
+  depth = 1;
+  resetSession();
+  root.hidden = false;
+  root.classList.remove("is-done");
+  document.body.classList.add("screen-loading");
+  if (showRaf) cancelAnimationFrame(showRaf);
+  showRaf = requestAnimationFrame(() => {
+    showRaf = null;
+    if (depth > 0) root.classList.add("is-visible");
+  });
+  bumpTarget(12);
+  startLoop();
 }
 
 export function setScreenLoadProgress(pct) {
@@ -106,35 +107,24 @@ export function setScreenLoadProgress(pct) {
 }
 
 export function endScreenLoad() {
-  depth = Math.max(0, depth - 1);
-  if (depth > 0) return;
+  if (depth === 0) return;
+  depth = 0;
+  stopLoop();
 
-  bumpTarget(100);
-  startLoop();
-
+  if (showRaf) {
+    cancelAnimationFrame(showRaf);
+    showRaf = null;
+  }
   const { root } = elements();
   if (!root) return;
-
-  const finalize = () => {
-    root.classList.add("is-done");
-    root.classList.remove("is-visible");
-    document.body.classList.remove("screen-loading");
-    finishTimer = window.setTimeout(() => {
-      if (depth === 0) {
-        root.hidden = true;
-        root.classList.remove("is-done");
-        resetSession();
-      }
-      finishTimer = null;
-    }, 400);
-  };
-
-  const waitComplete = () => {
-    if (displayPct >= 99.5) {
-      finalize();
-      return;
-    }
-    requestAnimationFrame(waitComplete);
-  };
-  waitComplete();
+  root.classList.add("is-done");
+  root.classList.remove("is-visible");
+  root.hidden = true;
+  document.body.classList.remove("screen-loading");
+  if (finishTimer) clearTimeout(finishTimer);
+  finishTimer = window.setTimeout(() => {
+    root.classList.remove("is-done");
+    resetSession();
+    finishTimer = null;
+  }, 400);
 }

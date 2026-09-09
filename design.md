@@ -128,6 +128,25 @@ pairs (e.g. Application data vs Sign out) match.
 Text-style `.link-btn` does not use this height. Icon-only squares that already
 set an explicit size (avatar, pin) override it.
 
+### App chrome (workbench)
+
+Shared shell for `/panel`, `/remote`, `/admin`, `/apply`, and `/company`. Classes live in
+`relocation_jobs/static/app-shell.css`. Palette tokens do not change.
+
+- **Rail (N3):** sky paper (`--color-paper-2`), wordmark, collapse to icons.
+  Active item uses `--color-accent-soft` pill — not a second brand hue.
+  Below 900px the rail is a hamburger drawer; credits, add-company, and account
+  controls move into that menu.
+- **Page:** large Lexend title (`.app-page-title`), then a toolbar, then one
+  workbench pane. Admin uses `location.hash` to show one pane; section IDs stay
+  in the DOM.
+- **Topbar:** existing credits control as `.app-usage-chip`; account menu stays
+  on the right. Primary CTA remains orange; secondary remains outlined navy.
+- **Paid/locked:** ochre status chip (`.app-lock`), never a gold crown or purple
+  meter. Status hues stay chip-scale meaning only.
+- **Cards/tables:** hairline `--border-subtle`, `--radius-card`, no gradient
+  header stripe, almost no shadow.
+
 ## Hum adaptations
 
 - Rounded, welcoming surfaces and pills in the Kuchup palette

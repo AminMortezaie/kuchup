@@ -219,7 +219,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
       state.fetchPanelSingle = true;
       const activityMsg = (st.activity?.message || "").trim();
       patchRunningFetchPanel({
-        title: `Fetching ${st.company}`,
+        title: `Refreshing ${st.company}`,
         subtitle: st.cancel_requested
           ? `${countryLabel(st.country)} · cancelling…`
           : (activityMsg || `${countryLabel(st.country)} · working…`),
@@ -237,7 +237,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
       state.fetchPanelSingle = false;
       const n = st.concurrency || state.scrapeConfig?.default_concurrency || 16;
       patchRunningFetchPanel({
-        title: st.ats_type ? `Fetching ${atsLabel(st.ats_type)} companies` : "Fetching companies",
+        title: st.ats_type ? `Refreshing ${atsLabel(st.ats_type)} companies` : "Refreshing companies",
         subtitle: fetchScopeSubtitle(st.country, st.ats_type, n),
         singleCompany: false,
         progressWrapHidden: false,
@@ -277,7 +277,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
 
   if (singleFetch && !cancelled && !failed) {
     finishFetchPanel({
-      title: "Fetch complete",
+      title: "Refresh complete",
       subtitle: singleCompanySummarySubtitle(st),
       cancelled: false,
       failed: false,
@@ -298,7 +298,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
     };
   } else if (singleFetch && failed) {
     finishFetchPanel({
-      title: "Fetch finished with errors",
+      title: "Refresh finished with errors",
       subtitle: st.result_line || "Check the log for details.",
       cancelled: false,
       failed: true,
@@ -316,7 +316,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
     state.lastFetchReview = null;
   } else if (singleFetch && cancelled) {
     finishFetchPanel({
-      title: "Fetch cancelled",
+      title: "Refresh cancelled",
       subtitle: "Completed companies were saved.",
       cancelled: true,
       failed: false,
@@ -336,7 +336,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
       ? st.result_line.replace(/^\[\d+\/\d+\]\s*/, "").replace(/^Done\s+/, "")
       : "Jobs list updated";
     finishFetchPanel({
-      title: cancelled ? "Fetch cancelled" : (failed ? "Fetch finished with errors" : "Fetch complete"),
+      title: cancelled ? "Refresh cancelled" : (failed ? "Refresh finished with errors" : "Refresh complete"),
       subtitle: cancelled
         ? (newJobsNote ? `${newJobsNote} · completed companies were saved.` : "Completed companies were saved.")
         : (newJobsNote || resultSubtitle),
@@ -357,7 +357,7 @@ function applyFetchStatus(st, { replaceLog = false } = {}) {
 function showFetchPanelForStatus(st, { reopen = false } = {}) {
   if (st.company) {
     showFetchPanel({
-      title: `Fetching ${st.company}`,
+      title: `Refreshing ${st.company}`,
       subtitle: countryLabel(st.country),
       singleCompany: true,
       country: st.country,
@@ -367,7 +367,7 @@ function showFetchPanelForStatus(st, { reopen = false } = {}) {
     return;
   }
   showFetchPanel({
-    title: st.ats_type ? `Fetching ${atsLabel(st.ats_type)} companies` : "Fetching companies",
+    title: st.ats_type ? `Refreshing ${atsLabel(st.ats_type)} companies` : "Refreshing companies",
     subtitle: fetchScopeSubtitle(st.country, st.ats_type, st.concurrency),
     singleCompany: false,
     country: st.country,
@@ -578,11 +578,11 @@ export function pollFetchStatus(expectedRunId = null) {
           ? doneSt.result_line.replace(/^\[\d+\/\d+\]\s*/, "")
           : (doneSt.company ? `${doneSt.company} updated` : "Jobs list updated");
         if (cancelled) {
-          toast("Fetch cancelled — progress saved");
+          toast("Refresh cancelled — progress saved");
         } else if (doneSt.exit_code === 0) {
           toast(summary);
         } else {
-          toast(doneSt.result_line || "Fetch failed — see log");
+          toast(doneSt.result_line || "Refresh failed — see log");
         }
         return;
       }
@@ -610,11 +610,11 @@ export function pollFetchStatus(expectedRunId = null) {
         : (doneSt.company ? `${doneSt.company} updated` : "Jobs list updated");
 
       if (cancelled) {
-        toast("Fetch cancelled — progress saved");
+        toast("Refresh cancelled — progress saved");
       } else if (doneSt.exit_code === 0) {
         toast(summary);
       } else {
-        toast(doneSt.result_line || "Fetch failed — see log");
+        toast(doneSt.result_line || "Refresh failed — see log");
       }
     } finally {
       state.fetchPollInFlight = false;
@@ -711,7 +711,7 @@ export async function startCountryFetch() {
   state.lastFetchReview = null;
   state.fetchPanelSingle = false;
   showFetchPanel({
-    title: atsType !== "all" ? `Fetching ${atsLabel(atsType)} companies` : "Fetching companies",
+    title: atsType !== "all" ? `Refreshing ${atsLabel(atsType)} companies` : "Refreshing companies",
     subtitle: fetchScopeSubtitle(country, atsType, concurrency),
     singleCompany: false,
     country,
@@ -763,7 +763,7 @@ export async function fetchOneCompany(country, company) {
   state.lastFetchReview = null;
   state.lastFetchStatus = null;
   showFetchPanel({
-    title: `Fetching ${company}`,
+    title: `Refreshing ${company}`,
     subtitle: countryLabel(country),
     singleCompany: true,
     country,
@@ -803,7 +803,7 @@ export async function fetchOneCompany(country, company) {
 }
 
 function hideFetchPanelOnFailure() {
-  finishFetchPanel({ title: "Fetch failed", subtitle: "Could not start fetch.", failed: true });
+  finishFetchPanel({ title: "Refresh failed", subtitle: "Could not start refresh.", failed: true });
   setFetchPanelRunning(false);
 }
 

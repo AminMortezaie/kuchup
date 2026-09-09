@@ -27,6 +27,9 @@ export function applyPanelChrome() {
     el.textContent = remote ? "Remote roles worldwide" : "Visa-friendly roles abroad";
   });
 
+  const boardTitle = document.getElementById("boardPageTitle");
+  if (boardTitle) boardTitle.textContent = remote ? "Remote" : "Relocation";
+
   const loginHint = document.getElementById("loginHint");
   if (loginHint && !document.getElementById("loginSubmit")?.disabled) {
     const register = document.getElementById("loginTitle")?.textContent === "Create account";
@@ -52,10 +55,12 @@ export function applyPanelChrome() {
   const remoteNav = document.getElementById("panelNavRemote");
   if (relocationNav) {
     relocationNav.classList.toggle("is-active", !remote);
-    relocationNav.setAttribute("aria-current", remote ? "false" : "page");
+    if (remote) relocationNav.removeAttribute("aria-current");
+    else relocationNav.setAttribute("aria-current", "page");
   }
   if (remoteNav) {
     remoteNav.classList.toggle("is-active", remote);
-    remoteNav.setAttribute("aria-current", remote ? "page" : "false");
+    if (remote) remoteNav.setAttribute("aria-current", "page");
+    else remoteNav.removeAttribute("aria-current");
   }
 }

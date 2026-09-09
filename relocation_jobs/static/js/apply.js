@@ -1,7 +1,8 @@
-/** Application data — profile + master resumes + project masters + interview notes for MCP (per logged-in user). */
+/** Materials — profile + resumes + project masters + interview notes for MCP (per logged-in user). */
 
 import { createSlugDocumentEditor } from "./apply-documents.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
+import { initAppShell } from "./app-shell.js";
 
 const MAX_PIPELINE_PROMPTS = 5;
 
@@ -345,7 +346,7 @@ async function loadConnectPanel() {
       quota.innerHTML =
         `Free/Full MCP quota: <strong>${remaining}</strong> of ${limit} write/render requests left today (plan: ${escapeHtml(plan)}). `
         + `Saving masters and rendering PDFs consume this budget. `
-        + `<a href="/pricing">See plans</a> · <a href="/mcp">How MCP works</a>`;
+        + `<a href="/pricing">See plans</a> · <a href="/mcp">How connecting works</a>`;
     }
   }
   await refreshTokenList();
@@ -443,6 +444,7 @@ function bindEvents() {
 }
 
 async function init() {
+  initAppShell();
   bindEvents();
   if (await refreshAuth()) {
     try {

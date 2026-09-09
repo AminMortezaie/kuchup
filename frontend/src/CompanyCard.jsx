@@ -152,7 +152,7 @@ function emptyMessage(company, ui) {
     }
     return "No roles match your current filters.";
   }
-  return "No jobs yet — click Fetch jobs.";
+  return "No jobs yet — click Refresh jobs.";
 }
 
 function CompanyCard({ company, ui }) {
@@ -275,7 +275,7 @@ function CompanyCard({ company, ui }) {
             </span>
             {tailoredCount > 0 ? (
               <a className="company-cv-summary" href={workspaceHref} title="View tailored CVs and cover letters">
-                {tailoredCount} application doc{tailoredCount === 1 ? "" : "s"}
+                {tailoredCount} tailored PDF{tailoredCount === 1 ? "" : "s"}
               </a>
             ) : null}
           </div>
@@ -385,7 +385,7 @@ function CompanyCard({ company, ui }) {
                   );
                 }}
               >
-                {isFetching ? "Fetching…" : "Fetch jobs"}
+                {isFetching ? "Refreshing…" : "Refresh jobs"}
               </button>
               ) : null}
               <button

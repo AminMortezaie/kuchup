@@ -15,6 +15,7 @@ import { saveWaitingReferral, markJobSeen } from "./api.js";
 import { toast, $ } from "./utils.js";
 import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
+import { initAppShell } from "./app-shell.js";
 import { openPreferencesDialog } from "./preferences.js";
 import { openCreditsDialog } from "./credits.js";
 import {
@@ -35,6 +36,7 @@ window.relocationJobs.toast = toast;
 async function init() {
   setOnUnauthorized(() => showLogin("session"));
   applyPanelChrome();
+  initAppShell();
 
   loadCollapsedCompanies();
   loadShowNotForMeCompanies();
@@ -51,6 +53,9 @@ async function init() {
   publishFetchUi();
   $("preferencesLink")?.addEventListener("click", () => openPreferencesDialog());
   $("creditsLink")?.addEventListener("click", () => openCreditsDialog());
+  document.querySelectorAll("[data-open-credits]").forEach((el) => {
+    el.addEventListener("click", () => openCreditsDialog());
+  });
 
   const ok = await refreshAuth();
   if (!ok) return;

@@ -4,6 +4,7 @@ import { removeCountry } from "./api.js";
 import { initAdminWorker } from "./admin-worker.js";
 import { buildAdminStatsHtml } from "./stats-dashboard.js";
 import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge, toast } from "./utils.js";
+import { initAdminPanes, initAppShell } from "./app-shell.js";
 
 function skeletonRows(n = 4) {
   return Array(n).fill(0).map(() =>
@@ -167,7 +168,7 @@ function renderCatalog(data) {
         <p class="hint">No countries registered yet.</p>
       </section>
     `;
-    $("adminFetchProblems").innerHTML = "";
+  $("adminFetchProblems").innerHTML = `<section class="admin-panel"><h2 class="admin-panel-title">Fetch problems</h2><p class="hint">No fetch problems right now.</p></section>`;
     return;
   }
 
@@ -239,7 +240,7 @@ function renderCatalog(data) {
       </div>
     </section>
   `
-    : "";
+    : `<section class="admin-panel"><h2 class="admin-panel-title">Fetch problems</h2><p class="hint">No fetch problems right now.</p></section>`;
 }
 
 function renderUsers(data) {
@@ -561,6 +562,8 @@ async function logout() {
 }
 
 async function init() {
+  initAppShell();
+  initAdminPanes();
   $("adminLogoutBtn").addEventListener("click", logout);
   $("adminRefreshBtn").addEventListener("click", async () => {
     try {

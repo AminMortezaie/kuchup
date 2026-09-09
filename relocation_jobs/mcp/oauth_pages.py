@@ -87,7 +87,7 @@ async def oauth_login_get(request: Request) -> HTMLResponse:
     """
     return _page(
         title="Connect",
-        heading="Connect MCP",
+        heading="Connect AI",
         message="Review access, then allow or deny this client.",
         body=body,
     )

@@ -140,7 +140,7 @@ function showPanel({ title, subtitle }) {
   backdrop.classList.add("open");
   backdrop.setAttribute("aria-hidden", "false");
   document.body.classList.add("fetch-modal-open");
-  $("adminFetchTitle").textContent = title || "Fetching companies";
+  $("adminFetchTitle").textContent = title || "Refreshing companies";
   $("adminFetchSubtitle").textContent = subtitle || "Starting…";
   hideFetchCompletion();
   appendLog("Starting…\n");
@@ -189,8 +189,8 @@ function applyFetchStatus(st) {
 
   if (st.running) {
     $("adminFetchTitle").textContent = st.ats_type
-      ? `Fetching ${st.ats_type} companies`
-      : "Fetching companies";
+      ? `Refreshing ${st.ats_type} companies`
+      : "Refreshing companies";
     $("adminFetchSubtitle").textContent = st.country || "In progress";
     updateProgress({
       current,
@@ -220,7 +220,7 @@ function applyFetchStatus(st) {
   });
 
   finishPanel({
-    title: cancelled ? "Fetch cancelled" : (failed ? "Fetch finished with errors" : "Fetch complete"),
+    title: cancelled ? "Refresh cancelled" : (failed ? "Refresh finished with errors" : "Refresh complete"),
     subtitle: st.result_line || "Catalog updated",
     cancelled,
     fetchRun: st.last_fetch_run || null,
@@ -328,7 +328,7 @@ export function renderWorkerStatus(worker) {
   $("adminWorkerViewProgress")?.addEventListener("click", () => {
     fetchBusy = true;
     showPanel({
-      title: fetch.ats_type ? `Fetching ${fetch.ats_type} companies` : "Fetching companies",
+      title: fetch.ats_type ? `Refreshing ${fetch.ats_type} companies` : "Refreshing companies",
       subtitle: fetch.country || "In progress",
     });
     pollFetchStatus();
@@ -351,7 +351,7 @@ export async function initAdminWorker(worker) {
   if (fetch.running && !fetch.company) {
     fetchBusy = true;
     showPanel({
-      title: fetch.ats_type ? `Fetching ${fetch.ats_type} companies` : "Fetching companies",
+      title: fetch.ats_type ? `Refreshing ${fetch.ats_type} companies` : "Refreshing companies",
       subtitle: fetch.country || "In progress",
     });
     pollFetchStatus();
@@ -361,7 +361,7 @@ export async function initAdminWorker(worker) {
       if (st.running && !st.company) {
         fetchBusy = true;
         showPanel({
-          title: st.ats_type ? `Fetching ${st.ats_type} companies` : "Fetching companies",
+          title: st.ats_type ? `Refreshing ${st.ats_type} companies` : "Refreshing companies",
           subtitle: st.country || "In progress",
         });
         pollFetchStatus();

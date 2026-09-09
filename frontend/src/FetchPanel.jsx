@@ -283,14 +283,14 @@ function FetchPanel({ panel = {} }) {
                       disabled={footer.problemDisabled}
                       onClick={() => actions.submitReviewFeedback?.(footer.country, footer.company, "problem")}
                     >
-                      No, fetch problem
+                      No, something's wrong
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className={`fetch-review-feedback-result is-${footer.resolvedStatus === "ok" ? "ok" : "problem"}`}>
                   <span className="fetch-review-feedback-text">
-                    {footer.resolvedStatus === "ok" ? "Fetch confirmed OK" : "Marked as fetch problem"}
+                    {footer.resolvedStatus === "ok" ? "Looks good" : "Marked as a problem"}
                   </span>
                 </div>
               )}

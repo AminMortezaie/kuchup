@@ -3,7 +3,7 @@ import BoardSkeleton from "./BoardSkeleton";
 
 function emptyHint(meta, isRemote) {
   if (meta?.needs_preferences) {
-    return "Choose your target countries in Preferences to match companies with open roles.";
+    return "Choose your target countries in Where to work to match companies with open roles.";
   }
   if (isRemote) {
     return "Try another remote board or clear filters. Remote listings are separate from your relocation country preferences.";
@@ -12,16 +12,16 @@ function emptyHint(meta, isRemote) {
   const selected = meta?.country;
   if (selected && selected !== "all" && targets.length && !targets.includes(selected)) {
     const labels = targets.join(", ");
-    return `Your preferences include ${labels}. Switch the country filter to one of those, or open Preferences to add more.`;
+    return `Your preferences include ${labels}. Switch the country filter to one of those, or open Where to work to add more.`;
   }
   if (meta?.positions_capped) {
     return "Your credit balance is empty. Tracking still works; add credits to receive more matched roles.";
   }
   if (meta?.board_capped && (meta?.opportunity_count === 0 || (meta?.total_companies ?? 0) === 0)) {
-    return "No open-role companies in your Free slots yet. Update Preferences or wait for catalog refresh.";
+    return "No open-role companies in your Free slots yet. Update Where to work or wait for catalog refresh.";
   }
   if ((meta?.total_companies ?? 0) === 0 && targets.length) {
-    return `No open roles match ${targets.join(" or ")} with the current filters. Clear filters or edit Preferences.`;
+    return `No open roles match ${targets.join(" or ")} with the current filters. Clear filters or edit Where to work.`;
   }
   return "Try another country or adjust your visa and location filters.";
 }

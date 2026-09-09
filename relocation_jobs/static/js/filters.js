@@ -9,13 +9,13 @@ const FILTER_DEFS = [
   { id: "hidePositionApplied", label: "Hide applied positions" },
   { id: "positionAppliedOnly", label: "Applied positions only" },
   { id: "positionRejectedOnly", label: "Rejections only" },
-  { id: "positionLookingToApplyOnly", label: "Looking to apply only" },
+  { id: "positionLookingToApplyOnly", label: "Want to apply only" },
   { id: "hideApplied", label: "Hide applied companies" },
   { id: "hideEmpty", label: "Hide companies with no open roles" },
   { id: "hideCollapsedCompanies", label: "Hide collapsed companies" },
   { id: "notAppliedOnly", label: "Not applied, has openings" },
-  { id: "fetchOkOnly", label: "Fetch OK only" },
-  { id: "fetchProblemOnly", label: "Fetch problems" },
+  { id: "fetchOkOnly", label: "Last refresh OK" },
+  { id: "fetchProblemOnly", label: "Refresh issues" },
   { id: "visaOnly", label: "Visa / relocation" },
 ];
 

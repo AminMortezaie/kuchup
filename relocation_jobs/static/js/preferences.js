@@ -63,7 +63,7 @@ export async function openPreferencesDialog() {
   const err = $("preferencesError");
   if (err) err.textContent = "";
   const title = $("preferencesTitle");
-  if (title) title.textContent = "Search preferences";
+  if (title) title.textContent = "Where you want to work";
   const hint = $("preferencesHint");
   if (hint) {
     hint.textContent = "Your board filters to matched companies in these countries.";

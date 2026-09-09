@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Application data — Relocation Jobs</title>
+  <title>Materials — Relocation Jobs</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
   <link rel="manifest" href="/static/manifest.json" />
@@ -11,7 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=93" />
+  <link rel="stylesheet" href="/static/styles.css?v=100" />
+  <link rel="stylesheet" href="/static/app-shell.css?v=11" />
 </head>
 <body>
   <div id="loadingBar" aria-hidden="true"><div id="loadingBarFill"></div></div>
@@ -41,7 +42,7 @@
         </a>
       </div>
       <h2>Sign in</h2>
-      <p class="hint">Your application profile, master resumes, project masters, and interview notes are stored per user in the database.</p>
+      <p class="hint">Your profile, resumes, projects, and interview notes are stored per account.</p>
       <div class="login-error" id="applyLoginError"></div>
       <div class="login-actions">
         <a href="/panel" class="link-btn">Back to jobs</a>
@@ -57,9 +58,9 @@
       </div>
     </div>
 
-    <div id="applyContent" class="admin-content" hidden>
-      <header class="admin-header apply-toolbar">
-        <div class="admin-header-left">
+    <div id="applyContent" class="admin-content app-shell" hidden>
+      <aside class="app-rail" id="appRail">
+        <div class="app-rail-brand">
           <a href="/panel" class="brand-lockup brand-lockup--compact">
             <span class="brand-mark" aria-hidden="true">
               <img src="/static/icons/kuchup-bird.svg" alt="" width="32" height="30" />
@@ -68,29 +69,54 @@
               <span class="brand-name">KUCHUP</span>
             </span>
           </a>
-          <h1 class="page-heading">Application data</h1>
-          <p class="admin-subtitle">Profile, master resumes, project masters, interview notes, and remote MCP access</p>
         </div>
-        <div class="admin-header-actions">
-          <a href="/panel" class="header-secondary-btn admin-nav-link">Job panel</a>
-          <button type="button" class="header-secondary-btn" id="applyLogoutBtn">Sign out</button>
-        </div>
-      </header>
+        <nav class="app-rail-nav" aria-label="Materials">
+          <a href="/panel" class="app-rail-item">
+            <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+            <span class="app-rail-label">Jobs</span>
+          </a>
+          <a href="/apply" class="app-rail-item is-active" aria-current="page">
+            <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            <span class="app-rail-label">Materials</span>
+          </a>
+        </nav>
+      </aside>
+      <div class="app-menu-backdrop" id="appMenuBackdrop" hidden></div>
+      <div class="app-main">
+        <header class="app-topbar">
+          <button type="button" class="app-menu-btn" id="appMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appRail">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <a href="/panel" class="app-topbar-brand brand-lockup brand-lockup--compact">
+            <span class="brand-mark" aria-hidden="true">
+              <img src="/static/icons/kuchup-bird.svg" alt="" width="28" height="26" />
+            </span>
+            <span class="brand-text"><span class="brand-name">KUCHUP</span></span>
+          </a>
+          <div class="app-shell-tools" id="appShellTools">
+            <div class="app-topbar-actions">
+              <button type="button" class="header-secondary-btn" id="applyLogoutBtn">Sign out</button>
+            </div>
+          </div>
+        </header>
+        <div class="app-page">
+          <h1 class="app-page-title">Materials</h1>
+          <p class="hint">Your profile, resumes, projects, interview notes, and AI connection</p>
 
       <div id="applyError" class="admin-error" hidden></div>
       <div id="applySuccess" class="apply-success" hidden></div>
 
-      <nav class="apply-tabs tab-rail" aria-label="Application data sections">
+      <nav class="apply-tabs tab-rail" aria-label="Materials sections">
         <button type="button" class="apply-tab apply-tab--active" data-tab="profile" id="applyTabProfile">Profile</button>
-        <button type="button" class="apply-tab" data-tab="masters" id="applyTabMasters">Master resumes</button>
+        <button type="button" class="apply-tab" data-tab="masters" id="applyTabMasters">Resumes</button>
         <button type="button" class="apply-tab" data-tab="projects" id="applyTabProjects">Projects</button>
         <button type="button" class="apply-tab" data-tab="notes" id="applyTabNotes">Interview notes</button>
-        <button type="button" class="apply-tab" data-tab="connect" id="applyTabConnect">Connect MCP</button>
+        <button type="button" class="apply-tab" data-tab="connect" id="applyTabConnect">Connect AI</button>
       </nav>
 
       <section class="admin-panel apply-panel" id="applyProfilePanel">
-        <h2 class="admin-panel-title">Application profile</h2>
-        <p class="hint apply-hint">Used when tailoring resumes and filling application forms via MCP.</p>
+        <h2 class="admin-panel-title">Profile</h2>
+        <p class="hint apply-hint">Used when tailoring resumes and filling application forms.</p>
         <form id="applyProfileForm" class="apply-profile-form">
           <label for="profileFullName">Full name</label>
           <input type="text" id="profileFullName" autocomplete="name" />
@@ -130,7 +156,7 @@
       </section>
 
       <section class="admin-panel apply-panel" id="applyMastersPanel" hidden>
-        <h2 class="admin-panel-title">Master resumes</h2>
+        <h2 class="admin-panel-title">Resumes</h2>
         <p class="hint apply-hint">One LaTeX source per stack or role variant (e.g. <code>go</code>, <code>java</code>, <code>fullstack</code>).</p>
 
         <div class="apply-masters-layout">
@@ -179,7 +205,7 @@
       </section>
 
       <section class="admin-panel apply-panel" id="applyProjectsPanel" hidden>
-        <h2 class="admin-panel-title">Project masters</h2>
+        <h2 class="admin-panel-title">Projects</h2>
         <p class="hint apply-hint">LaTeX fragment for MCP reframe (evidence bank). Same macros as your master CV when you insert a Projects block — not pasted wholesale without your approval.</p>
 
         <div class="apply-masters-layout">
@@ -306,11 +332,13 @@
         </div>
         <ul class="apply-token-list" id="applyTokenList"></ul>
       </section>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="toast" id="applyToast"></div>
 
-  <script type="module" src="/static/js/apply.js?v=16"></script>
+  <script type="module" src="/static/js/apply.js?v=24"></script>
 </body>
 </html>

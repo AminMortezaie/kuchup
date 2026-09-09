@@ -99,7 +99,7 @@ export function setFetchReviewFeedbackDone(status) {
   publishFetchUi();
 }
 
-function resetFetchReviewFeedbackPrompt(prompt = "Did the fetch work correctly?") {
+function resetFetchReviewFeedbackPrompt(prompt = "Did this update work?") {
   fetchPanelState.footer.pending = false;
   fetchPanelState.footer.resolved = false;
   fetchPanelState.footer.resolvedStatus = null;
@@ -118,7 +118,7 @@ function applyStoredFetchReviewFeedback(country, company) {
   return false;
 }
 
-export function setFetchReviewFooterPending({ country, company, prompt = "Fetch in progress…" } = {}) {
+export function setFetchReviewFooterPending({ country, company, prompt = "Refresh in progress…" } = {}) {
   fetchPanelState.footer = {
     hidden: false,
     pending: true,
@@ -161,8 +161,8 @@ export function showFetchReviewFeedback({ country, company, failed = false } = {
     company,
     showFeedback: true,
     prompt: failed
-      ? "Fetch finished with errors. Did it load roles correctly?"
-      : "Did the fetch work correctly?",
+      ? "Refresh finished with errors. Did it load roles correctly?"
+      : "Did this update work?",
   });
   publishFetchUi();
 }
@@ -200,7 +200,7 @@ export function renderFetchReview(review, { country, company, missingReview = fa
     const ats = (co?.ats_type || "").trim();
     fetchPanelState.review.hint = ats && ats !== "generic"
       ? `No matching roles found using the ${ats} board. The page may be empty or your filters are strict.`
-      : "No roles could be loaded. The ATS is likely misdetected (not generic) — use Edit URL or mark a fetch problem.";
+      : "No roles could be loaded. The ATS is likely misdetected (not generic) — use Edit URL or mark a problem.";
     fetchPanelState.review.filtered = [];
     fetchPanelState.review.addBtnVisible = false;
     Object.assign(fetchPanelState.review, expand);
@@ -260,7 +260,7 @@ export function showFetchPanel({
   state.fetchReviewFeedback = null;
   state.lastFetchReview = null;
   state.lastFetchStatus = null;
-  fetchPanelState.title = title || "Fetching companies";
+  fetchPanelState.title = title || "Refreshing companies";
   fetchPanelState.subtitle = subtitle || "Starting…";
   fetchPanelState.singleCompany = singleCompany;
   fetchPanelState.log.hidden = singleCompany;
@@ -273,8 +273,8 @@ export function showFetchPanel({
   fetchPanelState.cancelDisabled = false;
   fetchPanelState.cancelText = "Cancel";
   fetchPanelState.cancelTitle = singleCompany
-    ? "Stop this fetch immediately"
-    : "Stop fetching remaining companies";
+    ? "Stop this refresh immediately"
+    : "Stop remaining companies";
   fetchPanelState.closeHidden = false;
   setFetchLogMode(singleCompany);
 
@@ -351,7 +351,7 @@ export function updateFetchProgress({
   const newJobs = Math.max(0, Number(newJobsTotal) || 0);
   const newJobsSuffix = newJobs > 0 ? ` · ${newJobs} new` : "";
   let companyLine = "";
-  if (company && status === "fetching") companyLine = `Fetching: ${company}`;
+  if (company && status === "fetching") companyLine = `Refreshing: ${company}`;
   else if (company && status === "done") companyLine = `Completed: ${company}`;
   else if (status === "saving") companyLine = "Saving to database…";
   else if (company) companyLine = company;
@@ -428,7 +428,7 @@ export function finishFetchPanel({
   fetchStatus = null,
   hideCompletionMeta = false,
 }) {
-  fetchPanelState.title = title || (cancelled ? "Fetch cancelled" : "Fetch complete");
+  fetchPanelState.title = title || (cancelled ? "Refresh cancelled" : "Refresh complete");
   fetchPanelState.subtitle = failed && !cancelled ? (subtitle || "Check the log for details.") : (subtitle || "");
   if (hideCompletionMeta) {
     hideFetchCompletion();
@@ -477,7 +477,7 @@ export function updateFetchActivity(st) {
 
 export function showFetchNotice({ title, subtitle } = {}) {
   fetchPanelState.open = true;
-  fetchPanelState.title = title || "Fetch";
+  fetchPanelState.title = title || "Refresh";
   fetchPanelState.subtitle = subtitle || "";
   fetchPanelState.cancelHidden = true;
   fetchPanelState.cancelDisabled = false;

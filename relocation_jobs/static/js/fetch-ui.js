@@ -6,13 +6,13 @@ import { publishFetchView } from "./fetch-sync.js";
 
 export const fetchPanelState = {
   open: false,
-  title: "Fetching companies",
+  title: "Refreshing companies",
   subtitle: "Starting…",
   singleCompany: false,
   cancelHidden: true,
   cancelDisabled: false,
   cancelText: "Cancel",
-  cancelTitle: "Stop fetching remaining companies",
+  cancelTitle: "Stop remaining companies",
   closeHidden: false,
   progressWrapHidden: true,
   progress: {
@@ -64,7 +64,7 @@ export const fetchPanelState = {
     pending: false,
     resolved: false,
     resolvedStatus: null,
-    prompt: "Did the fetch work correctly?",
+    prompt: "Did this update work?",
     country: "",
     company: "",
     okDisabled: false,
@@ -122,18 +122,18 @@ function buildHeaderState() {
       countryRequired,
       buttonTitle: countryRequired
         ? "Select a single country first (not All countries)"
-        : "Fetch jobs for the selected country and ATS filter",
+        : "Refresh jobs for the selected country and board",
     };
   }
 
   const summary = state.fetchJobSummary || {};
-  let metaText = "Fetching…";
+  let metaText = "Refreshing…";
   let pct = 0;
-  let chipTitle = "View fetch progress";
+  let chipTitle = "View job update";
 
   if (state.fetchBusy && state.fetchingCompanyKey) {
     const company = state.fetchingCompanyKey.split(":").slice(1).join(":");
-    metaText = company || "Fetching…";
+    metaText = company || "Refreshing…";
     chipTitle = `View progress — ${company}`;
   } else if (summary.total > 0) {
     pct = Math.min(99, Math.round((summary.current / summary.total) * 100));

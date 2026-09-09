@@ -6,7 +6,7 @@ function FetchHeader({ header = {} }) {
       <button
         type="button"
         className={`header-secondary-btn${header.countryRequired ? " fetch-country-required" : ""}`}
-        title={header.buttonTitle || "Fetch jobs for the selected country and ATS filter"}
+        title={header.buttonTitle || "Refresh jobs for the selected country and board"}
         onClick={(e) => {
           e.stopPropagation();
           window.relocationJobs?.fetchActions?.startFetch?.();
@@ -16,7 +16,7 @@ function FetchHeader({ header = {} }) {
           <path d="M21 12a9 9 0 1 1-3-6.7" />
           <path d="M21 3v6h-6" />
         </svg>
-        <span className="header-btn-text">Fetch</span>
+        <span className="header-btn-text">Refresh</span>
       </button>
     );
   }
@@ -27,8 +27,8 @@ function FetchHeader({ header = {} }) {
     <button
       type="button"
       className="header-secondary-btn fetch-progress-chip"
-      title={header.chipTitle || "View fetch progress"}
-      aria-label={header.chipTitle || "View fetch progress"}
+      title={header.chipTitle || "View job update"}
+      aria-label={header.chipTitle || "View job update"}
       onClick={(e) => {
         e.stopPropagation();
         window.relocationJobs?.fetchActions?.openProgress?.();
@@ -40,7 +40,7 @@ function FetchHeader({ header = {} }) {
           style={{ width: `${header.pct || 4}%` }}
         />
       </span>
-      <span className="header-btn-text">{header.metaText || "Fetching…"}</span>
+      <span className="header-btn-text">{header.metaText || "Refreshing…"}</span>
       <svg className="fetch-progress-chip-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M9 18l6-6-6-6" />
       </svg>

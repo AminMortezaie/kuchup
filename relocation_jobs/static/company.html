@@ -11,7 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=93" />
+  <link rel="stylesheet" href="/static/styles.css?v=100" />
+  <link rel="stylesheet" href="/static/app-shell.css?v=11" />
 </head>
 <body>
   <div id="loadingBar" aria-hidden="true"><div id="loadingBarFill"></div></div>
@@ -57,9 +58,9 @@
       </div>
     </div>
 
-    <div id="companyContent" class="admin-content" hidden>
-      <header class="admin-header company-header">
-        <div class="admin-header-left">
+    <div id="companyContent" class="admin-content app-shell" hidden>
+      <aside class="app-rail" id="appRail">
+        <div class="app-rail-brand">
           <a href="/panel" class="brand-lockup brand-lockup--compact">
             <span class="brand-mark" aria-hidden="true">
               <img src="/static/icons/kuchup-bird.svg" alt="" width="32" height="30" />
@@ -68,25 +69,55 @@
               <span class="brand-name">KUCHUP</span>
             </span>
           </a>
+        </div>
+        <nav class="app-rail-nav" aria-label="Company">
+          <a href="/panel" class="app-rail-item">
+            <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+            <span class="app-rail-label">Jobs</span>
+          </a>
+          <a href="/apply" class="app-rail-item is-active" aria-current="page">
+            <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            <span class="app-rail-label">Materials</span>
+          </a>
+        </nav>
+      </aside>
+      <div class="app-menu-backdrop" id="appMenuBackdrop" hidden></div>
+      <div class="app-main">
+        <header class="app-topbar">
+          <button type="button" class="app-menu-btn" id="appMenuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="appRail">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <a href="/panel" class="app-topbar-brand brand-lockup brand-lockup--compact">
+            <span class="brand-mark" aria-hidden="true">
+              <img src="/static/icons/kuchup-bird.svg" alt="" width="28" height="26" />
+            </span>
+            <span class="brand-text"><span class="brand-name">KUCHUP</span></span>
+          </a>
+          <div class="app-shell-tools" id="appShellTools">
+            <div class="app-topbar-actions">
+              <button type="button" class="company-guide-launch" data-company-guide aria-haspopup="dialog" aria-controls="companyGuideDialog">
+                <span class="company-guide-launch-icon" aria-hidden="true">?</span>
+                <span class="company-guide-launch-label">Guide</span>
+              </button>
+              <button type="button" class="header-secondary-btn" id="companyLogoutBtn">Sign out</button>
+            </div>
+          </div>
+        </header>
+        <div class="app-page">
           <p class="company-breadcrumb">
-            <a href="/panel" class="link-btn">Job panel</a>
+            <a href="/panel" class="link-btn">Jobs</a>
             <span aria-hidden="true">/</span>
             <span id="companyCountryLabel">…</span>
           </p>
-          <h1 class="page-heading" id="companyTitle">Company</h1>
-          <p class="admin-subtitle" id="companySubtitle">Application workspace</p>
-        </div>
-        <div class="admin-header-actions">
-          <a href="/apply" class="header-secondary-btn admin-nav-link">Application data</a>
-          <button type="button" class="header-secondary-btn" id="companyLogoutBtn">Sign out</button>
-        </div>
-      </header>
-
-      <div id="companyError" class="admin-error" hidden></div>
-
-      <div class="company-workspace">
+          <h1 class="app-page-title" id="companyTitle">Company</h1>
+          <p class="hint" id="companySubtitle">Tailored resumes, cover letters, and PDF preview</p>
+          <div id="companyError" class="admin-error" hidden></div>
+          <div class="company-workspace">
         <aside class="company-positions-panel admin-panel">
-          <h2 class="admin-panel-title">Positions</h2>
+          <div class="company-positions-head">
+            <h2 class="admin-panel-title">Positions</h2>
+            <button type="button" class="company-guide-help" data-company-guide aria-label="Open guide" title="Guide">?</button>
+          </div>
           <p class="hint company-positions-hint" id="companyPositionsHint">Select a role to preview its tailored CV.</p>
           <p class="empty-hint company-positions-upgrade" id="companyPositionsUpgrade" hidden></p>
           <ul class="company-position-list" id="companyPositionList"></ul>
@@ -94,8 +125,7 @@
 
         <section class="company-detail-panel admin-panel" id="companyDetailPanel">
           <div id="companyDetailEmpty" class="company-detail-empty">
-            <p>Select a position with a tailored resume or cover letter to preview LaTeX and PDF.</p>
-            <p class="hint">Use <a href="/apply?tab=connect">Connect MCP</a> (Claude or Cursor) to generate tailored CVs / cover letters after marking roles as <em>looking to apply</em> on the job panel. <a href="/mcp">How MCP works</a>.</p>
+            <p>Select a role on the left to preview a tailored CV or cover letter.</p>
           </div>
 
           <div id="companyDetailBody" class="company-detail-body" hidden>
@@ -117,13 +147,9 @@
                 </button>
                 <button type="button" class="header-secondary-btn" id="companyRenderBtn">Re-render PDF</button>
                 <a class="header-secondary-btn" id="companyOpenPdf" href="#" target="_blank" rel="noopener noreferrer" hidden>Open PDF</a>
-                <a class="header-primary-btn" id="companyDownloadPdf" href="#" download="resume.pdf">Download PDF</a>
-                <a class="header-secondary-btn" id="companyApplyLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Apply on company site</a>
+                <a class="header-secondary-btn" id="companyDownloadPdf" href="#" download="resume.pdf">Download PDF</a>
+                <a class="header-primary-btn" id="companyApplyLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Apply on their site</a>
               </div>
-              <p class="company-apply-hint" id="companyApplyHint" hidden>
-                <span id="companyApplyHintText"></span>
-                <a class="company-apply-url" id="companyApplyUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
-              </p>
             </div>
 
             <div id="companyPositionCardContainer" class="company-position-card-container"></div>
@@ -178,12 +204,61 @@
           </div>
         </section>
       </div>
+        </div>
+      </div>
+      <button type="button" class="company-guide-fab" data-company-guide aria-haspopup="dialog" aria-controls="companyGuideDialog">
+        <span class="company-guide-launch-icon" aria-hidden="true">?</span>
+        <span class="company-guide-launch-label">Guide</span>
+      </button>
     </div>
   </div>
 
   <div class="toast" id="companyToast"></div>
 
-  <script type="module" src="/static/js/position-card.js?v=2"></script>
-  <script type="module" src="/static/js/company.js?v=16"></script>
+  <dialog class="company-guide-dialog" id="companyGuideDialog" aria-labelledby="companyGuideTitle">
+    <form method="dialog" class="company-guide-sheet">
+      <button type="submit" class="company-guide-close" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <p class="company-guide-kicker">Quick start</p>
+      <h2 id="companyGuideTitle">How this workspace works</h2>
+      <p class="company-guide-lede">Prepare the application here. Send it on the company website.</p>
+      <ol class="company-guide-steps">
+        <li>
+          <span class="company-guide-num" aria-hidden="true">1</span>
+          <div>
+            <h3>Want to apply</h3>
+            <p>On <a href="/panel">Jobs</a>, mark the role you want.</p>
+          </div>
+        </li>
+        <li>
+          <span class="company-guide-num" aria-hidden="true">2</span>
+          <div>
+            <h3>Connect Claude or Cursor</h3>
+            <p>Open <a href="/apply?tab=connect">Connect AI</a> and sign in with your account.</p>
+          </div>
+        </li>
+        <li>
+          <span class="company-guide-num" aria-hidden="true">3</span>
+          <div>
+            <h3>Generate the CV</h3>
+            <p>Ask the agent to tailor a resume or cover letter for this role.</p>
+          </div>
+        </li>
+        <li>
+          <span class="company-guide-num" aria-hidden="true">4</span>
+          <div>
+            <h3>Apply on their site</h3>
+            <p>Preview the PDF here, then use the orange <strong>Apply on their site</strong> button.</p>
+          </div>
+        </li>
+      </ol>
+      <a class="company-guide-more" href="/mcp">How connecting works</a>
+      <button type="submit" class="header-primary-btn company-guide-done">Got it</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="/static/js/position-card.js?v=12"></script>
+  <script type="module" src="/static/js/company.js?v=26"></script>
 </body>
 </html>
