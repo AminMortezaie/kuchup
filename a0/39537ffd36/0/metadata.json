@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a039537ffd36",
+  "session_id": "438b428e-ec27-44bb-be23-2e086e81bdb1",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T19:53:03.696853Z",
+  "branch": "fix/hide-empty-pagination",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/admin/service.py",
+    "relocation_jobs/static/js/admin.js",
+    "relocation_jobs/static/js/app-shell.js",
+    "relocation_jobs/web/routes/admin.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "b403e15edb2b",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T19:53:03.680496Z",
+    "agent_lines": 133,
+    "agent_removed": 65,
+    "human_added": 14,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 147,
+    "total_lines_changed": 222,
+    "agent_percentage": 89.1891891891892,
+    "metric_version": 2
+  }
+}
