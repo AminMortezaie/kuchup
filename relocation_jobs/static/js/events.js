@@ -13,7 +13,6 @@ import {
   markJobSeen,
   toggleSeen,
   toggleLookingToApply,
-  toggleCompanyAwaitingResponse,
 } from "./api.js";
 import { pinJob } from "./api.js";
 import { loadJobs, loadCities, ensureLocationsLoaded } from "./data.js";
@@ -662,19 +661,6 @@ function bindJobsListEvents() {
     const showRejectedBtn = e.target.closest(".show-rejected-btn");
     if (showRejectedBtn) {
       toggleShowRejected(showRejectedBtn.dataset.companyKey);
-      return;
-    }
-
-    const awaitingResponseBtn = e.target.closest(".awaiting-response-btn");
-    if (awaitingResponseBtn) {
-      const card = awaitingResponseBtn.closest(".company-card");
-      if (!card) return;
-      const { country, company } = card.dataset;
-      const awaiting = awaitingResponseBtn.dataset.awaiting !== "1";
-      awaitingResponseBtn.disabled = true;
-      const result = await toggleCompanyAwaitingResponse(country, company, awaiting);
-      awaitingResponseBtn.disabled = false;
-      if (!result) return;
       return;
     }
 

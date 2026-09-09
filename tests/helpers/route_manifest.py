@@ -48,7 +48,6 @@ PANEL_API_ROUTES: dict[str, frozenset[str]] = {
     "/api/public/preview": frozenset({"GET"}),
     "/api/companies/<country>/<path:company_name>": frozenset({"GET"}),
     "/api/companies/applied": frozenset({"PATCH", "POST"}),
-    "/api/companies/awaiting-response": frozenset({"PATCH", "POST"}),
     "/api/companies": frozenset({"POST", "DELETE"}),
     "/api/companies/remove": frozenset({"POST"}),
     "/api/companies/name": frozenset({"PATCH", "POST"}),

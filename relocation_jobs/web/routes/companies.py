@@ -53,32 +53,6 @@ def register(app):
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
-    @app.patch("/api/companies/awaiting-response")
-    @app.post("/api/companies/awaiting-response")
-    @login_required
-    def api_companies_awaiting_response():
-        body = request.get_json(silent=True) or {}
-        country = body.get("country", "")
-        company = body.get("company", "")
-        awaiting = bool(body.get("awaiting_response", body.get("awaiting", True)))
-
-        if not country or country == "all":
-            return jsonify({"error": "country is required (not 'all')"}), 400
-        if country not in supported_countries():
-            return jsonify({"error": f"Unknown country: {country}"}), 400
-        if not company:
-            return jsonify({"error": "company is required"}), 400
-
-        try:
-            result = deps.set_company_awaiting_response(
-                country, company, awaiting, user_id=g.user_id,
-            )
-            return jsonify({"ok": True, **result})
-        except LookupError as e:
-            return jsonify({"error": str(e)}), 404
-        except ValueError as e:
-            return jsonify({"error": str(e)}), 400
-
     @app.post("/api/companies")
     @login_required
     def api_companies_add():

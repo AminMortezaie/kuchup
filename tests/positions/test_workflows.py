@@ -47,10 +47,17 @@ class TestApplyWorkflow:
 
         assert job["applied"] is True
         assert job["looking_to_apply"] is False
-        assert acme["awaiting_response"] is True
         assert acme["company_applied"] is True
+        assert acme["awaiting_response"] is True
+        assert acme["awaiting_response_date"] == acme["company_applied_date"]
         assert acme["positions_applied"] >= 1
         assert acme["positions_applied_all"] >= 1
+
+        positions.set_job_applied("uk", company, url, False, user_id=uid)
+        acme = _acme(_flatten(uid))
+        assert acme["company_applied"] is False
+        assert acme["awaiting_response"] is False
+        assert acme["awaiting_response_date"] == ""
 
     def test_apply_preserves_looking_to_apply_date(self, seeded_catalog_v2, test_user):
         uid = test_user["id"]
@@ -82,6 +89,7 @@ class TestApplyWorkflow:
         assert job_a["applied"] is False
         assert job_b["applied"] is True
         assert acme["company_applied"] is True
+        assert acme["awaiting_response"] is True
 
 
 @pytest.mark.integration
@@ -108,6 +116,29 @@ class TestRejectAndReapply:
         assert url in _urls(acme["jobs"])
         assert url not in _urls(acme["rejected_jobs"])
         assert acme["positions_rejected"] == 0
+
+    def test_reject_applied_job_clears_awaiting_keeps_last_applied(
+        self, seeded_catalog_v2, test_user
+    ):
+        uid = test_user["id"]
+        company, url_a, url_b = _company_and_jobs(seeded_catalog_v2)
+
+        positions.set_job_applied("uk", company, url_a, True, user_id=uid)
+        positions.set_job_applied("uk", company, url_b, True, user_id=uid)
+        positions.set_job_rejected("uk", company, url_a, True, user_id=uid)
+        acme = _acme(_flatten(uid))
+        last = acme["company_applied_date"]
+        assert acme["awaiting_response"] is True
+        assert acme["company_applied"] is True
+        assert last
+
+        positions.set_job_rejected("uk", company, url_b, True, user_id=uid)
+        acme = _acme(_flatten(uid))
+        assert acme["awaiting_response"] is False
+        assert acme["awaiting_response_date"] == ""
+        assert acme["company_applied"] is True
+        assert acme["company_applied_date"] == last
+        assert acme["positions_applied_all"] >= 2
 
 
 @pytest.mark.integration

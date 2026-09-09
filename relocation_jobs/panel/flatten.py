@@ -9,6 +9,7 @@ from relocation_jobs.panel.flatten_orphans import append_tracked_orphans, append
 from relocation_jobs.panel.flatten_rules import skip_company_after_jobs, skip_company_before_jobs
 from relocation_jobs.panel.tracking import tracking_key
 from relocation_jobs.panel.types import FlattenFilters
+from relocation_jobs.shared.coerce import as_bool
 from relocation_jobs.shared.timestamps import company_newest_job_fetched
 
 
@@ -30,40 +31,58 @@ def sort_pinned_jobs_first(jobs: list[dict]) -> list[dict]:
     return pinned + rest
 
 
+def _iter_company_job_tracks(
+    country_key: str,
+    company_name: str,
+    stored_jobs: list[dict],
+    job_tracking: dict,
+):
+    seen_urls: set[str] = set()
+    for job in stored_jobs:
+        url = normalize_job_url(job.get("url", ""))
+        seen_urls.add(url)
+        yield job_tracking.get(tracking_key(country_key, company_name, url), {})
+    for (t_country, t_company, t_url), track in job_tracking.items():
+        if t_country == country_key and t_company == company_name and t_url not in seen_urls:
+            yield track
+
+
 def _derive_company_applied(
     country_key: str,
     company_name: str,
     stored_jobs: list[dict],
     job_tracking: dict,
-) -> tuple[bool, str, int, str]:
+) -> dict:
     dates: list[str] = []
+    waiting: list[str] = []
     applied_ats: list[str] = []
-    seen_urls: set[str] = set()
-
-    for job in stored_jobs:
-        url = normalize_job_url(job.get("url", ""))
-        seen_urls.add(url)
-        track = job_tracking.get(tracking_key(country_key, company_name, url), {})
-        if track.get("applied"):
-            dates.append((track.get("applied_date") or "").strip())
-            applied_at = (track.get("updated_at") or "").strip()
-            if applied_at:
-                applied_ats.append(applied_at)
-
-    for (t_country, t_company, t_url), track in job_tracking.items():
-        if t_country != country_key or t_company != company_name or t_url in seen_urls:
+    for track in _iter_company_job_tracks(
+        country_key, company_name, stored_jobs, job_tracking,
+    ):
+        if not track.get("applied"):
             continue
-        if track.get("applied"):
-            dates.append((track.get("applied_date") or "").strip())
-            applied_at = (track.get("updated_at") or "").strip()
-            if applied_at:
-                applied_ats.append(applied_at)
-
+        date = (track.get("applied_date") or "").strip()
+        dates.append(date)
+        if not as_bool(track.get("rejected")):
+            waiting.append(date)
+        applied_at = (track.get("updated_at") or "").strip()
+        if applied_at:
+            applied_ats.append(applied_at)
     if not dates:
-        return False, "", 0, ""
-
-    non_empty = [d for d in dates if d]
-    return True, min(non_empty), len(dates), min(applied_ats) if applied_ats else ""
+        return {
+            "applied": False, "applied_date": "", "positions": 0, "applied_at": "",
+            "awaiting": False, "awaiting_date": "",
+        }
+    nonempty = [d for d in dates if d]
+    waiting_dates = [d for d in waiting if d]
+    return {
+        "applied": True,
+        "applied_date": max(nonempty) if nonempty else "",
+        "positions": len(dates),
+        "applied_at": max(applied_ats) if applied_ats else "",
+        "awaiting": bool(waiting),
+        "awaiting_date": min(waiting_dates) if waiting_dates else "",
+    }
 
 
 def _company_header_state(
@@ -77,17 +96,22 @@ def _company_header_state(
     company_tracking: dict,
 ) -> dict:
     if user_id:
-        applied, applied_date, positions, applied_at = _derive_company_applied(
+        derived = _derive_company_applied(
             country_key, company_name, stored_jobs, job_tracking,
         )
+        applied = derived["applied"]
+        applied_date = derived["applied_date"]
+        positions = derived["positions"]
+        applied_at = derived["applied_at"]
+        awaiting = derived["awaiting"]
+        awaiting_date = derived["awaiting_date"]
     else:
         applied = bool(company.get("company_applied"))
         applied_date = company.get("company_applied_date", "") if applied else ""
         positions, applied_at = 0, ""
+        awaiting, awaiting_date = False, ""
 
     track = company_tracking.get((country_key, company_name), {})
-    awaiting = bool(track.get("awaiting_response")) if user_id else False
-    awaiting_date = (track.get("awaiting_response_date") or "").strip() if awaiting and user_id else ""
     board_pinned = bool(track.get("board_pinned")) if user_id else False
     board_pinned_at = (track.get("board_pinned_at") or "").strip() if board_pinned and user_id else ""
     return {

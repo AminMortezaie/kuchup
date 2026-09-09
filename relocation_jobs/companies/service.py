@@ -794,18 +794,3 @@ def set_company_applied(
     if company is None:
         raise LookupError(f"Company not found: {company_name}")
     return positions_repo.set_company_applied(user_id, country_key, company["name"], applied)
-
-
-def set_company_awaiting_response(
-    country_key: str,
-    company_name: str,
-    awaiting: bool,
-    *,
-    user_id: int,
-) -> dict:
-    company = get_company(country_key, company_name)
-    if company is None:
-        raise LookupError(f"Company not found: {company_name}")
-    return positions_repo.set_company_awaiting_response(
-        user_id, country_key, company["name"], awaiting,
-    )

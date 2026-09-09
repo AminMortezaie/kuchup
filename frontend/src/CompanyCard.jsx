@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { companyWorkspacePath } from "./companyWorkspace";
-import { companyActivityTs, formatActivityBadge, formatAppliedLabel } from "./format";
+import { companyActivityTs, formatActivityBadge } from "./format";
 import { sortJobsForDisplay } from "./sort";
 import JobCard from "./JobCard";
 
@@ -28,14 +28,6 @@ function useMobileBoard() {
 function prefersReducedMotion() {
   return typeof window !== "undefined"
     && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function formatCompactDateTime(value) {
-  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}))?/);
-  if (!match) return value || "";
-  const month = new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" })
-    .format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)));
-  return `${month} ${Number(match[3])}${match[4] ? ` · ${match[4]}` : ""}`;
 }
 
 /** Slice a job list for mobile preview; returns visible jobs + hidden count. */
@@ -186,13 +178,7 @@ function CompanyCard({ company, ui }) {
   const isFetching = ui.fetchingCompanyKey === keyStr;
   const countLabel = company.job_count === 1 ? "1 role" : `${company.job_count} roles`;
   const appliedCount = company.positions_applied_all ?? company.positions_applied ?? 0;
-  const companyAppliedAt = formatAppliedLabel({
-    date: company.company_applied_date || "",
-    at: company.company_applied_at || "",
-  }).replace(/^Applied\s*·?\s*/, "");
-  const companyAppliedAtCompact = formatCompactDateTime(
-    company.company_applied_date || companyAppliedAt,
-  );
+  const lastApplied = (company.company_applied_date || "").trim();
   const openJobs = sortJobsForDisplay(company.jobs || []);
   const lookingJobs = openJobs.filter((j) => j.looking_to_apply && !j.applied);
   const lookingCount = lookingJobs.length;
@@ -298,38 +284,27 @@ function CompanyCard({ company, ui }) {
           <div className="company-status-row">
             {company.company_applied ? (
               <span className="badge applied">
-                <span className="company-status-label">
-                  {appliedCount > 1 ? `${appliedCount} roles applied` : "Applied"}
-                </span>
-                {companyAppliedAtCompact ? (
-                  <span className="company-status-date">{companyAppliedAtCompact}</span>
-                ) : null}
+                {appliedCount > 1 ? `${appliedCount} roles applied` : "Applied"}
+              </span>
+            ) : null}
+            {company.company_applied && lastApplied ? (
+              <span className="badge date">
+                Last applied · {formatActivityBadge(lastApplied)}
               </span>
             ) : null}
             {lookingCount > 0 ? (
               <span className="badge looking-to-apply">
-                <span className="company-status-label">
-                  {lookingCount > 1 ? `${lookingCount} want to apply` : "Want to apply"}
-                </span>
-                {lookingSince ? (
-                  <span className="company-status-date">{formatCompactDateTime(lookingSince)}</span>
-                ) : null}
+                {lookingCount > 1 ? `${lookingCount} want to apply` : "Want to apply"}
+                {lookingSince ? ` · ${formatActivityBadge(lookingSince)}` : ""}
               </span>
             ) : null}
             {company.awaiting_response ? (
-              <button type="button" className="awaiting-response-btn active" data-awaiting="1" aria-pressed="true" title="Clear awaiting-response status">
-                <span className="company-status-label">Awaiting</span>
-                {company.awaiting_response_date ? (
-                  <span className="company-status-date">
-                    {formatCompactDateTime(company.awaiting_response_date)}
-                  </span>
-                ) : null}
-              </button>
-            ) : (
-              <button type="button" className="awaiting-response-btn" data-awaiting="0" aria-pressed="false" title="Mark this company as awaiting a response">
-                <span className="company-status-label">Mark awaiting</span>
-              </button>
-            )}
+              <span className="badge awaiting-response">
+                {company.awaiting_response_date
+                  ? `Awaiting · ${formatActivityBadge(company.awaiting_response_date)}`
+                  : "Awaiting"}
+              </span>
+            ) : null}
           </div>
           <div className="company-list-toggles" aria-label="Archived role groups">
             {notForMeCount > 0 ? (

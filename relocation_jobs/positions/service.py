@@ -65,10 +65,6 @@ def set_job_applied(
         job_title=job.get("title", ""),
     )
     repo.sync_company_applied(user_id, country_key, company_name)
-    if applied:
-        repo.set_company_awaiting_response(
-            user_id, country_key, company_name, True, preserve_date=True,
-        )
     return _validated(_with_catalog_url(result, job.get("url", "")))
 
 

@@ -619,44 +619,6 @@ def sync_company_applied(user_id: int, country: str, company_name: str) -> dict:
     }
 
 
-def set_company_awaiting_response(
-    user_id: int,
-    country: str,
-    company_name: str,
-    awaiting: bool,
-    *,
-    preserve_date: bool = False,
-) -> dict:
-    now = _utc_now()
-    with db_transaction() as conn:
-        if awaiting:
-            date_only = now[:10]
-            date_clause = (
-                "awaiting_response_date = COALESCE(company_tracking.awaiting_response_date, EXCLUDED.awaiting_response_date)"
-                if preserve_date else "awaiting_response_date = EXCLUDED.awaiting_response_date"
-            )
-            conn.execute(
-                f"""
-                INSERT INTO company_tracking (
-                    user_id, country, company_name, awaiting_response, awaiting_response_date, updated_at
-                ) VALUES (%s, %s, %s, 1, %s, %s)
-                ON CONFLICT (user_id, country, company_name) DO UPDATE SET
-                    awaiting_response = 1, {date_clause}, updated_at = EXCLUDED.updated_at
-                """,
-                (user_id, country, company_name, date_only, now),
-            )
-        else:
-            conn.execute(
-                """
-                UPDATE company_tracking
-                SET awaiting_response = 0, awaiting_response_date = NULL, updated_at = %s
-                WHERE user_id = %s AND country = %s AND company_name = %s
-                """,
-                (now, user_id, country, company_name),
-            )
-    return {"company": company_name, "country": country, "awaiting_response": awaiting}
-
-
 def load_wrong_location_hides(user_id: int, country_key: str | None = None) -> list[dict]:
     if country_key:
         rows = get_connection().execute(

@@ -66,21 +66,21 @@ function mergeJobPatch(job, data) {
 }
 
 function syncCompanyHeaderFromJobs(company, data = {}) {
-  const openApplied = (company.jobs || []).filter((job) => job.applied).length;
-  const rejectedApplied = (company.rejected_jobs || []).filter((job) => job.applied).length;
-  const appliedTotal = openApplied + rejectedApplied;
-  company.positions_applied = openApplied;
+  const openApplied = (company.jobs || []).filter((job) => job.applied);
+  const rejectedApplied = (company.rejected_jobs || []).filter((job) => job.applied);
+  const appliedJobs = [...openApplied, ...rejectedApplied];
+  const appliedTotal = appliedJobs.length;
+  company.positions_applied = openApplied.length;
   company.positions_applied_all = appliedTotal;
-  if (appliedTotal > 0) {
-    company.company_applied = true;
-    if (data.applied_date) company.company_applied_date = data.applied_date;
-  } else if (!company.company_applied) {
-    company.company_applied_date = "";
-    company.company_applied_at = "";
-  }
-  if (data.applied === true) {
-    company.awaiting_response = true;
-  }
+  company.company_applied = appliedTotal > 0;
+  const dates = appliedJobs.map((job) => job.applied_date).filter(Boolean);
+  if (data.applied === true && data.applied_date) dates.push(data.applied_date);
+  dates.sort();
+  company.company_applied_date = appliedTotal > 0 ? (dates.at(-1) || "") : "";
+  if (!appliedTotal) company.company_applied_at = "";
+  company.awaiting_response = openApplied.length > 0;
+  const waitingDates = openApplied.map((job) => job.applied_date).filter(Boolean).sort();
+  company.awaiting_response_date = company.awaiting_response ? (waitingDates[0] || "") : "";
 }
 
 function bucketLists(company) {

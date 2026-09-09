@@ -7343,56 +7343,8 @@ body.scroll-locked {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-top: 0.6rem;
-}
-
-.company-status-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-width: 24rem;
-}
-
-.company-status-row > :only-child {
-  grid-column: 1 / -1;
-}
-
-.company-status-row > .badge,
-.company-status-row > button {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  min-width: 0;
-  min-height: var(--control-height);
-  height: auto;
-  padding: 0.4rem 0.65rem;
-  border-radius: 0.65rem;
-  text-align: left;
-  white-space: normal;
-}
-
-.company-status-label {
-  overflow: hidden;
-  max-width: 100%;
-  font-size: 0.7rem;
-  font-weight: 650;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.company-status-date {
-  overflow: hidden;
-  max-width: 100%;
-  margin-top: 0.15rem;
-  color: color-mix(in srgb, currentColor 72%, var(--muted));
-  font-size: 0.62rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .company-list-toggles {
@@ -7681,16 +7633,6 @@ body.scroll-locked {
     width: max-content;
   }
 
-  .company-status-row {
-    gap: 0.5rem;
-    max-width: none;
-  }
-
-  .company-status-row .awaiting-response-btn {
-    min-height: var(--control-height);
-    height: auto;
-  }
-
   .positions {
     padding: 0;
   }
@@ -7940,12 +7882,6 @@ body.scroll-locked {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.015em;
-}
-
-.company-status-row > .badge,
-.company-status-row > button {
-  border-width: var(--card-snap-rule-width);
-  border-radius: var(--card-snap-radius);
 }
 
 .positions .position-card {

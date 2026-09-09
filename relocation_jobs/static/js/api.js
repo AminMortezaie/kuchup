@@ -7,7 +7,6 @@ import {
   applyPinToCatalog,
   reapplyJobLocally,
   restoreJobToOpen,
-  refreshJobBoard,
 } from "./job-board.js";
 import { toast, browserTimezone } from "./utils.js";
 import { panelApiPrefix, isRemotePanel } from "./panel-mode.js";
@@ -257,26 +256,6 @@ export async function toggleCompanyApplied(country, company, applied) {
   if (!res.ok) {
     toast(data.error || "Could not save");
     return null;
-  }
-  return data;
-}
-
-export async function toggleCompanyAwaitingResponse(country, company, awaiting) {
-  const res = await apiFetch("/api/companies/awaiting-response", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ country, company, awaiting_response: awaiting }),
-  });
-  const data = await parseJsonResponse(res);
-  if (!res.ok) {
-    toast(data.error || "Could not save company status");
-    return null;
-  }
-  const co = findCompany(country, company);
-  if (co) {
-    co.awaiting_response = data.awaiting_response;
-    co.awaiting_response_date = data.awaiting_response_date || "";
-    refreshJobBoard();
   }
   return data;
 }

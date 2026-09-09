@@ -16,11 +16,11 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 
 ## Position state (writes)
 
-5. **Apply** — Marking a job applied sets DB `applied`, clears `looking_to_apply`, appends an apply event to history, syncs company-level `company_applied` from any applied position at that company, and sets company `awaiting_response` (keeping an existing awaiting date if already set). **Applied today** counts distinct apply events whose `created_at` falls in the user's local calendar day (browser timezone); touching an already-applied row (seen, ATS score, etc.) does not increment the stat.
+5. **Apply** — Marking a job applied sets DB `applied`, clears `looking_to_apply`, appends an apply event to history, and syncs company-level `company_applied` from any applied position at that company. On panel read, `company_applied_date` is the **latest** apply date at that company. `awaiting_response` is true while any applied position is not rejected. **Applied today** counts distinct apply events whose `created_at` falls in the user's local calendar day (browser timezone); touching an already-applied row (seen, ATS score, etc.) does not increment the stat.
 
-6. **Unapply** — Clearing applied on a job updates DB and re-syncs `company_applied` (false when no positions at that company remain applied). It does not automatically clear `awaiting_response`.
+6. **Unapply** — Clearing applied on a job updates DB and re-syncs `company_applied` (false when no positions at that company remain applied). Awaiting follows remaining applied-not-rejected positions.
 
-7. **Reject and reapply** — Rejecting moves a job to the `rejected_jobs` list on read; it does not clear applied. Reapply clears rejection only and returns the job to the main `jobs` list.
+7. **Reject and reapply** — Rejecting moves a job to the `rejected_jobs` list on read; it does not clear applied. An applied job that is rejected drops out of company `awaiting_response`. Reapply clears rejection only and returns the job to the main `jobs` list.
 
 8. **Not for me** — Marks the job hidden from main and rejected reinjection paths; it appears only under `not_for_me_jobs`. Orphan reinjection skips not-for-me rows. Hide reasons stored on `job_tracking.not_for_me_reason` include `not_for_me`, `expired` (posting closed — human review), `wrong_location`, and `no_relocation`.
 
@@ -48,7 +48,7 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 
 ---
 
-**Not specified in code (investigate before changing UX):** interactions like applied + rejected simultaneously, not-for-me then apply, and whether unapply should clear `awaiting_response`. Current behavior follows DB writes + read overlay above; product intent for edge combos is implicit.
+**Not specified in code (investigate before changing UX):** not-for-me then apply. Current behavior follows DB writes + read overlay above; product intent for edge combos is implicit.
 
 ---
 

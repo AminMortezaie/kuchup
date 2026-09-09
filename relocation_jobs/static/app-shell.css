@@ -251,13 +251,6 @@
   border-color: var(--border-subtle);
 }
 
-.app-shell .company-status-row > :only-child {
-  grid-column: 1;
-  justify-self: start;
-  width: max-content;
-  max-width: 100%;
-}
-
 @media (min-width: 721px) {
   .app-shell .position-actions-primary > button:not(.position-more-btn),
   .app-shell .position-actions-primary > .hide-reason-wrap {

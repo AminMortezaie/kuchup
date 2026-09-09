@@ -20,7 +20,6 @@ remove_country = companies.remove_country
 rename_company = companies.rename_company
 resolve_company_name = companies.resolve_company_name
 set_company_applied = companies.set_company_applied
-set_company_awaiting_response = companies.set_company_awaiting_response
 set_company_fetch_ok = companies.set_company_fetch_ok
 set_company_fetch_problem = companies.set_company_fetch_problem
 touch_company_fetch_time = companies.touch_company_fetch_time
