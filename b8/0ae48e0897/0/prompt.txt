@@ -1,24 +1,4 @@
-<timestamp>Wednesday, Sep 9, 2026, 9:18 PM (UTC+4)</timestamp>
-
-no for the guide you should put a button which is simple and clickable and everyone can find it and then when click on them they would see the introduction to it use the application.
-
----
-
-is this clear that everyone can find it?
-exactly no!
-
-i told you .
-
-search for the guid button on internet and see what are them and how the professional companies would implement it.
-
-also the text you show on pop up is not beautiful and it's more like a raw text.
-
----
-
-change the name of buttons for example application data is not a good name for that button, 
-think about all the buttons and if you have better names place replace them.
-
----
+<timestamp>Wednesday, Sep 9, 2026, 9:43 PM (UTC+4)</timestamp>
 
 ok shutdown the app on local.
 merge these big change on main on github and then deploy on server to live on server
