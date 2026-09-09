@@ -1,0 +1,3 @@
+the mark awaiting should be dynamic and no need to have a different button, when the user applies on a position the company should be tagged mark awaited from the date the user applied, so the button should be emitted.
+
+/ponytail use this for implemet it.
