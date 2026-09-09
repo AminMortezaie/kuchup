@@ -7732,10 +7732,12 @@ body.scroll-locked {
 
   .position-actions-primary .looking-to-apply-btn {
     grid-column: 1 / -1;
+    order: 2;
   }
 
   .position-actions-primary .hide-reason-wrap {
     display: flex;
+    order: 1;
   }
 
   .position-actions-primary .hide-reason-trigger {

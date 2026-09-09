@@ -421,8 +421,8 @@ class PositionCard extends HTMLElement {
       ${appliedStatus}
       <div class="position-actions-primary">
         ${j.applied ? "" : appliedControl}
-        ${j.applied ? '<button type="button" class="rejected-btn" data-rejected="0" title="Mark that you got a rejection">Mark rejected</button>' : this._hideReason()}
         ${lookingControl}
+        ${j.applied ? '<button type="button" class="rejected-btn" data-rejected="0" title="Mark that you got a rejection">Mark rejected</button>' : this._hideReason()}
         <button type="button" class="position-more-btn" aria-expanded="false" aria-label="More role actions" title="More role actions">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>More</span>
         </button>
