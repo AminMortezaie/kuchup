@@ -67,8 +67,6 @@ def _country_fetch_worker(
 
         new_jobs_total, companies_done, cancelled = asyncio.run(_run())
         exit_code = 130 if cancelled else 0
-        if exit_code == 0 and companies_done > 0:
-            enqueue_country_opportunity_refresh(country_key)
     except TimeoutError:
         timed_out = True
         limit = timeout if timeout is not None else country_timeout_seconds()
@@ -111,6 +109,8 @@ def _country_fetch_worker(
     if timed_out:
         limit = timeout if timeout is not None else country_timeout_seconds()
         raise TimeoutError(f"Country fetch timed out after {limit}s")
+    if exit_code == 0 and companies_done > 0:
+        enqueue_country_opportunity_refresh(country_key)
 
 
 def _begin_country_run(
@@ -178,7 +178,6 @@ def _company_fetch_worker(
             exit_code = 130
         else:
             exit_code = 0
-            enqueue_country_opportunity_refresh(country_key)
     except FetchCancelled:
         cancelled = True
         exit_code = 130
@@ -221,6 +220,8 @@ def _company_fetch_worker(
         fetch_state.mutate_state_for_run(run_id, _finish)
         fetch_state.sync_live_to_db()
         fetch_state.persist_fetch_run(run_id)
+    if exit_code == 0 and not cancelled:
+        enqueue_country_opportunity_refresh(country_key)
 
 
 def start_company_fetch(
