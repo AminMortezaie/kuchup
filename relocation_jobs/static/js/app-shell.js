@@ -46,9 +46,18 @@ export function showAdminPane(name) {
   });
 }
 
-export function initAdminPanes() {
+export function adminPaneFromHash() {
+  const name = (window.location.hash || "#home").slice(1);
+  return ADMIN_PANES.includes(name) ? name : "home";
+}
+
+export function initAdminPanes(onChange) {
   if (!document.querySelector("[data-admin-pane]")) return;
-  const fromHash = () => showAdminPane((window.location.hash || "#home").slice(1));
+  const fromHash = () => {
+    const pane = adminPaneFromHash();
+    showAdminPane(pane);
+    onChange?.(pane);
+  };
   window.addEventListener("hashchange", fromHash);
   fromHash();
 }

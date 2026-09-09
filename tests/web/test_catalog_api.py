@@ -88,11 +88,11 @@ def test_admin_dashboard(v2_auth_client, seeded_catalog_v2):
     assert "worker" in payload
     assert "panel_stats" in payload
     assert payload["panel_stats"] is None
-    assert "catalog" in payload
-    assert payload["catalog"]["has_data"] is True
-    assert "users" in payload
-    assert "runs" in payload
-    assert "config" in payload
+    assert "user_count" in payload
+    assert "catalog" not in payload
+    assert "users" not in payload
+    assert "runs" not in payload
+    assert "config" not in payload
     assert "overview" not in payload
 
 

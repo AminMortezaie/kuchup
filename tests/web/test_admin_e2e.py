@@ -52,6 +52,11 @@ def test_admin_js_loads_dashboard_once():
     admin_js = (Path(STATIC_DIR) / "js" / "admin.js").read_text(encoding="utf-8")
     assert admin_js.count("/api/admin/dashboard") >= 1
     assert "/api/admin/panel-stats" in admin_js
+    assert "/api/admin/catalog" in admin_js
+    assert "/api/admin/users" in admin_js
+    assert "/api/admin/fetch-runs" in admin_js
+    assert "/api/admin/recent-jobs" in admin_js
+    assert "/api/admin/config" in admin_js
     assert "renderOverview" not in admin_js
     assert "adminOverview" not in admin_js
 
@@ -145,13 +150,13 @@ def test_admin_dashboard_runs_respect_limit(v2_auth_client, seeded_catalog_v2, d
             new_jobs=1,
         )
 
-    payload = v2_auth_client.get("/api/admin/dashboard?limit=15").get_json()
-    assert len(payload["runs"]["runs"]) == 15
+    payload = v2_auth_client.get("/api/admin/fetch-runs?limit=15").get_json()
+    assert len(payload["runs"]) == 15
 
 
 def test_admin_dashboard_catalog_has_country_meta(v2_auth_client, seeded_catalog_v2):
     del seeded_catalog_v2
-    catalog = v2_auth_client.get("/api/admin/dashboard").get_json()["catalog"]
+    catalog = v2_auth_client.get("/api/admin/catalog").get_json()
     assert catalog["has_data"] is True
     assert catalog["countries"]
     assert "country_meta" in catalog

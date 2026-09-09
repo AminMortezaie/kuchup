@@ -14,7 +14,7 @@ from relocation_jobs.core.ats_constants import (
 )
 from relocation_jobs.core.location_tags import SUGGESTED_CITIES, all_country_labels, load_custom_cities, load_custom_countries
 from relocation_jobs.core.paths import country_archive_filename, data_dir, supported_countries
-from relocation_jobs.users.repo import list_users_with_stats, user_count
+from relocation_jobs.users.repo import user_count
 from relocation_jobs.catalog.custom_countries import countries_use_redis
 from relocation_jobs.catalog.repo import get_catalog_overview
 from relocation_jobs.core.redis_client import ping_redis, redis_enabled
@@ -198,11 +198,8 @@ def get_admin_dashboard(
     *,
     fetch_state: dict | None = None,
     scrape_enabled: bool,
-    httpx_available: bool,
     company_fetch_enabled: bool | None = None,
-    fetch_runs_limit: int = 15,
 ) -> dict:
-    catalog = get_catalog_overview()
     return {
         "user_count": user_count(),
         "worker": get_worker_status(
@@ -211,12 +208,4 @@ def get_admin_dashboard(
             company_fetch_enabled=company_fetch_enabled,
         ),
         "panel_stats": None,
-        "catalog": catalog,
-        "users": {"users": list_users_with_stats()},
-        "runs": {"runs": fetch_repo.list_all_fetch_runs(limit=fetch_runs_limit)},
-        "config": get_system_config(
-            scrape_enabled=scrape_enabled,
-            company_fetch_enabled=company_fetch_enabled,
-            httpx_available=httpx_available,
-        ),
     }

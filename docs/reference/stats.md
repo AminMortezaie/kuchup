@@ -8,20 +8,20 @@ How admin/user stats are computed. Implementation: `panel/stats.py`, `static/js/
 
 ---
 
-## Admin dashboard (`GET /api/admin/dashboard`)
+## Admin home (`GET /api/admin/dashboard`)
 
-Single load for the admin page. Includes:
+Home pane only: worker status and `user_count`. Other panes hit their own routes:
 
-| Block | Meaning |
-|-------|---------|
-| **worker** | Fetch scheduler status, current run, last country fetch |
-| **panel_stats** | `null` on dashboard — load via async `GET /api/admin/panel-stats` |
-| **catalog** | Raw Postgres catalog by country |
-| **users** | Per-user tracking summary |
-| **runs** | Recent fetch runs (default 15) |
-| **config** | Minimal system settings |
+| Pane | Route |
+|------|-------|
+| Home | `GET /api/admin/dashboard` then async `GET /api/admin/panel-stats` |
+| Catalog / Fetch problems | `GET /api/admin/catalog` |
+| Users | `GET /api/admin/users` (+ credit-orders / credits/audit) |
+| New jobs | `GET /api/admin/recent-jobs` |
+| Fetch runs | `GET /api/admin/fetch-runs` |
+| Config | `GET /api/admin/config` |
 
-Legacy route `GET /api/admin/panel-stats` loads **Your pipeline** stats asynchronously after the dashboard shell renders.
+`panel_stats` is `null` on the home payload — load via `GET /api/admin/panel-stats`.
 
 ### Your pipeline (`panel_stats`)
 

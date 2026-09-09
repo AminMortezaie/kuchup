@@ -20,21 +20,11 @@ def register(app):
     @admin_required
     def api_admin_dashboard():
         try:
-            limit = 15
-            raw_limit = request.args.get("limit")
-            if raw_limit is not None:
-                try:
-                    limit = int(raw_limit)
-                except ValueError:
-                    limit = 15
-            timezone_name = (request.args.get("timezone") or "").strip() or None
             return jsonify(
                 admin_service.get_admin_dashboard(
                     fetch_state=fetch_state.build_fetch_status(),
                     scrape_enabled=scrape_enabled(),
                     company_fetch_enabled=company_fetch_enabled(),
-                    httpx_available=HTTPX_AVAILABLE,
-                    fetch_runs_limit=limit,
                 )
             )
         except Exception as exc:

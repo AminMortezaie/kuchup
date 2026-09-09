@@ -4,7 +4,7 @@ import { removeCountry } from "./api.js";
 import { initAdminWorker } from "./admin-worker.js";
 import { buildAdminStatsHtml } from "./stats-dashboard.js";
 import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge, toast } from "./utils.js";
-import { initAdminPanes, initAppShell } from "./app-shell.js";
+import { adminPaneFromHash, initAdminPanes, initAppShell } from "./app-shell.js";
 
 function skeletonRows(n = 4) {
   return Array(n).fill(0).map(() =>
@@ -18,21 +18,28 @@ function skeletonStatCards(n = 4) {
   ).join("");
 }
 
-function showAdminSkeletons() {
-  const worker = $("adminWorkerSection");
-  const panelStats = $("adminPanelStats");
-  const catalog = $("adminCatalog");
-  const users = $("adminUsers");
-  const newJobs = $("adminNewJobs");
-  const runs = $("adminFetchRuns");
-  const config = $("adminConfig");
-  if (worker) worker.innerHTML = `<div class="skeleton-admin-stats">${skeletonStatCards(3)}</div>`;
-  if (panelStats) panelStats.innerHTML = `<div class="skeleton-admin-stats">${skeletonStatCards(4)}</div>`;
-  if (catalog) catalog.innerHTML = `<div class="skeleton-admin-table">${skeletonRows(5)}</div>`;
-  if (users) users.innerHTML = `<div class="skeleton-admin-table">${skeletonRows(3)}</div>`;
-  if (newJobs) newJobs.innerHTML = `<div class="skeleton-admin-table">${skeletonRows(4)}</div>`;
-  if (runs) runs.innerHTML = `<div class="skeleton-admin-table">${skeletonRows(4)}</div>`;
-  if (config) config.innerHTML = `<div class="skeleton-admin-table">${skeletonRows(3)}</div>`;
+function setSkeleton(id, html) {
+  const el = $(id);
+  if (el) el.innerHTML = html;
+}
+
+function showPaneSkeleton(pane) {
+  const stats = `<div class="skeleton-admin-stats">${skeletonStatCards(pane === "home" ? 3 : 4)}</div>`;
+  const table = `<div class="skeleton-admin-table">${skeletonRows(pane === "catalog" ? 5 : 4)}</div>`;
+  if (pane === "home") {
+    setSkeleton("adminWorkerSection", stats);
+    setSkeleton("adminPanelStats", `<div class="skeleton-admin-stats">${skeletonStatCards(4)}</div>`);
+    return;
+  }
+  const mounts = {
+    catalog: "adminCatalog",
+    problems: "adminFetchProblems",
+    users: "adminUsers",
+    jobs: "adminNewJobs",
+    runs: "adminFetchRuns",
+    config: "adminConfig",
+  };
+  setSkeleton(mounts[pane], table);
 }
 
 function formatTs(value) {
@@ -168,7 +175,6 @@ function renderCatalog(data) {
         <p class="hint">No countries registered yet.</p>
       </section>
     `;
-  $("adminFetchProblems").innerHTML = `<section class="admin-panel"><h2 class="admin-panel-title">Fetch problems</h2><p class="hint">No fetch problems right now.</p></section>`;
     return;
   }
 
@@ -210,7 +216,9 @@ function renderCatalog(data) {
     </section>
   `;
   bindCatalogActions();
+}
 
+function renderFetchProblems(data) {
   const problems = data.fetch_problem_companies || [];
   $("adminFetchProblems").innerHTML = problems.length
     ? `
@@ -495,31 +503,97 @@ function renderConfig(data) {
   `;
 }
 
-async function loadDashboard() {
-  $("adminError").hidden = true;
-  showAdminSkeletons();
-  setLoadingProgress(15);
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const data = await apiGet(`/api/admin/dashboard?limit=15&timezone=${encodeURIComponent(tz)}`);
-  setLoadingProgress(80);
-  renderCatalog(data.catalog);
-  renderUsers(data.users);
-  const [creditOrders, creditAudit] = await Promise.all([
+async function loadHome() {
+  const data = await apiGet("/api/admin/dashboard");
+  await initAdminWorker(data.worker);
+  void loadPanelStats(data.user_count, tz());
+}
+
+async function loadCatalogPane() {
+  renderCatalog(await catalogData());
+}
+
+async function loadProblemsPane() {
+  renderFetchProblems(await catalogData());
+}
+
+async function loadUsersPane() {
+  const [users, creditOrders, creditAudit] = await Promise.all([
+    apiGet("/api/admin/users"),
     apiGet("/api/admin/credit-orders"),
     apiGet("/api/admin/credits/audit"),
   ]);
+  renderUsers(users);
   renderCreditOrders(creditOrders, creditAudit);
-  renderNewJobs(
-    await apiGet(
-      `/api/admin/recent-jobs?limit=30&timezone=${encodeURIComponent(tz)}`,
-    ),
-  );
-  renderFetchRuns(data.runs);
-  renderConfig(data.config);
-  await initAdminWorker(data.worker);
-  finishLoadingProgress();
-  void loadPanelStats(data.user_count, tz);
 }
+
+async function loadJobsPane() {
+  renderNewJobs(await apiGet(`/api/admin/recent-jobs?limit=30&timezone=${encodeURIComponent(tz())}`));
+}
+
+async function loadRunsPane() {
+  renderFetchRuns(await apiGet("/api/admin/fetch-runs?limit=15"));
+}
+
+async function loadConfigPane() {
+  renderConfig(await apiGet("/api/admin/config"));
+}
+
+const PANE_LOADERS = {
+  home: loadHome,
+  catalog: loadCatalogPane,
+  problems: loadProblemsPane,
+  users: loadUsersPane,
+  jobs: loadJobsPane,
+  runs: loadRunsPane,
+  config: loadConfigPane,
+};
+
+function tz() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
+let catalogCache = null;
+const loadedPanes = new Set();
+const paneGen = {};
+
+async function catalogData() {
+  if (!catalogCache) {
+    catalogCache = apiGet("/api/admin/catalog").catch((err) => {
+      catalogCache = null;
+      throw err;
+    });
+  }
+  return catalogCache;
+}
+
+async function loadPane(name, { force = false, progress = false } = {}) {
+  const pane = PANE_LOADERS[name] ? name : "home";
+  if (force) {
+    loadedPanes.delete(pane);
+    if (pane === "catalog" || pane === "problems") catalogCache = null;
+  }
+  if (loadedPanes.has(pane)) return;
+  const gen = (paneGen[pane] = (paneGen[pane] || 0) + 1);
+  $("adminError").hidden = true;
+  showPaneSkeleton(pane);
+  if (progress) setLoadingProgress(15);
+  try {
+    await PANE_LOADERS[pane]();
+    if (paneGen[pane] !== gen) return;
+    loadedPanes.add(pane);
+  } finally {
+    if (progress) finishLoadingProgress();
+  }
+}
+
+async function loadDashboard() {
+  loadedPanes.clear();
+  catalogCache = null;
+  await loadPane(adminPaneFromHash(), { force: true, progress: true });
+}
+
+window.adminReloadDashboard = loadDashboard;
 
 async function loadPanelStats(userCount, timezone) {
   const mount = $("adminPanelStats");
@@ -538,8 +612,6 @@ async function loadPanelStats(userCount, timezone) {
     `;
   }
 }
-
-window.adminReloadDashboard = loadDashboard;
 
 async function refreshAuth() {
   const res = await fetch("/api/auth/status", { credentials: "same-origin" });
@@ -563,7 +635,14 @@ async function logout() {
 
 async function init() {
   initAppShell();
-  initAdminPanes();
+  let ready = false;
+  initAdminPanes((pane) => {
+    if (!ready) return;
+    void loadPane(pane).catch((err) => {
+      $("adminError").hidden = false;
+      $("adminError").textContent = err.message || "Failed to load admin data";
+    });
+  });
   $("adminLogoutBtn").addEventListener("click", logout);
   $("adminRefreshBtn").addEventListener("click", async () => {
     try {
@@ -575,8 +654,9 @@ async function init() {
   });
 
   if (await refreshAuth()) {
+    ready = true;
     try {
-      await loadDashboard();
+      await loadPane(adminPaneFromHash(), { progress: true });
     } catch (err) {
       $("adminError").hidden = false;
       $("adminError").textContent = err.message || "Failed to load admin data";

@@ -117,8 +117,7 @@ def test_remove_custom_country_without_catalog(v2_auth_client, tmp_data_dir):
 
 def test_admin_dashboard_lists_registered_country_without_catalog(v2_auth_client, tmp_data_dir):
     v2_auth_client.post("/api/countries", json={"label": "Singapore"})
-    dashboard = v2_auth_client.get("/api/admin/dashboard?limit=10").get_json()
-    catalog = dashboard["catalog"]
+    catalog = v2_auth_client.get("/api/admin/catalog").get_json()
     ids = {row["country"] for row in catalog["countries"]}
     assert "singapore" in ids
     singapore = next(row for row in catalog["countries"] if row["country"] == "singapore")
