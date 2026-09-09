@@ -15,7 +15,6 @@ from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
 from relocation_jobs.fetch.timeouts import company_timeout_seconds
-from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 from relocation_jobs.scrape.aggregator_sync import should_skip_country_fetch
 from relocation_jobs.scrape.merge import now_iso
 
@@ -89,7 +88,6 @@ async def _fetch_one_company(
                     client, country_key, name, fetch_run_id=run_id,
                     enrich_concurrency=enrich_concurrency,
                     on_company_result=on_company_result,
-                    refresh_opportunities=False,
                 ),
                 timeout=company_timeout_seconds(),
             )
@@ -222,6 +220,4 @@ async def run_country_fetch(
     )
     if not cancelled:
         report(done, None, "done")
-    if done > 0:
-        enqueue_country_opportunity_refresh(country_key)
     return new_jobs_total, done, cancelled

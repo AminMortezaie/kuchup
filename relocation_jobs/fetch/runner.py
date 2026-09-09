@@ -6,12 +6,14 @@ import threading
 from relocation_jobs.core.ats_constants import MAX_CONCURRENCY
 from relocation_jobs.core.scrape_cancel import FetchCancelled, clear_cancel_checker, set_cancel_checker
 from relocation_jobs.core.paths import country_archive_filename
+from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.client import make_fetch_client
 from relocation_jobs.fetch.country_runner import run_country_fetch
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
+from relocation_jobs.fetch.timeouts import country_timeout_seconds
 
 
 def _append_log(line: str) -> None:
@@ -26,9 +28,11 @@ def _country_fetch_worker(
     skip_filled: bool,
     ats_type: str | None,
     concurrency: int = 1,
+    timeout: float | None = None,
 ) -> None:
     exit_code = 1
     cancelled = False
+    timed_out = False
     new_jobs_total = 0
     companies_done = 0
 
@@ -46,7 +50,7 @@ def _country_fetch_worker(
         async def _run():
             nonlocal new_jobs_total, companies_done, cancelled
             async with make_fetch_client(concurrency=concurrency) as client:
-                return await run_country_fetch(
+                coro = run_country_fetch(
                     client,
                     country_key,
                     run_id=run_id,
@@ -57,9 +61,17 @@ def _country_fetch_worker(
                     on_log=append_log,
                     on_company_result=on_company_result,
                 )
+                if timeout is None:
+                    return await coro
+                return await asyncio.wait_for(coro, timeout=timeout)
 
         new_jobs_total, companies_done, cancelled = asyncio.run(_run())
         exit_code = 130 if cancelled else 0
+    except TimeoutError:
+        timed_out = True
+        limit = timeout if timeout is not None else country_timeout_seconds()
+        append_log(f"Error: timed out after {limit}s")
+        exit_code = 1
     except Exception as exc:
         append_log(f"Error: {exc}")
         exit_code = 1
@@ -94,6 +106,34 @@ def _country_fetch_worker(
         fetch_state.mutate_state_for_run(run_id, _finish)
         fetch_state.sync_live_to_db()
         fetch_state.persist_fetch_run(run_id)
+    if timed_out:
+        limit = timeout if timeout is not None else country_timeout_seconds()
+        raise TimeoutError(f"Country fetch timed out after {limit}s")
+    if exit_code == 0 and companies_done > 0:
+        enqueue_country_opportunity_refresh(country_key)
+
+
+def _begin_country_run(
+    *,
+    user_id: int,
+    country_key: str,
+    ats_type: str | None = None,
+    concurrency: int = 1,
+) -> tuple[int, int]:
+    fetch_state.reap_zombie_fetch()
+    if fetch_state.fetch_is_running():
+        raise RuntimeError("A fetch is already running")
+    workers = max(1, min(int(concurrency), MAX_CONCURRENCY))
+    file_name = country_archive_filename(country_key)
+    with fetch_state.fetch_lock():
+        run_id = fetch_state.reset_for_run(
+            user_id=user_id,
+            country=country_key,
+            file_name=file_name,
+            concurrency=workers,
+            ats_type=ats_type,
+        )
+    return run_id, workers
 
 
 def _company_fetch_worker(
@@ -120,13 +160,13 @@ def _company_fetch_worker(
         _append_log(f"Fetching {company_name}")
 
         async def _run() -> tuple[str, int]:
-            async with make_fetch_client(concurrency=8) as client:
+            async with make_fetch_client(concurrency=MAX_CONCURRENCY) as client:
                 return await fetch_and_persist_company(
                     client,
                     country_key,
                     company_name,
                     fetch_run_id=run_id,
-                    enrich_concurrency=8,
+                    enrich_concurrency=MAX_CONCURRENCY,
                     review_mode=True,
                     on_review=fetch_state.set_review_jobs,
                 )
@@ -180,6 +220,8 @@ def _company_fetch_worker(
         fetch_state.mutate_state_for_run(run_id, _finish)
         fetch_state.sync_live_to_db()
         fetch_state.persist_fetch_run(run_id)
+    if exit_code == 0 and not cancelled:
+        enqueue_country_opportunity_refresh(country_key)
 
 
 def start_company_fetch(
@@ -228,32 +270,50 @@ def start_country_fetch(
     ats_type: str | None = None,
     concurrency: int = 1,
 ) -> int:
-    fetch_state.reap_zombie_fetch()
-    if fetch_state.fetch_is_running():
-        raise RuntimeError("A fetch is already running")
-    workers = max(1, min(int(concurrency), MAX_CONCURRENCY))
-    file_name = country_archive_filename(country_key)
+    run_id, workers = _begin_country_run(
+        user_id=user_id,
+        country_key=country_key,
+        ats_type=ats_type,
+        concurrency=concurrency,
+    )
+    thread = threading.Thread(
+        target=_country_fetch_worker,
+        args=(country_key,),
+        kwargs={
+            "run_id": run_id,
+            "skip_filled": skip_filled,
+            "ats_type": ats_type,
+            "concurrency": workers,
+        },
+        daemon=True,
+    )
     with fetch_state.fetch_lock():
-        run_id = fetch_state.reset_for_run(
-            user_id=user_id,
-            country=country_key,
-            file_name=file_name,
-            concurrency=workers,
-            ats_type=ats_type,
-        )
-        thread = threading.Thread(
-            target=_country_fetch_worker,
-            args=(country_key,),
-            kwargs={
-                "run_id": run_id,
-                "skip_filled": skip_filled,
-                "ats_type": ats_type,
-                "concurrency": workers,
-            },
-            daemon=True,
-        )
         fetch_state.set_fetch_thread(thread)
     thread.start()
+    return run_id
+
+
+def run_country_fetch_blocking(
+    *,
+    user_id: int,
+    country_key: str,
+    concurrency: int = 1,
+    timeout: float | None = None,
+) -> int:
+    run_id, workers = _begin_country_run(
+        user_id=user_id,
+        country_key=country_key,
+        concurrency=concurrency,
+    )
+    limit = country_timeout_seconds() if timeout is None else timeout
+    _country_fetch_worker(
+        country_key,
+        run_id=run_id,
+        skip_filled=False,
+        ats_type=None,
+        concurrency=workers,
+        timeout=limit,
+    )
     return run_id
 
 
@@ -263,25 +323,10 @@ async def run_single_company_fetch_async(
     *,
     fetch_run_id: int | None = None,
 ) -> tuple[str, int]:
-    async with make_fetch_client(concurrency=8) as client:
+    async with make_fetch_client(concurrency=MAX_CONCURRENCY) as client:
         return await fetch_and_persist_company(
             client,
             country_key,
             company_name,
             fetch_run_id=fetch_run_id,
         )
-
-
-def run_single_company_fetch(
-    country_key: str,
-    company_name: str,
-    *,
-    fetch_run_id: int | None = None,
-) -> tuple[str, int]:
-    return asyncio.run(
-        run_single_company_fetch_async(
-            country_key,
-            company_name,
-            fetch_run_id=fetch_run_id,
-        )
-    )

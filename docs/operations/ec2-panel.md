@@ -15,10 +15,11 @@
 | Panel (gunicorn) | `relocation-panel` | 127.0.0.1:10000 |
 | Remote MCP (OAuth + Streamable HTTP) | `relocation-mcp` | 127.0.0.1:10001 |
 | Fetch worker (scheduler) | `relocation-fetch-worker` | — |
+| Role propagator (SQS assignments) | `relocation-role-propagator` | — |
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
 | Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker only needs Postgres; it runs country scrapes every **6 hours** (sequential countries, concurrency **4**). Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker needs Postgres (and SQS when opportunity refresh is enabled); it runs country scrapes every **6 hours** (sequential countries, concurrency **4**). Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
 
 ---
 

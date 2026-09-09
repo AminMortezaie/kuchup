@@ -89,7 +89,7 @@ def test_full_access_ipn_sets_plan_once(db, monkeypatch):
     uid = int(user["id"])
     rematch = []
     monkeypatch.setattr(
-        "relocation_jobs.payments.service.refresh_user_opportunities",
+        "relocation_jobs.payments.service.enqueue_user_opportunity_refresh",
         lambda user_id: rematch.append(user_id) or {"user_id": user_id},
     )
     order_id = repo.create_order(
@@ -122,7 +122,7 @@ def test_full_access_refund_returns_free(db, monkeypatch):
     user = _user("pay-full-refund")
     uid = int(user["id"])
     monkeypatch.setattr(
-        "relocation_jobs.payments.service.refresh_user_opportunities",
+        "relocation_jobs.payments.service.enqueue_user_opportunity_refresh",
         lambda user_id: {"user_id": user_id},
     )
     order_id = repo.create_order(
@@ -180,7 +180,7 @@ def test_full_access_refund_keeps_grandfathered(db, monkeypatch):
     user = _user("pay-gf", plan="grandfathered")
     uid = int(user["id"])
     monkeypatch.setattr(
-        "relocation_jobs.payments.service.refresh_user_opportunities",
+        "relocation_jobs.payments.service.enqueue_user_opportunity_refresh",
         lambda user_id: {"user_id": user_id},
     )
     order_id = repo.create_order(

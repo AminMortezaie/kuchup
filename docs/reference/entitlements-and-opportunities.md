@@ -25,9 +25,9 @@
 | Domain | Role |
 |--------|------|
 | [`core/sqs_client.py`](../../relocation_jobs/core/sqs_client.py) | SQS transport only |
-| [`async_jobs/`](../../relocation_jobs/async_jobs/) | Typed enqueue/dispatch (reconcile user/country) |
-| [`opportunities/`](../../relocation_jobs/opportunities/) | Sticky company matching / reconcile |
-| [`broadcast/`](../../relocation_jobs/broadcast/) | Freemium position broadcast (truncate, reveal-on-touch, capacity meta) |
+| [`async_jobs/`](../../relocation_jobs/async_jobs/) | Typed SQS enqueue only (no Python consumer) |
+| [`opportunities/`](../../relocation_jobs/opportunities/) | Preference + opportunity **reads**; enqueue refresh. Runtime sticky: Go `ReconcileSticky`. Python `reconcile.py` is test-only. |
+| [`broadcast/`](../../relocation_jobs/broadcast/) | Freemium peek / consume / capacity meta. Replacement **writes**: Go via `type=replace` |
 | [`credits/`](../../relocation_jobs/credits/) | Monthly/purchased grants, wallet balance, immutable ledger, atomic spend/refund |
 | [`payments/`](../../relocation_jobs/payments/) | Provider-neutral checkout orchestration + NOWPayments adapter |
 
@@ -96,6 +96,7 @@ Ops: [`docs/operations/nowpayments.md`](../operations/nowpayments.md).
   `position_broadcast_assignments` (stable monthly job assignments),
   `credit_grants`, `credit_ledger`, `credit_orders`, and `payment_events`
 - Domains: [`opportunities/`](../../relocation_jobs/opportunities/), [`broadcast/`](../../relocation_jobs/broadcast/), [`async_jobs/`](../../relocation_jobs/async_jobs/)
-- SQS: `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` + [`scripts/opportunity_sqs_worker.py`](../../scripts/opportunity_sqs_worker.py) → `async_jobs.dispatch.poll_once`
-- When SQS unset: refresh runs inline (sync)
-- Producers: fetch country end, company persist, prefs save, admin plan, `build_companies`
+- SQS: `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` + [`apps/role-propagator/`](../../apps/role-propagator/) (Go, sole assignment writer)
+- When SQS unset: `ROLE_PROPAGATOR_BIN` runs the Go one-shot; if both are unset, enqueue raises
+- Producers: login, prefs save, fetch run finish (`fetch/runner.py`), admin plan, payments, role replacement, `build_companies`. Not board GET.
+- Caps live in [`users/entitlements.py`](../../relocation_jobs/users/entitlements.py); Go reads the same env vars (`FREE_BOARD_COMPANY_CAP`, …).

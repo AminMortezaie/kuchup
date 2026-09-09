@@ -7,6 +7,7 @@ from relocation_jobs.broadcast.types import CapacityLimits, PositionAssignment, 
 from relocation_jobs.credits.service import credit_balance
 from relocation_jobs.credits import repo as credits_repo
 from relocation_jobs.users.repo import create_user
+from tests.helpers.seed import ensure_company_assignments
 
 
 def _job(index: int) -> dict:
@@ -20,7 +21,7 @@ def _job(index: int) -> dict:
 def test_initial_assignments_do_not_consume_monthly_budget(db):
     user = create_user("broadcast-free", email="broadcast@example.com", google_sub="sub-broadcast")
     uid = int(user["id"])
-    assignments = repo.ensure_company_assignments(
+    assignments = ensure_company_assignments(
         uid,
         "germany",
         "Acme",
@@ -36,7 +37,7 @@ def test_explicit_action_is_deduplicated_without_free_board_refill(db):
     user = create_user("broadcast-action", email="action@example.com", google_sub="sub-action")
     uid = int(user["id"])
     jobs = [_job(i) for i in range(1, 6)]
-    repo.ensure_company_assignments(
+    ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key="2026-08",
     )
     first = repo.mark_assignment_consumed(
@@ -59,7 +60,7 @@ def test_explicit_action_is_deduplicated_without_free_board_refill(db):
         action_kind="applied",
         period_key="2026-08",
     )
-    assignments = repo.ensure_company_assignments(
+    assignments = ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key="2026-08",
     )
     assert first is True
@@ -72,6 +73,13 @@ def test_position_budget_resets_by_month(db):
     user = create_user("broadcast-reset", email="reset@example.com", google_sub="sub-reset")
     uid = int(user["id"])
     job = _job(1)
+    jobs = [job]
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=1, period_key="2026-08",
+    )
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=1, period_key="2026-09",
+    )
     august = repo.mark_assignment_consumed(
         uid,
         country="germany",
@@ -96,6 +104,24 @@ def test_position_budget_resets_by_month(db):
     assert september is True
     assert repo.consumed_count(uid, period_key="2026-08") == 1
     assert repo.consumed_count(uid, period_key="2026-09") == 1
+
+
+def test_consume_without_assignment_does_not_insert(db):
+    user = create_user("broadcast-missing", email="missing@example.com", google_sub="sub-missing")
+    uid = int(user["id"])
+    job = _job(1)
+    created = repo.mark_assignment_consumed(
+        uid,
+        country="germany",
+        company_name="Acme",
+        job_key=job["idempotency_key"],
+        job_url=job["url"],
+        job_title=job["title"],
+        action_kind="seen",
+        period_key="2026-08",
+    )
+    assert created is False
+    assert repo.list_assignments(uid, period_key="2026-08") == []
 
 
 def test_assigned_role_remains_visible_after_catalog_removal():
@@ -146,10 +172,15 @@ def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch)
     uid = int(user["id"])
     jobs = [_job(i) for i in range(1, 5)]
     period = repo.current_period_key()
-    repo.ensure_company_assignments(
+    ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key=period,
     )
     monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
+    monkeypatch.setattr(
+        broadcast_service,
+        "enqueue_replace_assignment",
+        lambda *args, **kwargs: {"queued": True, "synced": False},
+    )
     event = RevealEvent(
         country="germany",
         company_name="Acme",
@@ -175,7 +206,7 @@ def test_action_with_no_replacement_spends_no_credit(db, monkeypatch):
     uid = int(user["id"])
     jobs = [_job(i) for i in range(1, 4)]
     period = repo.current_period_key()
-    repo.ensure_company_assignments(
+    ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key=period,
     )
     monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
@@ -203,7 +234,7 @@ def test_empty_wallet_does_not_refill_on_board_read(db, monkeypatch):
     uid = int(user["id"])
     jobs = [_job(i) for i in range(1, 5)]
     period = repo.current_period_key()
-    repo.ensure_company_assignments(
+    ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key=period,
     )
     broadcast_service.capacity_meta_for_user(uid)
@@ -226,7 +257,7 @@ def test_empty_wallet_does_not_refill_on_board_read(db, monkeypatch):
             job_title=jobs[0]["title"],
         ),
     )
-    assignments = repo.ensure_company_assignments(
+    assignments = ensure_company_assignments(
         uid, "germany", "Acme", jobs, active_target=3, period_key=period,
     )
     assert result["reason"] == "credits_exhausted"

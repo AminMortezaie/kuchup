@@ -35,7 +35,14 @@ def test_consume_mcp_quota_blocks_free_user(db, monkeypatch):
 
 
 def test_admin_plan_endpoint(auth_client, db, seeded_catalog_v2, monkeypatch):
-    monkeypatch.delenv("SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL", raising=False)
+    monkeypatch.setattr(
+        "relocation_jobs.opportunities.service.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.web.routes.admin.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
+    )
     user = create_user("grantme", email="grantme@example.com", google_sub="sub-grant")
     from relocation_jobs.opportunities.service import save_preferences_and_refresh
 
@@ -48,11 +55,15 @@ def test_admin_plan_endpoint(auth_client, db, seeded_catalog_v2, monkeypatch):
     body = resp.get_json()
     assert body["entitlements"]["plan"] == "grandfathered"
     assert body["entitlements"]["board_company_cap"] is None
-    assert body["refresh"]["synced"] is True
-    assert body["refresh"]["opportunity_count"] >= 1
+    assert body["refresh"]["queued"] is False
 
 
-def test_empty_opportunity_board_does_not_rematch_every_load(client, db, seeded_catalog_v2):
+def test_empty_opportunity_board_does_not_enqueue_or_write(client, db, seeded_catalog_v2, monkeypatch):
+    called = []
+    monkeypatch.setattr(
+        "relocation_jobs.async_jobs.enqueue.enqueue",
+        lambda message: called.append(message) or {"queued": True},
+    )
     user = create_user("zeromatch", email="zeromatch@example.com", google_sub="sub-zero")
     with client.session_transaction() as sess:
         sess.clear()
@@ -61,11 +72,21 @@ def test_empty_opportunity_board_does_not_rematch_every_load(client, db, seeded_
         sess.permanent = True
     first = client.get("/api/board?country=all").get_json()
     assert first["meta"]["opportunity_count"] == 0
+    from relocation_jobs.broadcast import repo as broadcast_repo
     from relocation_jobs.opportunities import repo as opportunities_repo
 
-    assert opportunities_repo.needs_opportunity_bootstrap(int(user["id"])) is False
+    uid = int(user["id"])
+    assert opportunities_repo.count_user_opportunities(uid) == 0
+    assert opportunities_repo.get_user_preferences(uid).target_countries == ()
+    assert broadcast_repo.list_assignments(uid) == []
+    assert opportunities_repo.needs_opportunity_bootstrap(uid) is True
+    assert called == []
+    prefs = client.get("/api/preferences").get_json()["preferences"]
+    assert prefs["target_countries"] == ["germany"]
+    assert opportunities_repo.get_user_preferences(uid).target_countries == ()
     second = client.get("/api/board?country=all").get_json()
     assert second["meta"]["opportunity_count"] == 0
+    assert called == []
 
 
 def test_auth_status_includes_entitlements(auth_client, db):

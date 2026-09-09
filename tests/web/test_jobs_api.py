@@ -15,7 +15,7 @@ def test_jobs_list_returns_companies(v2_auth_client, seeded_catalog_v2):
 
 
 def test_free_user_jobs_list_caps_positions(client, db, seeded_catalog_v2):
-    from relocation_jobs.opportunities.service import save_preferences_and_refresh
+    from tests.helpers.seed import seed_free_assignments
     from relocation_jobs.users.repo import create_user
     from tests.helpers.seed import append_matching_jobs
 
@@ -40,7 +40,7 @@ def test_free_user_jobs_list_caps_positions(client, db, seeded_catalog_v2):
         email="freejobslist@example.com",
         google_sub="sub-free-jobs-list",
     )
-    save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
+    seed_free_assignments(int(user["id"]), ["uk"])
     with client.session_transaction() as sess:
         sess.clear()
         sess["user_id"] = user["id"]

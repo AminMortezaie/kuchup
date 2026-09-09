@@ -6,7 +6,7 @@ from relocation_jobs.core.ats_constants import HTTPX_AVAILABLE
 from relocation_jobs.core.auth import admin_required
 from relocation_jobs.core.panel_flags import company_fetch_enabled, scrape_enabled
 from relocation_jobs.users.entitlements import set_plan
-from relocation_jobs.opportunities.service import refresh_user_opportunities
+from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
 from relocation_jobs.users.repo import list_users_with_stats
 from relocation_jobs.admin import service as admin_service
 from relocation_jobs.catalog.repo import get_catalog_overview
@@ -77,13 +77,12 @@ def register(app):
         plan = (body.get("plan") or "").strip()
         try:
             entitlements = set_plan(user_id, plan)
-            # Sync rematch immediately so Free→Full board caps apply without waiting on SQS.
-            refresh = refresh_user_opportunities(user_id)
+            refresh = enqueue_user_opportunity_refresh(user_id)
             return jsonify({
                 "ok": True,
                 "user_id": user_id,
                 "entitlements": entitlements,
-                "refresh": {"synced": True, **refresh},
+                "refresh": refresh,
             })
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400

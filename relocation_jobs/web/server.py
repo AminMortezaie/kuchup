@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import Flask, Response, redirect, request, send_from_directory
 from dotenv import load_dotenv
 
-from relocation_jobs.core.auth import init_auth
+from relocation_jobs.core.auth import ensure_dev_login, init_auth
 from relocation_jobs.core.db import init_db
 from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.paths import PROJECT_ROOT, STATIC_DIR
@@ -196,6 +196,7 @@ def _ensure_bootstrapped():
     if request.endpoint == "static":
         return
     bootstrap_app()
+    ensure_dev_login()
 
 
 @app.after_request

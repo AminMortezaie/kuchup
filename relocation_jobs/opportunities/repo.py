@@ -107,12 +107,6 @@ def list_user_ids_for_country(country: str) -> list[int]:
     return out
 
 
-def list_all_user_ids() -> list[int]:
-    with db_read() as conn:
-        rows = conn.execute("SELECT id FROM users ORDER BY id ASC").fetchall()
-    return [int(row["id"]) for row in rows]
-
-
 def list_user_opportunity_rows(user_id: int) -> list[OpportunityRow]:
     with db_read() as conn:
         rows = conn.execute(
@@ -139,29 +133,9 @@ def list_user_opportunity_rows(user_id: int) -> list[OpportunityRow]:
     ]
 
 
-def replace_user_opportunities(user_id: int, rows: list[OpportunityRow]) -> int:
+def mark_opportunity_refresh_attempted(user_id: int) -> None:
     now = _utc_now()
     with db_transaction() as conn:
-        conn.execute("DELETE FROM user_opportunities WHERE user_id = %s", (user_id,))
-        for row in rows:
-            conn.execute(
-                """
-                INSERT INTO user_opportunities (
-                    user_id, country, company_name, newest_fetched, updated_at,
-                    revealed_job_count, engaged
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    user_id,
-                    row.country,
-                    row.company_name,
-                    row.newest_fetched or "",
-                    now,
-                    max(0, int(row.revealed_job_count)),
-                    1 if row.engaged else 0,
-                ),
-            )
         conn.execute(
             """
             UPDATE user_preferences
@@ -170,7 +144,6 @@ def replace_user_opportunities(user_id: int, rows: list[OpportunityRow]) -> int:
             """,
             (now, user_id),
         )
-    return len(rows)
 
 
 def needs_opportunity_bootstrap(user_id: int) -> bool:

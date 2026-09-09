@@ -16,6 +16,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 _SESSION_ENV_KEYS = (
     "PANEL_ADMIN_USER",
     "PANEL_ADMIN_EMAILS",
+    "PANEL_AUTH_DISABLED",
     "PANEL_SECRET_KEY",
     "PANEL_ALLOW_REGISTER",
     "PANEL_SCRAPE_ENABLED",
@@ -43,6 +44,7 @@ def _session_env():
     env_defaults = {
         "PANEL_ADMIN_USER": "admin",
         "PANEL_ADMIN_EMAILS": "admin@example.com",
+        "PANEL_AUTH_DISABLED": "0",
         "PANEL_SECRET_KEY": "test-secret-key-fixed",
         "PANEL_ALLOW_REGISTER": "1",
         "PANEL_SCRAPE_ENABLED": "0",

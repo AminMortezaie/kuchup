@@ -6,11 +6,11 @@ Thin, discoverable entrypoints for the product’s runnable services. Domain log
 |-----|-------------|------------|
 | **panel** | `python3 apps/panel/run.py` | Flask job board + API (`:5051`) |
 | **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker |
-| **opportunity-worker** | `python3 apps/opportunity-worker/run.py` | SQS async_jobs reconcile worker |
+| **role-propagator** | `go run ./apps/role-propagator` | SQS assignment writer (company slots + roles) |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 
-Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/opportunity_sqs_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`.
+Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Go propagator: `apps/role-propagator`.
 
 ## Domains vs apps
 

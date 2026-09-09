@@ -4,16 +4,22 @@ import os
 import secrets
 from functools import wraps
 
-from flask import g, jsonify, session
+from flask import g, jsonify, request, session
 
 from relocation_jobs.db import init_db
 from relocation_jobs.credits.service import wallet_status
 from relocation_jobs.opportunities.service import ensure_default_preferences
+from relocation_jobs.opportunities import repo as opportunities_repo
+from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
+from relocation_jobs.broadcast.service import import_month_usage
 from relocation_jobs.users.entitlements import entitlement_status
 from relocation_jobs.users.repo import (
+    create_user,
+    get_user_by_email,
     get_user_by_id,
     is_user_admin,
     login_or_register_google_user,
+    set_user_admin,
     user_count,
 )
 
@@ -32,6 +38,35 @@ def allow_register() -> bool:
 def admin_emails() -> set[str]:
     raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
     return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def auth_disabled() -> bool:
+    if os.environ.get("PANEL_AUTH_DISABLED", "").lower() not in ("1", "true", "yes"):
+        return False
+    host = request.host.split(":")[0].lower()
+    return host in ("127.0.0.1", "localhost")
+
+
+def ensure_dev_login() -> None:
+    if not auth_disabled() or current_user_id():
+        return
+    raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
+    email = next((part.strip().lower() for part in raw.split(",") if part.strip()), "admin@localhost")
+    user = get_user_by_email(email)
+    if user is None:
+        user = create_user(
+            email.split("@", 1)[0] or "admin",
+            is_admin=True,
+            email=email,
+            google_sub=f"local-dev-{email}",
+        )
+        ensure_default_preferences(int(user["id"]))
+        import_month_usage(int(user["id"]))
+        enqueue_user_opportunity_refresh(int(user["id"]))
+    elif not is_user_admin(int(user["id"])):
+        set_user_admin(int(user["id"]), True)
+        user = get_user_by_id(int(user["id"])) or user
+    login_user(int(user["id"]), user["username"])
 
 
 def login_user(user_id: int, username: str) -> None:
@@ -55,6 +90,7 @@ def current_username() -> str | None:
 
 
 def auth_status() -> dict:
+    ensure_dev_login()
     uid = current_user_id()
     if not uid:
         return {"authenticated": False, "allow_register": allow_register()}
@@ -81,6 +117,7 @@ def auth_status() -> dict:
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
+        ensure_dev_login()
         uid = current_user_id()
         if not uid or not get_user_by_id(uid):
             logout_user()
@@ -116,7 +153,11 @@ def login_or_register_google(profile: dict) -> dict:
         allow_new=allow_register() or user_count() == 0,
         is_admin=email in admin_emails(),
     )
-    ensure_default_preferences(int(user["id"]))
+    uid = int(user["id"])
+    ensure_default_preferences(uid)
+    import_month_usage(uid)
+    if opportunities_repo.needs_opportunity_bootstrap(uid):
+        enqueue_user_opportunity_refresh(uid)
     return user
 
 

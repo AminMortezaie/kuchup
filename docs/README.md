@@ -1,6 +1,6 @@
 # Documentation
 
-**Last updated:** 2026-09-06
+**Last updated:** 2026-09-09
 
 All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage only. Repo map (apps vs domains): [apps/README.md](../apps/README.md).
 
@@ -14,6 +14,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Find apps vs domains (repo map) | [apps/README.md](../apps/README.md) · [architecture.md](reference/architecture.md#repo-map) |
 | Set up for development | [contributing.md](contributing.md) |
 | Understand code layout & data flow | [reference/architecture.md](reference/architecture.md) |
+| Backend soul refactor (2026-09 — fetch / reads / Go writer) | [reference/backend-soul-refactor.md](reference/backend-soul-refactor.md) |
 | Change Python in `relocation_jobs/` | [reference/rules.md](reference/rules.md) |
 | Change job apply / reject / hide behavior | [reference/business-rules.md](reference/business-rules.md) |
 | Work on board sort, pagination, newest | [reference/board.md](reference/board.md) |
@@ -54,6 +55,7 @@ docs/
   backlog.md                  planned work
   reference/
     architecture.md           data flow, package layout, panel read path
+    backend-soul-refactor.md  2026-09: fetch when/what, reads are reads, Go assignment writer
     board.md                  pagination, “newest first” sort, timestamps
     board-read-model-proposal.md  board performance: projection table, cursors (proposal)
     kafka-fetch-pipeline-proposal.md  fetch/scrape work queue, Kafka placement (proposal)
@@ -92,6 +94,7 @@ docs/
 |-----|---------|
 | [contributing.md](contributing.md) | First 15 minutes, domains, tests, database, fetch |
 | [reference/architecture.md](reference/architecture.md) | Data flow, v2 layout, panel read path, client patterns |
+| [reference/backend-soul-refactor.md](reference/backend-soul-refactor.md) | What moved in the 2026-09 ownership refactor (files, line counts, DoD) |
 | [reference/rules.md](reference/rules.md) | Layer boundaries, naming, scrape/fetch, tests |
 | [.cursor/rules/v2-coding.mdc](../.cursor/rules/v2-coding.mdc) | Cursor summary of rules |
 

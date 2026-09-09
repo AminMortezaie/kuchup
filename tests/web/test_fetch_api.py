@@ -196,6 +196,11 @@ def test_company_fetch_worker_integration(seeded_catalog_v2, db, monkeypatch):
         "relocation_jobs.fetch.pipeline.enrich_jobs",
         noop_enrich,
     )
+    enqueued = []
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.runner.enqueue_country_opportunity_refresh",
+        lambda country: enqueued.append(country) or {"queued": False, "synced": True},
+    )
 
     user_id = get_user_by_username("admin")["id"]
     with respx.mock:
@@ -229,6 +234,7 @@ def test_company_fetch_worker_integration(seeded_catalog_v2, db, monkeypatch):
     assert finished
     assert finished[0]["exit_code"] == 0
     assert finished[0]["new_jobs"] == 1
+    assert enqueued == ["uk"]
 
 
 def test_companies_fetch_409_when_busy(v2_auth_client, seeded_catalog_v2, monkeypatch):

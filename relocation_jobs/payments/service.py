@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 
 from relocation_jobs.credits import repo as credits_repo
 from relocation_jobs.credits.service import grant_order_credits
-from relocation_jobs.opportunities.service import refresh_user_opportunities
+from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
 from relocation_jobs.payments import nowpayments
 from relocation_jobs.payments.catalog import sku_for_checkout
 from relocation_jobs.payments.types import ORDER_KIND_FULL_ACCESS
@@ -83,7 +83,7 @@ def apply_full_access_purchase(order: dict) -> bool:
     if plan_is_full_access(user.get("plan"), user_id=user_id):
         return False
     set_plan(user_id, "full")
-    refresh_user_opportunities(user_id)
+    enqueue_user_opportunity_refresh(user_id)
     return True
 
 
@@ -97,7 +97,7 @@ def revert_full_access_purchase(order: dict) -> bool:
     if normalize_plan(user.get("plan")) != "full":
         return False
     set_plan(user_id, "free")
-    refresh_user_opportunities(user_id)
+    enqueue_user_opportunity_refresh(user_id)
     return True
 
 

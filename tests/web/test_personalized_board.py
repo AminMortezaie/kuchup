@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from relocation_jobs.opportunities.service import save_preferences_and_refresh
+from relocation_jobs.broadcast import repo as broadcast_repo
+from relocation_jobs.opportunities import repo as opportunities_repo
 from relocation_jobs.users.repo import create_user
+from tests.helpers.seed import seed_free_assignments
 
 
 def _login_as(client, user: dict) -> None:
@@ -28,11 +30,15 @@ def test_free_user_defaults_to_germany(client, db, seeded_catalog_v2):
     prefs = client.get("/api/preferences").get_json()["preferences"]
     assert prefs["target_countries"] == ["germany"]
     assert prefs["preferences_confirmed"] is False
+    uid = int(user["id"])
+    assert opportunities_repo.count_user_opportunities(uid) == 0
+    assert opportunities_repo.get_user_preferences(uid).target_countries == ()
+    assert broadcast_repo.list_assignments(uid) == []
 
 
 def test_free_user_board_filters_to_opportunities(client, db, seeded_catalog_v2):
     user = create_user("freefilter", email="freefilter@example.com", google_sub="sub-free-filter")
-    save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
+    seed_free_assignments(int(user["id"]), ["uk"])
     _login_as(client, user)
     resp = client.get("/api/board?country=uk")
     assert resp.status_code == 200
@@ -57,8 +63,11 @@ def test_admin_board_bypasses_opportunity_filter(v2_auth_client, seeded_catalog_
     assert payload["meta"]["upgrade_available"] is False
 
 
-def test_preferences_put_refreshes_opportunities(client, db, seeded_catalog_v2, monkeypatch):
-    monkeypatch.delenv("SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL", raising=False)
+def test_preferences_put_enqueues_refresh(client, db, seeded_catalog_v2, monkeypatch):
+    monkeypatch.setattr(
+        "relocation_jobs.opportunities.service.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
+    )
     user = create_user("prefuser", email="prefuser@example.com", google_sub="sub-pref")
     _login_as(client, user)
     put = client.put(
@@ -69,13 +78,13 @@ def test_preferences_put_refreshes_opportunities(client, db, seeded_catalog_v2, 
     body = put.get_json()
     assert body["ok"] is True
     assert body["preferences"]["target_countries"] == ["uk"]
-    assert body["refresh"]["synced"] is True
-    assert body["refresh"]["opportunity_count"] >= 1
+    assert body["refresh"]["queued"] is False
 
     get = client.get("/api/preferences")
     assert get.status_code == 200
     assert get.get_json()["preferences"]["target_countries"] == ["uk"]
 
+    seed_free_assignments(int(user["id"]), ["uk"])
     board = client.get("/api/board?country=uk").get_json()
     assert board["meta"]["needs_preferences"] is False
     assert board["meta"]["opportunity_count"] >= 1

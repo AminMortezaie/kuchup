@@ -137,7 +137,7 @@ relocation_jobs/
   users/        repo, history, applied
   positions/    types, state, service, repo
   panel/        types, flatten, flatten_rules, flatten_jobs, flatten_orphans, tracking, service, stats
-  fetch/        types, repo, service, pipeline, runner, country_runner, state, client, ports, scheduler
+  fetch/        types, repo, service, pipeline, runner, country_runner, state, client, scheduler
   scrape/       relevance, filter, merge, listing, company, board, boards/
   web/          server, routes, deps, query, validators
   db/           __init__.py (bootstrap), migrate.py
