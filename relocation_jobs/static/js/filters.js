@@ -19,6 +19,31 @@ const FILTER_DEFS = [
   { id: "visaOnly", label: "Visa / relocation" },
 ];
 
+const INSTANT_FILTERS = new Set([
+  "hidePositionApplied",
+  "hideApplied",
+  "hideEmpty",
+  "visaOnly",
+]);
+
+function setFilterUpdating(on) {
+  const btn = $("filterBtn");
+  if (!btn) return;
+  btn.classList.toggle("is-updating", on);
+  btn.setAttribute("aria-busy", on ? "true" : "false");
+}
+
+async function reloadBoardAfterFilter(instant) {
+  if (instant) applyBoardView();
+  setFilterUpdating(true);
+  try {
+    // ponytail: exclusive filters keep last page until GET /api/board returns
+    await loadBoard({ force: true, preserveContent: true });
+  } finally {
+    setFilterUpdating(false);
+  }
+}
+
 function syncSortFromSelect() {
   const newest = $("sortSelect").value === "newest";
   if ($("sortNewestFetch").checked !== newest) {
@@ -111,7 +136,7 @@ async function applyFilterChange(def, checked) {
     applyBoardView();
     return;
   }
-  await loadBoard({ force: true, overlayLabel: "Applying filters…" });
+  await reloadBoardAfterFilter(INSTANT_FILTERS.has(def.id));
 }
 
 export function bindFilterBar() {
@@ -138,7 +163,7 @@ export function bindFilterBar() {
     }
     saveFilterPreferences();
     updateFilterUI();
-    await loadBoard({ force: true, overlayLabel: "Applying filters…" });
+    await reloadBoardAfterFilter(false);
   });
 
   $("filterPopover").addEventListener("click", (e) => e.stopPropagation());
@@ -159,7 +184,7 @@ export function bindFilterBar() {
         applyBoardView();
         return;
       }
-      await loadBoard({ force: true, overlayLabel: "Applying filters…" });
+      await reloadBoardAfterFilter(INSTANT_FILTERS.has(def.id));
     });
   }
 

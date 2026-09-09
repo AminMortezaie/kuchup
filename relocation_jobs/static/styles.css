@@ -1394,6 +1394,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--accent-hover);
 }
 
+#filterBtn.is-updating {
+  border-color: var(--accent);
+  background: rgba(91, 141, 239, 0.14);
+  color: var(--accent-hover);
+  cursor: progress;
+}
+
+#filterBtn.is-updating > svg {
+  box-sizing: border-box;
+  color: transparent;
+  border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+#filterBtn.is-updating > svg path {
+  opacity: 0;
+}
+
 .filter-badge {
   display: inline-flex;
   align-items: center;

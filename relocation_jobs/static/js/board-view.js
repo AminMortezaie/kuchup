@@ -19,10 +19,20 @@ function paginationView(loading = false) {
   };
 }
 
+let lastView = null;
+
 export function syncBoardView({ loading = false, preserveContent = false } = {}) {
   const hideContent = loading && !preserveContent;
   renderBoardScopeBanner(state.boardMeta || {});
-  publishBoardView({
+  if (preserveContent && lastView) {
+    publishBoardView({
+      ...lastView,
+      loading: false,
+      pagination: { ...lastView.pagination, ...paginationView(loading) },
+    });
+    return;
+  }
+  lastView = {
     loading: hideContent,
     pagination: paginationView(loading),
     companies: hideContent ? [] : getDisplayCompanies(),
@@ -45,5 +55,6 @@ export function syncBoardView({ loading = false, preserveContent = false } = {})
       positionRejectedOnly: Boolean($("positionRejectedOnly")?.checked),
       visaOnly: Boolean($("visaOnly")?.checked),
     },
-  });
+  };
+  publishBoardView(lastView);
 }
