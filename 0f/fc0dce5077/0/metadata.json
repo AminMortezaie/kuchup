@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "0ffc0dce5077",
+  "session_id": "1abd88a3-0b48-41e8-8112-22e5e31beb13",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T17:20:11.980775Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/README.md",
+    "docs/reference/architecture.md",
+    "docs/reference/backend-soul-refactor.md"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "a685db326f73",
+  "compact_transcript_start": 0,
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-09T16:58:50.80723Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "61226e2eb86a",
+      "timestamp": "2026-09-09T16:58:50.80723Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 6,
+    "context_tokens": 242836,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T17:20:11.91659Z",
+    "agent_lines": 228,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 228,
+    "total_lines_changed": 230,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
