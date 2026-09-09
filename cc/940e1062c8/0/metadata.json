@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "cc940e1062c8",
+  "session_id": "21f26649-3cd7-451d-82fd-1348c567d355",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T21:32:14.542449Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    ".env.example",
+    ".github/workflows/ci.yml",
+    "AGENTS.md",
+    "README.md",
+    "apps/README.md",
+    "apps/role-propagator/Dockerfile",
+    "apps/role-propagator/main.go",
+    "docs/contributing.md",
+    "docs/operations/sqs-opportunity-refresh.md",
+    "docs/reference/architecture.md",
+    "docs/reference/backend-soul-refactor.md",
+    "docs/reference/entitlements-and-opportunities.md",
+    "scripts/aws_sqs_opportunity_queue.sh",
+    "scripts/ec2_app_deploy.sh"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "b258026ef33f",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "duration_ms": 1201073,
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T21:32:14.532982Z",
+    "agent_lines": 56,
+    "agent_removed": 262,
+    "human_added": 934,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 990,
+    "total_lines_changed": 1949,
+    "agent_percentage": 16.316059517701383,
+    "metric_version": 2
+  }
+}

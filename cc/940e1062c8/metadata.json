@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "cc940e1062c8",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".env.example",
+    ".github/workflows/ci.yml",
+    "AGENTS.md",
+    "README.md",
+    "apps/README.md",
+    "apps/role-propagator/Dockerfile",
+    "apps/role-propagator/main.go",
+    "docs/contributing.md",
+    "docs/operations/sqs-opportunity-refresh.md",
+    "docs/reference/architecture.md",
+    "docs/reference/backend-soul-refactor.md",
+    "docs/reference/entitlements-and-opportunities.md",
+    "scripts/aws_sqs_opportunity_queue.sh",
+    "scripts/ec2_app_deploy.sh"
+  ],
+  "sessions": [
+    {
+      "metadata": "/cc/940e1062c8/0/metadata.json",
+      "transcript": "/cc/940e1062c8/0/full.jsonl",
+      "compact_transcript": "/cc/940e1062c8/0/transcript.jsonl",
+      "content_hash": "/cc/940e1062c8/0/content_hash.txt",
+      "prompt": "/cc/940e1062c8/0/prompt.txt"
+    }
+  ]
+}
