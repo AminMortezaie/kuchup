@@ -1,0 +1,1 @@
+make login off and set admin email for the local host to use the application simply without any login stuff.
