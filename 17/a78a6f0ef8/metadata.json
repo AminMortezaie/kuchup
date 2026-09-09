@@ -3,7 +3,7 @@
   "checkpoint_id": "17a78a6f0ef8",
   "strategy": "manual-commit",
   "branch": "fix/hide-empty-pagination",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "docs/reference/board.md",
     "relocation_jobs/panel/board.py",
@@ -20,13 +20,20 @@
       "compact_transcript": "/17/a78a6f0ef8/0/transcript.jsonl",
       "content_hash": "/17/a78a6f0ef8/0/content_hash.txt",
       "prompt": "/17/a78a6f0ef8/0/prompt.txt"
+    },
+    {
+      "metadata": "/17/a78a6f0ef8/1/metadata.json",
+      "transcript": "/17/a78a6f0ef8/1/full.jsonl",
+      "compact_transcript": "/17/a78a6f0ef8/1/transcript.jsonl",
+      "content_hash": "/17/a78a6f0ef8/1/content_hash.txt",
+      "prompt": "/17/a78a6f0ef8/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 206062,
+    "input_tokens": 246705,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 9414784,
-    "output_tokens": 20360,
-    "api_call_count": 2
+    "cache_read_tokens": 11195136,
+    "output_tokens": 28255,
+    "api_call_count": 3
   }
 }

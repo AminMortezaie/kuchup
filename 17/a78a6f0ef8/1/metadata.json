@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "17a78a6f0ef8",
+  "session_id": "8597c6cc-c078-4933-b848-9787dfebc6df",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-09T19:52:59.912507Z",
+  "branch": "fix/hide-empty-pagination",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "docs/reference/board.md",
+    "relocation_jobs/panel/board.py",
+    "relocation_jobs/panel/flatten_rules.py",
+    "relocation_jobs/panel/service.py",
+    "relocation_jobs/web/routes/board.py",
+    "relocation_jobs/web/routes/jobs.py",
+    "tests/panel/test_hide_empty.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "57c09328a6e0",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 40643,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1780352,
+    "output_tokens": 7895,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "duration_ms": 22632621,
+    "turn_count": 23,
+    "context_tokens": 235462,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-09T19:52:59.717053Z",
+    "agent_lines": 114,
+    "agent_removed": 34,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 114,
+    "total_lines_changed": 148,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
