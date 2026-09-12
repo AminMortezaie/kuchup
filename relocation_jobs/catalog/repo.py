@@ -1690,40 +1690,7 @@ def insert_jobs(country_key: str, company_name: str, jobs: list[dict]) -> int:
         if row is None:
             return 0
         company_id = _row(row)["id"]
-        inserted = 0
-        for job in jobs:
-            stamp_job_identity(job)
-            key = job.get("idempotency_key") or job_idempotency_key(job.get("url", ""))
-            if not key:
-                continue
-            cur = conn.execute(
-                """
-                INSERT INTO matching_jobs (
-                    company_id, idempotency_key, title, url, fetched, last_seen,
-                    visa_sponsorship, location, locations_json, description_text,
-                    public_slug, closed_at, listing_misses
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT DO NOTHING
-                RETURNING id
-                """,
-                (
-                    company_id, key,
-                    job.get("title") or "",
-                    job.get("url") or "",
-                    job.get("fetched") or _today_iso(),
-                    job.get("last_seen") or job.get("fetched") or _today_iso(),
-                    _visa_to_db(job.get("visa_sponsorship")),
-                    (job.get("location") or "").strip(),
-                    job_locations_json(job),
-                    (job.get("description_text") or "").strip(),
-                    _public_slug_value(job),
-                    _closed_at_value(job),
-                    _listing_misses_value(job),
-                ),
-            )
-            if cur.fetchone() is not None:
-                inserted += 1
-        _fill_missing_public_slugs(conn, company_id)
+        inserted = _upsert_jobs_additive_on_conn(conn, company_id, jobs)
     if inserted:
         invalidate_country_cache(country_key)
     return inserted

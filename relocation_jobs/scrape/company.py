@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
+from relocation_jobs.core.job_identity import job_idempotency_key
 from relocation_jobs.core.location_tags import filter_jobs_by_expected_locations
 from relocation_jobs.core.scrape_cancel import FetchCancelled, raise_if_cancelled
 from relocation_jobs.fetch.log import log_event
@@ -257,6 +258,8 @@ async def scrape_company_board(
             f"review: {len(scraped)} included, {len(filtered_out)} filtered",
             company=name,
         )
+    known = {job_idempotency_key(j.get("url", "")) for j in existing}
+    scraped.extend(j for j in raw if job_idempotency_key(j.get("url", "")) in known)
     jobs, preserved, new_count, stale_kept, new_jobs = merge_matching_jobs(existing, scraped)
     if on_company_result and new_count > 0:
         on_company_result(name, new_count, _slim_new_jobs(new_jobs))

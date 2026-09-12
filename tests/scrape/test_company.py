@@ -36,6 +36,29 @@ async def test_process_company_merges_and_counts_new():
 
 
 @pytest.mark.asyncio
+async def test_process_company_does_not_close_filtered_live_jobs():
+    company = {
+        "name": "Acme",
+        "city": "London",
+        "matching_jobs": [
+            {"title": "Marketing Manager", "url": "https://example.com/j/3?gh_jid=3", "fetched": "2025-01-01"},
+        ],
+    }
+
+    async def fetch_board(_client, _company, **kwargs):
+        return [
+            {"title": "Backend Engineer", "url": "https://example.com/j/2?gh_jid=2"},
+            {"title": "Marketing Manager", "url": "https://example.com/j/3?gh_jid=3"},
+        ]
+
+    await process_company(
+        None, company, 1, 1, fetch_board=fetch_board, catalog_country="uk",
+    )
+    kept = next(job for job in company["matching_jobs"] if "j/3" in job["url"])
+    assert not (kept.get("closed_at") or "")
+
+
+@pytest.mark.asyncio
 async def test_process_company_records_fetch_problem_on_error():
     company = {"name": "FailCo", "city": "Berlin", "matching_jobs": []}
 
