@@ -1,0 +1,138 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "8209956d791d",
+  "session_id": "c4777671-4f5a-49ea-bbcf-4b72e8c0081a",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-12T11:24:10.099417Z",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "save_step_count": 6,
+  "files_touched": [
+    "relocation_jobs/catalog/repo.py",
+    "relocation_jobs/scrape/company.py",
+    "tests/scrape/test_company.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "09e09394567d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 37236,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3237888,
+    "output_tokens": 15872,
+    "api_call_count": 6
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-12T11:03:13.938226Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "fc0bfa2fd218",
+      "timestamp": "2026-09-12T11:03:13.938226Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-12T11:24:10.078756Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 35,
+    "total_committed": 0,
+    "total_lines_changed": 35,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 105,
+      "user_lines_removed": 41,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/catalog/repo.py": 1,
+        "relocation_jobs/scrape/company.py": 3,
+        "relocation_jobs/scrape/merge.py": 27,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/scrape/test_company.py": 42,
+        "tests/scrape/test_merge.py": 20
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/catalog/repo.py": 34,
+        "relocation_jobs/scrape/company.py": 1,
+        "relocation_jobs/scrape/merge.py": 6
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 93,
+      "agent_lines_removed": 41,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 93,
+      "agent_lines_removed": 41,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 93,
+      "agent_lines_removed": 41,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 38,
+      "agent_lines_removed": 38,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 38,
+      "agent_lines_removed": 38,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

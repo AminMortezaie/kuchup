@@ -1,0 +1,39 @@
+i just faced with a strange problem.
+
+i just refreshed a company jobs and when add by selecting the job it says this is closed or expired but it's available in company's page.
+
+when i want to add this it cannot be added.
+
+the problem is occuring on SumUp company and during adding the Golang position.
+
+let's find the problem is occuring here and fix this.
+
+---
+
+did you deploy it?
+
+---
+
+where can i check this on localhost?
+
+---
+
+/ponytail-review  the code you wrote.
+
+---
+
+ok change it then i will review it.
+
+---
+
+write down what you did here a summary with code lines to see better cause it's kinda akward
+
+---
+
+i believe that the code is weried.
+
+you can make it more clean and simpler.
+
+/ponytail what do you think about this flow.
+can we make this more simpler and lazier?
+I believe we can do it.
