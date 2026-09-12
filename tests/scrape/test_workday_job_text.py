@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from tests.helpers.http_mock import MockResponse
+
 from relocation_jobs.scrape.boards.workday import workday_job_detail_api_url
 from relocation_jobs.scrape.job_text import fetch_workday_job_detail
 
@@ -27,7 +29,19 @@ def test_workday_job_detail_api_url_myworkdaysite():
     )
 
 
-def test_fetch_workday_job_detail_criteo():
+def test_fetch_workday_job_detail_criteo(monkeypatch):
+    api = workday_job_detail_api_url(_CRITEO_JOB)
+
+    def fake_get(url, *args, **kwargs):
+        assert url == api
+        return MockResponse(json_data={
+            "jobPostingInfo": {
+                "jobDescription": "<p>Site Reliability Engineer</p>",
+                "location": "Paris",
+            },
+        })
+
+    monkeypatch.setattr("relocation_jobs.scrape.job_text.requests.get", fake_get)
     result = fetch_workday_job_detail(_CRITEO_JOB)
     assert "Site Reliability Engineer" in result.text
     assert result.location == "Paris"
