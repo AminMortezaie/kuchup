@@ -1,4 +1,3 @@
-based on the @docs/internal/fetch-jobs.tex /ponytail review the flow.
-i think it can be much simpler that what we have.
+<timestamp>Tuesday, Sep 15, 2026, 12:41 AM (UTC+4)</timestamp>
 
-this code is written by AI and might be flow is not a consistant thing and it had been extended during the developing.
+do it, i will review it.
