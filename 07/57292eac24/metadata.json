@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "0757292eac24",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/internal/fetch-jobs.tex",
+    "internal-docs/fetch-jobs.tex"
+  ],
+  "sessions": [
+    {
+      "metadata": "/07/57292eac24/0/metadata.json",
+      "transcript": "/07/57292eac24/0/full.jsonl",
+      "compact_transcript": "/07/57292eac24/0/transcript.jsonl",
+      "content_hash": "/07/57292eac24/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
