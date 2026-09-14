@@ -1,0 +1,4 @@
+based on the @docs/internal/fetch-jobs.tex /ponytail review the flow.
+i think it can be much simpler that what we have.
+
+this code is written by AI and might be flow is not a consistant thing and it had been extended during the developing.
