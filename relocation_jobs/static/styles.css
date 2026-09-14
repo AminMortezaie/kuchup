@@ -7414,6 +7414,10 @@ body.scroll-locked {
   z-index: 30;
 }
 
+.company-card:has(.company-more[open]) {
+  z-index: 5;
+}
+
 .company-more-menu {
   position: absolute;
   top: calc(100% + 0.5rem);
