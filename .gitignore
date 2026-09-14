@@ -32,6 +32,5 @@ skills-lock.json
 # Local responsive/review captures (underscore-prefixed)
 **/brand/_*.png
 /.cursor/
-# Local internal documents (contents ignored; folder stays in the repo)
-/docs/internal/*
-!/docs/internal/.gitignore
+# Local internal-docs documents (contents ignored; folder stays in the repo)
+/internal-docs
