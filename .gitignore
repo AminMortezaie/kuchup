@@ -33,4 +33,4 @@ skills-lock.json
 **/brand/_*.png
 /.cursor/
 # Local internal-docs documents (contents ignored; folder stays in the repo)
-/internal-docs
+/internal-docs/
