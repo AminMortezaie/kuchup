@@ -32,6 +32,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Fetch scheduler hung / timeouts (2026-07) | [reference/fetch-scheduler-timeout-practices.md](reference/fetch-scheduler-timeout-practices.md) |
 | Fetch thread exhaustion / `can't start new thread` (2026-09 postmortem) | [reference/fetch-thread-exhaustion-incident.md](reference/fetch-thread-exhaustion-incident.md) |
 | Fetch concurrency model review (2026-09) | [reference/fetch-concurrency-model-review.md](reference/fetch-concurrency-model-review.md) |
+| Job fetching (trigger → ATS → Postgres) | [reference/fetch-jobs.tex](reference/fetch-jobs.tex) |
 | Secrets / no real IPs in public docs | [reference/rules.md](reference/rules.md#secrets-and-documentation) · `.env` / `aws-postgres.env` gitignored |
 | MCP apply assistant (Claude Desktop, v0) | [reference/mcp-application.md](reference/mcp-application.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
@@ -72,6 +73,7 @@ docs/
     country-cache-redis-hotpath-incident.md  post-mortem: Redis I/O in country-label hot path
     fetch-thread-exhaustion-incident.md      post-mortem: can't start new thread (2026-09)
     fetch-concurrency-model-review.md        review: one event loop + semaphore (2026-09)
+    fetch-jobs.tex              job fetching: trigger → ATS scrape → Postgres
     mcp-application.md          Claude Desktop MCP: resume tex → PDF, apply prep (v0)
     company-workspace.md        Panel company page: tailored CV + PDF preview
     job-syndication.md          Public /jobs/<slug> pages, JobPosting JSON-LD, LinkedIn funnel
