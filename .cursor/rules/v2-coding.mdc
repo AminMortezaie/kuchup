@@ -51,7 +51,7 @@ Postgres (AWS EC2) is source of truth. `sync_company_board_to_catalog` requires 
 
 ## Client JS (static/)
 
-After job API success, update board locally via `job-board.js` — avoid `reloadBoard()` when company is in memory.
+After Class B job mutations (not-for-me / apply / reject / looking-to-apply / reapply), apply the server `board` + `user_stats` snapshot from the same response. Local `job-board.js` patches are fallback only when the snapshot is absent.
 
 ## Do not
 

@@ -1,147 +1,19 @@
 from __future__ import annotations
 
-import math
-
 from flask import g, jsonify, request
 
 from relocation_jobs.core.auth import login_required
-from relocation_jobs.opportunities.service import board_scope_meta, resolve_board_opportunity_scope
-from relocation_jobs.panel.board import (
-    DEFAULT_BOARD_PAGE_SIZE,
-    MAX_BOARD_PAGE_SIZE,
-    load_catalog_board_page,
-)
-from relocation_jobs.panel.flatten_rules import company_has_open_roles
-from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
-from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
-from relocation_jobs.shared.board_contract import (
-    CATALOG_KIND_RELOCATION,
-)
+from relocation_jobs.panel.stats import compute_user_board_stats
+from relocation_jobs.shared.board_contract import CATALOG_KIND_RELOCATION
+from relocation_jobs.web.board_payload import build_board_payload
 from relocation_jobs.web.query import query_flags
-
-
-def _latest_fetch_new_jobs(
-    file_meta: list[dict],
-    *,
-    user_id: int | None,
-    country_key: str | None,
-    timezone_name: str | None,
-) -> int:
-    return resolve_new_jobs_count(
-        user_id=user_id,
-        country_key=country_key,
-        timezone_name=timezone_name,
-        file_meta=file_meta,
-    )
-
-
-def _panel_flags() -> dict:
-    flags = query_flags()
-    return {
-        "visa_only": flags["visa_only"],
-        "hide_applied": flags["hide_applied"],
-        "hide_empty": flags["hide_empty"],
-        "not_applied_only": flags["not_applied_only"],
-        "hide_position_applied": flags["hide_position_applied"],
-        "hide_position_rejected": flags["hide_position_rejected"],
-        "position_applied_only": flags["position_applied_only"],
-        "position_rejected_only": flags["position_rejected_only"],
-        "position_looking_to_apply_only": flags["position_looking_to_apply_only"],
-        "fetch_ok_only": flags["fetch_ok_only"],
-        "fetch_problem_only": flags["fetch_problem_only"],
-    }
 
 
 def register(app):
     @app.get("/api/board")
     @login_required
     def api_board():
-        scope = query_flags()
-        timezone_name = (request.args.get("timezone") or "").strip() or None
-        search = (request.args.get("q") or "").strip() or None
-        page = max(request.args.get("page", 1, type=int) or 1, 1)
-        page_size = request.args.get("page_size", DEFAULT_BOARD_PAGE_SIZE, type=int) or DEFAULT_BOARD_PAGE_SIZE
-        page_size = max(1, min(page_size, MAX_BOARD_PAGE_SIZE))
-        visible_offset = (page - 1) * page_size
-        sort = (request.args.get("sort") or "newest").strip().lower()
-        if sort not in ("newest", "name"):
-            sort = "newest"
-
-        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
-        panel_flags = _panel_flags()
-        requested_hide_empty = panel_flags["hide_empty"]
-        defer_empty = (
-            requested_hide_empty
-            and opportunity_scope.plan == "free"
-            and not opportunity_scope.bypass
-        )
-        if defer_empty:
-            panel_flags["hide_empty"] = False
-        companies, file_meta, fetch_problem_count, total_visible, has_more = load_catalog_board_page(
-            scope["country_key"],
-            ats_type=scope["ats_type"],
-            location=scope["location"],
-            user_id=g.user_id,
-            visible_offset=0 if defer_empty else visible_offset,
-            limit=None if defer_empty else page_size,
-            search=search,
-            panel_flags=panel_flags,
-            count_total=True if defer_empty else (page == 1),
-            sort=sort,
-            catalog_kind=CATALOG_KIND_RELOCATION,
-            opportunity_scope=opportunity_scope,
-        )
-        companies = apply_capacity_to_board_page(g.user_id, companies)
-        if defer_empty:
-            # ponytail: full-list then slice; SQL hide_empty count if this path is slow
-            rejected_only = bool(panel_flags.get("position_rejected_only"))
-            companies = [
-                company
-                for company in companies
-                if company_has_open_roles(
-                    company.get("jobs"),
-                    company.get("rejected_jobs"),
-                    rejected_only=rejected_only,
-                )
-            ]
-            total_visible = len(companies)
-            has_more = visible_offset + page_size < total_visible
-            companies = companies[visible_offset:visible_offset + page_size]
-        capacity_meta = capacity_meta_for_user(g.user_id).as_dict()
-        latest_fetch_new_jobs = _latest_fetch_new_jobs(
-            file_meta,
-            user_id=g.user_id,
-            country_key=scope["country_key"],
-            timezone_name=timezone_name,
-        )
-        total_pages = None
-        if total_visible is not None:
-            total_pages = max(1, math.ceil(total_visible / page_size))
-        return jsonify({
-            "companies": companies,
-            "meta": {
-                "country": request.args.get("country", "all"),
-                "ats_type": scope["ats_type"],
-                "location": scope["location"],
-                "catalog_kind": CATALOG_KIND_RELOCATION,
-                "fetch_problem_total": fetch_problem_count,
-                "latest_fetch_new_jobs": latest_fetch_new_jobs,
-                "page": page,
-                "page_size": page_size,
-                "total_companies": total_visible,
-                "total_pages": total_pages,
-                "has_more": has_more,
-                "sort": sort,
-                **board_scope_meta(opportunity_scope),
-                **capacity_meta,
-            },
-            "user_stats": compute_user_board_stats(
-                user_id=g.user_id,
-                country_key=scope["country_key"],
-                timezone_name=timezone_name,
-                latest_fetch_new_jobs=latest_fetch_new_jobs,
-            ),
-        })
+        return jsonify(build_board_payload(g.user_id, catalog_kind=CATALOG_KIND_RELOCATION))
 
     @app.get("/api/board/stats")
     @login_required

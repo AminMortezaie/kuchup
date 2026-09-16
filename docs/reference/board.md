@@ -1,6 +1,6 @@
 # Panel board — pagination, sort, and activity timestamps
 
-**Last updated:** 2026-07-21
+**Last updated:** 2026-09-16
 
 How the main company board loads, paginates, and sorts by “newest”. Read before changing `panel/`, `static/js/board*.js`, `static/js/render.js`, or `GET /api/board`.
 
@@ -31,14 +31,15 @@ Remote boards: `remote-ok`, `remote-dxb`, `remote-joblet` (Remotedxb is not unde
 ```
 GET /api/board
   → opportunities.service.resolve_board_opportunity_scope()  # admin bypass / user_opportunities
+  → web/board_payload.build_board_payload()
   → panel/board.load_catalog_board_page(catalog_kind=relocation, opportunity_scope=…)
   → panel/service.flatten_companies_page()
       → catalog/repo.load_catalog_companies_page()   # DB batch, ORDER BY country, name
       → panel/flatten.flatten_company()              # per-user merge + filters
-  → web/routes/board.py                              # meta (+ opportunity fields) + user_stats
 
 GET /api/remote/board
   → same opportunity scope
+  → web/board_payload.build_board_payload(catalog_kind=remote)
   → panel/board.load_catalog_board_page(catalog_kind=remote)
   → same flatten path with catalog_kind=remote
 ```
@@ -56,6 +57,25 @@ board.js (fetch page via panelApiPrefix())
 ```
 
 Toolbar layout: **pagination → search → sort/filters → company cards**.
+
+---
+
+## Mutation responses (Phase 0)
+
+Class B tracking writes (`POST`/`PATCH` `/api/jobs/not-for-me`, `/applied`, `/rejected`, `/looking-to-apply`, `/reapply`) can return the **same board page + `user_stats`** as `GET /api/board`, so the panel can refresh without a second round trip.
+
+Pass the current board query string plus `include_board=1` (and `catalog_kind=remote` on the remote panel). Postgres remains the source of truth; the snapshot is built with `flatten` / `load_catalog_board_page` (no projection table, no Redis).
+
+```
+POST /api/jobs/not-for-me?include_board=1&country=uk&sort=newest&page=1&hide_empty=1&…
+  → tracking write
+  → flatten current page (same path as GET /api/board)
+  → { ok, job fields, board: { companies, meta }, user_stats, reveal }
+```
+
+Without `include_board=1` the mutation JSON is unchanged (company workspace / MCP stay cheap). If the requested page is past the new `total_pages` (hide-empty dropped the last row), the snapshot clamps to the last valid page.
+
+Phase 1+ (projection table, keyset cursors, Redis) is deferred; F vs F+G is still open. See [board-read-model-proposal.md](board-read-model-proposal.md).
 
 ---
 
@@ -156,11 +176,12 @@ After a fetch, a company rises in sort order only when it has a **new or updated
 
 | Area | File |
 |------|------|
-| API | `web/routes/board.py` |
+| API | `web/routes/board.py`, `web/routes/jobs.py`, `web/board_payload.py` |
 | Pagination + flatten | `panel/service.py`, `panel/flatten.py` |
 | Timestamps | `shared/timestamps.py` |
 | Scrape merge | `scrape/merge.py` |
 | Client load | `static/js/board.js` |
+| Mutation snapshot | `static/js/board.js` (`applyServerBoardSnapshot`), `position-card.js`, `api.js` |
 | Client sort | `static/js/render.js` |
 | Sort UI | `static/js/filters.js`, `static/js/storage.js` |
 

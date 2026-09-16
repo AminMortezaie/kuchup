@@ -15,6 +15,16 @@ const API = {
   reapply: "/api/jobs/reapply",
 };
 
+const BOARD_REFRESH_PATHS = new Set([
+  API.applied,
+  API.rejected,
+  API.notForMe,
+  API.lookingToApply,
+  API.reapply,
+]);
+
+const MUTATION_ENVELOPE_KEYS = new Set(["ok", "board", "user_stats", "reveal", "error"]);
+
 function newestStatusDate(dates, fallback) {
   const list = (dates || []).filter(Boolean).map((d) => String(d).trim()).filter(Boolean);
   const fb = (fallback || "").trim();
@@ -164,7 +174,16 @@ class PositionCard extends HTMLElement {
   // --- API ---
 
   async _api(path, body) {
-    const res = await fetch(path, {
+    let url = path;
+    if (
+      BOARD_REFRESH_PATHS.has(path)
+      && document.getElementById("jobs")
+      && document.getElementById("country")
+    ) {
+      const { mutationBoardQuery } = await import("./api.js");
+      url = `${path}?${mutationBoardQuery()}`;
+    }
+    const res = await fetch(url, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
@@ -198,7 +217,11 @@ class PositionCard extends HTMLElement {
 
   _apply(data) {
     if (!data) return;
-    this._job = { ...this._job, ...data };
+    const jobFields = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (!MUTATION_ENVELOPE_KEYS.has(key)) jobFields[key] = value;
+    }
+    this._job = { ...this._job, ...jobFields };
     this.render();
     this._dispatch("mutated", { job: this._job, apiData: data });
   }

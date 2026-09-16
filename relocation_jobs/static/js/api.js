@@ -21,8 +21,17 @@ async function refreshUserStatsQuiet() {
   await refreshBoardUserStats();
 }
 
-function applyJobMutation(country, company, url, idempotencyKey, data, { pin = true } = {}) {
+async function applyMutationBoard(data) {
+  const { applyServerBoardSnapshot } = await import("./board.js");
+  return applyServerBoardSnapshot(data);
+}
+
+async function applyJobMutation(country, company, url, idempotencyKey, data, { pin = true } = {}) {
   const key = data.idempotency_key || idempotencyKey || "";
+  if (await applyMutationBoard(data)) {
+    if (pin) void pinJob(country, company, url, key);
+    return true;
+  }
   if (patchJobOnBoard(country, company, url, key, data)) {
     if (pin) void pinJob(country, company, url, key);
     void refreshUserStatsQuiet();
@@ -198,7 +207,7 @@ export async function toggleFetchProblem(country, company, fetch_problem, { mark
 export async function setNotForMe(country, company, url, notForMe, reason = null) {
   const body = { country, company, url, not_for_me: notForMe };
   if (notForMe && reason) body.reason = reason;
-  const res = await apiFetch("/api/jobs/not-for-me", {
+  const res = await apiFetch(withBoardQuery("/api/jobs/not-for-me"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -211,6 +220,7 @@ export async function setNotForMe(country, company, url, notForMe, reason = null
     toast(msg);
     return false;
   }
+  if (await applyMutationBoard(data)) return true;
   const co = findCompany(country, company);
   const idempotencyKey = data.idempotency_key || "";
   if (co) {
@@ -261,7 +271,7 @@ export async function toggleCompanyApplied(country, company, applied) {
 }
 
 export async function toggleApplied(country, company, url, applied, idempotencyKey = "") {
-  const res = await apiFetch("/api/jobs/applied", {
+  const res = await apiFetch(withBoardQuery("/api/jobs/applied"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -277,7 +287,7 @@ export async function toggleApplied(country, company, url, applied, idempotencyK
     toast(data.error || "Could not save");
     return null;
   }
-  applyJobMutation(country, company, url, idempotencyKey, data);
+  await applyJobMutation(country, company, url, idempotencyKey, data);
   return data;
 }
 
@@ -300,7 +310,7 @@ export async function saveAtsScore(country, company, url, atsScore) {
     toast(msg);
     return null;
   }
-  applyJobMutation(country, company, url, "", data);
+  await applyJobMutation(country, company, url, "", data);
   return data;
 }
 
@@ -321,13 +331,13 @@ export async function saveWaitingReferral(country, company, url, waitingReferral
     toast(data.error || "Could not save waiting referral");
     return null;
   }
-  applyJobMutation(country, company, url, "", data);
+  await applyJobMutation(country, company, url, "", data);
   toast(waitingReferral ? "Waiting for referral" : "Referral status cleared");
   return data;
 }
 
 export async function reapplyJob(country, company, url) {
-  const res = await apiFetch("/api/jobs/reapply", {
+  const res = await apiFetch(withBoardQuery("/api/jobs/reapply"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ country, company, url }),
@@ -339,6 +349,10 @@ export async function reapplyJob(country, company, url) {
       : (data.error || "Could not reapply");
     toast(msg);
     return null;
+  }
+  if (await applyMutationBoard(data)) {
+    void pinJob(country, company, url, data.idempotency_key || "");
+    return data;
   }
   const co = findCompany(country, company);
   if (co) {
@@ -352,7 +366,7 @@ export async function reapplyJob(country, company, url) {
 }
 
 export async function toggleRejected(country, company, url, rejected, idempotencyKey = "") {
-  const res = await apiFetch("/api/jobs/rejected", {
+  const res = await apiFetch(withBoardQuery("/api/jobs/rejected"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -371,12 +385,12 @@ export async function toggleRejected(country, company, url, rejected, idempotenc
     toast(msg);
     return null;
   }
-  applyJobMutation(country, company, url, idempotencyKey, data);
+  await applyJobMutation(country, company, url, idempotencyKey, data);
   return data;
 }
 
 export async function toggleLookingToApply(country, company, url, lookingToApply, idempotencyKey = "") {
-  const res = await apiFetch("/api/jobs/looking-to-apply", {
+  const res = await apiFetch(withBoardQuery("/api/jobs/looking-to-apply"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -392,7 +406,7 @@ export async function toggleLookingToApply(country, company, url, lookingToApply
     toast(data.error || "Could not save");
     return null;
   }
-  applyJobMutation(country, company, url, idempotencyKey, data, { pin: false });
+  await applyJobMutation(country, company, url, idempotencyKey, data, { pin: false });
   return data;
 }
 
@@ -413,7 +427,7 @@ export async function toggleSeen(country, company, url, seen, idempotencyKey = "
     toast(data.error || "Could not update saw-before tag");
     return null;
   }
-  applyJobMutation(country, company, url, idempotencyKey, data, { pin });
+  await applyJobMutation(country, company, url, idempotencyKey, data, { pin });
   return data;
 }
 
@@ -542,6 +556,20 @@ export function boardQueryParams({ page = 1, pageSize = 25 } = {}) {
   const sort = document.getElementById("sortSelect")?.value === "name" ? "name" : "newest";
   params.set("sort", sort);
   return params;
+}
+
+export function mutationBoardQuery() {
+  const params = boardQueryParams({
+    page: state.boardPage ?? 1,
+    pageSize: state.boardMeta?.page_size ?? 25,
+  });
+  params.set("include_board", "1");
+  params.set("catalog_kind", isRemotePanel() ? "remote" : "relocation");
+  return params.toString();
+}
+
+function withBoardQuery(path) {
+  return `${path}?${mutationBoardQuery()}`;
 }
 
 export async function fetchBoard(options = {}) {

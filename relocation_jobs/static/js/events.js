@@ -16,7 +16,7 @@ import {
 } from "./api.js";
 import { pinJob } from "./api.js";
 import { loadJobs, loadCities, ensureLocationsLoaded } from "./data.js";
-import { loadBoard } from "./board.js";
+import { loadBoard, applyServerBoardSnapshot } from "./board.js";
 import { patchJobOnBoard, hideJobAsNotForMe, restoreJobToOpen } from "./job-board.js";
 import {
   renderCompanies,
@@ -614,23 +614,30 @@ function bindJobsListEvents() {
     if (detail.type === "auth-required") { onUnauthorized(); return; }
     if (detail.type === "toast" && detail.message) toast(detail.message);
     if (detail.type === "mutated" && detail.apiData) {
-      if (detail.apiData.not_for_me === true) {
-        const co = findCompany(detail.country, detail.company);
-        if (co) hideJobAsNotForMe(co, detail.url, detail.idempotencyKey, detail.apiData.not_for_me_reason || null);
-      } else if (detail.apiData.not_for_me === false) {
-        const co = findCompany(detail.country, detail.company);
-        if (co) restoreJobToOpen(co, detail.url, detail.idempotencyKey);
-      } else {
-        patchJobOnBoard(detail.country, detail.company, detail.url, detail.idempotencyKey, detail.apiData);
+      const snapshot = applyServerBoardSnapshot(detail.apiData);
+      if (!snapshot) {
+        if (detail.apiData.not_for_me === true) {
+          const co = findCompany(detail.country, detail.company);
+          if (co) hideJobAsNotForMe(co, detail.url, detail.idempotencyKey, detail.apiData.not_for_me_reason || null);
+        } else if (detail.apiData.not_for_me === false) {
+          const co = findCompany(detail.country, detail.company);
+          if (co) restoreJobToOpen(co, detail.url, detail.idempotencyKey);
+        } else {
+          patchJobOnBoard(detail.country, detail.company, detail.url, detail.idempotencyKey, detail.apiData);
+        }
       }
       if (detail.apiData.reveal?.consumed) {
         if (detail.apiData.reveal.expanded) {
           toast("Action saved · one new role added for this company");
         }
-        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        if (!snapshot) {
+          void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        }
       } else if (detail.apiData.reveal?.reason === "credits_exhausted") {
         toast("Status saved · add credits to receive the next matched role");
-        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        if (!snapshot) {
+          void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        }
       }
     }
   });

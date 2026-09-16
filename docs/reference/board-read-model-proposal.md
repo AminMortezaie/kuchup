@@ -488,12 +488,14 @@ Search runs against catalog tables to resolve `company_id` set, then intersects 
 
 ### Phase 0 — Low-risk mitigations (no projection table)
 
+**Shipped 2026-09-16:** Class B mutation endpoints return `board` + `user_stats` when `include_board=1`, built from the current flatten path. Panel applies that snapshot instead of `GET /api/board`. F vs F+G and Phase 1+ remain open.
+
 Can ship before structural approval:
 
-1. Mutation endpoints return **board page + meta + user_stats** in one response (still from current flatten path).
-2. Remove extra round trips: fold pin into apply response where appropriate; stop unconditional `/api/board/stats` after every click.
-3. Denormalize `companies.newest_open_job_fetched` at scrape merge (catalog-only hint).
-4. Document and measure: `EXPLAIN ANALYZE` on board path with realistic row counts.
+1. Mutation endpoints return **board page + meta + user_stats** in one response (still from current flatten path). **Done.**
+2. Remove extra round trips: fold pin into apply response where appropriate; stop unconditional `/api/board/stats` after every click. **Partial:** Class B mutations no longer refetch board/stats; pin-fold and Class A stats are still deferred.
+3. Denormalize `companies.newest_open_job_fetched` at scrape merge (catalog-only hint). **Deferred.**
+4. Document and measure: `EXPLAIN ANALYZE` on board path with realistic row counts. **Deferred.**
 
 **Done when:** p95 mutation→visible board update improves measurably; still correct.
 
