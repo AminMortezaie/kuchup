@@ -10,7 +10,7 @@ from flask import Flask, Response, redirect, request, send_from_directory
 from dotenv import load_dotenv
 
 from relocation_jobs.core.auth import ensure_dev_login, init_auth
-from relocation_jobs.core.db import init_db
+from relocation_jobs.core.db import init_connection_pool, init_db, release_thread_connection
 from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.paths import PROJECT_ROOT, STATIC_DIR
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
@@ -185,6 +185,7 @@ app.secret_key = os.environ.get("PANEL_SECRET_KEY", "").strip() or "dev-fallback
 def bootstrap_app() -> None:
     STATIC.mkdir(exist_ok=True)
     load_dotenv(ROOT / ".env")
+    init_connection_pool()
     init_db()
     configure_logging()
     ensure_aggregator_seeds()
@@ -197,6 +198,11 @@ def _ensure_bootstrapped():
         return
     bootstrap_app()
     ensure_dev_login()
+
+
+@app.teardown_appcontext
+def _release_db_connection(_exc):
+    release_thread_connection()
 
 
 @app.after_request

@@ -38,8 +38,8 @@ Root cause is **burst parallel DB connections** (one per worker thread in `reloc
 
 - Single env var: **`DATABASE_URL`** (required; no SQLite fallback in prod).
 - Schema: `init_db()` + `relocation_jobs/core/migrations.py` on startup.
-- Driver: `psycopg` in `relocation_jobs/core/db.py`.
-- Neon-specific today: `prepare_threshold=None` (pooler), keepalive tuning, idle ping every ~4.5 min.
+- Driver: `psycopg` + `psycopg_pool.ConnectionPool` in `relocation_jobs/core/db.py` (`min_size=2`, `max_size=8` per gunicorn worker).
+- Keepalives and `prepare_threshold=None` remain; the Neon idle-ping workaround was removed in multi-user scaling Phase 0.
 
 **No code changes required for cutover** — only connection string + infra. Optional doc/README updates after success.
 
@@ -304,8 +304,8 @@ Neon data is stale after cutover unless you re-dump from AWS back to Neon. Take 
 |---------|----------------|
 | Country fetch workers | Start **8**; increase to 16 only if stable |
 | EC2 `t4g.micro` | ~1 GB RAM — 16 parallel Playwright + httpx is heavy |
-| DB connections | 16 workers ≈ 16 thread-local connections + main thread — watch `max_connections` |
-| Neon idle ping | `_IDLE_PING_THRESHOLD_S = 270` in `db.py` — harmless on always-on AWS |
+| DB connections | 2 gunicorn workers × pool `max_size=8` = up to 16 panel connections; fetch worker uses the same pool module |
+| Neon idle ping | Removed in Phase 0 (`psycopg_pool` idle/lifetime handling on always-on EC2 Postgres) |
 
 Longer-term code improvement (not part of infra migration): single writer queue for catalog persists instead of per-thread connections.
 

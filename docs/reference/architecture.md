@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-16
 
 v2 layout and data flow. Setup: [contributing.md](../contributing.md). Board details: [board.md](board.md). Catalog vs user state: [catalog-pattern.md](catalog-pattern.md). How this graph was reached: [backend-soul-refactor.md](backend-soul-refactor.md).
 
@@ -79,7 +79,7 @@ relocation_jobs/
 
 | Store | Contents |
 |-------|----------|
-| **Postgres** (`DATABASE_URL`) | Catalog, users, tracking, fetch runs |
+| **Postgres** (`DATABASE_URL`) | Catalog, users, tracking, fetch runs. Panel uses `psycopg_pool.ConnectionPool` (`min_size=2`, `max_size=8` per gunicorn worker). |
 | `data/custom_cities.json` | User-added cities (`PANEL_DATA_DIR`) |
 
 ---
