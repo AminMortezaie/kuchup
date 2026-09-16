@@ -10,6 +10,7 @@ from relocation_jobs.broadcast.service import apply_capacity_to_board_page, reco
 from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.opportunities.service import resolve_board_opportunity_scope
 from relocation_jobs.web import deps
+from relocation_jobs.web.board_payload import mutation_board_fields
 from relocation_jobs.web.query import query_flags
 from relocation_jobs.web.validators import job_mutation_error, job_mutation_fields
 
@@ -29,6 +30,14 @@ def _touch_reveal(country: str, company: str, result: dict, kind: str) -> dict:
         )
     except LookupError:
         return {}
+
+
+def _ok_with_board(result: dict, reveal: dict | None = None) -> dict:
+    payload = {"ok": True, **result}
+    if reveal is not None:
+        payload["reveal"] = reveal
+    payload.update(mutation_board_fields(g.user_id, job_country=result.get("country")))
+    return payload
 
 
 def register(app):
@@ -102,7 +111,7 @@ def register(app):
             active = bool(body.get("applied", True))
             result = deps.set_job_applied(country, company, url, active, user_id=g.user_id)
             reveal = _touch_reveal(country, company, result, "applied") if active else {}
-            return jsonify({"ok": True, **result, "reveal": reveal})
+            return jsonify(_ok_with_board(result, reveal))
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -118,7 +127,7 @@ def register(app):
             active = bool(body.get("rejected", True))
             result = deps.set_job_rejected(country, company, url, active, user_id=g.user_id)
             reveal = _touch_reveal(country, company, result, "rejected") if active else {}
-            return jsonify({"ok": True, **result, "reveal": reveal})
+            return jsonify(_ok_with_board(result, reveal))
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -133,7 +142,7 @@ def register(app):
         try:
             result = deps.set_job_reapply(country, company, url, user_id=g.user_id)
             reveal = _touch_reveal(country, company, result, "reapply")
-            return jsonify({"ok": True, **result, "reveal": reveal})
+            return jsonify(_ok_with_board(result, reveal))
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -197,7 +206,7 @@ def register(app):
                 reason=(body.get("reason") or "").strip() or None,
             )
             reveal = _touch_reveal(country, company, result, "not_for_me") if active else {}
-            return jsonify({"ok": True, **result, "reveal": reveal})
+            return jsonify(_ok_with_board(result, reveal))
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
@@ -215,7 +224,7 @@ def register(app):
                 country, company, url, active, user_id=g.user_id,
             )
             reveal = _touch_reveal(country, company, result, "interested") if active else {}
-            return jsonify({"ok": True, **result, "reveal": reveal})
+            return jsonify(_ok_with_board(result, reveal))
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 

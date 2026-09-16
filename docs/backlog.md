@@ -76,7 +76,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ## Board read model (fast pagination + mutation refresh)
 
-**Status:** planned (proposal written)  
+**Status:** in progress (Phase 0 shipped 2026-09-16; Phase 1+ planned)  
 **Priority:** high  
 **Context:** `GET /api/board` rescans/flattens the catalog on many requests (~2s). Mutations (not-for-me on newest job, hide-empty, sort) require a **correct global board refresh** with pagination — client cache or ES are poor fits. See [reference/board-read-model-proposal.md](reference/board-read-model-proposal.md).
 
@@ -88,7 +88,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ### Approach (summary)
 
-1. **Phase 0:** mutation responses return board page + stats; cut extra round trips.
+1. **Phase 0 (shipped):** mutation responses return board page + stats when `include_board=1`; panel applies the snapshot instead of `GET /api/board`. Still uses the current flatten path. No projection table, no Redis.
 2. **Phase 1:** `user_board_company` Postgres projection, synchronous write-through via `flatten_company()` (Option F).
 3. **Phase 2:** keyset cursor pagination on `(sort_ts, company_id)`.
 4. **Phase 4 (optional):** Redis ZSET + HASH read path (Option G) — [proposal](reference/board-read-model-proposal.md#g-redis-derived-board-zset-rank--row-cache--viable-read-accelerator).
@@ -100,6 +100,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ### Done when
 
+- [x] Phase 0: mutation responses include board page + `user_stats`; extra `GET /api/board` after Class B mutations removed on the panel
 - [ ] Proposal approved (open decisions in doc resolved)
 - [ ] Parity tests: projection vs legacy flatten
 - [ ] p95 targets in proposal met on realistic data

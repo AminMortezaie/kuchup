@@ -84,6 +84,19 @@ export function applyBoardView({ enterAnimation = false } = {}) {
   }
 }
 
+export function applyServerBoardSnapshot(data) {
+  const board = data?.board;
+  if (!board || !Array.isArray(board.companies)) return false;
+  state.boardCatalog = board.companies;
+  state.boardMeta = { ...(board.meta || {}) };
+  if (data.user_stats) state.boardUserStats = data.user_stats;
+  state.boardPage = board.meta?.page ?? state.boardPage ?? 1;
+  state.boardScopeKey = catalogScopeKey();
+  state.boardRequestKey = boardRequestKey();
+  applyBoardView();
+  return true;
+}
+
 async function loadBoardCatalog(options = {}) {
   persistScopeSelection();
   const page = options.page ?? state.boardPage ?? 1;
