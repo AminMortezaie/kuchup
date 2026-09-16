@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, unquote, urlparse
 
+import pytest
+
 from relocation_jobs.catalog.repo import (
     get_company,
     sync_company_board_to_catalog,
@@ -306,6 +308,7 @@ def test_jobs_hub_country_filter(v2_client, seeded_catalog_v2):
     assert blank.headers["Location"].endswith("/jobs")
 
 
+@pytest.mark.fresh_db
 def test_jobs_hub_omits_remote_catalog_and_remote_locations(v2_client, seeded_catalog_v2):
     keep = _publish_visa_job(seeded_catalog_v2)
     company = get_company("uk", "Acme Backend Ltd")
