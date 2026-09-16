@@ -12,3 +12,7 @@ you're insight is wrong.
 ---
 
 no i mean the bug fixed you've done.
+
+---
+
+fine commit ur files on git.
