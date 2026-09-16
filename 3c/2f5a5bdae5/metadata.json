@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3c2f5a5bdae5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/static/apply.html",
+    "relocation_jobs/static/company.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/apply-documents.js",
+    "relocation_jobs/static/js/board.js",
+    "relocation_jobs/static/js/company.js",
+    "relocation_jobs/static/js/screen-loader.js",
+    "relocation_jobs/static/js/utils.js",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3c/2f5a5bdae5/0/metadata.json",
+      "transcript": "/3c/2f5a5bdae5/0/full.jsonl",
+      "compact_transcript": "/3c/2f5a5bdae5/0/transcript.jsonl",
+      "content_hash": "/3c/2f5a5bdae5/0/content_hash.txt",
+      "prompt": "/3c/2f5a5bdae5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 224212,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2779904,
+    "output_tokens": 21137,
+    "api_call_count": 1
+  }
+}
