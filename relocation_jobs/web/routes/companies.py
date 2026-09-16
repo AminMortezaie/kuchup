@@ -223,6 +223,7 @@ def register(app):
                 locations=locations,
             )
             restored = deps.reconcile_wrong_location_hides(g.user_id, country_key=country)
+            deps.apply_wrong_location_hides(g.user_id, country_key=country)
             return jsonify({"ok": True, **result, "restored_jobs": restored})
         except LookupError as e:
             return jsonify({"error": str(e)}), 404

@@ -2,16 +2,21 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from relocation_jobs.core.job_identity import job_idempotency_key
+from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from relocation_jobs.core.location_tags import (
     city_match_keys,
     company_expected_locations,
+    job_fails_office_location_gate,
     job_matches_expected_locations,
+    sync_company_location_fields,
 )
+from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.catalog.lookup import find_job_in_data
-from relocation_jobs.catalog.repo import get_company, get_job_by_url
+from relocation_jobs.catalog.repo import get_company, get_job_by_url, load_country_catalog
 from relocation_jobs.positions import repo
-from relocation_jobs.positions.types import JobStatusUpdate
+from relocation_jobs.positions.types import JobStatusUpdate, TrackingFlags
+from relocation_jobs.shared.coerce import as_bool
+from relocation_jobs.users.repo import load_job_tracking
 
 
 def _normalize_linkedin_url(url: str) -> str:
@@ -48,6 +53,90 @@ def _validated(result: dict) -> dict:
 
 def _catalog_url(job: dict, job_url: str) -> str:
     return (job.get("url") or "").strip() or job_url
+
+
+def _should_persist_wrong_location_hide(track: dict | None) -> bool:
+    flags = TrackingFlags.from_row(track)
+    if flags.not_for_me and flags.not_for_me_reason:
+        return False
+    if track and as_bool(track.get("location_gate_override")):
+        return False
+    return True
+
+
+def _tracking_row_for_job(
+    job_tracking: dict,
+    *,
+    country: str,
+    company_name: str,
+    job_url: str,
+) -> dict | None:
+    direct = job_tracking.get((country, company_name, normalize_job_url(job_url)))
+    if direct is not None:
+        return direct
+    job_key = job_idempotency_key(job_url)
+    if not job_key:
+        return None
+    for (t_country, t_company, t_url), track in job_tracking.items():
+        if t_country != country or t_company != company_name:
+            continue
+        if job_idempotency_key(t_url) == job_key:
+            return track
+    return None
+
+
+def _company_wrong_location_hits(company: dict, *, country: str) -> list[tuple[str, str, str]]:
+    sync_company_location_fields(company, catalog_country=country)
+    company_name = (company.get("name") or "").strip()
+    if not company_name:
+        return []
+    hits: list[tuple[str, str, str]] = []
+    for job in company.get("matching_jobs") or []:
+        fails, _ = job_fails_office_location_gate(job, company, catalog_country=country)
+        url = (job.get("url") or "").strip()
+        if fails and url:
+            hits.append((country, company_name, url))
+    return hits
+
+
+def _catalog_jobs_failing_location_gate(*, country_key: str | None) -> list[tuple[str, str, str]]:
+    countries = [country_key] if country_key else sorted(supported_countries())
+    hits: list[tuple[str, str, str]] = []
+    for country in countries:
+        data = load_country_catalog(country)
+        if not data:
+            continue
+        for company in data.get("companies") or []:
+            hits.extend(_company_wrong_location_hits(company, country=country))
+    return hits
+
+
+def _persist_wrong_location_hits(user_id: int, hits: list[tuple[str, str, str]]) -> int:
+    if not hits:
+        return 0
+    countries = {country for country, _, _ in hits}
+    country_filter = next(iter(countries)) if len(countries) == 1 else None
+    job_tracking = load_job_tracking(user_id, country=country_filter)
+    marked = 0
+    for country, company_name, job_url in hits:
+        track = _tracking_row_for_job(
+            job_tracking,
+            country=country,
+            company_name=company_name,
+            job_url=job_url,
+        )
+        if not _should_persist_wrong_location_hide(track):
+            continue
+        repo.set_not_for_me(
+            user_id,
+            country,
+            company_name,
+            job_url,
+            not_for_me=True,
+            reason="wrong_location",
+        )
+        marked += 1
+    return marked
 
 
 def set_job_applied(
@@ -211,6 +300,17 @@ def set_job_not_for_me(
         not_for_me=not_for_me, reason=reason,
     )
     return _validated(_with_catalog_url(result, job.get("url", "")))
+
+
+def apply_wrong_location_hides(
+    user_id: int,
+    *,
+    country_key: str | None = None,
+) -> int:
+    return _persist_wrong_location_hits(
+        user_id,
+        _catalog_jobs_failing_location_gate(country_key=country_key),
+    )
 
 
 def reconcile_wrong_location_hides(

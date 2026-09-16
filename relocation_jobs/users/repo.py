@@ -475,6 +475,12 @@ def is_user_admin(user_id: int) -> bool:
     return user.get("username", "").strip().lower() == admin_name
 
 
+def list_user_ids() -> list[int]:
+    with db_read() as conn:
+        rows = conn.execute("SELECT id FROM users ORDER BY id").fetchall()
+    return [int(row["id"]) for row in rows]
+
+
 def list_users_with_stats() -> list[dict]:
     sql = """
         SELECT

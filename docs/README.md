@@ -129,6 +129,7 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 | [operations/seo-indexing.md](operations/seo-indexing.md) | Search Console, `/sitemap.xml` + `/sitemap-jobs.xml`, `/engineering` notes |
 | `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
+| `python3 scripts/mark_wrong_location_jobs.py` | Persist wrong-location hides for all users (`--dry-run` to list only; `--country`, `--user-id` to scope) |
 
 ### Backlog
 
