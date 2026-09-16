@@ -3,7 +3,7 @@
   "checkpoint_id": "d2b3c19a514c",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 8,
   "files_touched": [
     "relocation_jobs/core/ats_detection.py",
     "relocation_jobs/scrape/ats_resolve.py",
@@ -18,13 +18,20 @@
       "compact_transcript": "/d2/b3c19a514c/0/transcript.jsonl",
       "content_hash": "/d2/b3c19a514c/0/content_hash.txt",
       "prompt": "/d2/b3c19a514c/0/prompt.txt"
+    },
+    {
+      "metadata": "/d2/b3c19a514c/1/metadata.json",
+      "transcript": "/d2/b3c19a514c/1/full.jsonl",
+      "compact_transcript": "/d2/b3c19a514c/1/transcript.jsonl",
+      "content_hash": "/d2/b3c19a514c/1/content_hash.txt",
+      "prompt": "/d2/b3c19a514c/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 297144,
+    "input_tokens": 586467,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 2345728,
-    "output_tokens": 19109,
-    "api_call_count": 2
+    "cache_read_tokens": 4744192,
+    "output_tokens": 42124,
+    "api_call_count": 4
   }
 }

@@ -1,0 +1,110 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d2b3c19a514c",
+  "session_id": "b933d4eb-a0c0-451f-8bc5-79b91d188cff",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-16T14:35:15.812775Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "save_step_count": 3,
+  "files_touched": [
+    "relocation_jobs/core/ats_detection.py",
+    "relocation_jobs/scrape/ats_resolve.py",
+    "tests/core/test_ats_constants.py",
+    "tests/core/test_ats_detection.py",
+    "tests/scrape/test_greenhouse_board.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "c8d6d41dc735",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 289323,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2398464,
+    "output_tokens": 23015,
+    "api_call_count": 2
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-2026-09-16T14:09:52.840399Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "1b003d832ca9",
+      "timestamp": "2026-09-16T14:09:52.840399Z",
+      "native": {
+        "command": "/ponytail"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-16T14:35:15.797205Z",
+    "agent_lines": 84,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 84,
+    "total_lines_changed": 84,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 195,
+      "agent_lines_removed": 74,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 195,
+      "agent_lines_removed": 74,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 242,
+      "agent_lines_removed": 71,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
