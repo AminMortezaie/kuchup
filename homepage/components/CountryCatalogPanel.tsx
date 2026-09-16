@@ -19,12 +19,14 @@ type LiveState = {
 };
 
 function publicJobHref(role: CountrySnapshot["sample_positions"][number]): string | null {
-  const slug = (role.public_slug || "").trim();
-  if (slug) {
-    return `/jobs/${slug}`;
-  }
   const url = (role.url || "").trim();
-  return url.startsWith("/jobs/") ? url : null;
+  if (!/^https?:\/\//i.test(url)) {
+    return null;
+  }
+  if (/kuchup\.com\/jobs\//i.test(url)) {
+    return null;
+  }
+  return url;
 }
 
 function hasPublicJobHref(role: CountrySnapshot["sample_positions"][number]): boolean {
@@ -168,6 +170,8 @@ export function CountryCatalogPanel({ country, label, initial }: Props) {
                 <li key={`${role.company_name}-${role.title}-${href}`}>
                   <a
                     href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm font-medium text-text-primary underline-offset-2 hover:underline"
                   >
                     {role.title}

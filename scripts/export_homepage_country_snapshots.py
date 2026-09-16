@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,7 +11,26 @@ LABELS_PATH = ROOT / "homepage" / "data" / "countries.json"
 OUT = ROOT / "homepage" / "data" / "country-snapshots.json"
 FEATURED_LIMIT = 6
 POSITION_LIMIT = 8
+POSITION_POOL = 40
 CITY_LIMIT = 8
+
+
+def _employer_ats_url(row: dict) -> str:
+    url = (row.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return ""
+    if "kuchup.com/jobs/" in url.casefold():
+        return ""
+    return url
+
+
+def _weekly_sample(rows: list[dict], limit: int, week: int | None = None) -> list[dict]:
+    # ponytail: ISO-week slice frozen in static HTML until homepage rebuild, weekly cron export+deploy or Flask SSR of sample ATS hrefs when LinkedIn wrapping needs the set to change without a human deploy
+    if len(rows) <= limit:
+        return rows
+    iso_week = date.today().isocalendar().week if week is None else week
+    start = iso_week % len(rows)
+    return (rows[start:] + rows[:start])[:limit]
 
 
 def _load_marketing_keys() -> list[str]:
@@ -52,7 +72,7 @@ def _city_labels(companies: list[dict]) -> list[str]:
 def _snapshot_for_country(country: str, overview_row: dict | None, meta_row: dict | None) -> dict:
     from relocation_jobs.web.routes.public import _public_preview_payload
 
-    preview = _public_preview_payload(limit=FEATURED_LIMIT, country=country, search=None)
+    preview = _public_preview_payload(limit=POSITION_POOL, country=country, search=None)
     companies = list(preview.get("companies") or [])
     featured = list(preview.get("featured_companies") or [])
     featured_scope = (preview.get("meta") or {}).get("featured_scope") or ""
@@ -62,20 +82,19 @@ def _snapshot_for_country(country: str, overview_row: dict | None, meta_row: dic
     for row in preview.get("positions") or []:
         if (row.get("country") or "").strip().lower() != country:
             continue
-        slug = (row.get("public_slug") or "").strip()
-        if not slug:
+        url = _employer_ats_url(row)
+        if not url:
             continue
         positions.append(
             {
                 "title": row.get("title") or "",
                 "company_name": row.get("company_name") or "",
                 "location": row.get("location") or "",
-                "public_slug": slug,
-                "url": f"/jobs/{slug}",
+                "public_slug": (row.get("public_slug") or "").strip(),
+                "url": url,
             }
         )
-        if len(positions) >= POSITION_LIMIT:
-            break
+    positions = _weekly_sample(positions, POSITION_LIMIT)
     sample_companies = [
         {
             "name": row.get("name") or "",

@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, unquote, urlparse
 
-from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
+from relocation_jobs.catalog.repo import (
+    get_company,
+    sync_company_board_to_catalog,
+    upsert_company,
+)
 from relocation_jobs.credits.repo import list_ledger
 from relocation_jobs.credits.service import credit_balance, spend_for_operation
 from relocation_jobs.credits.types import CreditOperation
@@ -300,6 +304,56 @@ def test_jobs_hub_country_filter(v2_client, seeded_catalog_v2):
     blank = v2_client.get("/jobs?country=")
     assert blank.status_code == 302
     assert blank.headers["Location"].endswith("/jobs")
+
+
+def test_jobs_hub_omits_remote_catalog_and_remote_locations(v2_client, seeded_catalog_v2):
+    keep = _publish_visa_job(seeded_catalog_v2)
+    company = get_company("uk", "Acme Backend Ltd")
+    jobs = list(company["matching_jobs"])
+    remote_loc = next(j for j in jobs if j["url"] != keep["url"])
+    remote_loc["visa_sponsorship"] = True
+    remote_loc["location"] = "Remote, DXB"
+    company["matching_jobs"] = jobs
+    sync_company_board_to_catalog("uk", company)
+    remote_loc = next(
+        j
+        for j in get_company("uk", "Acme Backend Ltd")["matching_jobs"]
+        if j["url"] == remote_loc["url"]
+    )
+
+    upsert_company(
+        "remote-dxb",
+        {
+            "name": "DXB Corp",
+            "catalog_kind": "remote",
+            "ats_type": "sourced",
+            "careers_url": "https://www.remotedxb.com/rss",
+            "matching_jobs": [
+                {
+                    "title": "Remote Engineer",
+                    "url": "https://www.remotedxb.com/jobs/1",
+                    "visa_sponsorship": True,
+                    "location": "Dubai",
+                }
+            ],
+        },
+    )
+    dxb = next(
+        j
+        for j in get_company("remote-dxb", "DXB Corp")["matching_jobs"]
+        if j["url"] == "https://www.remotedxb.com/jobs/1"
+    )
+
+    body = v2_client.get("/jobs").get_data(as_text=True)
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"/jobs/{keep['public_slug']}" in body
+    assert f"/jobs/{keep['public_slug']}" in sitemap
+    assert remote_loc.get("public_slug")
+    assert f"/jobs/{remote_loc['public_slug']}" not in body
+    assert f"/jobs/{remote_loc['public_slug']}" not in sitemap
+    assert dxb.get("public_slug")
+    assert f"/jobs/{dxb['public_slug']}" not in body
+    assert f"/jobs/{dxb['public_slug']}" not in sitemap
 
 
 def test_jobs_hub_omits_closed_roles(v2_client, seeded_catalog_v2):

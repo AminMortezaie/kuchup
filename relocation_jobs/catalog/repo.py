@@ -22,6 +22,8 @@ from relocation_jobs.catalog.serialize import (
 )
 from relocation_jobs.core.slug import public_job_slug_base
 from relocation_jobs.shared.board_contract import (
+    CATALOG_KIND_REMOTE,
+    REMOTE_COUNTRY_KEYS,
     catalog_kind_for_write,
     normalize_catalog_kind,
 )
@@ -834,37 +836,51 @@ def get_public_job_by_slug(slug: str) -> dict | None:
     return job
 
 
-def list_active_public_job_sitemap_entries() -> list[dict]:
-    with db_read() as conn:
-        rows = conn.execute(
-            """
-            SELECT j.public_slug, j.last_seen, j.fetched
-            FROM matching_jobs j
-            WHERE j.visa_sponsorship = 1
+def _public_relocation_job_clause() -> tuple[str, tuple]:
+    remote_keys = tuple(sorted(REMOTE_COUNTRY_KEYS))
+    placeholders = ", ".join("%s" for _ in remote_keys)
+    sql = f"""
+              j.visa_sponsorship = 1
               AND (j.closed_at IS NULL OR j.closed_at = '')
               AND j.public_slug IS NOT NULL
               AND j.public_slug != ''
+              AND LOWER(TRIM(COALESCE(c.catalog_kind, ''))) != %s
+              AND c.country NOT IN ({placeholders})
+              AND LOWER(COALESCE(j.location, '')) NOT LIKE %s
+    """
+    return sql, (CATALOG_KIND_REMOTE, *remote_keys, "%remote%")
+
+
+def list_active_public_job_sitemap_entries() -> list[dict]:
+    where_sql, where_params = _public_relocation_job_clause()
+    with db_read() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT j.public_slug, j.last_seen, j.fetched
+            FROM matching_jobs j
+            JOIN companies c ON c.id = j.company_id
+            WHERE {where_sql}
             ORDER BY COALESCE(NULLIF(j.last_seen, ''), j.fetched) DESC, j.public_slug
-            """
+            """,
+            where_params,
         ).fetchall()
     return [_row(row) for row in rows]
 
 
 def list_active_public_jobs() -> list[dict]:
+    where_sql, where_params = _public_relocation_job_clause()
     with db_read() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT j.id, j.title, j.public_slug, j.location, j.description_text,
                    j.fetched, j.last_seen,
                    c.name AS company_name, c.country, c.city
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
-            WHERE j.visa_sponsorship = 1
-              AND (j.closed_at IS NULL OR j.closed_at = '')
-              AND j.public_slug IS NOT NULL
-              AND j.public_slug != ''
+            WHERE {where_sql}
             ORDER BY c.country, c.name, j.title, j.public_slug
-            """
+            """,
+            where_params,
         ).fetchall()
     jobs: list[dict] = []
     for row in rows:

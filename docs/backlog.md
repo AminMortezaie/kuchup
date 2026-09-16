@@ -4,6 +4,31 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 
 ---
 
+## Live weekly rotation of country-page sample ATS URLs
+
+**Status:** planned  
+**Priority:** high  
+**Context:** LinkedIn wraps sample roles from `/relocation-jobs-*` static HTML. Sample hrefs are employer ATS URLs. `_weekly_sample` only re-picks the set at homepage export (ISO week of that build). Without a weekly rebuild, LinkedIn keeps wrapping the same eight jobs.
+
+### Problem / goal
+
+Country marketing samples must change every week in the HTML LinkedInBot actually crawls, without waiting for someone to run `build_homepage.sh` by hand.
+
+### Approach
+
+1. **First:** weekly cron that exports country snapshots, rebuilds the homepage, deploys marketing HTML.
+2. **If cron is too slow / missed deploys:** Flask-SSR the sample list on `GET /relocation-jobs-*` (or inject ATS hrefs at request time) so ISO week is computed on crawl.
+
+Do not rotate only in client JS — LinkedInBot reads the first HTML.
+
+### Done when
+
+- [ ] Germany (and other country pages) show a different ATS sample set each ISO week in static/SSR HTML
+- [ ] No human homepage rebuild required for that swap
+- [ ] Sample hrefs stay employer ATS URLs, not `/jobs/<slug>`
+
+---
+
 ## Not-for-me soft delete (wrong location + user hides)
 
 **Status:** in progress (expired hide reason shipped 2026-07-03)  
