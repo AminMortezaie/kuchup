@@ -1,0 +1,98 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "299c2e42beb2",
+  "session_id": "0f155454-59cf-4d86-866c-918967b37a1a",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-16T11:36:39.926299Z",
+  "branch": "refactor/fetch-keep-layers",
+  "checkpoints_count": 3,
+  "save_step_count": 3,
+  "files_touched": [
+    "relocation_jobs/companies/service.py",
+    "relocation_jobs/fetch/__init__.py",
+    "relocation_jobs/fetch/country_runner.py",
+    "relocation_jobs/fetch/pipeline.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/fetch/service.py",
+    "relocation_jobs/fetch/state.py",
+    "relocation_jobs/scrape/boards/_async.py",
+    "relocation_jobs/scrape/company.py",
+    "relocation_jobs/web/routes/fetch.py",
+    "tests/catalog/test_remove_country.py",
+    "tests/fetch/test_fetch_state_stale.py",
+    "tests/fetch/test_pipeline.py",
+    "tests/fetch/test_runner_country_results.py",
+    "tests/fetch/test_service.py",
+    "tests/web/test_fetch_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "ffdd1c2e7919",
+  "checkpoint_transcript_start": 17,
+  "transcript_lines_at_start": 17,
+  "compact_transcript_start": 3,
+  "token_usage": {
+    "input_tokens": 817823,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6662784,
+    "output_tokens": 63041,
+    "api_call_count": 3
+  },
+  "session_metrics": {
+    "turn_count": 4,
+    "context_tokens": 235960,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-16T11:36:39.876645Z",
+    "agent_lines": 426,
+    "agent_removed": 903,
+    "human_added": 1,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 427,
+    "total_lines_changed": 1330,
+    "agent_percentage": 99.92481203007519,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 439,
+      "agent_lines_removed": 979,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 426,
+      "agent_lines_removed": 903,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 13,
+      "user_lines_removed": 0,
+      "agent_lines_added": 426,
+      "agent_lines_removed": 903,
+      "user_added_per_file": {
+        ".cursor/rules/v2-coding.mdc": 1,
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

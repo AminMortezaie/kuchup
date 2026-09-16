@@ -1,0 +1,20 @@
+<timestamp>Tuesday, Sep 15, 2026, 12:41 AM (UTC+4)</timestamp>
+
+do it, i will review it.
+
+---
+
+i don't like your way.
+you have remove lots of abstractions which was useful.
+YAGWNI is good but you have removed some cleensing part of code and substitude with local if else or global vars which are bad patterns.
+
+you need to review again and rewrite with software best practice and make the flow simpler.
+
+/ponytail-review review with what i told u.
+
+---
+
+it's much better now.
+i will accept this change but you should update the style i accpeted on skill to have this for further changes.
+
+firstly, update the skill with this newly info you got, then we will merge it i will tell you later.

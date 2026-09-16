@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "299c2e42beb2",
+  "strategy": "manual-commit",
+  "branch": "refactor/fetch-keep-layers",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "relocation_jobs/companies/service.py",
+    "relocation_jobs/fetch/__init__.py",
+    "relocation_jobs/fetch/country_runner.py",
+    "relocation_jobs/fetch/pipeline.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/fetch/service.py",
+    "relocation_jobs/fetch/state.py",
+    "relocation_jobs/scrape/boards/_async.py",
+    "relocation_jobs/scrape/company.py",
+    "relocation_jobs/web/routes/fetch.py",
+    "tests/catalog/test_remove_country.py",
+    "tests/fetch/test_fetch_state_stale.py",
+    "tests/fetch/test_pipeline.py",
+    "tests/fetch/test_runner_country_results.py",
+    "tests/fetch/test_service.py",
+    "tests/web/test_fetch_api.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/29/9c2e42beb2/0/metadata.json",
+      "transcript": "/29/9c2e42beb2/0/full.jsonl",
+      "compact_transcript": "/29/9c2e42beb2/0/transcript.jsonl",
+      "content_hash": "/29/9c2e42beb2/0/content_hash.txt",
+      "prompt": "/29/9c2e42beb2/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 817823,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6662784,
+    "output_tokens": 63041,
+    "api_call_count": 3
+  }
+}
