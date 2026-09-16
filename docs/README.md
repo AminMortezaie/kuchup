@@ -19,6 +19,7 @@ Code is the source of truth. This index lists **living** pages first. History si
 | Change Python in `relocation_jobs/` | [reference/rules.md](reference/rules.md) |
 | Change job apply / reject / hide behavior | [reference/business-rules.md](reference/business-rules.md) |
 | Work on board sort, pagination, newest | [reference/board.md](reference/board.md) |
+| Panel UI health check (React island + vanilla hybrid) | [reference/frontend-health-check.md](reference/frontend-health-check.md) |
 | Entitlements — Google auth, plans, credits, NOWPayments | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
 | Catalog vs per-user tracking | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
 | Panel / admin statistics | [reference/stats.md](reference/stats.md) |
@@ -70,6 +71,7 @@ docs/
 | Doc | Purpose |
 |-----|---------|
 | [reference/board.md](reference/board.md) | Board API, pagination, newest sort |
+| [reference/frontend-health-check.md](reference/frontend-health-check.md) | Panel UI health check — React island, vanilla JS, what to do next |
 | [reference/stats.md](reference/stats.md) | Admin/user stats definitions |
 | [reference/business-rules.md](reference/business-rules.md) | Job state contracts — read before tracking changes |
 
