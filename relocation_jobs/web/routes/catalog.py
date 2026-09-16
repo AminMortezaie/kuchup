@@ -146,6 +146,7 @@ def register(app):
                 country_key=country,
                 city_label=location["city"],
             )
+            deps.apply_wrong_location_hides(g.user_id, country_key=country)
             return jsonify({"ok": True, "location": location, "restored_jobs": restored})
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400

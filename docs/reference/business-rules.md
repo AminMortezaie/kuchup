@@ -22,7 +22,7 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 
 7. **Reject and reapply** — Rejecting moves a job to the `rejected_jobs` list on read; it does not clear applied. An applied job that is rejected drops out of company `awaiting_response`. Reapply clears rejection only and returns the job to the main `jobs` list.
 
-8. **Not for me** — Marks the job hidden from main and rejected reinjection paths; it appears only under `not_for_me_jobs`. Orphan reinjection skips not-for-me rows. Hide reasons stored on `job_tracking.not_for_me_reason` include `not_for_me`, `expired` (posting closed — human review), `wrong_location`, and `no_relocation`.
+8. **Not for me** — Marks the job hidden from main and rejected reinjection paths; it appears only under `not_for_me_jobs`. Orphan reinjection skips not-for-me rows. Hide reasons stored on `job_tracking.not_for_me_reason` include `not_for_me`, `expired` (posting closed — human review), `wrong_location`, and `no_relocation`. Wrong-location hides are also written by `apply_wrong_location_hides` after country fetch and location-tag edits (not on `GET /api/board`). User-chosen reasons are left intact. `reconcile_wrong_location_hides` clears `wrong_location` rows when office tags expand.
 
 9. **Waiting for referral** — Requires a LinkedIn URL when enabled; stored on the tracking row. Independent of applied/rejected buckets unless filters say otherwise.
 
@@ -44,7 +44,7 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 
 15. **Backend relevance** — Scrapers only keep titles that pass keyword include/exclude rules (e.g. backend/software engineer in, CTO/marketing-manager-style roles out). This gate applies before jobs are stored as `matching_jobs`.
 
-16. **Location gate** — When a company has tagged locations, scraped listings must match those countries/cities (or valid remote rules) or they are excluded from merge into new board rows. Listings with **no usable location metadata** stay on the main board (benefit of the doubt). On panel read, roles with a **known wrong** location are routed to **Not for me** with reason **Wrong location**.
+16. **Location gate** — When a company has tagged locations, scraped listings must match those countries/cities (or valid remote rules) or they are excluded from merge into new board rows. Listings with **no usable location metadata** stay on the main board (benefit of the doubt). On panel read, roles with a **known wrong** location are routed to **Not for me** with reason **Wrong location**. After fetch or tag edits, the same gate is persisted as `job_tracking` (`not_for_me_reason='wrong_location'`); the read-time flag remains a safety net for jobs not yet scanned.
 
 ---
 
@@ -63,6 +63,7 @@ Plain-language contracts extracted from the code (`catalog_service`, `db`, `cata
 | Panel data / CRUD | `tests/test_catalog_service.py` |
 | Scrapers / relevance | `tests/test_scrape_*.py` (run `pytest -m scrape`) |
 | Location gate | `tests/test_location_tags*.py` |
+| Wrong-location persist | `tests/positions/test_wrong_location_hides.py` |
 | Custom picker cities (`POST /api/locations`, `data/custom_cities.json`) | `tests/test_location_tags_full.py`, `tests/test_catalog_service.py`, `tests/test_panel_api_full.py` |
 
 Run business-rule tests only:

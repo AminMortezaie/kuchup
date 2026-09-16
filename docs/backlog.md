@@ -6,9 +6,9 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 
 ## Not-for-me soft delete (wrong location + user hides)
 
-**Status:** in progress (expired hide reason shipped 2026-07-03)  
+**Status:** done (2026-09-16)  
 **Priority:** medium  
-**Context:** Rule 16 routes known wrong-location roles to the not-for-me bucket at panel read time. User-initiated “not for me” writes `job_tracking.not_for_me`. Wrong-location hides were read-time only until the one-shot `scripts/mark_wrong_location_jobs.py` backfill.
+**Context:** Rule 16 routes known wrong-location roles to the not-for-me bucket at panel read time. User-initiated “not for me” writes `job_tracking.not_for_me`. Wrong-location hides were read-time only until the one-shot `scripts/mark_wrong_location_jobs.py` backfill. `apply_wrong_location_hides` now persists those rows after country fetch and location-tag edits (not on `GET /api/board`).
 
 **Shipped (2026-07-03):** **Expired** added as a user-chosen hide reason (`not_for_me_reason='expired'`) in the board hide picker — human review when a posting is closed; same tracking bucket and restore flow as other not-for-me reasons.
 

@@ -14,6 +14,21 @@ from relocation_jobs.fetch.country_runner import run_country_fetch
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
+from relocation_jobs.positions.service import apply_wrong_location_hides
+from relocation_jobs.users.repo import list_user_ids
+
+
+def _apply_wrong_location_hides_after_fetch(country_key: str) -> None:
+    for user_id in list_user_ids():
+        try:
+            apply_wrong_location_hides(user_id, country_key=country_key)
+        except Exception as exc:
+            log_event(f"Wrong-location hide persist failed user={user_id}: {exc}")
+
+
+def _on_successful_catalog_fetch(country_key: str) -> None:
+    enqueue_country_opportunity_refresh(country_key)
+    _apply_wrong_location_hides_after_fetch(country_key)
 
 
 def _finish_lines(cancelled: bool, exit_code: int, *, done_line: str) -> tuple[str, str]:
@@ -111,7 +126,7 @@ def _country_fetch_worker(
         limit = timeout if timeout is not None else country_timeout_seconds()
         raise TimeoutError(f"Country fetch timed out after {limit}s")
     if exit_code == 0 and companies_done > 0:
-        enqueue_country_opportunity_refresh(country_key)
+        _on_successful_catalog_fetch(country_key)
 
 
 def _begin_country_run(
@@ -196,7 +211,7 @@ def _company_fetch_worker(
             done_line=result_message or "Finished (exit 0)",
         )
     if exit_code == 0 and not cancelled:
-        enqueue_country_opportunity_refresh(country_key)
+        _on_successful_catalog_fetch(country_key)
 
 
 def start_company_fetch(

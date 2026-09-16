@@ -7,26 +7,18 @@ import argparse
 import sys
 
 from relocation_jobs.catalog.repo import load_country_catalog
-from relocation_jobs.core.db import get_connection
 from relocation_jobs.core.location_tags import job_fails_office_location_gate, sync_company_location_fields
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.panel.tracking import resolve_track
-from relocation_jobs.positions import repo as positions_repo
-from relocation_jobs.positions.types import TrackingFlags
-from relocation_jobs.users.repo import load_job_tracking
+from relocation_jobs.positions.service import (
+    _should_persist_wrong_location_hide,
+    apply_wrong_location_hides,
+)
+from relocation_jobs.users.repo import list_user_ids, load_job_tracking
 
 
 def _catalog_url(job: dict) -> str:
     return (job.get("url") or "").strip()
-
-
-def _should_mark(track: dict | None) -> bool:
-    flags = TrackingFlags.from_row(track)
-    if flags.not_for_me and flags.not_for_me_reason == "wrong_location":
-        return False
-    if flags.not_for_me and flags.not_for_me_reason not in ("", "wrong_location"):
-        return False
-    return True
 
 
 def find_wrong_location_jobs(*, country_key: str | None = None) -> list[dict]:
@@ -60,14 +52,9 @@ def find_wrong_location_jobs(*, country_key: str | None = None) -> list[dict]:
     return hits
 
 
-def list_user_ids() -> list[int]:
-    rows = get_connection().execute("SELECT id FROM users ORDER BY id").fetchall()
-    return [int(row["id"]) for row in rows]
-
-
-def mark_for_user(user_id: int, hits: list[dict], *, dry_run: bool) -> list[dict]:
+def count_for_user(user_id: int, hits: list[dict]) -> int:
     job_tracking = load_job_tracking(user_id)
-    marked: list[dict] = []
+    marked = 0
     for hit in hits:
         track = resolve_track(
             job_tracking,
@@ -75,20 +62,8 @@ def mark_for_user(user_id: int, hits: list[dict], *, dry_run: bool) -> list[dict
             company_name=hit["company_name"],
             job={"url": hit["job_url"]},
         )
-        if not _should_mark(track or None):
-            continue
-        if dry_run:
-            marked.append({**hit, "user_id": user_id})
-            continue
-        positions_repo.set_not_for_me(
-            user_id,
-            hit["country"],
-            hit["company_name"],
-            hit["job_url"],
-            not_for_me=True,
-            reason="wrong_location",
-        )
-        marked.append({**hit, "user_id": user_id})
+        if _should_persist_wrong_location_hide(track or None):
+            marked += 1
     return marked
 
 
@@ -117,10 +92,13 @@ def main(argv: list[str] | None = None) -> int:
 
     total_marked = 0
     for user_id in user_ids:
-        marked = mark_for_user(user_id, hits, dry_run=args.dry_run)
-        total_marked += len(marked)
+        if args.dry_run:
+            n = count_for_user(user_id, hits)
+        else:
+            n = apply_wrong_location_hides(user_id, country_key=args.country)
+        total_marked += n
         verb = "would mark" if args.dry_run else "marked"
-        print(f"User {user_id}: {verb} {len(marked)} position(s)")
+        print(f"User {user_id}: {verb} {n} position(s)")
 
     print(f"Done — {total_marked} tracking row(s) {'would be ' if args.dry_run else ''}updated.")
     return 0
