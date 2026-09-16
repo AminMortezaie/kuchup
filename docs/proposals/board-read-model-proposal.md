@@ -4,7 +4,7 @@
 **Last updated:** 2026-07-03 (Redis / leaderboard option added)  
 **Authors:** architecture discussion (agent + owner review pending)
 
-Related: [board.md](board.md), [catalog-pattern.md](catalog-pattern.md), [business-rules.md](business-rules.md), [rules.md](rules.md), [stats.md](stats.md)
+Related: [board.md](../reference/board.md), [catalog-pattern.md](../reference/catalog-pattern.md), [business-rules.md](../reference/business-rules.md), [rules.md](../reference/rules.md), [stats.md](../reference/stats.md)
 
 ---
 
@@ -37,13 +37,13 @@ companies + matching_jobs          (catalog — shared)
   → paginate visible companies
 ```
 
-This is already documented as “overlay / projection at read time” in [catalog-pattern.md](catalog-pattern.md). The implementation lives in `panel/flatten.py`, `panel/service.py`, and `web/routes/board.py`.
+This is already documented as “overlay / projection at read time” in [catalog-pattern.md](../reference/catalog-pattern.md). The implementation lives in `panel/flatten.py`, `panel/service.py`, and `web/routes/board.py`.
 
 ### Why mutations force a full board refresh
 
 Example (from product requirements): user marks the **newest** open role at company #26 as **wrong location** or **expired** (not-for-me).
 
-1. Tracking write moves the job to the `not_for_me_jobs` bucket ([business-rules.md](business-rules.md) rules 8, 10).
+1. Tracking write moves the job to the `not_for_me_jobs` bucket ([business-rules.md](../reference/business-rules.md) rules 8, 10).
 2. `newest_job_fetched` is recomputed from the **open `jobs` bucket only** (`shared/timestamps.company_newest_job_fetched`).
 3. Company sort position on “newest first” may drop; with `hide_empty`, the company may **leave the visible set**.
 4. Pagination totals and page membership change — a company on page 2 may need to appear on page 1, or vanish.
@@ -54,7 +54,7 @@ The client only holds one page (~25 companies). It cannot derive global order or
 
 | Path | Cost |
 |------|------|
-| `sort=newest` (default) | `_flatten_companies_page_by_activity` scans and flattens **all** catalog companies matching scope/search, sorts in memory, then slices one page ([board.md](board.md)) |
+| `sort=newest` (default) | `_flatten_companies_page_by_activity` scans and flattens **all** catalog companies matching scope/search, sorts in memory, then slices one page ([board.md](../reference/board.md)) |
 | `sort=name` | Streaming with **visible-offset** — walks catalog in DB order, flattening until enough visible rows; expensive on deep pages |
 | Every filter toggle | Client calls `loadBoard()` → full `GET /api/board` (`static/js/filters.js`) |
 | Many job mutations | Local patch exists (`job-board.js`), but still triggers stats refresh and sometimes full reload; separate pin request after apply |
@@ -63,11 +63,11 @@ The slowness is **repeated full derivation**, not missing full-text search infra
 
 ### Constraints (non-negotiable for this design)
 
-From [rules.md](rules.md), [catalog-pattern.md](catalog-pattern.md), and owner requirements:
+From [rules.md](../reference/rules.md), [catalog-pattern.md](../reference/catalog-pattern.md), and owner requirements:
 
 1. **Postgres is source of truth** — tracking and catalog writes commit to Postgres; no client-authoritative state; UI renders server response after successful write.
-2. **Redis (if used) is derived only** — see [Proposed rules.md amendment](#proposed-rulesmd-amendment). Today [rules.md](rules.md) says “never cache per-user merged panel” in Redis; this proposal suggests narrowing that to “never store tracking **truth** in Redis.”
-3. **Merge semantics stay in `panel/flatten.py`** — one definition of buckets, orphans, filters; tests map to [business-rules.md](business-rules.md).
+2. **Redis (if used) is derived only** — see [Proposed rules.md amendment](#proposed-rulesmd-amendment). Today [rules.md](../reference/rules.md) says “never cache per-user merged panel” in Redis; this proposal suggests narrowing that to “never store tracking **truth** in Redis.”
+3. **Merge semantics stay in `panel/flatten.py`** — one definition of buckets, orphans, filters; tests map to [business-rules.md](../reference/business-rules.md).
 4. **Pagination stays** — no “load entire board on startup” as the primary path.
 5. **Correctness over optimistic UI** — failed Postgres writes must not update Redis or the UI board; no “update Redis now, persist DB in background” for tracking mutations.
 
@@ -116,11 +116,11 @@ ES helps **relevance-ranked full-text search** over large document corpuses. It 
 - Per-user merge of catalog + tracking.
 - Bucket partition and orphan reinjection.
 - Write-time sync from Postgres on every tracking mutation and scrape merge.
-- Invalidation when [business-rules.md](business-rules.md) changes.
+- Invalidation when [business-rules.md](../reference/business-rules.md) changes.
 
 We would duplicate merge semantics in index mappings/scripts or still call Python flatten on every write — plus operate a second system.
 
-**Verdict:** reject for board state. Revisit only if `q` search across full JD text becomes a product requirement at scale; even then Postgres `tsvector` / `pg_trgm` is the first step ([rules.md](rules.md): profile before new infrastructure).
+**Verdict:** reject for board state. Revisit only if `q` search across full JD text becomes a product requirement at scale; even then Postgres `tsvector` / `pg_trgm` is the first step ([rules.md](../reference/rules.md): profile before new infrastructure).
 
 ---
 
@@ -302,7 +302,7 @@ Country fetch and `sync_company_board_to_catalog` may **asynchronously** refresh
 | Ops | Postgres EC2 only | Postgres + Redis on EC2 |
 | Rebuild if cache lost | Table is truth | Replay from Postgres projection or re-flatten |
 | Owner’s leaderboard experience | Same pattern, SQL | Direct ZSET fit |
-| [rules.md](rules.md) today | Fits | Needs amendment (derived cache OK) |
+| [rules.md](../reference/rules.md) today | Fits | Needs amendment (derived cache OK) |
 
 **Default recommendation:** implement **F first** (single system, transactional projection). Add **G** when profiling shows board reads still hot or multi-instance needs shared rank cache — G reads from Redis, **F remains repair source and truth for row shape**.
 
@@ -418,7 +418,7 @@ Client replaces `state.boardCatalog` from `board` — **no optimistic authority*
 
 ### Pagination: keyset cursor
 
-Replace `visible_offset = (page - 1) * page_size` ([board.md](board.md)) with:
+Replace `visible_offset = (page - 1) * page_size` ([board.md](../reference/board.md)) with:
 
 ```sql
 -- First page
@@ -475,7 +475,7 @@ Search runs against catalog tables to resolve `company_id` set, then intersects 
 |----------|-----|
 | Elasticsearch for board list | Ops + sync; doesn’t own merge semantics |
 | Client-side board truth | Pagination + sort cascade; corruption on failed writes |
-| Full catalog load on startup | Bad TTI; [board.md](board.md) pagination exists for a reason |
+| Full catalog load on startup | Bad TTI; [board.md](../reference/board.md) pagination exists for a reason |
 | `pg_ivm` / REFRESH MATERIALIZED VIEW for merge | Procedural merge not expressible; full refresh too slow |
 | **Redis-first mutations** (update Redis, async Postgres) | Tracking lies on DB failure; conflicts with correctness requirements |
 | **Redis as sole store** for board / tracking | Postgres must remain truth |
@@ -530,7 +530,7 @@ Can ship before structural approval:
 3. `GET /api/board` reads Redis; fallback to Postgres projection on miss/error.
 4. Mutations: Postgres tx → update F → pipeline update G → response from G.
 5. Scrape worker: batch refresh affected companies in Redis.
-6. Amend [rules.md](rules.md) per [Proposed rules.md amendment](#proposed-rulesmd-amendment).
+6. Amend [rules.md](../reference/rules.md) per [Proposed rules.md amendment](#proposed-rulesmd-amendment).
 7. Tests: Redis parity with projection; Redis down → fallback; not-for-me on newest job re-ranks ZSET.
 
 **Done when:** `GET /api/board` p95 &lt; 50ms warm Redis; no correctness regressions in business-rule tests.
@@ -599,10 +599,10 @@ Measure before Phase 1 with timing middleware or structured logs on `flatten_com
 
 ### In-repo
 
-- [board.md](board.md) — current pagination and newest-sort cost
-- [catalog-pattern.md](catalog-pattern.md) — catalog + overlay; CQRS-lite framing
-- [rules.md](rules.md) — Postgres SoT, Redis limits
-- [business-rules.md](business-rules.md) — bucket and filter contracts
+- [board.md](../reference/board.md) — current pagination and newest-sort cost
+- [catalog-pattern.md](../reference/catalog-pattern.md) — catalog + overlay; CQRS-lite framing
+- [rules.md](../reference/rules.md) — Postgres SoT, Redis limits
+- [business-rules.md](../reference/business-rules.md) — bucket and filter contracts
 
 ### External
 
@@ -622,7 +622,7 @@ Measure before Phase 1 with timing middleware or structured logs on `flatten_com
 Before implementation:
 
 - [ ] **F vs F+G** decided ([Decision: projection store](#decision-projection-store-f-vs-g))
-- [ ] If G: [rules.md](rules.md) amendment approved
+- [ ] If G: [rules.md](../reference/rules.md) amendment approved
 - [ ] Open decisions section resolved
 - [ ] Phase 0 vs Phase 1 split agreed
 - [ ] Phase 4 (Redis) deferred or scheduled with Phase 1 prerequisite

@@ -56,23 +56,21 @@ Plain-language contracts extracted from the code (`catalog`, `positions`, `scrap
 
 | Rules | Test file |
 |-------|-----------|
-| 1–14, state workflows | `tests/test_job_state_rules.py` |
-| 1–16 + API round-trip | `tests/test_business_rules_coverage.py` |
-| DB writes / history | `tests/test_db_full.py`, `tests/test_applied_today.py` |
-| Panel API | `tests/test_panel_api_full.py` |
-| Panel data / CRUD | `tests/test_catalog_service.py` |
-| Scrapers / relevance | `tests/test_scrape_*.py` (run `pytest -m scrape`) |
-| Location gate | `tests/test_location_tags*.py` |
-| Custom picker cities (`POST /api/locations`, `data/custom_cities.json`) | `tests/test_location_tags_full.py`, `tests/test_catalog_service.py`, `tests/test_panel_api_full.py` |
+| 1–14, state workflows | `tests/positions/test_workflows.py`, `tests/positions/test_state.py` |
+| Panel / board API | `tests/web/test_board_api.py`, `tests/web/test_jobs_api.py` |
+| Catalog board sync | `tests/catalog/test_repo.py` |
+| Scrapers / relevance | `tests/scrape/` (run `pytest -m scrape`) |
+| Location gate | `tests/core/test_location_gate.py` |
+| Custom picker cities | `tests/catalog/test_locations.py` |
 
-Run business-rule tests only:
+Run business-rule tests:
 
 ```bash
-pytest tests/test_job_state_rules.py tests/test_business_rules_coverage.py -v
+pytest tests/positions tests/web/test_board_api.py tests/web/test_jobs_api.py -o addopts=
 ```
 
-Run scraper tests (not included in default `pytest`):
+Run scraper tests (not included in default CI):
 
 ```bash
-pytest -m scrape -v
+pytest -m scrape -o addopts=
 ```

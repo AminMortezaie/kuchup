@@ -1,11 +1,14 @@
 # Fetch panel session: why single-company fetch felt flaky
 
+> **Archived 2026-09-16.** Shipped client session fix for single-company fetch UX.
+
+
 **Last updated:** 2026-07-13  
 **Status:** fixed (client session model + settle-after-decision UX)
 
 Single-company “Fetch jobs” looked unreliable: a prior run’s completion UI flashed when starting a new fetch, the board refreshed twice (once on complete, again on OK/problem), and card entrance animations replayed on every republish. The cause was not a broken scrape — it was **missing session ownership** on the client, plus a UX that reloaded the board while the decision modal was still open.
 
-Related: [architecture.md](architecture.md), [full-spa-ui-modernization-proposal.md](full-spa-ui-modernization-proposal.md), UX skills under [`.claude/ux-skills/`](../../.claude/ux-skills/)
+Related: [architecture.md](../reference/architecture.md), [full-spa-ui-modernization-proposal.md](../proposals/full-spa-ui-modernization-proposal.md).
 
 ---
 

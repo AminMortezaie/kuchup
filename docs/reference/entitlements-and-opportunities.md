@@ -88,7 +88,7 @@ Ops: [`docs/operations/nowpayments.md`](../operations/nowpayments.md).
 
 ## Next
 
-- **G** Infra SQS (fetch/PDF) per [multi-user-scaling-proposal.md](multi-user-scaling-proposal.md)
+- **G** Infra SQS (fetch/PDF) per [multi-user-scaling-proposal.md](../proposals/multi-user-scaling-proposal.md)
 
 ## Opportunity refresh (Phase E — shipped)
 

@@ -103,7 +103,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 **Status:** planned (proposal written)  
 **Priority:** high  
-**Context:** `GET /api/board` rescans/flattens the catalog on many requests (~2s). Mutations (not-for-me on newest job, hide-empty, sort) require a **correct global board refresh** with pagination — client cache or ES are poor fits. See [reference/board-read-model-proposal.md](reference/board-read-model-proposal.md).
+**Context:** `GET /api/board` rescans/flattens the catalog on many requests (~2s). Mutations (not-for-me on newest job, hide-empty, sort) require a **correct global board refresh** with pagination — client cache or ES are poor fits. See [board-read-model-proposal.md](proposals/board-read-model-proposal.md).
 
 ### Problem / goal
 
@@ -116,7 +116,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 1. **Phase 0:** mutation responses return board page + stats; cut extra round trips.
 2. **Phase 1:** `user_board_company` Postgres projection, synchronous write-through via `flatten_company()` (Option F).
 3. **Phase 2:** keyset cursor pagination on `(sort_ts, company_id)`.
-4. **Phase 4 (optional):** Redis ZSET + HASH read path (Option G) — [proposal](reference/board-read-model-proposal.md#g-redis-derived-board-zset-rank--row-cache--viable-read-accelerator).
+4. **Phase 4 (optional):** Redis ZSET + HASH read path (Option G) — [proposal](proposals/board-read-model-proposal.md#g-redis-derived-board-zset-rank--row-cache--viable-read-accelerator).
 
 ### Decision pending
 
@@ -135,7 +135,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 **Status:** in progress (Phase 0 shipped 2026-09-16)  
 **Priority:** high (blocks going beyond a single real user)  
-**Context:** App has one real user today. Scaling to many concurrent users exposes: a single shared Postgres connection serializing all HTTP threads, per-request board re-flattening, and per-user job submission (company fetch, PDF compile) with no queue — one user's fetch/PDF request blocks another's via a global mutex. See [reference/multi-user-scaling-proposal.md](reference/multi-user-scaling-proposal.md).
+**Context:** App has one real user today. Scaling to many concurrent users exposes: a single shared Postgres connection serializing all HTTP threads, per-request board re-flattening, and per-user job submission (company fetch, PDF compile) with no queue — one user's fetch/PDF request blocks another's via a global mutex. See [multi-user-scaling-proposal.md](proposals/multi-user-scaling-proposal.md).
 
 ### Problem / goal
 
@@ -167,7 +167,7 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 **Status:** planned (proposal written)  
 **Priority:** low (until fetch scale or reliability bites)  
-**Context:** Fetch/scrape is the only async workload. Today it uses in-process threads, a global `fetch_runs` mutex, and sequential countries in the EC2 scheduler. No message broker. See [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md).
+**Context:** Fetch/scrape is the only async workload. Today it uses in-process threads, a global `fetch_runs` mutex, and sequential countries in the EC2 scheduler. No message broker. See [kafka-fetch-pipeline-proposal.md](proposals/kafka-fetch-pipeline-proposal.md).
 
 ### Problem / goal
 

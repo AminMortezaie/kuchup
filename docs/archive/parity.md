@@ -1,5 +1,8 @@
 # Parity — complete
 
+> **Archived 2026-09-16.** v1 removal checklist — complete. Living map: [architecture.md](../reference/architecture.md).
+
+
 Legacy v1 stack removed. Single application under `relocation_jobs/`:
 
 | Domain | Path |

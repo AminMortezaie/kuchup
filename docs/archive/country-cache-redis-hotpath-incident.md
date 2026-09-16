@@ -1,5 +1,8 @@
 # How a "cache invalidation" fix took the board down again
 
+> **Archived 2026-09-16.** 2026-07 Redis country-label hot-path postmortem.
+
+
 **Last updated:** 2026-07-18
 **Status:** resolved (local panel + EC2 Postgres/Redis dev setup)
 
@@ -207,4 +210,4 @@ The cross-process propagation test forces `_COUNTRIES_GENERATION_TTL_S = 0.0` to
 - [`relocation_jobs/catalog/custom_countries.py`](../../relocation_jobs/catalog/custom_countries.py) — dual-write + `countries:labels:generation`
 - [`tests/catalog/test_countries_redis.py`](../../tests/catalog/test_countries_redis.py) — hot-path and propagation tests
 
-Related: [board-load-performance-incident.md](board-load-performance-incident.md), [catalog-pattern.md](catalog-pattern.md), [operations/ec2-panel.md](../operations/ec2-panel.md)
+Related: [board-load-performance-incident.md](board-load-performance-incident.md), [catalog-pattern.md](../reference/catalog-pattern.md), [operations/ec2-panel.md](../operations/ec2-panel.md)

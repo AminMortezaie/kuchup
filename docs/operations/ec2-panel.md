@@ -2,7 +2,7 @@
 
 **Domain:** [kuchup.com](https://kuchup.com) (Cloudflare)  
 **Server:** same EC2 instance as Postgres + Redis (`aws-postgres.env` → `ELASTIC_IP`)  
-**Status:** panel + fetch worker + Caddy on EC2; Render optional legacy until cutover
+**Status:** panel + fetch worker + Caddy on EC2
 
 ---
 
@@ -19,7 +19,7 @@
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
 | Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker needs Postgres (and SQS when opportunity refresh is enabled); it runs country scrapes every **6 hours** (sequential countries, concurrency **4**). Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker needs Postgres (and SQS when opportunity refresh is enabled); it runs country scrapes every **6 hours** (sequential countries, concurrency **2**). Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
 
 ---
 
@@ -67,11 +67,11 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
 
-On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. See [fetch-thread-exhaustion-incident.md](../reference/fetch-thread-exhaustion-incident.md).
+On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
 
 **Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.
 
-**Scheduler stuck?** If `worker-logs` shows no new lines for 2+ hours while the container is Up, a Playwright scrape may have hung. Restart: `docker restart relocation-fetch-worker`. See [fetch-scheduler-timeout-practices.md](../reference/fetch-scheduler-timeout-practices.md) for layered timeout rules and the implementation plan.
+**Scheduler stuck?** If `worker-logs` shows no new lines for 2+ hours while the container is Up, a Playwright scrape may have hung. Restart: `docker restart relocation-fetch-worker`. Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90` ([architecture.md](../reference/architecture.md#fetch)). Incident history: [fetch-scheduler-timeout-practices.md](../archive/fetch-scheduler-timeout-practices.md).
 
 ---
 
@@ -87,7 +87,7 @@ Point the domain at the Elastic IP from `aws-postgres.env`:
 
 Domain email (`hello@` / `support@`) uses Cloudflare Email Routing — see [email.md](email.md). Do not orange-proxy MX or mail TXT records.
 
-Caddy in `deploy/ec2/Caddyfile` requests Let's Encrypt certs for `kuchup.com`, `www.kuchup.com`, and `mcp.kuchup.com`. The panel and MCP are **not** served on the raw Elastic IP — use the domain only.
+Caddy config lives in **gitignored** `deploy/ec2/Caddyfile` (not in the public tree). It requests Let's Encrypt certs for `kuchup.com`, `www.kuchup.com`, and `mcp.kuchup.com`. The panel and MCP are **not** served on the raw Elastic IP — use the domain only.
 
 **Claude remote connectors** reach `mcp.kuchup.com` from Anthropic’s cloud (not the user’s phone). If the security group is locked to Cloudflare only, that is enough when the orange cloud proxies MCP. If you later lock origin beyond Cloudflare, also allowlist [Anthropic egress ranges](https://platform.claude.com/docs/en/api/ip-addresses).
 
@@ -118,7 +118,7 @@ The origin IP can still be discovered (old DNS, scans, leaks). Treat this as **n
 
 ### 1. Caddy (done in repo)
 
-`deploy/ec2/Caddyfile` returns **404** for `http://<ELASTIC_IP>`; only the domain proxies to the panel. After changing it:
+Gitignored `deploy/ec2/Caddyfile` returns **404** for `http://<ELASTIC_IP>`; only the domain proxies to the panel. After changing it:
 
 ```bash
 ./scripts/ec2_app_deploy.sh sync
@@ -233,4 +233,4 @@ docker logs relocation-caddy --tail 50
 - [nowpayments.md](nowpayments.md) — credit packs + Full Access checkout
 - [aws-postgres.md](aws-postgres.md) — Postgres on EC2
 - `scripts/ec2_redis.sh` — Redis on EC2
-- [board-read-model-proposal.md](../reference/board-read-model-proposal.md) — board performance (still the main latency fix)
+- [board-read-model-proposal.md](../proposals/board-read-model-proposal.md) — board performance (still the main latency fix)

@@ -13,12 +13,12 @@ A job-search panel for backend/software roles at visa-friendly companies.
 ```
 relocate.me → build_companies.py → Postgres catalog
                               ↓
-                    country fetch (v2) → scrape ATS boards → Postgres
+                    country fetch → scrape ATS boards → Postgres
                               ↓
-                    Flask panel (v2) + static JS UI → per-user tracking
+                    Flask panel + static JS / React widget → per-user tracking
 ```
 
-**Supported countries:** Germany, Netherlands, UK, Portugal.
+**Seeded countries:** Germany, Netherlands, UK, Portugal. Ireland and others can be added from the panel (`custom_countries`).
 
 ---
 
@@ -26,14 +26,14 @@ relocate.me → build_companies.py → Postgres catalog
 
 | Layer | Status | Location |
 |------|--------|----------|
-| **Apps (deployables)** | Discoverable entries | [`apps/`](../apps/) — see [apps/README.md](../apps/README.md) |
-| **v2 application spine** | **Active — code here** | `relocation_jobs/` |
-| **v1** | Reference only; do not extend | legacy paths under `relocation_jobs/` |
-| **Static UI** | Shared | `relocation_jobs/static/` + `frontend/` |
+| **Apps (deployables)** | How you run it | [`apps/`](../apps/) — [apps/README.md](../apps/README.md) |
+| **Python domains** | Active | `relocation_jobs/` |
+| **Go assignment writer** | Active | `role_propagator/` |
+| **UI** | Shared | `relocation_jobs/static/` + `frontend/` |
 | **Postgres** | AWS EC2 Docker (Frankfurt) | `DATABASE_URL` in `.env` |
-| **Production panel** | EC2 kuchup.com | [operations/ec2-panel.md](operations/ec2-panel.md) |
+| **Production** | EC2 kuchup.com | [operations/ec2-panel.md](operations/ec2-panel.md) |
 
-Local dev uses v2 on **5051**. More detail: [reference/architecture.md](reference/architecture.md).
+Local panel: **5051**. There is no v1 / port 5050 stack. Detail: [reference/architecture.md](reference/architecture.md).
 
 ---
 
@@ -52,10 +52,12 @@ PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 pytest tests -o addopts=
 ```
 
-| Panel | Port | Entry |
-|-------|------|-------|
-| **v2 (dev)** | 5051 | `apps/panel/run.py` (or `scripts/panel_server.py`) |
-| v1 (legacy) | 5050 | `python3 -m relocation_jobs.panel_server` |
+| Process | Port / role | Entry |
+|---------|-------------|--------|
+| Panel | 5051 | `apps/panel/run.py` (Docker shim: `scripts/panel_server.py`) |
+| Fetch worker | scheduled scrape | `apps/fetch-worker/run.py` |
+| Role propagator | SQS assignments | `apps/role-propagator/run.py` |
+| MCP stdio / HTTP | Claude / Cursor | `apps/mcp/run.py` / `apps/mcp/run_http.py` |
 
 After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run build`.
 
@@ -67,14 +69,14 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 
 | Kind | Location | Role |
 |------|----------|------|
-| **Apps (deployables)** | [`apps/`](../apps/) | How you run it — see [apps/README.md](../apps/README.md) |
+| **Apps (deployables)** | [`apps/`](../apps/) | How you run it — [apps/README.md](../apps/README.md) |
 | **Domains** | `relocation_jobs/`, `role_propagator/` | Python business logic; Go assignment writer |
 | **Ops scripts** | `scripts/` | Deploy helpers + Docker entry paths |
 | **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel JS, React board, marketing |
 
 ```
 apps/panel/run.py              Flask panel
-apps/fetch-worker/run.py       Scheduled country scrape
+apps/fetch-worker/run.py       Scheduled country scrape (Playwright image in prod)
 apps/role-propagator/run.py    Go SQS role assignment writer
 apps/mcp/run.py                Claude Desktop MCP (stdio)
 apps/mcp/run_http.py           HTTP MCP + OAuth
@@ -92,11 +94,14 @@ scrape/       ATS boards, merge, enrich, relevance
 companies/    Company CRUD orchestration
 users/        User history, applied dates, entitlements
 opportunities/ Personalized board + queue matching
-mcp/          Claude Desktop MCP — application prep, tex → PDF (v0)
+broadcast/    Freemium peek / consume / capacity
+credits/      Wallet + ledger
+payments/     NOWPayments checkout
+mcp/          Claude / Cursor MCP — application prep, tex → PDF
 admin/        Dashboard aggregates
 web/          Flask server, routes, deps
 shared/       predicates, coerce, schema helpers
-db/           v2-only migrations
+db/           migrations
 ```
 
 **Rules:** [reference/rules.md](reference/rules.md) — SQL **only** in `*/repo.py`.
@@ -107,16 +112,15 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ### Client
 
-- Board: `GET /api/board` — see [reference/board.md](reference/board.md)
+- Board: `GET /api/board` — [reference/board.md](reference/board.md)
 - Layout: pagination → search → sort/filters → company cards
 - After job mutations: local updates in `job-board.js`, not full reload
-- React bundle: `frontend/` → `npm run build` → `static/dist/board.js`
+- React bundle: `frontend/` → `npm run build` → `relocation_jobs/static/dist/board.js`
 
 ### Do not touch without asking
 
-- v1 legacy modules — reference only
-- `render.yaml` / production cutover
-- AWS infra (`scripts/aws_postgres_migrate.sh`)
+- AWS infra (`scripts/aws_postgres_migrate.sh`, security groups)
+- Production cutover / DNS
 - **Do not commit** unless explicitly asked
 
 ---
@@ -131,10 +135,21 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ## Fetch & scrape
 
+Production is **two images**:
+
+| Image | Playwright | Role |
+|-------|------------|------|
+| Slim panel (`Dockerfile.ec2`) | No | HTTP API, company-fetch without country scrape (`PANEL_COMPANY_FETCH_ENABLED=1`) |
+| Fetch worker (`Dockerfile.ec2-worker`) | Yes | 6-hour country scrape |
+
+There is one fetch-worker app on `main` (`apps/fetch-worker/run.py`). A split “light HTTP” worker is **not** on `main`.
+
 - Country fetch: in-process asyncio (`fetch/country_runner.py`)
-- Concurrency: default 16, hard cap 16 (`core/ats_constants.py`)
+- ATS scrape cap: `MAX_CONCURRENCY` 16 (`core/ats_constants.py`)
+- Production scheduler: `FETCH_SCHEDULE_CONCURRENCY=2` (do not raise on `t4g.micro` without watching RSS)
+- Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Live state: `fetch_runs` + `GET /api/fetch/status`
-- CLI: `apps/fetch-worker/run.py`, `build_companies.py` for batch/offline
+- CLI: `apps/fetch-worker/run.py`, `scripts/build_companies.py` for batch/offline
 
 ---
 
@@ -142,14 +157,15 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 | Command | Scope |
 |---------|--------|
-| `pytest tests -o addopts=` | **Default for v2 work** |
+| `pytest tests -o addopts=` | Default application suite |
 | `pytest tests/test_route_manifest.py -o addopts=` | Fast API route check |
-| `pytest -o addopts=` | v1 business tier (CI) |
-| `pytest -m scrape -o addopts=` | Scraper + build_companies |
+| `pytest -m scrape -o addopts=` | Scraper + board coverage (not in default CI) |
+| `./scripts/run_ci_tests.sh` | Same gate as GitHub Actions (`not scrape` + coverage) |
+| `go test ./role_propagator` | Go assignment writer |
 
 Job-state changes: read [reference/business-rules.md](reference/business-rules.md) first.
 
-Catalog seed pitfalls (why unrelated tests failed after board sort tests): [reference/catalog-seed-test-failure.md](reference/catalog-seed-test-failure.md).
+`seed_country()` must sync the full fixture — see [archive/catalog-seed-test-failure.md](archive/catalog-seed-test-failure.md).
 
 ---
 
@@ -159,12 +175,13 @@ Catalog seed pitfalls (why unrelated tests failed after board sort tests): [refe
 |----------|------|
 | [reference/rules.md](reference/rules.md) | Any `relocation_jobs/` or `tests/` edit |
 | [reference/business-rules.md](reference/business-rules.md) | Job tracking / panel buckets |
-| `.claude/skills/` | Collaboration, engineering standards, module layout |
+| [docs/README.md](README.md) | Where a topic lives |
 
 ---
 
 ## Known open items
 
-1. Render cutover to v2 entry ([reference/parity.md](reference/parity.md))
-2. SQL still in `users/history.py`, `users/applied.py`
-3. Deep board pages rescan catalog from start (cursor pagination future work)
+1. Board read-model / cursor pagination — [proposals/board-read-model-proposal.md](proposals/board-read-model-proposal.md)
+2. SQS for per-user fetch/PDF (opportunity SQS already live) — [proposals/multi-user-scaling-proposal.md](proposals/multi-user-scaling-proposal.md)
+3. Persist wrong-location hides as `job_tracking` rows — [backlog.md](backlog.md)
+4. Deep board pages still rescan catalog from the start

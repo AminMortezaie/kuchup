@@ -1,8 +1,10 @@
 # Documentation
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-16
 
-All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage only. Repo map (apps vs domains): [apps/README.md](../apps/README.md).
+All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage. Repo map (apps vs domains): [apps/README.md](../apps/README.md).
+
+Code is the source of truth. This index lists **living** pages first. History sits in [archive/](archive/README.md). Unshipped designs sit in [proposals/](proposals/README.md).
 
 ---
 
@@ -11,38 +13,28 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | I want to… | Read |
 |------------|------|
 | Install and run the panel | [README](../README.md) |
-| Find apps vs domains (repo map) | [apps/README.md](../apps/README.md) · [architecture.md](reference/architecture.md#repo-map) |
+| Find apps vs domains | [apps/README.md](../apps/README.md) |
 | Set up for development | [contributing.md](contributing.md) |
 | Understand code layout & data flow | [reference/architecture.md](reference/architecture.md) |
-| Backend soul refactor (2026-09 — fetch / reads / Go writer) | [reference/backend-soul-refactor.md](reference/backend-soul-refactor.md) |
 | Change Python in `relocation_jobs/` | [reference/rules.md](reference/rules.md) |
 | Change job apply / reject / hide behavior | [reference/business-rules.md](reference/business-rules.md) |
 | Work on board sort, pagination, newest | [reference/board.md](reference/board.md) |
-| Board performance / read-model design (proposal) | [reference/board-read-model-proposal.md](reference/board-read-model-proposal.md) |
-| Fetch pipeline queue / Kafka placement (proposal) | [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md) |
-| Multi-user scaling — SQS broker, DB pool, board projection (proposal) | [reference/multi-user-scaling-proposal.md](reference/multi-user-scaling-proposal.md) |
-| Entitlements — Google auth, plans, credits, NOWPayments checkout | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
-| Full SPA UI modernization (proposal) | [reference/full-spa-ui-modernization-proposal.md](reference/full-spa-ui-modernization-proposal.md) |
-| Single-company fetch modal session (why it felt flaky) | [reference/fetch-panel-session.md](reference/fetch-panel-session.md) |
-| Catalog vs per-user tracking (design) | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
+| Entitlements — Google auth, plans, credits, NOWPayments | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
+| Catalog vs per-user tracking | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
 | Panel / admin statistics | [reference/stats.md](reference/stats.md) |
-| Test failures / catalog seed in tests | [reference/catalog-seed-test-failure.md](reference/catalog-seed-test-failure.md) |
-| Board hung / slow load (2026-07 postmortem) | [reference/board-load-performance-incident.md](reference/board-load-performance-incident.md) |
-| Country cache Redis hot-path regression (2026-07 postmortem) | [reference/country-cache-redis-hotpath-incident.md](reference/country-cache-redis-hotpath-incident.md) |
-| Fetch scheduler hung / timeouts (2026-07) | [reference/fetch-scheduler-timeout-practices.md](reference/fetch-scheduler-timeout-practices.md) |
-| Fetch thread exhaustion / `can't start new thread` (2026-09 postmortem) | [reference/fetch-thread-exhaustion-incident.md](reference/fetch-thread-exhaustion-incident.md) |
-| Fetch concurrency model review (2026-09) | [reference/fetch-concurrency-model-review.md](reference/fetch-concurrency-model-review.md) |
 | Secrets / no real IPs in public docs | [reference/rules.md](reference/rules.md#secrets-and-documentation) · `.env` / `aws-postgres.env` gitignored |
-| MCP apply assistant (Claude Desktop, v0) | [reference/mcp-application.md](reference/mcp-application.md) |
+| MCP apply assistant | [reference/mcp-application.md](reference/mcp-application.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
 | Public job pages / LinkedIn wrapping | [reference/job-syndication.md](reference/job-syndication.md) |
-| SEO indexing (Search Console, sitemaps) | [operations/seo-indexing.md](operations/seo-indexing.md) |
+| SEO indexing | [operations/seo-indexing.md](operations/seo-indexing.md) |
 | **Production panel (EC2, kuchup.com)** | [operations/ec2-panel.md](operations/ec2-panel.md) |
-| **NOWPayments checkout (credits + Full Access)** | [operations/nowpayments.md](operations/nowpayments.md) |
+| **AWS Postgres on that host** | [operations/aws-postgres.md](operations/aws-postgres.md) |
+| **NOWPayments checkout** | [operations/nowpayments.md](operations/nowpayments.md) |
 | **Production monitoring (Grafana Cloud)** | [operations/monitoring.md](operations/monitoring.md) |
 | Domain email (`@kuchup.com`) | [operations/email.md](operations/email.md) |
 | **SQS opportunity refresh queue** | [operations/sqs-opportunity-refresh.md](operations/sqs-opportunity-refresh.md) |
-| Agent commands cheat sheet | [CLAUDE.md](../CLAUDE.md) |
+| Planned work | [backlog.md](backlog.md) · [proposals/](proposals/README.md) |
+| Postmortems / shipped write-ups | [archive/](archive/README.md) |
 
 ---
 
@@ -52,36 +44,11 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 docs/
   README.md                 ← this index
   contributing.md           dev setup, tests, where to code
-  backlog.md                  planned work
-  reference/
-    architecture.md           data flow, package layout, panel read path
-    backend-soul-refactor.md  2026-09: fetch when/what, reads are reads, Go assignment writer
-    board.md                  pagination, “newest first” sort, timestamps
-    board-read-model-proposal.md  board performance: projection table, cursors (proposal)
-    kafka-fetch-pipeline-proposal.md  fetch/scrape work queue, Kafka placement (proposal)
-    multi-user-scaling-proposal.md  SQS job queue, DB pool, board projection for many users (proposal)
-    full-spa-ui-modernization-proposal.md  React SPA, design system, dark/light, mobile (proposal)
-    fetch-panel-session.md    single-company fetch modal: session ownership + settle-once UX
-    stats.md                  admin/user stats definitions
-    business-rules.md         job buckets, orphans, apply/reject/not-for-me
-    rules.md                  v2 coding standards (SQL in repo.py)
-    schemas.md                Pydantic models, catalog shape
-    parity.md                 v1 vs v2 checklist (complete)
-    catalog-pattern.md        shared catalog + per-user overlay (design)
-    catalog-seed-test-failure.md  post-mortem: pytest pollution after board sort tests
-    country-cache-redis-hotpath-incident.md  post-mortem: Redis I/O in country-label hot path
-    fetch-thread-exhaustion-incident.md      post-mortem: can't start new thread (2026-09)
-    fetch-concurrency-model-review.md        review: one event loop + semaphore (2026-09)
-    mcp-application.md          Claude Desktop MCP: resume tex → PDF, apply prep (v0)
-    company-workspace.md        Panel company page: tailored CV + PDF preview
-    job-syndication.md          Public /jobs/<slug> pages, JobPosting JSON-LD, LinkedIn funnel
-  operations/
-    aws-postgres.md           AWS EC2 Postgres
-    ec2-panel.md              Panel on EC2, kuchup.com, Caddy
-    monitoring.md             Grafana Cloud Free + Alloy
-    email.md                  Domain email via Cloudflare Email Routing
-    nowpayments.md            NOWPayments credit packs + Full Access checkout
-    seo-indexing.md           Search Console, marketing + jobs sitemaps
+  backlog.md                planned work
+  reference/                living architecture and product contracts
+  operations/               live production runbooks
+  proposals/                unshipped designs
+  archive/                  postmortems and shipped history
 ```
 
 ---
@@ -93,19 +60,16 @@ docs/
 | Doc | Purpose |
 |-----|---------|
 | [contributing.md](contributing.md) | First 15 minutes, domains, tests, database, fetch |
-| [reference/architecture.md](reference/architecture.md) | Data flow, v2 layout, panel read path, client patterns |
-| [reference/backend-soul-refactor.md](reference/backend-soul-refactor.md) | What moved in the 2026-09 ownership refactor (files, line counts, DoD) |
+| [reference/architecture.md](reference/architecture.md) | Data flow, package layout, panel read path, fetch worker |
 | [reference/rules.md](reference/rules.md) | Layer boundaries, naming, scrape/fetch, tests |
+| [reference/schemas.md](reference/schemas.md) | Pydantic models and catalog envelope |
 | [.cursor/rules/v2-coding.mdc](../.cursor/rules/v2-coding.mdc) | Cursor summary of rules |
-
-Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` → `engineering-standards` → …)
 
 ### Panel behavior
 
 | Doc | Purpose |
 |-----|---------|
-| [reference/board.md](reference/board.md) | Board API, pagination, newest sort (mermaid) |
-| [reference/fetch-panel-session.md](reference/fetch-panel-session.md) | Single-company fetch modal session (stale UI / double board update) |
+| [reference/board.md](reference/board.md) | Board API, pagination, newest sort |
 | [reference/stats.md](reference/stats.md) | Admin/user stats definitions |
 | [reference/business-rules.md](reference/business-rules.md) | Job state contracts — read before tracking changes |
 
@@ -113,37 +77,60 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 
 | Doc | Purpose |
 |-----|---------|
-| [reference/schemas.md](reference/schemas.md) | Pydantic models and catalog envelope |
 | [reference/catalog-pattern.md](reference/catalog-pattern.md) | Shared catalog vs per-user overlay |
 | [reference/job-syndication.md](reference/job-syndication.md) | Public `/jobs/<slug>` pages, JSON-LD, LinkedIn capture funnel |
-| [reference/parity.md](reference/parity.md) | v1 removal / cutover status |
+| [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) | Plans, credits, sticky slots, Go assignment writer |
+
+### MCP / apply
+
+| Doc | Purpose |
+|-----|---------|
+| [reference/mcp-application.md](reference/mcp-application.md) | MCP tools, `/apply`, resume tex → PDF |
+| [reference/company-workspace.md](reference/company-workspace.md) | `/company/<country>/<slug>` — CV, cover letter, JD fetch |
 
 ### Operations
 
 | Doc | Purpose |
 |-----|---------|
-| [operations/aws-postgres.md](operations/aws-postgres.md) | AWS Postgres migration and day-to-day ops |
-| [operations/ec2-panel.md](operations/ec2-panel.md) | EC2 deploy, kuchup.com, Caddy, Cloudflare lock-down |
+| [operations/aws-postgres.md](operations/aws-postgres.md) | EC2 Docker Postgres, `sync-sg`, backups |
+| [operations/ec2-panel.md](operations/ec2-panel.md) | EC2 deploy, kuchup.com, Caddy, Cloudflare |
 | [operations/monitoring.md](operations/monitoring.md) | Grafana Cloud Free, Alloy, `/api/health`, alerts |
-| [operations/email.md](operations/email.md) | `@kuchup.com` via Cloudflare Email Routing + Gmail Send as |
-| [operations/seo-indexing.md](operations/seo-indexing.md) | Search Console, `/sitemap.xml` + `/sitemap-jobs.xml`, `/engineering` notes |
+| [operations/email.md](operations/email.md) | `@kuchup.com` via Cloudflare Email Routing |
+| [operations/nowpayments.md](operations/nowpayments.md) | Credit packs + Full Access checkout |
+| [operations/seo-indexing.md](operations/seo-indexing.md) | Search Console, `/sitemap.xml` + `/sitemap-jobs.xml` |
+| [operations/sqs-opportunity-refresh.md](operations/sqs-opportunity-refresh.md) | Opportunity assignment queue (Go consumer) |
 | `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
 
-### Backlog
+Caddyfile and Grafana Alloy config live in **gitignored** `deploy/ec2/` (not in the public tree). The deploy script copies them onto the host.
+
+### Proposals (not on `main` yet)
 
 | Doc | Purpose |
 |-----|---------|
-| [backlog.md](backlog.md) | Living backlog |
+| [proposals/README.md](proposals/README.md) | Status of open designs |
+| [board-read-model-proposal.md](proposals/board-read-model-proposal.md) | Board projection / cursor pagination |
+| [multi-user-scaling-proposal.md](proposals/multi-user-scaling-proposal.md) | SQS for fetch/PDF; Phase 0 pool already shipped |
+| [kafka-fetch-pipeline-proposal.md](proposals/kafka-fetch-pipeline-proposal.md) | Fetch work queue (not the opportunity SQS) |
+| [full-spa-ui-modernization-proposal.md](proposals/full-spa-ui-modernization-proposal.md) | Full React SPA |
+
+### Archive
+
+| Doc | Purpose |
+|-----|---------|
+| [archive/README.md](archive/README.md) | Postmortems, v1 parity, Neon migration, shipped refactors |
 
 ---
 
-## Root entry points (tools)
+## Root entry points
 
 | File | Role |
 |------|------|
 | [README.md](../README.md) | Product + quick start |
 | [AGENTS.md](../AGENTS.md) | Agent pointer → this index |
-| [CLAUDE.md](../CLAUDE.md) | Commands + current focus |
+| [apps/README.md](../apps/README.md) | How to run panel / workers / MCP |
+| [design.md](../design.md) | Locked UI design system |
+
+`CLAUDE.md` and `.claude/skills/` are gitignored local notes, not part of the public docs set.
 
 **Do not commit** unless explicitly asked.

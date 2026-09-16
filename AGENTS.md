@@ -6,7 +6,7 @@
 |------------|------|
 | Install and use the panel | [README.md](README.md) |
 | Develop / contribute | [docs/contributing.md](docs/contributing.md) |
-| Run commands | [CLAUDE.md](CLAUDE.md) |
+| Run panel / workers / MCP | [`apps/README.md`](apps/README.md) |
 
 **Code:** `relocation_jobs/` (Python domains) · `role_propagator/` (Go assignments) · **Apps:** [`apps/`](apps/) · **Panel:** port **5051** · **Tests:** `pytest tests -o addopts= -q --tb=line`  
 **Code exploration:** use **`codebase-memory-mcp`** before Grep/file reads when a task will change code (`codebase-memory` skill).  
@@ -15,5 +15,5 @@
 
 | I want to… | Go |
 |------------|-----|
-| Run panel / workers / MCP | [`apps/README.md`](apps/README.md) |
 | Change domain logic | `relocation_jobs/<domain>/` (Python) · `role_propagator/` (Go) |
+| Production ops | [`docs/operations/ec2-panel.md`](docs/operations/ec2-panel.md) |
