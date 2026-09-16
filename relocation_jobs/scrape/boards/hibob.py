@@ -153,11 +153,6 @@ def fetch_hibob_job_detail(url: str) -> tuple[str, str]:
     return "", ""
 
 
-def fetch_hibob_job_text(url: str) -> str:
-    text, _location = fetch_hibob_job_detail(url)
-    return text
-
-
 async def fetch_hibob_board(
     client,
     board_url: str,

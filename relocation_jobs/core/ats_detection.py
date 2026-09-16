@@ -1,6 +1,6 @@
 """ATS type and board URL detection (static HTML, URL patterns, Playwright).
 
-Shared by scrape_jobs and company_service — neither should duplicate this logic.
+Shared by scrape and company_service — neither should duplicate this logic.
 """
 
 from __future__ import annotations
@@ -957,7 +957,7 @@ async def detect_ats_static_async(
     *,
     _depth: int = 0,
 ) -> tuple[str | None, str | None]:
-    """Async variant used by scrape_jobs bulk fetch."""
+    """Async variant of detect_ats_static."""
     url_detected = _accept_url_ats_detection(*_detect_ats_from_careers_url(careers_url))
     if url_detected[0]:
         return url_detected

@@ -182,7 +182,7 @@ relocate.me
     ↓
 build_companies.py          → companies (catalog)
     ↓
-fetch / scrape_jobs.py      → matching_jobs (catalog)
+fetch (panel / fetch-worker) → matching_jobs (catalog)
     ↓
 GET /api/board
     load catalog page
