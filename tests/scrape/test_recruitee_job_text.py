@@ -5,7 +5,7 @@ from pathlib import Path
 
 from tests.helpers.http_mock import MockResponse
 
-from relocation_jobs.scrape.job_text import fetch_recruitee_job_text
+from relocation_jobs.scrape.job_text import fetch_recruitee_job_detail
 from relocation_jobs.scrape.descriptions import needs_recruitee_refetch
 
 _FIXTURE = (
@@ -17,7 +17,7 @@ _FIXTURE = (
 _JOB_URL = "https://acme.recruitee.com/o/backend-developer"
 
 
-def test_fetch_recruitee_job_text_combines_description_and_requirements(monkeypatch):
+def test_fetch_recruitee_job_detail_combines_description_and_requirements(monkeypatch):
     payload = json.loads(_FIXTURE.read_text())
     list_payload = {
         "offers": [
@@ -37,11 +37,11 @@ def test_fetch_recruitee_job_text_combines_description_and_requirements(monkeypa
         raise AssertionError(f"unexpected url: {url}")
 
     monkeypatch.setattr("relocation_jobs.scrape.job_text.requests.get", fake_get)
-    text = fetch_recruitee_job_text(_JOB_URL)
-    assert "Relocation package available including visa sponsorship." in text
-    assert "What awaits you" in text
-    assert "TypeScript and React" in text
-    assert "Ship features end to end" in text
+    result = fetch_recruitee_job_detail(_JOB_URL)
+    assert "Relocation package available including visa sponsorship." in result.text
+    assert "What awaits you" in result.text
+    assert "TypeScript and React" in result.text
+    assert "Ship features end to end" in result.text
 
 
 def test_needs_recruitee_refetch():

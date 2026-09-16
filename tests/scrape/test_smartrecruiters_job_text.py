@@ -15,7 +15,7 @@ from relocation_jobs.scrape.descriptions import (
     needs_smartrecruiters_refetch,
     recover_smartrecruiters_plain_text,
 )
-from relocation_jobs.scrape.job_text import fetch_smartrecruiters_job_text
+from relocation_jobs.scrape.job_text import fetch_smartrecruiters_job_detail
 
 _FIXTURE = (
     Path(__file__).resolve().parents[1]
@@ -48,7 +48,7 @@ def test_smartrecruiters_job_ad_html_builds_sections():
     assert "<ul>" in html
 
 
-def test_fetch_smartrecruiters_job_text_uses_api(monkeypatch):
+def test_fetch_smartrecruiters_job_detail_uses_api(monkeypatch):
     detail_url = smartrecruiters_posting_detail_url(_JOB_URL)
     payload = json.loads(_FIXTURE.read_text())
 
@@ -57,10 +57,7 @@ def test_fetch_smartrecruiters_job_text_uses_api(monkeypatch):
         return MockResponse(json_data=payload)
 
     monkeypatch.setattr("relocation_jobs.scrape.job_text.requests.get", fake_get)
-    result = __import__(
-        "relocation_jobs.scrape.job_text",
-        fromlist=["fetch_smartrecruiters_job_detail"],
-    ).fetch_smartrecruiters_job_detail(_JOB_URL)
+    result = fetch_smartrecruiters_job_detail(_JOB_URL)
     assert "<h3>Job Description</h3>" in result.text
     assert "Python experience" in result.text
     assert result.location == "Munich, Germany"

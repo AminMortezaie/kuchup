@@ -10,7 +10,7 @@ from relocation_jobs.scrape.boards.ashby import (
     ashby_job_ids_from_url,
 )
 from relocation_jobs.scrape.descriptions import format_job_description, needs_ashby_refetch
-from relocation_jobs.scrape.job_text import fetch_ashby_job_text
+from relocation_jobs.scrape.job_text import fetch_ashby_job_detail
 
 _FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "ats" / "ashby.json"
 _JOB_URL = "https://jobs.ashbyhq.com/acme/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -24,7 +24,7 @@ def test_ashby_job_ids_from_url():
     )
 
 
-def test_fetch_ashby_job_text_returns_html(monkeypatch):
+def test_fetch_ashby_job_detail_returns_html(monkeypatch):
     payload = json.loads(_FIXTURE.read_text())
 
     def fake_get(url, *args, **kwargs):
@@ -32,10 +32,7 @@ def test_fetch_ashby_job_text_returns_html(monkeypatch):
         return MockResponse(json_data=payload)
 
     monkeypatch.setattr("relocation_jobs.scrape.boards.ashby.requests.get", fake_get)
-    result = __import__(
-        "relocation_jobs.scrape.job_text",
-        fromlist=["fetch_ashby_job_detail"],
-    ).fetch_ashby_job_detail(_JOB_URL)
+    result = fetch_ashby_job_detail(_JOB_URL)
     assert "<p>" in result.text
     assert "visa sponsorship" in result.text
     assert result.location == "Berlin, Germany"
