@@ -24,3 +24,7 @@ check on localhost
 it's fine, i checked it.
 
 but if we don't have weekly rotation we should put there as a technical debt to implement as soon as possible.
+
+---
+
+ok also remove remoteDXB or any remote positions from jobs page.
