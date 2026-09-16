@@ -1,0 +1,42 @@
+we have changed the track of application to not post the careers url directly on germany page post on homepage and it doesn't help cause linkedin would not accepeted to crawl our website because it's not using known ATS system linkedin recognize.
+
+i'm wondering that maybe we should post directly the careers url on germay board to make our brand known and then start to post on linkedin and tell the people we're providing lots of different features alongside of posting real careers url jobs and maybe this would make our website more visits.
+
+what do you think of it?
+
+---
+
+ok do you understand what i said?
+
+linkedin has wrapped positions from my germany /relocation-jobs-germany path and i changed the link of positions to kuchup url and did not it since i changed it.
+
+as you mentioned that i'm not company with ATS gate it would not recogonize my board ever.
+
+so i just want to change the urls in this page to real ats urls to linkedin crawl them and post on my jobs and weekly it should be changed (i think currently it's happening).
+then as you mentioned more people click on kuchup to find more than these sample jobs and my application goes up.
+
+---
+
+check on localhost
+
+---
+
+it's fine, i checked it.
+
+but if we don't have weekly rotation we should put there as a technical debt to implement as soon as possible.
+
+---
+
+ok also remove remoteDXB or any remote positions from jobs page.
+
+---
+
+/ponytail-debt there is a question for me.
+the pipeline of remote and relocation jobs are seperated or not?
+
+i saw on db that remote positions are in the same table with relocation jobs and just i think the location is put there completely remote.
+
+/ponytail i think it's a really bad practice cause we need to keep them seperated.
+also we can think differently and keep them like today.
+
+what do you think about it?
