@@ -5,12 +5,13 @@ Thin, discoverable entrypoints for the product’s runnable services. Python dom
 | App | Run locally | What it is |
 |-----|-------------|------------|
 | **panel** | `python3 apps/panel/run.py` | Flask job board + API (`:5051`) |
-| **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker |
+| **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker (HTTP ATS; default production image) |
+| **playwright-worker** | `python3 apps/playwright-worker/run.py` | Chromium boards only (`jibe`, `atlassian`, `hibob`) |
 | **role-propagator** | `python3 apps/role-propagator/run.py` | SQS assignment writer (company slots + roles) |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 
-Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Go propagator: `python3 apps/role-propagator/run.py` (or `go run ./apps/role-propagator`).
+Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Playwright worker Docker CMD is `apps/playwright-worker/run.py`. Go propagator: `python3 apps/role-propagator/run.py` (or `go run ./apps/role-propagator`).
 
 ## Domains vs apps
 

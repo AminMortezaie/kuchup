@@ -12,7 +12,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 
 | Kind | Location | Role |
 |------|----------|------|
-| **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, role-propagator, mcp |
+| **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, playwright-worker, role-propagator, mcp |
 | **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/) | Python domains (catalog, fetch, scrape, …); Go assignment writer |
 | **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
 | **UI** | `static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
@@ -20,6 +20,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 ```
 apps/panel/run.py
 apps/fetch-worker/run.py
+apps/playwright-worker/run.py
 apps/role-propagator/run.py    # Go SQS assignment writer
 apps/mcp/run.py          # stdio
 apps/mcp/run_http.py     # HTTP + OAuth
@@ -143,6 +144,7 @@ Layout: **pagination → search → sort/filters → company cards**.
 
 ```
 apps/fetch-worker/run.py          (scripts/fetch_scheduler_worker.py is a Docker shim)
+apps/playwright-worker/run.py     (Dockerfile.ec2-worker-playwright; FETCH_WORKER_KIND=playwright)
   → fetch/scheduler.main
   → run_scheduled_pass            listing check, then countries
   → run_fetch_cycle               when / which countries
@@ -158,7 +160,7 @@ Package spine: `relocation_jobs.fetch` exports `bootstrap_scheduler`, `run_fetch
 
 After a country or company **run** finishes (`fetch/runner.py`), enqueue `type=country`. Scrape/pipeline/country_runner do not enqueue.
 
-- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`
+- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all`)
 - Cap: `core/ats_constants.MAX_CONCURRENCY`
 - Status: `GET /api/fetch/status`
 - Panel fire-and-forget only: `start_country_fetch` / `start_company_fetch` (thread + UI poll)

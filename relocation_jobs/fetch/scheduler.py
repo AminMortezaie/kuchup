@@ -6,6 +6,7 @@ import os
 import time
 
 from relocation_jobs.core.ats_constants import HTTPX_AVAILABLE, MAX_CONCURRENCY
+from relocation_jobs.core.ats_detection import PLAYWRIGHT_AVAILABLE
 from relocation_jobs.core.log import configure_logging
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.db import init_db
@@ -16,6 +17,7 @@ from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import run_country_fetch_blocking
 from relocation_jobs.fetch.listing_check import run_listing_check_cycle
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
+from relocation_jobs.fetch.worker_kind import worker_kind
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
 
 LOGGER = logging.getLogger("relocation_jobs.fetch.scheduler")
@@ -89,6 +91,8 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
         user_id=resolved_user_id,
         concurrency=concurrency,
         total=len(countries),
+        worker_kind=worker_kind(),
+        playwright_available=PLAYWRIGHT_AVAILABLE,
     )
 
     for country in countries:
@@ -183,6 +187,8 @@ def run_scheduler_loop() -> None:
         "Fetch scheduler started",
         concurrency=schedule_concurrency(),
         total=len(schedule_countries()),
+        worker_kind=worker_kind(),
+        playwright_available=PLAYWRIGHT_AVAILABLE,
     )
 
     while True:

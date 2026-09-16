@@ -127,7 +127,7 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 | [operations/monitoring.md](operations/monitoring.md) | Grafana Cloud Free, Alloy, `/api/health`, alerts |
 | [operations/email.md](operations/email.md) | `@kuchup.com` via Cloudflare Email Routing + Gmail Send as |
 | [operations/seo-indexing.md](operations/seo-indexing.md) | Search Console, `/sitemap.xml` + `/sitemap-jobs.xml`, `/engineering` notes |
-| `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
+| `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 (`image-sizes` compares light vs Playwright workers) |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
 
 ### Backlog
