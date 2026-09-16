@@ -129,13 +129,10 @@ export function atsScoreTone(score) {
   return "ats-low";
 }
 
-import { beginScreenLoad, endScreenLoad, isScreenLoadActive, setScreenLoadProgress } from "./screen-loader.js";
+import { endScreenLoad, isScreenLoadActive } from "./screen-loader.js";
 
 export function setLoadingProgress(pct) {
-  if (isScreenLoadActive()) {
-    setScreenLoadProgress(pct);
-    return;
-  }
+  if (isScreenLoadActive()) return;
   const fill = document.getElementById("loadingBarFill");
   const bar = document.getElementById("loadingBar");
   if (!fill || !bar) return;

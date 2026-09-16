@@ -11,20 +11,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=102" />
+  <link rel="stylesheet" href="/static/styles.css?v=106" />
   <link rel="stylesheet" href="/static/app-shell.css?v=12" />
 </head>
 <body>
   <div id="loadingBar" aria-hidden="true"><div id="loadingBarFill"></div></div>
   <div id="screenLoader" class="screen-loader" hidden aria-hidden="true" aria-live="polite">
-    <div class="screen-loader-panel">
-      <div id="screenLoaderRing" class="screen-loader-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <svg class="screen-loader-svg" viewBox="0 0 56 56" aria-hidden="true">
-          <circle class="screen-loader-track" cx="28" cy="28" r="24" />
-          <circle id="screenLoaderArc" class="screen-loader-arc" cx="28" cy="28" r="24" />
-        </svg>
-        <span id="screenLoaderPct" class="screen-loader-pct" aria-hidden="true"></span>
-      </div>
+    <div class="screen-loader-panel" role="status">
+      <span class="screen-loader-mark" aria-hidden="true">
+        <img src="/static/icons/kuchup-bird.svg" alt="" width="72" height="72" />
+      </span>
+      <span class="screen-loader-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
       <p id="screenLoaderLabel" class="screen-loader-label">Loading…</p>
     </div>
   </div>
@@ -259,6 +258,6 @@
   </dialog>
 
   <script type="module" src="/static/js/position-card.js?v=13"></script>
-  <script type="module" src="/static/js/company.js?v=27"></script>
+  <script type="module" src="/static/js/company.js?v=28"></script>
 </body>
 </html>

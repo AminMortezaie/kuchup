@@ -1,80 +1,14 @@
-/** Full-screen circular loader — progress only moves forward. */
-
-const RING_R = 24;
-const RING_LEN = 2 * Math.PI * RING_R;
+/** Full-screen branded loader — mark + dots, no fake percentage. */
 
 let depth = 0;
-let displayPct = 0;
-let targetPct = 0;
-let rafId = null;
 let showRaf = null;
 let finishTimer = null;
 
 function elements() {
   return {
     root: document.getElementById("screenLoader"),
-    arc: document.getElementById("screenLoaderArc"),
-    pct: document.getElementById("screenLoaderPct"),
     label: document.getElementById("screenLoaderLabel"),
-    ring: document.getElementById("screenLoaderRing"),
   };
-}
-
-function paint(pct) {
-  const value = Math.max(0, Math.min(100, pct));
-  const { arc, pct: pctEl, ring } = elements();
-  if (arc) {
-    arc.style.strokeDasharray = `${RING_LEN}`;
-    arc.style.strokeDashoffset = `${RING_LEN * (1 - value / 100)}`;
-  }
-  if (pctEl) pctEl.textContent = value >= 8 ? `${Math.round(value)}%` : "";
-  ring?.setAttribute("aria-valuenow", String(Math.round(value)));
-}
-
-function stopLoop() {
-  if (rafId != null) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
-}
-
-function bumpTarget(pct) {
-  targetPct = Math.max(targetPct, Math.min(pct, 100));
-}
-
-function tick() {
-  if (displayPct < targetPct) {
-    const gap = targetPct - displayPct;
-    const step = Math.max(0.45, gap * 0.14);
-    displayPct = Math.min(targetPct, displayPct + step);
-    paint(displayPct);
-  }
-
-  if (depth > 0 && targetPct < 90) {
-    bumpTarget(targetPct + 0.22);
-  }
-
-  if (depth > 0 || displayPct < 99.8) {
-    rafId = requestAnimationFrame(tick);
-    return;
-  }
-  rafId = null;
-}
-
-function startLoop() {
-  if (rafId != null) return;
-  rafId = requestAnimationFrame(tick);
-}
-
-function resetSession() {
-  stopLoop();
-  if (finishTimer) {
-    clearTimeout(finishTimer);
-    finishTimer = null;
-  }
-  displayPct = 0;
-  targetPct = 0;
-  paint(0);
 }
 
 export function isScreenLoadActive() {
@@ -88,28 +22,24 @@ export function beginScreenLoad(label = "Loading…") {
   if (depth > 0) return;
 
   depth = 1;
-  resetSession();
+  if (finishTimer) {
+    clearTimeout(finishTimer);
+    finishTimer = null;
+  }
   root.hidden = false;
   root.classList.remove("is-done");
+  root.setAttribute("aria-hidden", "false");
   document.body.classList.add("screen-loading");
   if (showRaf) cancelAnimationFrame(showRaf);
   showRaf = requestAnimationFrame(() => {
     showRaf = null;
     if (depth > 0) root.classList.add("is-visible");
   });
-  bumpTarget(12);
-  startLoop();
-}
-
-export function setScreenLoadProgress(pct) {
-  bumpTarget(pct);
-  startLoop();
 }
 
 export function endScreenLoad() {
   if (depth === 0) return;
   depth = 0;
-  stopLoop();
 
   if (showRaf) {
     cancelAnimationFrame(showRaf);
@@ -120,11 +50,11 @@ export function endScreenLoad() {
   root.classList.add("is-done");
   root.classList.remove("is-visible");
   root.hidden = true;
+  root.setAttribute("aria-hidden", "true");
   document.body.classList.remove("screen-loading");
   if (finishTimer) clearTimeout(finishTimer);
   finishTimer = window.setTimeout(() => {
     root.classList.remove("is-done");
-    resetSession();
     finishTimer = null;
   }, 400);
 }

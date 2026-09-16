@@ -5261,9 +5261,9 @@ body.screen-loading #loadingBar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  width: min(320px, 100%);
-  padding: 32px 28px 28px;
+  gap: 12px;
+  width: min(280px, 100%);
+  padding: 28px 24px 24px;
   border-radius: var(--radius-card);
   border: var(--rule-width) solid var(--color-rule);
   background: var(--color-paper);
@@ -5280,51 +5280,65 @@ body.screen-loading #loadingBar {
   opacity: 1;
 }
 
-.screen-loader-ring {
-  position: relative;
-  width: 72px;
-  height: 72px;
+.screen-loader-mark {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
 }
 
-.screen-loader-svg {
+.screen-loader-mark img {
+  display: block;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg);
+  object-fit: contain;
 }
 
-.screen-loader-track,
-.screen-loader-arc {
-  fill: none;
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-
-.screen-loader-track {
-  stroke: color-mix(in srgb, var(--accent) 12%, var(--surface));
-}
-
-.screen-loader-arc {
-  stroke: var(--accent);
-  stroke-dasharray: 150.8;
-  stroke-dashoffset: 150.8;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 45%, transparent));
-}
-
-.screen-loader-pct {
-  position: absolute;
-  inset: 0;
+.screen-loader-dots {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.82rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  letter-spacing: -0.02em;
+  gap: 0.4rem;
+  height: 0.5rem;
+}
+
+.screen-loader-dots span {
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.4;
+  animation: screen-loader-dot 1.1s ease-in-out infinite;
+}
+
+.screen-loader-dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.screen-loader-dots span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes screen-loader-dot {
+  0%, 70%, 100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-0.15rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-loader-dots span {
+    animation: none !important;
+    opacity: 0.7;
+    transform: none;
+  }
 }
 
 .screen-loader-label {
-  margin: 0;
+  margin: 4px 0 0;
   text-align: center;
   font-size: 0.92rem;
   font-weight: 500;

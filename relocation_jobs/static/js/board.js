@@ -5,7 +5,7 @@ import { $, beginTopLoadingProgress, finishLoadingProgress, setLoadingProgress }
 import { fetchBoard, fetchBoardUserStats } from "./api.js";
 import { releaseCompanyOrder } from "./render.js";
 import { syncBoardView } from "./board-view.js";
-import { beginScreenLoad, endScreenLoad, setScreenLoadProgress } from "./screen-loader.js";
+import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { panelStorageKey } from "./panel-mode.js";
 
 function overlayLabel(options, page, requestChanged) {
@@ -141,11 +141,9 @@ export async function loadBoard(options = {}) {
   }
 
   try {
-    if (useOverlay) setScreenLoadProgress(20);
-    else if (useTopBar) setLoadingProgress(28);
+    if (useTopBar) setLoadingProgress(28);
     await loadBoardCatalog({ ...options, page, requestChanged });
-    if (useOverlay) setScreenLoadProgress(72);
-    else if (useTopBar) setLoadingProgress(82);
+    if (useTopBar) setLoadingProgress(82);
 
     const totalPages = boardTotalPages();
     if (state.boardPage > totalPages) {
@@ -153,13 +151,11 @@ export async function loadBoard(options = {}) {
     }
 
     if (options.refreshUserStats) {
-      if (useOverlay) setScreenLoadProgress(86);
-      else if (useTopBar) setLoadingProgress(90);
+      if (useTopBar) setLoadingProgress(90);
       await loadBoardUserStats();
     }
 
-    if (useOverlay) setScreenLoadProgress(94);
-    else if (useTopBar) setLoadingProgress(96);
+    if (useTopBar) setLoadingProgress(96);
     applyBoardView({ enterAnimation });
   } finally {
     if (useOverlay) endScreenLoad();

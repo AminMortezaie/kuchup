@@ -2,7 +2,7 @@
 
 import { initAppShell } from "./app-shell.js";
 import { companyWorkspacePath } from "./company-workspace.js";
-import { beginScreenLoad, endScreenLoad, setScreenLoadProgress } from "./screen-loader.js";
+import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
 
 let routeCountry = "";
@@ -799,29 +799,22 @@ async function rerenderPdf() {
   if (editBtn) editBtn.disabled = true;
   showError("");
   beginScreenLoad("Rendering PDF…");
-  setScreenLoadProgress(15);
-  const tick = window.setInterval(() => setScreenLoadProgress(88), 800);
   try {
     if (texEditing) {
-      setScreenLoadProgress(20);
       await persistTex();
     }
-    setScreenLoadProgress(25);
     const result = await api(
       `${artifactApiBase(selectedKey)}/render`,
       { method: "POST" },
     );
-    setScreenLoadProgress(92);
     if (!result.ok) {
       throw new Error(result.error || result.log || "Render failed");
     }
     showToast("PDF re-rendered");
-    setScreenLoadProgress(96);
     await refreshPositionsAfterRender();
   } catch (err) {
     showError(err.message || "Failed to re-render PDF");
   } finally {
-    window.clearInterval(tick);
     endScreenLoad();
     btn.disabled = false;
     if (saveBtn) saveBtn.disabled = false;

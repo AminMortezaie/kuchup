@@ -1,4 +1,4 @@
-import { beginScreenLoad, endScreenLoad, setScreenLoadProgress } from "./screen-loader.js";
+import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
 
 export function createSlugDocumentEditor({
@@ -170,17 +170,12 @@ export function createSlugDocumentEditor({
     if (saveBtn) saveBtn.disabled = true;
     showError("");
     beginScreenLoad("Rendering PDF…");
-    setScreenLoadProgress(15);
-    const tick = window.setInterval(() => setScreenLoadProgress(88), 800);
     try {
-      setScreenLoadProgress(20);
       await persist();
-      setScreenLoadProgress(35);
       const result = await api(
         `${apiBase}/${encodeURIComponent(selectedSlug)}/render`,
         { method: "POST" },
       );
-      setScreenLoadProgress(92);
       if (!result.ok) {
         throw new Error(result.error || result.log || "Render failed");
       }
@@ -190,12 +185,10 @@ export function createSlugDocumentEditor({
         hasPdf: Boolean(result.pdf_stored),
         pdfFilename: result.pdf_filename,
       });
-      setScreenLoadProgress(96);
       await refreshDetail(selectedSlug);
     } catch (err) {
       showError(err.message || copy.renderFailed);
     } finally {
-      window.clearInterval(tick);
       endScreenLoad();
       btn.disabled = false;
       if (saveBtn) saveBtn.disabled = false;
