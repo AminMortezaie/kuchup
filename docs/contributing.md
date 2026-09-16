@@ -74,7 +74,8 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 
 ```
 apps/panel/run.py              Flask panel
-apps/fetch-worker/run.py       Scheduled country scrape
+apps/fetch-worker/run.py       Scheduled country scrape (HTTP ATS)
+apps/playwright-worker/run.py  Chromium boards (jibe / atlassian / hibob)
 apps/role-propagator/run.py    Go SQS role assignment writer
 apps/mcp/run.py                Claude Desktop MCP (stdio)
 apps/mcp/run_http.py           HTTP MCP + OAuth

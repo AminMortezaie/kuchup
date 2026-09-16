@@ -74,7 +74,7 @@ submit — Kuchup never auto-applies.
 | **Concurrent scrape** | asyncio + httpx (up to **16** workers); relevance include/exclude keywords |
 | **Shared catalog + per-user overlay** | Tracking merged at read time — applied / reject / not-for-me / pin / looking-to-apply |
 | **Web panel** | Paginated board (`GET /api/board`, default **25**/page), filters, fetch, add company |
-| **Scheduled fetch** | Production Playwright worker every **6 hours** |
+| **Scheduled fetch** | Production **light HTTP** worker every **6 hours**; Playwright/Chromium is an opt-in sidecar |
 | **Application assistant** | MCP: masters, project masters, gated JD-mirror reframe, validate, PDF (`tectonic`) |
 | **Company workspace** | `/company/<country>/<slug>` — positions, CV / cover letter, live PDF preview |
 
@@ -97,7 +97,7 @@ tests/                pytest (mirrors relocation_jobs/ domains)
 | I want to… | Go here |
 |------------|---------|
 | Run the panel | `python3 apps/panel/run.py` (or `scripts/panel_server.py`) |
-| Run a worker | `python3 apps/fetch-worker/run.py`, `python3 apps/role-propagator/run.py` |
+| Run a worker | `python3 apps/fetch-worker/run.py`, `python3 apps/playwright-worker/run.py`, `python3 apps/role-propagator/run.py` |
 | Run MCP | `apps/mcp/run.py` (stdio) / `apps/mcp/run_http.py` |
 | Change domain logic | `relocation_jobs/<domain>/` (Python) · `role_propagator/` (Go assignments) |
 | Full app list | [`apps/README.md`](apps/README.md) |

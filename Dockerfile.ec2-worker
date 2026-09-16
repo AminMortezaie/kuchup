@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# EC2 fetch worker (Playwright + scheduled country fetches).
-# slim + chromium headless shell only — full bookworm + both chromium builds was ~2.5GB.
+# Light EC2 fetch worker: HTTP ATS APIs / HTML only (Greenhouse, Lever, Ashby, …).
+# No Playwright, no Chromium. Browser boards use Dockerfile.ec2-worker-playwright.
 FROM python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
@@ -10,21 +10,13 @@ ENV PYTHONUNBUFFERED=1 \
     FETCH_SCHEDULE_ENABLED=1 \
     FETCH_SCHEDULE_INTERVAL_HOURS=6 \
     FETCH_SCHEDULE_CONCURRENCY=4 \
-    PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL=1 \
-    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+    FETCH_WORKER_KIND=http
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-# Keep Chromium in a layer keyed only by the Playwright requirement. Changes to
-# ordinary Python dependencies can then reuse the expensive browser layer.
-COPY requirements-playwright.txt .
-RUN --mount=type=cache,id=relocation-worker-pip,target=/root/.cache/pip \
-    pip install -r requirements-playwright.txt \
-    && playwright install --with-deps --only-shell chromium
 
 COPY requirements.txt .
 RUN --mount=type=cache,id=relocation-worker-pip,target=/root/.cache/pip \

@@ -6,6 +6,14 @@ from unittest.mock import patch
 from relocation_jobs.scrape.playwright_board import scrape_board_with_playwright
 
 
+def test_playwright_board_returns_empty_when_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        "relocation_jobs.scrape.playwright_board.PLAYWRIGHT_AVAILABLE",
+        False,
+    )
+    assert scrape_board_with_playwright("https://example.com/careers") == []
+
+
 def test_playwright_board_watchdog_returns_empty_on_timeout(monkeypatch):
     monkeypatch.setenv("PLAYWRIGHT_BOARD_TIMEOUT_SECONDS", "1")
 
