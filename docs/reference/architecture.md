@@ -12,7 +12,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 
 | Kind | Location | Role |
 |------|----------|------|
-| **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, role-propagator, mcp |
+| **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, playwright-worker, role-propagator, mcp |
 | **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/) | Python domains (catalog, fetch, scrape, …); Go assignment writer |
 | **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
 | **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
@@ -20,6 +20,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 ```
 apps/panel/run.py
 apps/fetch-worker/run.py
+apps/playwright-worker/run.py
 apps/role-propagator/run.py    # Go SQS assignment writer
 apps/mcp/run.py          # stdio
 apps/mcp/run_http.py     # HTTP + OAuth
@@ -140,6 +141,7 @@ Layout: **pagination → search → sort/filters → company cards**.
 
 ```
 apps/fetch-worker/run.py          (scripts/fetch_scheduler_worker.py is a Docker shim)
+apps/playwright-worker/run.py     (Dockerfile.ec2-worker-playwright; FETCH_WORKER_KIND=playwright)
   → fetch/scheduler.main
   → run_scheduled_pass            listing check, then countries
   → run_fetch_cycle               when / which countries
@@ -160,11 +162,12 @@ Production images:
 | Image | Playwright | Env |
 |-------|------------|-----|
 | Slim panel (`Dockerfile.ec2`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1` |
-| Fetch worker (`Dockerfile.ec2-worker`) | Yes | `FETCH_SCHEDULE_ENABLED=1`, interval 6h, concurrency **2** |
+| Light fetch worker (`Dockerfile.ec2-worker`) | No | `FETCH_WORKER_KIND=http`, `FETCH_SCHEDULE_ENABLED=1`, interval 6h, concurrency **2** |
+| Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `FETCH_WORKER_KIND=playwright`; `jibe` / `atlassian` / `hibob` |
 
-Playwright-only ATS boards need the worker or a local scrape (`PANEL_SCRAPE_ENABLED=1`). There is one fetch-worker on `main`; a split light-HTTP worker is not shipped.
+Playwright-only ATS boards need the sidecar or a local scrape (`PANEL_SCRAPE_ENABLED=1`). The default EC2 worker is HTTP-only and skips those ATS types so an empty board does not close jobs.
 
-- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`
+- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all`)
 - ATS scrape cap: `core/ats_constants.MAX_CONCURRENCY` (16)
 - Timeouts (`fetch/timeouts.py`): `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Status: `GET /api/fetch/status`

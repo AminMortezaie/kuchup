@@ -101,7 +101,7 @@ docs/
 | [operations/nowpayments.md](operations/nowpayments.md) | Credit packs + Full Access checkout |
 | [operations/seo-indexing.md](operations/seo-indexing.md) | Search Console, `/sitemap.xml` + `/sitemap-jobs.xml` |
 | [operations/sqs-opportunity-refresh.md](operations/sqs-opportunity-refresh.md) | Opportunity assignment queue (Go consumer) |
-| `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 |
+| `scripts/ec2_app_deploy.sh` | Panel deploy to EC2 (`image-sizes` compares light vs Playwright workers) |
 | `scripts/ec2_redis.sh` | Redis on EC2 |
 
 Caddyfile and Grafana Alloy config live in **gitignored** `deploy/ec2/` (not in the public tree). The deploy script copies them onto the host.

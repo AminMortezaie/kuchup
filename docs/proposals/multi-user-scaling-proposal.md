@@ -234,7 +234,7 @@ scripts/
 | `fetch/repo.py` | Add helpers for the worker to update `fetch_runs` status/progress |
 | `web/routes/fetch.py` | `POST /api/companies/fetch` and admin `POST /api/fetch` enqueue and return `202 { run_id }` |
 | `web/routes/company.py` (PDF route) | Enqueues, returns `202`; client polls existing status pattern |
-| `Dockerfile.ec2-worker` | CMD becomes the SQS worker script(s); keep Playwright/Chromium deps for fetch |
+| `Dockerfile.ec2-worker` | CMD becomes the SQS worker script(s); HTTP ATS only. Playwright/Chromium stays in `Dockerfile.ec2-worker-playwright`. |
 
 **Deploy changes:**
 

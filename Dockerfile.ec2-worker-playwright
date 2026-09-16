@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+# Playwright/Chromium fetch worker for jibe, atlassian, hibob (and optional
+# generic/ashby/teamtailor browser fallbacks). Not the default EC2 worker.
+# slim + chromium headless shell only — full bookworm + both chromium builds was ~2.5GB.
+FROM python:3.12-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PANEL_DATA_DIR=/tmp/panel-data \
+    PANEL_SCRAPE_ENABLED=1 \
+    FETCH_SCHEDULE_ENABLED=1 \
+    FETCH_SCHEDULE_INTERVAL_HOURS=6 \
+    FETCH_SCHEDULE_CONCURRENCY=1 \
+    FETCH_WORKER_KIND=playwright \
+    FETCH_LISTING_CHECK_ENABLED=0 \
+    PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Keep Chromium in a layer keyed only by the Playwright requirement. Changes to
+# ordinary Python dependencies can then reuse the expensive browser layer.
+COPY requirements-playwright.txt .
+RUN --mount=type=cache,id=relocation-playwright-worker-pip,target=/root/.cache/pip \
+    pip install -r requirements-playwright.txt \
+    && playwright install --with-deps --only-shell chromium
+
+COPY requirements.txt .
+RUN --mount=type=cache,id=relocation-playwright-worker-pip,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
+COPY . .
+
+RUN mkdir -p /tmp/panel-data
+
+CMD ["python3", "apps/playwright-worker/run.py"]

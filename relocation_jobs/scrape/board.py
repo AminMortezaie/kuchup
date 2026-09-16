@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 
-from relocation_jobs.core.ats_constants import ATS_TYPE_CHOICES
+from relocation_jobs.core.ats_constants import ATS_TYPE_CHOICES, PLAYWRIGHT_REQUIRED_ATS
+from relocation_jobs.core.ats_detection import PLAYWRIGHT_AVAILABLE
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.scrape.boards.ashby import fetch_ashby_board
 from relocation_jobs.scrape.boards.bol import fetch_bol_board
@@ -109,6 +110,9 @@ async def fetch_ats_board(
         raise LookupError(f"No careers or ATS URL for {name}")
 
     log_event(f"fetching board ats={ats_type} url={board_url}", company=name)
+
+    if ats_type in PLAYWRIGHT_REQUIRED_ATS and not PLAYWRIGHT_AVAILABLE:
+        raise LookupError(f"Playwright not installed; skip {ats_type} board for {name}")
 
     if ats_type in _GENERIC_ATS:
         return await fetch_generic_board(client, board_url, company)
