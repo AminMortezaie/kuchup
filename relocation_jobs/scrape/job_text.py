@@ -74,10 +74,6 @@ def fetch_greenhouse_job_detail(url: str, board_slug: str = "") -> JobFetchResul
     return JobFetchResult(content, location)
 
 
-def fetch_greenhouse_job_text(url: str) -> str:
-    return fetch_greenhouse_job_detail(url).text
-
-
 def fetch_lever_job_detail(url: str) -> JobFetchResult:
     api = lever_posting_api_url(url)
     if not api:
@@ -143,10 +139,6 @@ def fetch_recruitee_job_detail(url: str) -> JobFetchResult:
     return _empty_fetch()
 
 
-def fetch_recruitee_job_text(url: str) -> str:
-    return fetch_recruitee_job_detail(url).text
-
-
 def fetch_smartrecruiters_job_detail(url: str) -> JobFetchResult:
     detail_url = smartrecruiters_posting_detail_url(url)
     if not detail_url:
@@ -168,20 +160,12 @@ def fetch_smartrecruiters_job_detail(url: str) -> JobFetchResult:
     return _empty_fetch()
 
 
-def fetch_smartrecruiters_job_text(url: str) -> str:
-    return fetch_smartrecruiters_job_detail(url).text
-
-
 def fetch_ashby_job_detail(url: str) -> JobFetchResult:
     ids = ashby_job_ids_from_url(url)
     if not ids:
         return _empty_fetch()
     content, location = ashby_job_detail(ids[0], ids[1])
     return JobFetchResult(content, location)
-
-
-def fetch_ashby_job_text(url: str) -> str:
-    return fetch_ashby_job_detail(url).text
 
 
 def fetch_hibob_job_detail(url: str) -> JobFetchResult:

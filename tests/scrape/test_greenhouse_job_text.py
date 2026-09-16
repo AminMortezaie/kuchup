@@ -13,7 +13,7 @@ from relocation_jobs.scrape.descriptions import (
     format_job_description,
     needs_getyourguide_refetch,
 )
-from relocation_jobs.scrape.job_text import fetch_greenhouse_job_text
+from relocation_jobs.scrape.job_text import fetch_greenhouse_job_detail
 
 _JOB_URL = "https://www.getyourguide.careers/jobs/8007209"
 _API_URL = "https://boards-api.greenhouse.io/v1/boards/getyourguide/jobs/8007209"
@@ -48,7 +48,7 @@ def test_greenhouse_job_ids_from_branded_sumup_gh_jid():
     assert greenhouse_job_ids_from_url(url) == ("sumup", "8644922002")
 
 
-def test_fetch_greenhouse_job_text_getyourguide(monkeypatch):
+def test_fetch_greenhouse_job_detail_getyourguide(monkeypatch):
     payload = json.loads(_FIXTURE.read_text())
 
     def fake_get(url, *args, **kwargs):
@@ -56,10 +56,7 @@ def test_fetch_greenhouse_job_text_getyourguide(monkeypatch):
         return MockResponse(json_data=payload)
 
     monkeypatch.setattr("relocation_jobs.scrape.boards.greenhouse.requests.get", fake_get)
-    result = __import__(
-        "relocation_jobs.scrape.job_text",
-        fromlist=["fetch_greenhouse_job_detail"],
-    ).fetch_greenhouse_job_detail(_JOB_URL)
+    result = fetch_greenhouse_job_detail(_JOB_URL)
     assert "<h3>" in result.text
     assert "Change the way the world travels" in result.text
     assert result.location == "Berlin, Germany"
@@ -93,7 +90,5 @@ def test_fetch_greenhouse_job_detail_uses_board_slug(monkeypatch):
         return MockResponse(json_data=payload)
 
     monkeypatch.setattr("relocation_jobs.scrape.boards.greenhouse.requests.get", fake_get)
-    from relocation_jobs.scrape.job_text import fetch_greenhouse_job_detail
-
     result = fetch_greenhouse_job_detail(url, board_slug="hellofresh")
     assert "Change the way the world travels" in result.text
