@@ -1,6 +1,6 @@
 # Documentation
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-16
 
 All project docs live under `docs/`. [README](../README.md) at the repo root covers product setup and usage only. Repo map (apps vs domains): [apps/README.md](../apps/README.md).
 
@@ -22,6 +22,7 @@ All project docs live under `docs/`. [README](../README.md) at the repo root cov
 | Fetch pipeline queue / Kafka placement (proposal) | [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md) |
 | Multi-user scaling — SQS broker, DB pool, board projection (proposal) | [reference/multi-user-scaling-proposal.md](reference/multi-user-scaling-proposal.md) |
 | Entitlements — Google auth, plans, credits, NOWPayments checkout | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
+| Panel UI health check (React island + vanilla hybrid) | [reference/frontend-health-check.md](reference/frontend-health-check.md) |
 | Full SPA UI modernization (proposal) | [reference/full-spa-ui-modernization-proposal.md](reference/full-spa-ui-modernization-proposal.md) |
 | Single-company fetch modal session (why it felt flaky) | [reference/fetch-panel-session.md](reference/fetch-panel-session.md) |
 | Catalog vs per-user tracking (design) | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
@@ -60,6 +61,7 @@ docs/
     board-read-model-proposal.md  board performance: projection table, cursors (proposal)
     kafka-fetch-pipeline-proposal.md  fetch/scrape work queue, Kafka placement (proposal)
     multi-user-scaling-proposal.md  SQS job queue, DB pool, board projection for many users (proposal)
+    frontend-health-check.md  panel React island + vanilla hybrid (review)
     full-spa-ui-modernization-proposal.md  React SPA, design system, dark/light, mobile (proposal)
     fetch-panel-session.md    single-company fetch modal: session ownership + settle-once UX
     stats.md                  admin/user stats definitions
@@ -105,6 +107,7 @@ Agent skills: `.claude/skills/` (`getting-started` → `collaboration-style` →
 | Doc | Purpose |
 |-----|---------|
 | [reference/board.md](reference/board.md) | Board API, pagination, newest sort (mermaid) |
+| [reference/frontend-health-check.md](reference/frontend-health-check.md) | Panel UI health check — React island, vanilla JS, what to do next |
 | [reference/fetch-panel-session.md](reference/fetch-panel-session.md) | Single-company fetch modal session (stale UI / double board update) |
 | [reference/stats.md](reference/stats.md) | Admin/user stats definitions |
 | [reference/business-rules.md](reference/business-rules.md) | Job state contracts — read before tracking changes |
