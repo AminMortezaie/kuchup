@@ -4,7 +4,7 @@
 **Last updated:** 2026-07-08  
 **Authors:** architecture discussion (agent + owner review pending)
 
-Related: [architecture.md](architecture.md), [board.md](board.md), [business-rules.md](business-rules.md), [company-workspace.md](company-workspace.md), [rules.md](rules.md), [board-read-model-proposal.md](board-read-model-proposal.md)
+Related: [architecture.md](../reference/architecture.md), [board.md](../reference/board.md), [business-rules.md](../reference/business-rules.md), [company-workspace.md](../reference/company-workspace.md), [rules.md](../reference/rules.md), [board-read-model-proposal.md](board-read-model-proposal.md)
 
 ---
 
@@ -305,7 +305,7 @@ Port `admin.js`, `admin-worker.js`, `stats-dashboard.js`. Reuse fetch panel from
 
 ### Regression checklist (manual + Playwright)
 
-Map to [business-rules.md](business-rules.md): apply, reject, not-for-me, restore, pin, ATS score, hide-reason, orphan reinjection visible on board.
+Map to [business-rules.md](../reference/business-rules.md): apply, reject, not-for-me, restore, pin, ATS score, hide-reason, orphan reinjection visible on board.
 
 ---
 

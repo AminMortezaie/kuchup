@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-16
 
-v2 layout and data flow. Setup: [contributing.md](../contributing.md). Board details: [board.md](board.md). Catalog vs user state: [catalog-pattern.md](catalog-pattern.md). How this graph was reached: [backend-soul-refactor.md](backend-soul-refactor.md).
+Layout and data flow as of 2026-09. Setup: [contributing.md](../contributing.md). Board details: [board.md](board.md). Catalog vs user state: [catalog-pattern.md](catalog-pattern.md). How this graph was reached: [backend-soul-refactor.md](../archive/backend-soul-refactor.md).
 
 ---
 
@@ -15,7 +15,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 | **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, role-propagator, mcp |
 | **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/) | Python domains (catalog, fetch, scrape, …); Go assignment writer |
 | **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
-| **UI** | `static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
+| **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
 
 ```
 apps/panel/run.py
@@ -37,38 +37,37 @@ relocate.me (country page)
     ↓
 build_companies.py       ← careers URL discovery → Postgres catalog
     ↓
-v2 fetch (panel / fetch-worker)  ← ATS scrape → Postgres catalog
+fetch-worker (Playwright) / panel company-fetch  ← ATS scrape → Postgres catalog
     ↓
 web/server.py            ← Flask API (catalog + per-user tracking merge)
     ↓
-static/js/ + frontend/   ← UI; React pagination in static/dist/
+relocation_jobs/static/js/ + frontend/   ← UI; React pagination in static/dist/
 ```
 
 ---
 
-## v2 package layout
+## Package layout
 
 ```
 relocation_jobs/
-├── catalog/      repo — companies, jobs, sync_company_board_to_catalog
-├── positions/    repo + service — apply, reject, not-for-me
-├── panel/        relocation board flatten + stats
-├── remote/       remote board service + country list (aggregators)
-├── fetch/        scheduler (when/what), runner (panel threads), country_runner (semaphore), pipeline (scrape+persist)
-├── scrape/       boards/, merge, enrich, aggregator_* 
-├── companies/    company CRUD
-├── users/        history, applied, entitlements
+├── catalog/       repo — companies, jobs, sync_company_board_to_catalog
+├── positions/     repo + service — apply, reject, not-for-me
+├── panel/         relocation board flatten + stats
+├── remote/        remote board service + country list (aggregators)
+├── fetch/         scheduler (when/what), runner, country_runner (semaphore), pipeline
+├── scrape/        boards/, merge, enrich, aggregator_*
+├── companies/     company CRUD
+├── users/         history, applied, entitlements
 ├── opportunities/ preference + opportunity reads; enqueue refresh
 ├── broadcast/     freemium peek / consume / capacity meta
 ├── credits/       promotional/purchased wallet grants + immutable ledger
 ├── payments/      checkout providers, signed notifications, reconciliation
 ├── async_jobs/    typed SQS enqueue only (Go consumes)
-├── positions/     job tracking status (applied/seen/…)
-├── mcp/          Claude Desktop MCP: application prep, tex → PDF (v0)
-├── admin/        dashboard aggregates
-├── web/          server, routes, deps
-├── shared/       board_contract, predicates, coerce, schema
-└── db/           v2-only migrations
+├── mcp/           Claude / Cursor MCP: application prep, tex → PDF
+├── admin/         dashboard aggregates
+├── web/           server, routes, deps
+├── shared/        board_contract, predicates, coerce, schema
+└── db/            migrations
 ```
 
 **Layer rule:** SQL only in `*/repo.py`. See [rules.md](rules.md).
@@ -130,10 +129,10 @@ Response: `{ companies, meta, user_stats }`. Default `page_size` = 25.
 
 | Piece | Location |
 |-------|----------|
-| Board load / pagination | `static/js/board.js`, `board-view.js`, `api.js` |
+| Board load / pagination | `relocation_jobs/static/js/board.js`, `board-view.js`, `api.js` |
 | React pagination | `frontend/src/BoardPagination.jsx` → `#board-pagination-root` |
-| Company cards | `frontend/src/CompanyCard.jsx`, `static/js/render.js` |
-| Job mutations | `static/js/job-board.js` (prefer local updates) |
+| Company cards | `frontend/src/CompanyCard.jsx`, `relocation_jobs/static/js/render.js` |
+| Job mutations | `relocation_jobs/static/js/job-board.js` (prefer local updates) |
 
 Layout: **pagination → search → sort/filters → company cards**.
 
@@ -158,8 +157,18 @@ Package spine: `relocation_jobs.fetch` exports `bootstrap_scheduler`, `run_fetch
 
 After a country or company **run** finishes (`fetch/runner.py`), enqueue `type=country`. Scrape/pipeline/country_runner do not enqueue.
 
+Production images:
+
+| Image | Playwright | Env |
+|-------|------------|-----|
+| Slim panel (`Dockerfile.ec2`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1` |
+| Fetch worker (`Dockerfile.ec2-worker`) | Yes | `FETCH_SCHEDULE_ENABLED=1`, interval 6h, concurrency **2** |
+
+Playwright-only ATS boards need the worker or a local scrape (`PANEL_SCRAPE_ENABLED=1`). There is one fetch-worker on `main`; a split light-HTTP worker is not shipped.
+
 - Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`
-- Cap: `core/ats_constants.MAX_CONCURRENCY`
+- ATS scrape cap: `core/ats_constants.MAX_CONCURRENCY` (16)
+- Timeouts (`fetch/timeouts.py`): `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Status: `GET /api/fetch/status`
 - Panel fire-and-forget only: `start_country_fetch` / `start_company_fetch` (thread + UI poll)
 
@@ -177,6 +186,6 @@ Producer: `async_jobs/enqueue.py`. Requires `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_
 
 ---
 
-## v1 (reference only)
+## History
 
-Legacy panel on port 5050. Subprocess scrape CLI. Do not extend — use v2 paths above.
+v1 (port 5050 / subprocess scrape CLI) is gone — [parity.md](../archive/parity.md). Ownership refactor: [backend-soul-refactor.md](../archive/backend-soul-refactor.md).

@@ -1,9 +1,12 @@
 # Backend soul refactor (2026-09-09)
 
+> **Archived 2026-09-16.** Shipped 2026-09 ownership refactor. Living call graph: [architecture.md](../reference/architecture.md).
+
+
 **Commit:** [`ce61287`](https://github.com/AminMortezaie/kuchup/commit/ce6128763b5586e115149f30737978ee128e4447) on `main`  
 **Shipped:** EC2 panel + fetch worker + `relocation-role-propagator` (deploy verdict `all_ok`)  
-**Living call graph:** [architecture.md](architecture.md)  
-**Product rules:** [entitlements-and-opportunities.md](entitlements-and-opportunities.md) · queue ops: [sqs-opportunity-refresh.md](../operations/sqs-opportunity-refresh.md)
+**Living call graph:** [architecture.md](../reference/architecture.md)  
+**Product rules:** [entitlements-and-opportunities.md](../reference/entitlements-and-opportunities.md) · queue ops: [sqs-opportunity-refresh.md](../operations/sqs-opportunity-refresh.md)
 
 This is the record of what moved. Architecture.md is the current map; do not treat this page as the runtime source of truth.
 
@@ -102,12 +105,12 @@ Most of the addition is the Go assignment writer (`role_propagator/` domain + th
 
 | File | − | Why |
 |------|--:|-----|
-| [`relocation_jobs/async_jobs/dispatch.py`](../../relocation_jobs/async_jobs/dispatch.py) | 59 | Python SQS consumer |
-| [`relocation_jobs/async_jobs/handlers.py`](../../relocation_jobs/async_jobs/handlers.py) | 15 | Inline reconcile when SQS unset |
-| [`scripts/opportunity_sqs_worker.py`](../../scripts/opportunity_sqs_worker.py) | 48 | Python worker entry |
-| [`apps/opportunity-worker/run.py`](../../apps/opportunity-worker/run.py) | 15 | Deployable shim for that worker |
-| [`relocation_jobs/fetch/ports.py`](../../relocation_jobs/fetch/ports.py) | 40 | Protocols nobody needed |
-| [`relocation_jobs/broadcast/capacity.py`](../../relocation_jobs/broadcast/capacity.py) | 23 | Unused capacity helper module |
+| `relocation_jobs/async_jobs/dispatch.py` | 59 | Python SQS consumer |
+| `relocation_jobs/async_jobs/handlers.py` | 15 | Inline reconcile when SQS unset |
+| `scripts/opportunity_sqs_worker.py` | 48 | Python worker entry |
+| `apps/opportunity-worker/run.py` | 15 | Deployable shim for that worker |
+| `relocation_jobs/fetch/ports.py` | 40 | Protocols nobody needed |
+| `relocation_jobs/broadcast/capacity.py` | 23 | Unused capacity helper module |
 
 ### Fetch soul
 
@@ -161,7 +164,7 @@ Most of the addition is the Go assignment writer (`role_propagator/` domain + th
 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | 7 | 0 | `go test ./role_propagator` |
 | [`.env.example`](../../.env.example) | 7 | 2 | Enqueue requires SQS URL or `ROLE_PROPAGATOR_BIN` |
 | [`.gitignore`](../../.gitignore) | 1 | 0 | Ignore built `apps/role-propagator/role-propagator` |
-| [`docs/reference/architecture.md`](architecture.md) | 65 | 14 | Call graph after the move |
+| [`docs/reference/architecture.md`](../reference/architecture.md) | 65 | 14 | Call graph after the move |
 | Other docs (`entitlements`, `sqs-opportunity-refresh`, `ec2-panel`, `rules`, README) | ~22 | ~11 | Worker is Go; board GET is not a producer |
 
 ---

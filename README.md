@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://kuchup.com"><img src="https://img.shields.io/badge/Live-kuchup.com-FF6B35?style=for-the-badge" alt="kuchup.com"></a>
-  <a href="https://github.com/AminMortezaie/relocation-jobs/actions/workflows/ci.yml"><img src="https://github.com/AminMortezaie/relocation-jobs/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/AminMortezaie/kuchup/actions/workflows/ci.yml"><img src="https://github.com/AminMortezaie/kuchup/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
 </p>
 
 <p align="center">
@@ -172,7 +172,9 @@ from an ATS stay as catalog orphans and reappear if you still have tracking.
 
 | Path | Purpose |
 |------|---------|
-| `/` | Job board |
+| `/` | Marketing homepage |
+| `/panel` | Signed-in job board |
+| `/remote` | Remote job board |
 | `/apply` | Profile, pipeline prompts, master resumes, project masters, interview notes |
 | `/company/<country>/<slug>` | Positions, tailored CV / cover letter, PDF preview |
 
@@ -209,7 +211,7 @@ PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 ```
 relocate.me
     → build_companies          → Postgres catalog
-    → scrape / v2 fetch        → Postgres catalog
+    → scrape / fetch-worker     → Postgres catalog
     → web/ (Flask)             → board API (catalog + per-user merge)
     → mcp/                     → tailored tex / PDF / project masters
     → /company/…               → workspace + mark_applied
@@ -231,7 +233,7 @@ relocate.me
 ## Testing
 
 ```bash
-pytest tests -o addopts=                 # v2 suite
+pytest tests -o addopts=                 # application suite
 pytest tests/mcp -o addopts=             # MCP / application assistant
 pytest --cov --cov-report=term-missing   # coverage gate on business modules
 ```

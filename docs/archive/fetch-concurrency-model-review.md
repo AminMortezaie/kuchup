@@ -1,5 +1,8 @@
 # Technical review: fetch concurrency (one event loop)
 
+> **Archived 2026-09-16.** Review of the shipped one-loop fetch concurrency model. Living fetch path: [architecture.md](../reference/architecture.md#fetch).
+
+
 **Last updated:** 2026-09-06  
 **Status:** review of the shipped concurrency-model change; measured after 2026-09-03 16:09 UTC
 

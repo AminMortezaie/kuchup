@@ -1,6 +1,6 @@
 # Coding rules
 
-How we build `relocation_jobs/`. Also read [`parity.md`](parity.md).
+How we build `relocation_jobs/`. Layout: [`architecture.md`](architecture.md).
 
 ## Boundaries
 
@@ -28,12 +28,11 @@ How we build `relocation_jobs/`. Also read [`parity.md`](parity.md).
 
 ## File and module shape
 
-- **Few files per domain**, not a mirror of v1’s tree.
+- **Few files per domain**.
 - **~30–40 lines per function** where practical; split when a function mixes concerns or steps.
 - **`types.py` per domain** for enums and API/DB boundary models (`BaseSchema` from `shared/schema.py`).
 - **No re-export facades** — contract is **function name + tests**, not an extra module.
-- **No `cp -r` from v1.** Copy one reviewed module at a time when porting scrape logic.
-- **Delete dead code** — no shims, no “just in case” files (e.g. empty `web/routes/catalog.py`).
+- **Delete dead code** — no shims, no “just in case” files.
 
 ### Section order (within a module)
 
@@ -75,7 +74,7 @@ Names should state **what** and **when**, not generic verbs.
 
 ## Data rules (catalog)
 
-- **Postgres is source of truth** (AWS EC2 Docker in dev/prod; migrated from Neon 2026-06-24). No Redis until profiling shows catalog reads are the bottleneck.
+- **Postgres is source of truth** (AWS EC2 Docker in dev/prod). Redis is optional for country labels (`REDIS_URL`); do not cache per-user merged board.
 - **`sync_company_board_to_catalog`**: caller passes **full** `matching_jobs` after `merge_matching_jobs`. Repo makes DB rows match that list exactly (upsert + delete stragglers). Partial lists will wipe catalog jobs — merge first.
 - **Scrape never deletes roles** at the merge layer; repo delete only reflects what’s in the merged in-memory board.
 - **Panel per-request `country_cache`** in `panel/service.py` is dedup within one request, not a distributed cache.
@@ -83,7 +82,7 @@ Names should state **what** and **when**, not generic verbs.
 ## Scrape and fetch
 
 - **`process_company(..., fetch_board=...)`** — `fetch_board` is required and injected.
-- **Country fetch:** in-process asyncio runner (`fetch/country_runner.py`, `fetch/runner.py`), DB-backed status/cancel via `fetch_runs`. Parallel workers up to `MAX_CONCURRENCY` (16) — hard server cap in `core/ats_constants.py`.
+- **Country fetch:** in-process asyncio runner (`fetch/country_runner.py`, `fetch/runner.py`), DB-backed status/cancel via `fetch_runs`. Production scheduler concurrency is **2**; ATS scrape cap `MAX_CONCURRENCY` (16) in `core/ats_constants.py`.
 - **Single-company fetch:** `fetch/runner.py` + `POST /api/companies/fetch` (gated by `PANEL_COMPANY_FETCH_ENABLED` or `PANEL_SCRAPE_ENABLED`).
 - **Attempt logging** and **fetch run persistence** in `fetch/repo.py`.
 - **ATS boards:** greenhouse, lever, ashby, workable, recruitee, personio, smartrecruiters, teamtailor, generic, and others under `scrape/boards/`.
@@ -98,53 +97,32 @@ Names should state **what** and **when**, not generic verbs.
 
 - **`pytest tests`** during application work.
 - **`tests/<domain>/`** mirrors domains; seed via `tests/helpers/seed.py`.
-- **`seed_country()`** must sync the full fixture (`sync_country_catalog` in `catalog/repo.py`) — see [catalog-seed-test-failure.md](catalog-seed-test-failure.md).
+- **`seed_country()`** must sync the full fixture (`sync_country_catalog` in `catalog/repo.py`) — see [catalog-seed-test-failure.md](../archive/catalog-seed-test-failure.md).
 - Map position/panel behavior to [`business-rules.md`](business-rules.md).
 - Business rules for catalog board sync: `tests/catalog/test_repo.py`.
 
-## Render / deploy
+## Deploy
 
-- Free tier: `PANEL_SCRAPE_ENABLED=0`, scrape locally → AWS Postgres, panel reads DB.
-- `DATABASE_URL` must point to AWS Elastic IP; run `./scripts/aws_postgres_migrate.sh sync-sg` for Render egress.
-- No dependency on process-local cache for correctness across instances.
-- Optional `REDIS_URL` only if added later: cache **raw catalog reads** per country, invalidate on `sync_company_board_to_catalog`, never cache per-user merged panel.
+Production is EC2 (not Render): slim panel without Playwright; Playwright lives on `relocation-fetch-worker`. See [ec2-panel.md](../operations/ec2-panel.md).
+
+- `DATABASE_URL` points at AWS Postgres; after a laptop IP change run `./scripts/aws_postgres_migrate.sh sync-sg`.
+- No dependency on process-local cache for correctness across processes.
+- Optional `REDIS_URL`: country-label cache is fine; never store tracking **truth** or a per-user merged board in Redis.
 
 ## When to ask first
 
 - New domain folder or moving logic across domains.
 - ATS port order or deployment entrypoint changes.
-- Anything that changes module boundaries (see `.claude/skills/engineering-standards/SKILL.md`).
+- Anything that changes module boundaries. Ask first; layout lives in [`architecture.md`](architecture.md).
 
 ## Known violations (fix in this order)
 
 1. Long functions: `catalog/repo.py`, `fetch/repo.py`, `fetch/country_runner.py`, `panel/flatten_jobs.py`, `web/routes/jobs.py`
-2. Lazy imports in `positions/repo.py`
-3. Empty shim: `web/routes/catalog.py`
+2. `get_connection` used from `positions/repo.py`; bootstrap lazy imports in `web/server.py`
 
-## Roadmap
+## Target layout
 
-1. Fix violations above  
-2. Port remaining `BUSINESS_RULES` test gaps  
-3. Company CRUD / admin routes polish  
-4. Optional: `resolve_tracking_url` SQL optimization
-
-## Target layout (living)
-
-```
-relocation_jobs/
-  shared/       coerce, schema, timestamps, predicates
-  catalog/      repo, lookup, schema, cache
-  users/        repo, history, applied
-  positions/    types, state, service, repo
-  panel/        types, flatten, flatten_rules, flatten_jobs, flatten_orphans, tracking, service, stats
-  fetch/        types, repo, service, pipeline, runner, country_runner, state, client, scheduler
-  scrape/       relevance, filter, merge, listing, company, board, boards/
-  web/          server, routes, deps, query, validators
-  db/           __init__.py (bootstrap), migrate.py
-  core/         auth, db helpers, ATS constants, paths
-```
-
-Add files only when the domain gains a clear responsibility — not ahead of need.
+See [`architecture.md`](architecture.md#package-layout). Add files only when the domain gains a clear responsibility.
 
 ## Secrets and documentation
 
@@ -158,13 +136,13 @@ This repository is **public**. Committed files must not contain live infrastruct
 
 Agents and contributors: before writing postmortems, ops notes, or examples, **do not copy** hosts or passwords from local config. Point readers to gitignored `aws-postgres.env` instead.
 
-Full rule: [`engineering-standards`](../../.claude/skills/engineering-standards/SKILL.md) §7.
+This section is the public secrets rule. `.claude/skills/` is gitignored local notes.
 
 ## Run locally
 
 ```bash
 pytest tests -o addopts=
-PANEL_SCRAPE_ENABLED=1 python3 -c "from relocation_jobs.web.server import app; app.run(host='127.0.0.1', port=5051)"
+PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 ```
 
 **Onboarding:** [`docs/contributing.md`](../../docs/contributing.md) · [`docs/README.md`](../../docs/README.md)

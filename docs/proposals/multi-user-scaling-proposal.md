@@ -4,7 +4,7 @@
 **Last updated:** 2026-09-16
 **Authors:** architecture discussion (agent + owner)
 
-Related: [architecture.md](architecture.md), [rules.md](rules.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md) (superseded broker choice — see below), [board-read-model-proposal.md](board-read-model-proposal.md), [ec2-panel.md](../operations/ec2-panel.md), [aws-postgres.md](../operations/aws-postgres.md)
+Related: [architecture.md](../reference/architecture.md), [rules.md](../reference/rules.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md) (superseded broker choice — see below), [board-read-model-proposal.md](board-read-model-proposal.md), [ec2-panel.md](../operations/ec2-panel.md), [aws-postgres.md](../operations/aws-postgres.md)
 
 ---
 
@@ -243,7 +243,7 @@ scripts/
 - Redrive policy `maxReceiveCount=3` → DLQ per queue.
 - No new container needed for the broker itself — SQS is managed and off-box by design.
 
-**Secrets:** AWS credentials for SQS go in gitignored `.env`/`aws-postgres.env` only. Queue URLs use placeholders (`<SQS_QUEUE_URL>`) in any committed docs, per this repo's [secrets rule](rules.md#secrets-and-documentation).
+**Secrets:** AWS credentials for SQS go in gitignored `.env`/`aws-postgres.env` only. Queue URLs use placeholders (`<SQS_QUEUE_URL>`) in any committed docs, per this repo's [secrets rule](../reference/rules.md#secrets-and-documentation).
 
 ### Phase 2 — Board read model projection (independent of Phase 1)
 
@@ -298,7 +298,7 @@ flowchart LR
 | Redis Streams / Celery for this use case | Would work, but adds load to the same constrained box when a $0 off-box option (SQS) exists |
 | Redis-first mutations (async DB writes) | [board-read-model-proposal.md](board-read-model-proposal.md) rejects this: Postgres writes must commit before UI response |
 | Elasticsearch for board | New ops surface; merge semantics stay in Python; `pg_trgm` first if text search is ever needed |
-| NoSQL for catalog + tracking | Postgres already fits the shared-catalog + per-user-overlay pattern ([catalog-pattern.md](catalog-pattern.md)) |
+| NoSQL for catalog + tracking | Postgres already fits the shared-catalog + per-user-overlay pattern ([catalog-pattern.md](../reference/catalog-pattern.md)) |
 | Client-authoritative board state | Pagination + sort cascade impossible to derive from a 25-row page |
 | FastAPI rewrite upfront | Real migration cost; only justified by profiling data |
 | TypeScript mid-SPA-migration | Adds friction during the rewrite ([full-spa-ui-modernization-proposal.md](full-spa-ui-modernization-proposal.md)) |

@@ -1,8 +1,8 @@
 # Panel statistics
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-09-16
 
-How admin/user stats are computed. Implementation: `panel/stats.py`, `static/js/stats-dashboard.js`.
+How admin/user stats are computed. Implementation: `panel/stats.py`, `relocation_jobs/static/js/stats-dashboard.js`.
 
 > Stats are not yet a dedicated domain module — they are derived at read time from flattened catalog + tracking + `fetch_runs`. A future `stats/` package should own these queries.
 
@@ -34,7 +34,7 @@ Per-user totals over the **full catalog** (not the current board page). Uses `fl
 | **New today** | Sum of `fetch_runs.new_jobs` for your account finished **today** (browser timezone). True new discoveries only — not jobs re-enriched on an existing fetch. |
 | **Not for me** | Roles in the `not_for_me_jobs` bucket (user-hidden, wrong location, expired, etc.). Never included in open roles. |
 
-**Job dates:** `fetched` = first time the job entered the catalog; `last_seen` = last ATS scrape. Post-fetch visa enrich must **never** overwrite `fetched` (see `scrape/enrich.py`). If many cards show today's date incorrectly, run `python scripts/repair_job_fetched_dates.py --dry-run` then without `--dry-run`.
+**Job dates:** `fetched` = first time the job entered the catalog; `last_seen` = last ATS scrape. Post-fetch visa enrich must **never** overwrite `fetched` (see `scrape/enrich.py`).
 | **Last fetch** | Latest company activity timestamp in scope. |
 | **Applied today / total** | From `job_tracking` + status history. |
 | **Rejections** | Jobs in the `rejected_jobs` bucket. |

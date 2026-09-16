@@ -1,11 +1,14 @@
 # When most companies looked broken: fetch thread exhaustion
 
+> **Archived 2026-09-16.** 2026-09 `can't start new thread` postmortem. Production concurrency: [ec2-panel.md](../operations/ec2-panel.md).
+
+
 **Last updated:** 2026-09-02  
 **Status:** fix shipped (concurrency model); existing `fetch_problem` flags still need a catalog cleanup
 
 On 2026-09-01 the production board showed a fetch problem on most companies. It looked like ATS sites or scrapers had died. They had not. The EC2 fetch worker could not start OS threads, so every 6-hour country cycle failed in about a second and stamped `fetch_problem` on the catalog.
 
-Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [operations/monitoring.md](../operations/monitoring.md), [fetch-scheduler-timeout-practices.md](fetch-scheduler-timeout-practices.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md)
+Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [operations/monitoring.md](../operations/monitoring.md), [fetch-scheduler-timeout-practices.md](fetch-scheduler-timeout-practices.md), [kafka-fetch-pipeline-proposal.md](../proposals/kafka-fetch-pipeline-proposal.md)
 
 ---
 
@@ -388,4 +391,4 @@ The concurrency model **changed in this Python worker** (one event loop, bounded
 - [fetch-scheduler-timeout-practices.md](fetch-scheduler-timeout-practices.md) — hang/timeout incident (2026-07)
 - [operations/ec2-panel.md](../operations/ec2-panel.md) — worker deploy, concurrency env
 - [operations/monitoring.md](../operations/monitoring.md) — Grafana metrics, host-hung 522
-- [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md) — queue vs in-process threads (not approved)
+- [kafka-fetch-pipeline-proposal.md](../proposals/kafka-fetch-pipeline-proposal.md) — queue vs in-process threads (not approved)

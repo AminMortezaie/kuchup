@@ -20,7 +20,7 @@ The MCP pipeline stores tailored LaTeX and PDF bytes in `mcp_applications`, but 
 | **2 — Workspace page** | Done | `/company/<country>/<company-slug>` — position list + LaTeX source + PDF preview |
 | **3 — Board integration** | Done | CV/PDF badges on position cards; company name links to workspace |
 | **4 — Edit loop** | Later | Editable tex in panel, debounced re-render, validation errors in UI |
-| **5 — Job descriptions** | Later | Scrape/store JD text; show on workspace; apply opens ATS URL |
+| **5 — Job descriptions** | Done | Catalog `description_text`; workspace **Fetch job description**; MCP `get_job_context` / `save_position_description` |
 
 Out of scope for early phases: browser auto-submit, headless Claude API, full Overleaf-style live editor.
 
@@ -145,13 +145,11 @@ Positions come from catalog `matching_jobs`, overlaid with per-user tracking and
 
 ---
 
-## Future: job descriptions
+## Job descriptions
 
-1. Add `description_text` (or side table) on catalog jobs — scrape on company fetch or on demand.
-2. Show JD on the workspace right pane above the CV preview.
-3. **Apply** opens the ATS URL in a new tab; panel records `mark_applied` when the user returns.
+Catalog jobs store `description_text`. The workspace **Fetch job description** control fills it from the employer ATS (or a pasted JD). MCP `get_job_context` returns that text — do not scrape the posting URL in chat when `has_description` is true.
 
-See [mcp-application.md](mcp-application.md) out-of-scope table for v0 MCP boundaries.
+**Apply** still opens the employer ATS URL; `mark_applied` is a separate user action.
 
 ---
 

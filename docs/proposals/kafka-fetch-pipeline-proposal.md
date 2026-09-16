@@ -4,7 +4,7 @@
 **Last updated:** 2026-07-08  
 **Authors:** architecture discussion (agent + owner review pending)
 
-Related: [architecture.md](architecture.md), [rules.md](rules.md), [ec2-panel.md](../operations/ec2-panel.md), [stats.md](stats.md), [board-read-model-proposal.md](board-read-model-proposal.md)
+Related: [architecture.md](../reference/architecture.md), [rules.md](../reference/rules.md), [ec2-panel.md](../operations/ec2-panel.md), [stats.md](../reference/stats.md), [board-read-model-proposal.md](board-read-model-proposal.md)
 
 **Superseded (broker choice only):** [multi-user-scaling-proposal.md](multi-user-scaling-proposal.md) evaluates SQS (not considered here) against the options below for the specific case of per-user job submission (company fetch, PDF compile) and picks SQS — fully managed, $0 on a memory-constrained `t4g.micro`. This doc's problem statement (fetch pipeline coordination) and options A–D below are still accurate background; read both.
 
@@ -67,7 +67,7 @@ Everything else — `GET /api/board`, apply/reject/not-for-me, MCP tools — is 
 |------|-----------------------------|
 | Board (`panel/service.py`, `GET /api/board`) | Read-heavy derived view; slowness is re-flattening, not missing async infra — see [board-read-model-proposal.md](board-read-model-proposal.md) |
 | User tracking (`positions/`) | Low-volume mutations; request/response |
-| MCP `list_application_queue` | Discovery list of pinned/looking-to-apply jobs — not scrape dispatch ([mcp-application.md](mcp-application.md)) |
+| MCP `list_application_queue` | Discovery list of pinned/looking-to-apply jobs — not scrape dispatch ([mcp-application.md](../reference/mcp-application.md)) |
 | MCP reframe / PDF | Interactive single-user tools |
 | `job_status_events` | Append-only audit already in Postgres (`core/migrations.py`) |
 
@@ -139,7 +139,7 @@ Managed (Confluent / MSK) or self-hosted broker; topics for country/company work
 
 ## Proposed code layout (if Kafka or generic events)
 
-Follow v2 boundaries ([rules.md](rules.md)): SQL in `*/repo.py`, orchestration in services/pipelines, infra clients in `core/`.
+Follow v2 boundaries ([rules.md](../reference/rules.md)): SQL in `*/repo.py`, orchestration in services/pipelines, infra clients in `core/`.
 
 ```
 relocation_jobs/
