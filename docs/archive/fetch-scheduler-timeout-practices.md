@@ -1,10 +1,13 @@
 # Fetch scheduler: timeout and hang resilience
 
+> **Archived 2026-09-16.** 2026-07 hung-Playwright incident plus the timeout plan that shipped. Live knobs: [architecture.md](../reference/architecture.md#fetch).
+
+
 **Last updated:** 2026-07-10  
 **Status:** implemented (2026-07-10)  
 **Trigger:** EC2 worker blocked 15+ hours on a hung Playwright scrape (endios, Germany run 341)
 
-Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md), [board-load-performance-incident.md](board-load-performance-incident.md), [fetch-thread-exhaustion-incident.md](fetch-thread-exhaustion-incident.md) (2026-09: `can't start new thread`)
+Related: [operations/ec2-panel.md](../operations/ec2-panel.md), [kafka-fetch-pipeline-proposal.md](../proposals/kafka-fetch-pipeline-proposal.md), [board-load-performance-incident.md](board-load-performance-incident.md), [fetch-thread-exhaustion-incident.md](fetch-thread-exhaustion-incident.md) (2026-09: `can't start new thread`)
 
 ---
 

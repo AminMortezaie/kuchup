@@ -17,7 +17,7 @@ This is the production-shaped, interview-relevant path (Prometheus metrics + Lok
 | Grafana Cloud Free | Metrics (Prometheus), logs (Loki), dashboards, alert rules, email contact points |
 | Cloud synthetics | Hit public `https://kuchup.com/api/health` (catches Cloudflare 522 when origin is dead) |
 
-Config in repo: [`deploy/ec2/config.alloy`](../../deploy/ec2/config.alloy). Secrets via env from local `.env` at deploy time.
+Config lives in **gitignored** `deploy/ec2/config.alloy` (copied onto the host by `ec2_app_deploy.sh`). Secrets via env from local `.env` at deploy time.
 
 Alloy runs **privileged** with `/sys` and `/var/lib/docker` mounted so cAdvisor can attach the Docker `name` label. Without that, host/`probe_success` panels work but container memory/CPU stay **No data**. Docker socket is the same mount Loki uses to tail container stdout.
 
@@ -90,12 +90,11 @@ Use Loki for “what happened two hours ago / after the last deploy.” Use `log
 
 ## Dashboards (import)
 
-Import the ready dashboard (disk, memory, containers, health probe):
+Import a dashboard with those panels (JSON lives in gitignored `deploy/ec2/`, not the public tree):
 
 1. Grafana → **Dashboards** → **New** → **Import**
-2. Upload [`deploy/ec2/grafana-dashboard-kuchup.json`](../../deploy/ec2/grafana-dashboard-kuchup.json)
+2. Use the local `deploy/ec2/grafana-dashboard-kuchup.json` if you have it, or recreate from the PromQL below
 3. Pick your Grafana Cloud **Prometheus** datasource when prompted
-4. Open **kuchup EC2 health** (`uid: kuchup-ec2-health`)
 
 | Panel | PromQL |
 |-------|--------|
@@ -105,7 +104,7 @@ Import the ready dashboard (disk, memory, containers, health probe):
 | Panel health | `probe_success{job="integrations/blackbox"}` |
 | Load / CPU | `node_load1`, `rate(container_cpu_usage_seconds_total[...][5m])` |
 
-Alert rule recipes (email): [`deploy/ec2/grafana-alert-rules.md`](../../deploy/ec2/grafana-alert-rules.md).
+Alert rule recipes (email) — create these in Grafana Cloud (there is no public `grafana-alert-rules.md` in this repo):
 
 ---
 
@@ -126,7 +125,7 @@ This is what catches origin hangs when SSH and Alloy on the box are also dead.
 
 1. **Alerting** → **Contact points** → add **Email** (your address).
 2. Add notification policy routing critical alerts to that contact.
-3. Create rules from [`deploy/ec2/grafana-alert-rules.md`](../../deploy/ec2/grafana-alert-rules.md):
+3. Create rules from the table below:
 
 | Rule | Condition |
 |------|-----------|

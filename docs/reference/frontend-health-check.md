@@ -4,7 +4,7 @@
 **Last updated:** 2026-09-16  
 **Scope:** `frontend/` (Vite + React island), how `board.js` lands in the panel, leftover vanilla JS on the board, homepage only where it shares a surface
 
-Related: [architecture.md](architecture.md) (panel client map), [board.md](board.md), [contributing.md](../contributing.md), [full-spa-ui-modernization-proposal.md](full-spa-ui-modernization-proposal.md) (proposal, not approved — see [Non-goals](#non-goals)).
+Related: [architecture.md](architecture.md) (panel client map), [board.md](board.md), [contributing.md](../contributing.md), [full-spa-ui-modernization-proposal.md](../proposals/full-spa-ui-modernization-proposal.md) (proposal, not approved — see [Non-goals](#non-goals)).
 
 This is a light audit for someone who is not a frontend specialist. It describes the current hybrid honestly and lists small incremental wins. It is **not** a rewrite plan.
 
@@ -222,7 +222,7 @@ Three items. If only one happens, make it the CI build.
 
 ## Non-goals
 
-Leave these alone unless the product goal changes. Several showed up in [full-spa-ui-modernization-proposal.md](full-spa-ui-modernization-proposal.md); this review **does not** approve that proposal.
+Leave these alone unless the product goal changes. Several showed up in [full-spa-ui-modernization-proposal.md](../proposals/full-spa-ui-modernization-proposal.md); this review **does not** approve that proposal.
 
 - **No SPA rewrite** — no React Router shell, no Flask SPA fallback, no deleting `static/js/` “after cutover.”
 - **No framework hop** — do not move the panel to Next.js because the homepage already uses Next. Two apps is correct.

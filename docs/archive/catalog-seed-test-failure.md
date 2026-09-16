@@ -1,10 +1,13 @@
 # When board sort tests broke the jobs API tests
 
+> **Archived 2026-09-16.** Pytest catalog-seed pollution postmortem. Seed rule: [rules.md](../reference/rules.md).
+
+
 **Last updated:** 2026-06-28
 
 A post-mortem on a real pytest failure: four unrelated tests started failing after we added “newest first” board sort coverage. Production code was fine. The catalog in the test database was not reset the way we assumed.
 
-Related: [board.md](board.md) (sort behavior), [contributing.md](../contributing.md) (how to run tests), [rules.md](rules.md) (test helpers).
+Related: [board.md](../reference/board.md) (sort behavior), [contributing.md](../contributing.md) (how to run tests), [rules.md](../reference/rules.md) (test helpers).
 
 ---
 

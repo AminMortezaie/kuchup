@@ -1,11 +1,14 @@
 # When the board looked hung: a performance postmortem
 
+> **Archived 2026-09-16.** 2026-07 board-load postmortem. Living board docs: [board.md](../reference/board.md). Proposal: [board-read-model-proposal.md](../proposals/board-read-model-proposal.md).
+
+
 **Last updated:** 2026-07-08  
 **Status:** resolved (local panel + EC2 Postgres dev setup)
 
 In July 2026 the local job board appeared frozen: the server was up, but `GET /api/board` blocked for tens of seconds before returning anything. Germany was worst (~90s). The real cause was not “remote Postgres is slow” or job-description payloads — it was **hundreds of uncached Postgres round-trips** hidden inside innocent-looking location-label helpers.
 
-Related: [board.md](board.md), [board-read-model-proposal.md](board-read-model-proposal.md), [catalog-pattern.md](catalog-pattern.md), [mcp-application.md](mcp-application.md), [operations/ec2-panel.md](../operations/ec2-panel.md)
+Related: [board.md](../reference/board.md), [board-read-model-proposal.md](../proposals/board-read-model-proposal.md), [catalog-pattern.md](../reference/catalog-pattern.md), [mcp-application.md](../reference/mcp-application.md), [operations/ec2-panel.md](../operations/ec2-panel.md)
 
 ---
 
@@ -53,7 +56,7 @@ companies + matching_jobs          (catalog — shared)
   → paginate visible companies
 ```
 
-See [catalog-pattern.md](catalog-pattern.md) and [board-read-model-proposal.md](board-read-model-proposal.md).
+See [catalog-pattern.md](../reference/catalog-pattern.md) and [board-read-model-proposal.md](../proposals/board-read-model-proposal.md).
 
 ```mermaid
 flowchart TD
@@ -221,7 +224,7 @@ PANEL_SCRAPE_ENABLED=1 python3 scripts/panel_server.py
 
 ## Future work (not done)
 
-- CQRS / projection table ([board-read-model-proposal.md](board-read-model-proposal.md)) so `sort=newest` does not flatten the full country on every page load
+- CQRS / projection table ([board-read-model-proposal.md](../proposals/board-read-model-proposal.md)) so `sort=newest` does not flatten the full country on every page load
 - `/api/jobs` export path still uses `SELECT *` + descriptions via `_load_country_from_db`
 - Local Postgres in `.env` for fast iteration (see [.env.example](../../.env.example))
 

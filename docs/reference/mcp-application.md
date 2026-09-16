@@ -9,7 +9,8 @@ Plan and reference for the `relocation_jobs/mcp/` domain: MCP tools that prepare
 Transports:
 
 - **Remote (production):** Streamable HTTP + OAuth at `https://mcp.kuchup.com/mcp` — Claude custom connectors (including mobile) and Cursor.
-- **Local stdio:** `scripts/mcp_server.py` with `MCP_USERNAME` / `MCP_USER_ID` for Claude Desktop on a laptop.
+- **Local stdio:** `python3 apps/mcp/run.py` (`scripts/mcp_server.py` is the Docker shim) with `MCP_USERNAME` / `MCP_USER_ID`.
+- **Local HTTP:** `python3 apps/mcp/run_http.py` (`scripts/mcp_http_server.py` is the Docker shim).
 
 Use the panel **Application data** page at `/apply` to edit profile, pipeline prompts, masters, project masters, interview notes, and **Connect MCP** (URL + optional API tokens).
 
@@ -37,7 +38,7 @@ Related: [architecture.md](architecture.md), [business-rules.md](business-rules.
 ```text
 Claude / Cursor (remote)          Claude Desktop (local)
         ▼                                    ▼
-scripts/mcp_http_server.py          scripts/mcp_server.py
+apps/mcp/run_http.py                apps/mcp/run.py
   (Streamable HTTP + OAuth)           (stdio + MCP_USERNAME)
         ▼                                    ▼
 relocation_jobs/mcp/
@@ -185,7 +186,7 @@ flowchart TD
 1. Save **master resume(s)** (e.g. `go`, `java`, `fullstack`).
 2. Save **project master(s)** (LaTeX fragments, e.g. `relocation-jobs`) — evidence bank for reframe, not CV employment rows.
 3. Save **application profile** (name, email, …).
-4. Add **five pipeline prompts** (one phase each) from [`.claude/skills/mcp-resume-reframe/pipeline-prompts.md`](../../.claude/skills/mcp-resume-reframe/pipeline-prompts.md). Each slot ends with a **go ahead?** checkpoint — do not use a single consolidated auto-run prompt.
+4. Add **five pipeline prompts** (one phase each) on `/apply`. Each slot ends with a **go ahead?** checkpoint — do not use a single consolidated auto-run prompt. Prompt text lives in the gitignored MCP reframe skill / `dist/mcp-resume-reframe` package, not in this public tree.
 
 Interview notes are **not** part of this setup. Write them later, after an invite — see [Interview notes (after invite)](#interview-notes-after-invite).
 
@@ -420,10 +421,10 @@ Settings → MCP → **Connect** → same Kuchup login page.
 Local HTTP for development:
 
 ```bash
-MCP_PUBLIC_BASE_URL=http://127.0.0.1:10001 MCP_HTTP_PORT=10001 python3 scripts/mcp_http_server.py
+MCP_PUBLIC_BASE_URL=http://127.0.0.1:10001 MCP_HTTP_PORT=10001 python3 apps/mcp/run_http.py
 ```
 
-Local **stdio** Claude Desktop (`scripts/mcp_server.py` + `MCP_USERNAME`) remains supported.
+Local **stdio** Claude Desktop (`python3 apps/mcp/run.py` + `MCP_USERNAME`) remains supported.
 
 ## Configuration
 
@@ -443,7 +444,7 @@ Local **stdio** Claude Desktop (`scripts/mcp_server.py` + `MCP_USERNAME`) remain
 
 1. Call `get_mcp_status` — shows which panel user MCP reads (`user_id`, `username`) and whether profile / master resumes exist.
 2. MCP defaults to `MCP_USERNAME=admin`. Data saved on `/apply` is per **logged-in panel user**. If you sign in as a different account, set `MCP_USERNAME` (or `MCP_USER_ID`) in Claude Desktop’s MCP server `env` to match.
-3. Ensure Claude Desktop’s MCP config includes the same `DATABASE_URL` as the panel (`.env` is loaded from the repo root by `scripts/mcp_server.py`, but explicit `env` in the config is clearer).
+3. Ensure Claude Desktop’s MCP config includes the same `DATABASE_URL` as the panel (`.env` is loaded from the repo root by `apps/mcp/run.py`, but explicit `env` in the config is clearer).
 
 **Claude says there is no pipeline tool**
 
@@ -487,7 +488,7 @@ The JD is not stored in the catalog yet. On the panel, open `/company/<country>/
 
 **`save_tailored_tex` fails: missing `pdf_bytes` column (or other schema error)**
 
-The MCP server runs `init_db()` migrations on startup (`scripts/mcp_server.py`). If Claude Desktop was connected before you pulled MCP changes, restart Claude Desktop so the MCP process restarts and applies `mcp_master_resumes_pdf_v1` (adds `pdf_bytes` / `pdf_updated_at` on `mcp_master_resumes`). Alternatively start the panel once (`python3 scripts/panel_server.py`) — it also runs migrations on startup.
+The MCP server runs `init_db()` migrations on startup (`apps/mcp/run.py`). If Claude Desktop was connected before you pulled MCP changes, restart Claude Desktop so the MCP process restarts and applies `mcp_master_resumes_pdf_v1` (adds `pdf_bytes` / `pdf_updated_at` on `mcp_master_resumes`). Alternatively start the panel once (`python3 apps/panel/run.py`) — it also runs migrations on startup.
 
 ---
 
@@ -515,7 +516,7 @@ relocation_jobs/mcp/
   render.py
   types.py
 
-scripts/mcp_server.py
-scripts/mcp_http_server.py
+apps/mcp/run.py
+apps/mcp/run_http.py
 tests/mcp/
 ```

@@ -11,7 +11,7 @@ When the env var is **unset**, Python does **not** write assignments. Local one-
 **Production:** set `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` on panel, fetch worker, and `relocation-role-propagator`. Do not run a Python consumer on this queue.
 
 Related product design: [entitlements-and-opportunities.md](../reference/entitlements-and-opportunities.md).  
-Infra fetch/PDF queues (separate): [multi-user-scaling-proposal.md](../reference/multi-user-scaling-proposal.md).
+Infra fetch/PDF queues (separate, not shipped): [multi-user-scaling-proposal.md](../proposals/multi-user-scaling-proposal.md).
 
 ## What to create
 
