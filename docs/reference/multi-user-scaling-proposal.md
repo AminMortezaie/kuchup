@@ -1,7 +1,7 @@
 # Multi-user scaling — proposal
 
-**Status:** proposal (broker choice and framework direction decided; implementation not started)
-**Last updated:** 2026-07-13
+**Status:** Phase 0 shipped 2026-09-16 (SQS Phase 1 and board projection not started)
+**Last updated:** 2026-09-16
 **Authors:** architecture discussion (agent + owner)
 
 Related: [architecture.md](architecture.md), [rules.md](rules.md), [kafka-fetch-pipeline-proposal.md](kafka-fetch-pipeline-proposal.md) (superseded broker choice — see below), [board-read-model-proposal.md](board-read-model-proposal.md), [ec2-panel.md](../operations/ec2-panel.md), [aws-postgres.md](../operations/aws-postgres.md)
@@ -184,13 +184,13 @@ flowchart TB
 
 ### Phase 0 — Foundation fixes (no new infra)
 
-Prerequisite for Phase 1 and Phase 2.
+Shipped 2026-09-16. Prerequisite for Phase 1 and Phase 2.
 
 | Change | File(s) | Why |
 |--------|---------|-----|
 | Replace shared main-thread connection with a real pool (`psycopg_pool.ConnectionPool`) | `core/db.py` | 8 gunicorn threads each get a pooled connection instead of serializing on one lock |
 | Bump gunicorn `--workers` to 2 (matches `t4g.micro` 2 vCPUs) | `docker-entrypoint.sh` | Use both cores without overcommitting a 1GB box |
-| Initialize the pool after fork, one pool per worker process | `docker-entrypoint.sh`, `web/server.py` | Avoid sharing one connection object across forked workers |
+| Initialize the pool after fork, one pool per worker process | `docker-entrypoint.sh`, `web/gunicorn_conf.py`, `web/server.py` | Avoid sharing one connection object across forked workers |
 | Remove `_IDLE_PING_THRESHOLD` idle-ping logic | `core/db.py` | Was a Neon-serverless workaround; unneeded on always-on EC2 Postgres |
 
 **Risk:** pool sizing on a 1GB box. Start conservative: `min_size=2, max_size=8` per worker × 2 workers = up to 16 connections — matches the connection count the fetch worker already produces today without issue.
@@ -329,9 +329,9 @@ flowchart LR
 
 ## Done when
 
-- [ ] Phase 0 shipped: connection pool + gunicorn workers=2; `pytest tests -o addopts=` green
+- [x] Phase 0 shipped: connection pool + gunicorn workers=2; `pytest tests -o addopts=` green
 - [ ] Phase 1 shipped: `core/sqs_client.py`, 3 queues + DLQs provisioned, `fetch/runner.py` and `fetch/scheduler.py` enqueue instead of thread-spawn, PDF route enqueues, worker script(s) running on EC2
 - [ ] Phase 1 tests: enqueue → worker processes → catalog/PDF output correct; DLQ receives after 3 failures
 - [ ] Load test with realistic concurrent users informs whether Phase 3 (FastAPI) is warranted
 - [ ] Phase 2 tracked separately per [board-read-model-proposal.md](board-read-model-proposal.md) done-when checklist
-- [ ] `docs/backlog.md` updated to reflect this decision (see cross-reference)
+- [x] `docs/backlog.md` updated to reflect this decision (see cross-reference)

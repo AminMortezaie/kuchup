@@ -11,8 +11,9 @@ else:
 "
 exec gunicorn relocation_jobs.web.server:app \
   --bind "0.0.0.0:${PORT:-10000}" \
-  --workers 1 \
+  --workers 2 \
   --threads 8 \
   --timeout 600 \
+  --config python:relocation_jobs.web.gunicorn_conf \
   --access-logfile - \
   --error-logfile -

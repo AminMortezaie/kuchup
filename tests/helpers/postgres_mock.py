@@ -220,6 +220,7 @@ def install_postgres_mock(monkeypatch, *, database_url: str = "postgresql://test
 
     fake = FakePgConnection()
     monkeypatch.setenv("DATABASE_URL", database_url)
+    core.close_connection_pool()
     core._pg["conn"] = None
     core._thread_local.__dict__.clear()
     core.reset_db_initialized()
@@ -228,6 +229,7 @@ def install_postgres_mock(monkeypatch, *, database_url: str = "postgresql://test
         return fake.clone()
 
     monkeypatch.setattr(core, "_connect_postgres", _connect)
+    core._pg["conn"] = fake
     return fake
 
 
@@ -240,6 +242,7 @@ def install_session_postgres_mock(
 
     fake = FakePgConnection()
     os.environ["DATABASE_URL"] = database_url
+    core.close_connection_pool()
     core._pg["conn"] = None
     core._thread_local.__dict__.clear()
     core.reset_db_initialized()
