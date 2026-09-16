@@ -83,9 +83,9 @@ Names should state **what** and **when**, not generic verbs.
 ## Scrape and fetch
 
 - **`process_company(..., fetch_board=...)`** — `fetch_board` is required and injected.
-- **Country fetch:** in-process asyncio runner (`fetch/country_runner.py`, `fetch/runner.py`), DB-backed status/cancel via `fetch_runs`. Parallel workers up to `MAX_CONCURRENCY` (16) — hard server cap in `core/ats_constants.py`.
+- **Country fetch:** scheduler worker enqueues per-company `fetch_jobs` and consumes with `FOR UPDATE SKIP LOCKED` (`fetch/queue.py`, `fetch/repo.py`). Panel `start_country_fetch` still uses the in-process asyncio runner (`fetch/country_runner.py`). DB-backed status/cancel via `fetch_runs`. Parallel workers up to `MAX_CONCURRENCY` (16) — hard server cap in `core/ats_constants.py`.
 - **Single-company fetch:** `fetch/runner.py` + `POST /api/companies/fetch` (gated by `PANEL_COMPANY_FETCH_ENABLED` or `PANEL_SCRAPE_ENABLED`).
-- **Attempt logging** and **fetch run persistence** in `fetch/repo.py`.
+- **Attempt logging**, **fetch run persistence**, and **fetch job queue** SQL in `fetch/repo.py`.
 - **ATS boards:** greenhouse, lever, ashby, workable, recruitee, personio, smartrecruiters, teamtailor, generic, and others under `scrape/boards/`.
 
 ## HTTP (`web/`)
@@ -137,7 +137,7 @@ relocation_jobs/
   users/        repo, history, applied
   positions/    types, state, service, repo
   panel/        types, flatten, flatten_rules, flatten_jobs, flatten_orphans, tracking, service, stats
-  fetch/        types, repo, service, pipeline, runner, country_runner, state, client, scheduler
+  fetch/        types, repo, service, pipeline, runner, queue, country_runner, state, client, scheduler
   scrape/       relevance, filter, merge, listing, company, board, boards/
   web/          server, routes, deps, query, validators
   db/           __init__.py (bootstrap), migrate.py

@@ -67,6 +67,8 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
 
+**Fetch job queue:** the worker enqueues one `fetch_jobs` row per company and claims with `FOR UPDATE SKIP LOCKED`. `fetch_runs` remains the admin audit/progress row. Optional knobs: `FETCH_JOB_MAX_ATTEMPTS` (default 3), `FETCH_JOB_STALE_SECONDS` (default company timeout + 60; claimed rows older than this return to `queued` after a crash), `FETCH_JOB_RETRY_SECONDS` (default 60). No new broker. Restart: leftover `queued` jobs drain on the next cycle (and at the end of a cycle). Look at `fetch_jobs.status` plus `company_fetch_attempts.error_message` when diagnosing a stuck country.
+
 On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. See [fetch-thread-exhaustion-incident.md](../reference/fetch-thread-exhaustion-incident.md).
 
 **Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.

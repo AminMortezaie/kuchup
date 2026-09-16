@@ -126,6 +126,53 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "location_gate_override_v1", _apply_location_gate_override_column)
     run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
     run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
+    run_migration_once(conn, "v2_fetch_jobs_v1", _fetch_jobs_v1)
+
+
+def _fetch_jobs_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fetch_jobs (
+            id SERIAL PRIMARY KEY,
+            kind TEXT NOT NULL,
+            country TEXT NOT NULL,
+            company_name TEXT,
+            status TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            max_attempts INTEGER NOT NULL DEFAULT 3,
+            payload_json TEXT NOT NULL DEFAULT '{}',
+            fetch_run_id INTEGER,
+            user_id INTEGER,
+            available_at TEXT,
+            claimed_at TEXT,
+            claimed_by TEXT,
+            finished_at TEXT,
+            last_error TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_fetch_jobs_claim
+        ON fetch_jobs (status, id)
+        WHERE status = 'queued'
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_fetch_jobs_run
+        ON fetch_jobs (fetch_run_id, status)
+        """
+    )
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_fetch_jobs_active_company
+        ON fetch_jobs (kind, country, company_name)
+        WHERE status IN ('queued', 'claimed') AND kind = 'company'
+        """
+    )
 
 
 def _company_fetch_attempts_v1(conn) -> None:
