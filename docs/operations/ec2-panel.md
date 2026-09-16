@@ -12,7 +12,7 @@
 |---------|-----------|------|
 | Postgres | `pg` | 5432 |
 | Redis | `relocation-redis` | 6379 |
-| Panel (gunicorn) | `relocation-panel` | 127.0.0.1:10000 |
+| Panel (gunicorn, 2 workers × 8 threads) | `relocation-panel` | 127.0.0.1:10000 |
 | Remote MCP (OAuth + Streamable HTTP) | `relocation-mcp` | 127.0.0.1:10001 |
 | Fetch worker (scheduler) | `relocation-fetch-worker` | — |
 | Role propagator (SQS assignments) | `relocation-role-propagator` | — |

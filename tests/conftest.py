@@ -77,6 +77,7 @@ def _session_postgres(_session_env):
     yield fake
 
     fake.close()
+    core.close_connection_pool()
     core._connect_postgres = original_connect
     core._pg["conn"] = None
     core.reset_db_initialized()
