@@ -5,3 +5,7 @@ what do you think about it?
 ---
 
 fine commit it
+
+---
+
+run the tests and then validate that ci works.
