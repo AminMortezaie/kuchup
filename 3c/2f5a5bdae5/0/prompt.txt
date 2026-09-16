@@ -1,3 +1,7 @@
 i want to replace the loading spinner with kuchup logo and three points on bottom of it instead of showing precentage.
 
 what do you think about it?
+
+---
+
+fine commit it
