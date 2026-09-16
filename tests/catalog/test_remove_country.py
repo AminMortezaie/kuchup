@@ -16,13 +16,18 @@ def test_remove_country_full_purge(v2_auth_client, seeded_catalog_v2, db):
     job_url = listing["companies"][0]["jobs"][0]["url"]
     set_job_applied("uk", company, job_url, user_id=user_id, applied=True)
 
-    fetch_repo.create_fetch_run(
+    run = fetch_repo.create_fetch_run(
         user_id=user_id,
         country="uk",
         company_name=None,
         file_name="uk.json",
         concurrency=1,
         started_at="2025-06-01T12:00:00+00:00",
+    )
+    fetch_repo.finalize_fetch_run(
+        int(run["id"]),
+        finished_at="2025-06-01T12:05:00+00:00",
+        exit_code=0,
     )
 
     job = listing["companies"][0]["jobs"][0]
@@ -94,12 +99,9 @@ def test_remove_country_requires_admin(v2_client, test_user, seeded_catalog_v2, 
 
 
 def test_remove_country_blocks_active_fetch(v2_auth_client, seeded_catalog_v2, monkeypatch):
-    from relocation_jobs.fetch import state as fetch_state
-
     monkeypatch.setattr(
-        fetch_state,
-        "memory_status",
-        lambda: {"running": True, "country": "uk"},
+        "relocation_jobs.fetch.repo.get_running_fetch_run",
+        lambda: {"country": "uk", "status": "running"},
     )
     resp = v2_auth_client.delete("/api/countries/uk")
     assert resp.status_code == 409

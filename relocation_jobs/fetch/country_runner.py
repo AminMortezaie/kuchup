@@ -4,13 +4,13 @@ import asyncio
 import time
 from collections.abc import Callable
 
-from relocation_jobs.core.scrape_cancel import FetchCancelled, clear_cancel_checker, set_cancel_checker
 from relocation_jobs.catalog.repo import (
     get_company,
     list_country_company_stubs,
     load_country_catalog,
     patch_country_catalog_meta,
 )
+from relocation_jobs.core.scrape_cancel import FetchCancelled, clear_cancel_checker, set_cancel_checker
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
@@ -23,12 +23,7 @@ OnLog = Callable[[str], None]
 OnCompanyResult = Callable[[str, int, list[dict]], None]
 
 
-def _companies_to_fetch(
-    country_key: str,
-    *,
-    skip_filled: bool,
-    ats_type: str | None,
-) -> list[dict]:
+def _companies_to_fetch(country_key: str, *, ats_type: str | None) -> list[dict]:
     companies = list_country_company_stubs(country_key)
     if not companies:
         raise LookupError(f"No catalog for country: {country_key}")
@@ -38,8 +33,6 @@ def _companies_to_fetch(
         companies = [c for c in companies if (c.get("ats_type") or "").strip().lower() == want]
         if not companies:
             raise LookupError(f"No companies with ATS '{ats_type}' in {country_key}")
-    if skip_filled:
-        companies = [c for c in companies if not c.get("has_jobs")]
     return companies
 
 
@@ -85,7 +78,10 @@ async def _fetch_one_company(
         try:
             msg, new_count = await asyncio.wait_for(
                 fetch_and_persist_company(
-                    client, country_key, name, fetch_run_id=run_id,
+                    client, country_key, name,
+                    index=index,
+                    total=total,
+                    fetch_run_id=run_id,
                     enrich_concurrency=enrich_concurrency,
                     on_company_result=on_company_result,
                 ),
@@ -163,18 +159,13 @@ async def run_country_fetch(
     country_key: str,
     *,
     run_id: int,
-    skip_filled: bool = False,
     ats_type: str | None = None,
     concurrency: int = 1,
     on_progress: OnProgress | None = None,
     on_log: OnLog | None = None,
     on_company_result: OnCompanyResult | None = None,
 ) -> tuple[int, int, bool]:
-    companies = _companies_to_fetch(
-        country_key,
-        skip_filled=skip_filled,
-        ats_type=ats_type,
-    )
+    companies = _companies_to_fetch(country_key, ats_type=ats_type)
     total = len(companies)
     workers = max(1, min(concurrency, total))
     enrich_concurrency = max(1, min(4, workers))

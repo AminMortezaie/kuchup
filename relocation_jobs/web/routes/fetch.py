@@ -68,7 +68,6 @@ def register(app):
 
         body = request.get_json(silent=True) or {}
         country = (body.get("country") or "netherlands").strip().lower()
-        skip_filled = bool(body.get("skip_filled", False))
         try:
             concurrency = int(body.get("concurrency", body.get("workers", DEFAULT_CONCURRENCY)))
         except (TypeError, ValueError):
@@ -92,7 +91,6 @@ def register(app):
             run_id = start_country_fetch(
                 user_id=g.user_id,
                 country_key=country,
-                skip_filled=skip_filled,
                 ats_type=ats_type,
                 concurrency=concurrency,
             )

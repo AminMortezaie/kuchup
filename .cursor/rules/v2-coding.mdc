@@ -56,4 +56,5 @@ After job API success, update board locally via `job-board.js` — avoid `reload
 ## Do not
 
 - Re-export facades or empty shims  
+- Fold `pipeline.py` into `service.py`, or replace predicate tables / a named owner object with `global`s and copied `if`s  
 - Run unrelated legacy test tiers on every small edit

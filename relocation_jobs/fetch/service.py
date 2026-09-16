@@ -1,29 +1,15 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from datetime import date
 
-from relocation_jobs.core.scrape_cancel import FetchCancelled
 from relocation_jobs.fetch import repo
-from relocation_jobs.fetch.types import AttemptStatus, is_infra_fetch_error
+from relocation_jobs.fetch.types import AttemptStatus
 
 _ERROR_RE = re.compile(r" — Error: (.+)$")
 
 
-def _today() -> str:
-    return date.today().isoformat()
-
-
 def _company_ats_type(company: dict) -> str:
     return (company.get("ats_type") or "").strip() or "generic"
-
-
-def _mark_fetch_problem(company: dict) -> None:
-    company["fetch_problem"] = True
-    company["fetch_problem_date"] = _today()
-    company["fetch_ok"] = False
-    company.pop("fetch_ok_date", None)
 
 
 def _record_finish(
@@ -70,26 +56,18 @@ def finish_company_attempt(
     msg: str,
     new_count: int,
 ) -> tuple[str, int]:
+    jobs = company.get("matching_jobs") or []
     err_match = _ERROR_RE.search(msg)
     if err_match:
-        error_message = err_match.group(1)
-        if is_infra_fetch_error(error_message):
-            company.pop("fetch_problem", None)
-            company.pop("fetch_problem_date", None)
-        else:
-            _mark_fetch_problem(company)
-        jobs = company.get("matching_jobs") or []
         _record_finish(
             attempt_id,
             status=AttemptStatus.ERROR,
-            error_message=error_message,
+            error_message=err_match.group(1),
             jobs_total=len(jobs),
             jobs_new=0,
             message=msg,
         )
         return msg, 0
-
-    jobs = company.get("matching_jobs") or []
     _record_finish(
         attempt_id,
         status=AttemptStatus.OK,
@@ -98,38 +76,3 @@ def finish_company_attempt(
         message=msg,
     )
     return msg, new_count
-
-
-async def fetch_company(
-    client,
-    company: dict,
-    index: int,
-    total: int,
-    *,
-    country_key: str,
-    process_company: Callable,
-    sync_board,
-    enrich_only: bool,
-    skip_enriched: bool,
-    enrich_concurrency: int,
-    fetch_run_id: int | None = None,
-) -> tuple[str, int]:
-    attempt_id = start_company_attempt(
-        company, country_key=country_key, fetch_run_id=fetch_run_id,
-    )
-    try:
-        msg, new_count = await process_company(
-            client,
-            company,
-            index,
-            total,
-            sync_board=sync_board,
-            enrich_only=enrich_only,
-            skip_enriched=skip_enriched,
-            enrich_concurrency=enrich_concurrency,
-            catalog_country=country_key,
-        )
-    except FetchCancelled:
-        finish_cancelled_attempt(attempt_id)
-        raise
-    return finish_company_attempt(attempt_id, company, msg, new_count)

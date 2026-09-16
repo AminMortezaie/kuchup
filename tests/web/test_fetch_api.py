@@ -56,9 +56,11 @@ async def test_run_single_company_fetch_greenhouse(seeded_catalog_v2):
         ),
     )
     from relocation_jobs.catalog.repo import get_company
-    from relocation_jobs.fetch.runner import run_single_company_fetch_async
+    from relocation_jobs.fetch.client import make_fetch_client
+    from relocation_jobs.fetch.pipeline import fetch_and_persist_company
 
-    msg, new_count = await run_single_company_fetch_async("uk", "Acme Backend Ltd")
+    async with make_fetch_client(concurrency=1) as client:
+        msg, new_count = await fetch_and_persist_company(client, "uk", "Acme Backend Ltd")
     assert new_count == 1
     assert "1 new" in msg
 
@@ -292,9 +294,11 @@ def test_country_fetch_disabled(v2_auth_client, monkeypatch):
     assert resp.status_code == 503
 
 
-def test_fetch_status_includes_review_jobs_after_company_fetch(v2_auth_client, monkeypatch):
+def test_fetch_status_includes_review_jobs_after_company_fetch(v2_auth_client, db):
     from relocation_jobs.fetch import state as fetch_state
+    from relocation_jobs.users.repo import get_user_by_username
 
+    del db
     review = {
         "included": [{"title": "Backend Engineer", "url": "https://example.com/jobs/1"}],
         "filtered": [
@@ -306,23 +310,15 @@ def test_fetch_status_includes_review_jobs_after_company_fetch(v2_auth_client, m
         ],
     }
     fetch_state.reset_for_tests()
-    with fetch_state.fetch_lock():
-        fetch_state.mutate_state(lambda st: st.update({
-            "running": False,
-            "run_id": None,
-            "country": "germany",
-            "company": "Celonis",
-            "started_at": "2026-06-24T20:00:00+00:00",
-            "finished_at": "2026-06-24T20:01:00+00:00",
-            "exit_code": 0,
-            "review_jobs": review,
-            "progress": {"current": 1, "total": 1, "company": "Celonis", "status": "done"},
-            "activity": {},
-            "activity_log": [],
-            "log": ["Finished (exit 0)"],
-            "new_jobs_total": 0,
-            "last_fetch_run": {"id": 99, "country": "germany", "company_name": "Celonis"},
-        }))
+    run_id = fetch_state.reset_for_run(
+        user_id=get_user_by_username("admin")["id"],
+        country="germany",
+        file_name="germany.json",
+        concurrency=1,
+        company="Celonis",
+    )
+    fetch_state.set_review_jobs(run_id, review)
+    fetch_state.finish_run(run_id, exit_code=0, cancelled=False, result_line="Finished (exit 0)")
 
     status = v2_auth_client.get("/api/fetch/status").get_json()
     assert status["company"] == "Celonis"

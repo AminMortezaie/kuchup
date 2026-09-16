@@ -750,17 +750,16 @@ def remove_country(country_key: str) -> dict:
     if country_key not in supported_countries():
         raise ValueError(f"Unknown country: {country_key}")
 
-    from relocation_jobs.fetch import state as fetch_state
+    from relocation_jobs.fetch import repo as fetch_repo
+    from relocation_jobs.mcp import repo as mcp_repo
 
-    status = fetch_state.memory_status()
-    if status.get("running") and (status.get("country") or "").strip().lower() == country_key:
+    running = fetch_repo.get_running_fetch_run()
+    if running and (running.get("country") or "").strip().lower() == country_key:
         raise ValueError(f"Fetch is running for {country_key}")
 
     label = country_label(country_key)
     catalog_removed = delete_country_catalog(country_key)
     tracking_removed = positions_repo.clear_country_tracking(country_key)
-    from relocation_jobs.fetch import repo as fetch_repo
-    from relocation_jobs.mcp import repo as mcp_repo
 
     fetch_runs_removed = fetch_repo.delete_fetch_runs_for_country(country_key)
     mcp_removed = mcp_repo.delete_mcp_applications_for_country(country_key)

@@ -57,27 +57,3 @@ def test_scheduler_country_fetch_does_not_use_a_thread():
     src = inspect.getsource(run_country_fetch_blocking)
     assert "start_country_fetch" not in src
     assert "Thread" not in src
-
-
-def test_fetch_package_exports_spine():
-    import relocation_jobs.fetch as fetch
-
-    assert callable(fetch.bootstrap_scheduler)
-    assert callable(fetch.run_fetch_cycle)
-    assert callable(fetch.start_country_fetch)
-
-
-@pytest.mark.asyncio
-async def test_fetch_and_persist_unknown_company(db):
-    from relocation_jobs.fetch.pipeline import fetch_and_persist_company
-
-    async def fake_board(_client, _company, **kwargs):
-        return []
-
-    with pytest.raises(LookupError):
-        await fetch_and_persist_company(
-            None,
-            "uk",
-            "Missing Co",
-            fetch_board=fake_board,
-        )

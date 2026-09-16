@@ -29,18 +29,6 @@ class _ScrapeLineContext:
     stale_kept: int
 
 
-@dataclass(frozen=True)
-class _EnrichContext:
-    prefix: str
-    jobs: list[dict]
-    enrich_board: Callable | None
-
-
-@dataclass(frozen=True)
-class _ProcessContext:
-    enrich_only: bool
-
-
 _SCRAPE_SUMMARY_PARTS: tuple[Callable[[_ScrapeLineContext], str | None], ...] = (
     lambda ctx: f"{ctx.sponsored} with visa/relocation support" if ctx.sponsored else None,
     lambda ctx: f"{ctx.preserved} preserved" if ctx.preserved else None,
@@ -48,26 +36,12 @@ _SCRAPE_SUMMARY_PARTS: tuple[Callable[[_ScrapeLineContext], str | None], ...] = 
     lambda ctx: f"{ctx.stale_kept} kept from cache" if ctx.stale_kept else None,
 )
 
-_ENRICH_EARLY_EXIT: tuple[
-    tuple[Callable[[_EnrichContext], bool], Callable[[_EnrichContext], tuple[str, int]]],
-    ...,
-] = (
-    (
-        lambda ctx: not ctx.jobs,
-        lambda ctx: (f"{ctx.prefix} — no jobs to enrich", 0),
-    ),
-    (
-        lambda ctx: ctx.enrich_board is None,
-        lambda ctx: (f"{ctx.prefix} — enrich not configured", 0),
-    ),
-)
-
-_SKIP_POST_SCRAPE_ENRICH: tuple[Callable, ...] = (
+_SKIP_POST_SCRAPE_ENRICH: tuple[Callable[[Callable | None], bool], ...] = (
     lambda board: board is None,
 )
 
-_PROCESS_ENRICH_ONLY: tuple[Callable[[_ProcessContext], bool], ...] = (
-    lambda ctx: ctx.enrich_only,
+_MARK_FETCH_FAILED: tuple[Callable[[BaseException], bool], ...] = (
+    lambda exc: not is_infra_fetch_error(str(exc)),
 )
 
 
@@ -135,11 +109,26 @@ def _scrape_success_line(
     return f"{prefix} — {', '.join(parts)}"
 
 
-def _enrich_early_exit(ctx: _EnrichContext) -> tuple[str, int] | None:
-    for matches, outcome in _ENRICH_EARLY_EXIT:
-        if matches(ctx):
-            return outcome(ctx)
-    return None
+def _emit_review(
+    *,
+    review_mode: bool,
+    on_review: Callable | None,
+    raw: list[dict],
+    included: list[dict],
+    company: dict,
+    catalog_country: str,
+    name: str,
+) -> None:
+    if not review_mode or not on_review:
+        return
+    filtered_out = review_filtered_jobs(
+        raw, included, company, catalog_country=catalog_country,
+    )
+    on_review(build_review_payload(included=included, filtered=filtered_out))
+    log_event(
+        f"review: {len(included)} included, {len(filtered_out)} filtered",
+        company=name,
+    )
 
 
 async def _filter_board_listings(
@@ -175,40 +164,6 @@ async def _maybe_enrich_scraped_board(
         client, jobs, company,
         only_missing=True,
         concurrency=enrich_concurrency,
-    )
-
-
-async def enrich_company_board(
-    client,
-    company: dict,
-    prefix: str,
-    *,
-    enrich_board: Callable | None,
-    skip_enriched: bool,
-    enrich_concurrency: int,
-    sync_board: Callable,
-) -> tuple[str, int]:
-    ctx = _EnrichContext(
-        prefix=prefix,
-        jobs=company.get("matching_jobs") or [],
-        enrich_board=enrich_board,
-    )
-    early = _enrich_early_exit(ctx)
-    if early is not None:
-        return early
-
-    jobs = await enrich_board(
-        client, ctx.jobs, company,
-        only_missing=skip_enriched,
-        concurrency=enrich_concurrency,
-    )
-    company["matching_jobs"] = jobs
-    company["updated"] = now_iso()
-    _call_sync_board(sync_board)
-    sponsored = _sponsored_count(jobs)
-    return (
-        f"{prefix} — enriched {len(jobs)} job(s) ({sponsored} with visa/relocation support)",
-        0,
     )
 
 
@@ -249,15 +204,15 @@ async def scrape_company_board(
         catalog_country=catalog_country,
     )
     raise_if_cancelled()
-    if review_mode and on_review:
-        filtered_out = review_filtered_jobs(
-            raw, scraped, company, catalog_country=catalog_country,
-        )
-        on_review(build_review_payload(included=scraped, filtered=filtered_out))
-        log_event(
-            f"review: {len(scraped)} included, {len(filtered_out)} filtered",
-            company=name,
-        )
+    _emit_review(
+        review_mode=review_mode,
+        on_review=on_review,
+        raw=raw,
+        included=scraped,
+        company=company,
+        catalog_country=catalog_country,
+        name=name,
+    )
     known = {job_idempotency_key(j.get("url", "")) for j in existing}
     scraped.extend(j for j in raw if job_idempotency_key(j.get("url", "")) in known)
     jobs, preserved, new_count, stale_kept, new_jobs = merge_matching_jobs(existing, scraped)
@@ -303,15 +258,15 @@ async def _scrape_aggregator_board(
         raw,
         relevant_only=True,
     )
-    if review_mode and on_review:
-        filtered_out = review_filtered_jobs(
-            raw, matched, company, catalog_country=catalog_country,
-        )
-        on_review(build_review_payload(included=matched, filtered=filtered_out))
-        log_event(
-            f"review: {len(matched)} included, {len(filtered_out)} filtered",
-            company=name,
-        )
+    _emit_review(
+        review_mode=review_mode,
+        on_review=on_review,
+        raw=raw,
+        included=matched,
+        company=company,
+        catalog_country=catalog_country,
+        name=name,
+    )
     if on_company_result and job_total > 0:
         on_company_result(name, job_total, _slim_new_jobs(matched))
     company["matching_jobs"] = []
@@ -330,8 +285,6 @@ async def process_company(
     fetch_board: Callable,
     enrich_board: Callable | None = None,
     sync_board: Callable | None = None,
-    enrich_only: bool = False,
-    skip_enriched: bool = False,
     enrich_concurrency: int = 8,
     catalog_country: str = "",
     review_mode: bool = False,
@@ -340,17 +293,6 @@ async def process_company(
 ) -> tuple[str, int]:
     company["updated"] = now_iso()
     prefix = _company_line(company, index, total)
-    mode_ctx = _ProcessContext(enrich_only=enrich_only)
-
-    if any_of(mode_ctx, _PROCESS_ENRICH_ONLY):
-        return await enrich_company_board(
-            client, company, prefix,
-            enrich_board=enrich_board,
-            skip_enriched=skip_enriched,
-            enrich_concurrency=enrich_concurrency,
-            sync_board=sync_board,
-        )
-
     try:
         return await scrape_company_board(
             client, company, prefix,
@@ -366,7 +308,7 @@ async def process_company(
     except FetchCancelled:
         raise
     except Exception as exc:
-        if not is_infra_fetch_error(str(exc)):
+        if any_of(exc, _MARK_FETCH_FAILED):
             _mark_fetch_failed(company)
         _call_sync_board(sync_board)
         return f"{prefix} — Error: {exc}", 0
