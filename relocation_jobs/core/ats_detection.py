@@ -595,8 +595,31 @@ def _detect_hirehive_from_url(careers_url: str) -> tuple[str | None, str | None]
         return None, None
     return "hirehive", f"https://{m.group(1)}.hirehive.com"
 
+
+def _detect_greenhouse_from_url(careers_url: str) -> tuple[str | None, str | None]:
+    text = careers_url or ""
+    if "greenhouse.io" not in text.lower():
+        return None, None
+    m = re.search(
+        r"(?:job-boards|boards(?:-api)?(?:\.eu)?)\.greenhouse\.io/(?:v1/boards/)?([a-z0-9_-]+)",
+        text,
+        re.I,
+    )
+    if not m:
+        m = re.search(r"greenhouse\.io/embed[^?]*\?(?:[^&]*&)*for=([a-z0-9_-]+)", text, re.I)
+    if not m:
+        return None, None
+    slug = m.group(1)
+    if slug in ("embed", "job_board", "jobs"):
+        return None, None
+    eu = bool(re.search(r"boards(?:-api)?\.eu\.greenhouse\.io", text, re.I))
+    host = "boards.eu.greenhouse.io" if eu else "boards.greenhouse.io"
+    return ("greenhouse_eu" if eu else "greenhouse"), f"https://{host}/{slug}"
+
+
 def _detect_ats_from_careers_url(careers_url: str) -> tuple[str | None, str | None]:
     for detector in (
+        _detect_greenhouse_from_url,
         _detect_smartrecruiters_from_careers_url,
         _detect_smartrecruiters_from_redcare_careers,
         _detect_workday_from_url,

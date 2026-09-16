@@ -10,6 +10,7 @@ from relocation_jobs.core.ats_detection import (
     _detect_applytojob_from_url,
     _detect_bamboohr_from_url,
     _detect_deel_from_url,
+    _detect_greenhouse_from_url,
     _detect_hibob_from_url,
     _detect_join_from_url,
     _detect_job_shop_from_url,
@@ -67,6 +68,10 @@ def apply_known_ats_override(company: dict, sync_board: SyncBoard = None) -> Non
                 if sync_board:
                     sync_board()
                 return
+        detected = _detect_greenhouse_from_url(careers_url)
+        if detected[0]:
+            persist_detected_ats(company, detected[0], detected[1] or "", sync_board)
+            return
 
     smartrecruiters = _detect_smartrecruiters_from_careers_url(careers_url)
     if smartrecruiters[0]:

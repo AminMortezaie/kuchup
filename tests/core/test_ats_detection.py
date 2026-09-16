@@ -3,6 +3,16 @@ from __future__ import annotations
 from relocation_jobs.core import ats_detection as mod
 
 
+def test_detect_greenhouse_from_url():
+    assert mod._detect_greenhouse_from_url("https://boards.greenhouse.io/acmebackend") == (
+        "greenhouse",
+        "https://boards.greenhouse.io/acmebackend",
+    )
+    assert mod._detect_greenhouse_from_url(
+        "https://job-boards.greenhouse.io/acmebackend/jobs/"
+    ) == ("greenhouse", "https://boards.greenhouse.io/acmebackend")
+
+
 def test_smartrecruiters_company_id_from_oneclick_ui_url():
     assert (
         mod._smartrecruiters_company_id(

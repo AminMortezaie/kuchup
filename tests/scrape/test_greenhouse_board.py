@@ -74,6 +74,40 @@ async def test_fetch_ats_board_dispatches_greenhouse():
 
 
 @pytest.mark.asyncio
+@respx.mock
+async def test_fetch_ats_board_uses_greenhouse_when_cached_generic():
+    from relocation_jobs.scrape.board import fetch_ats_board
+
+    respx.get(greenhouse_jobs_api_url("acmebackend")).mock(
+        return_value=Response(
+            200,
+            json={
+                "jobs": [
+                    {
+                        "title": "Backend Engineer",
+                        "absolute_url": "https://boards.greenhouse.io/acmebackend/jobs/1",
+                        "location": {"name": "London"},
+                    },
+                ],
+            },
+        ),
+    )
+    import httpx
+
+    company = {
+        "name": "Acme Backend Ltd",
+        "ats_type": "generic",
+        "careers_url": "https://boards.greenhouse.io/acmebackend",
+        "ats_url": "",
+    }
+    async with httpx.AsyncClient() as client:
+        jobs = await fetch_ats_board(client, company)
+    assert company["ats_type"] == "greenhouse"
+    assert len(jobs) == 1
+    assert jobs[0]["url"].endswith("/jobs/1")
+
+
+@pytest.mark.asyncio
 async def test_fetch_ats_board_rejects_unknown_type():
     from relocation_jobs.scrape.board import UnsupportedAtsTypeError, fetch_ats_board
 
