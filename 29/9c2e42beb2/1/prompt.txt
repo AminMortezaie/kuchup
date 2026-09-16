@@ -1,0 +1,32 @@
+see this mcp.
+
+https://ats-mcp-production.up.railway.app/mcp
+
+---
+
+ok i have authenticated here you can see.
+
+---
+
+ok can i add this to kuchup background company add to find the company jobs url simpler?
+
+---
+
+no i want to make it simpler on kuchup.
+no matter there is 500 calls a day and 7 day token, 
+i want to add this to background company addition to make the users simpler to add companies just by the name of company.
+
+do you think is this feasible?
+
+---
+
+what if we get the data for the companies as a night job and put into a new table and after 7 days we have lots of companies url and then i will reauthorize it and again we will complete this flow.
+
+and thus we have all the data localized in our db every user can use this tool to add data.
+
+what do you think about this?
+
+---
+
+what do you mean?
+you mean that this is an authorized original solution to dump these ats data from their origin?

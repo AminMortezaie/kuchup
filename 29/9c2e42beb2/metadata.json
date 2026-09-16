@@ -3,7 +3,7 @@
   "checkpoint_id": "299c2e42beb2",
   "strategy": "manual-commit",
   "branch": "refactor/fetch-keep-layers",
-  "checkpoints_count": 3,
+  "checkpoints_count": 9,
   "files_touched": [
     "relocation_jobs/companies/service.py",
     "relocation_jobs/fetch/__init__.py",
@@ -29,13 +29,20 @@
       "compact_transcript": "/29/9c2e42beb2/0/transcript.jsonl",
       "content_hash": "/29/9c2e42beb2/0/content_hash.txt",
       "prompt": "/29/9c2e42beb2/0/prompt.txt"
+    },
+    {
+      "metadata": "/29/9c2e42beb2/1/metadata.json",
+      "transcript": "/29/9c2e42beb2/1/full.jsonl",
+      "compact_transcript": "/29/9c2e42beb2/1/transcript.jsonl",
+      "content_hash": "/29/9c2e42beb2/1/content_hash.txt",
+      "prompt": "/29/9c2e42beb2/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 817823,
+    "input_tokens": 1094339,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 6662784,
-    "output_tokens": 63041,
-    "api_call_count": 3
+    "cache_read_tokens": 8944640,
+    "output_tokens": 82208,
+    "api_call_count": 9
   }
 }
