@@ -28,25 +28,41 @@ Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost 
 From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present):
 
 ```bash
+./scripts/ec2_app_deploy.sh check            # plan only (hashes, would rebuild vs skip)
 ./scripts/ec2_app_deploy.sh deploy           # sync + rebuild images only when inputs change
 ./scripts/ec2_app_deploy.sh deploy --force   # rebuild panel + worker even if hashes match
+./scripts/ec2_app_deploy.sh deploy --dry-run # same plan as check; no rsync/build/run
 ./scripts/ec2_app_deploy.sh prune            # dangling images + trim BuildKit cache (disk recovery)
 ./scripts/ec2_app_deploy.sh open-sg          # one-shot: open SG 80/443 to 0.0.0.0/0 (manual)
 ./scripts/ec2_app_deploy.sh status           # doctor: disk/RAM, containers, /api/health, verdict
 ./scripts/ec2_app_deploy.sh logs panel 100   # docker logs (panel|caddy|mcp|worker|alloy|all)
 ./scripts/ec2_app_deploy.sh worker-logs      # follow fetch scheduler logs
+./scripts/ec2_app_deploy.sh image-sizes      # panel / worker / propagator image sizes
 ```
 
 **What `deploy` does**
 
-1. Conditionally rebuilds local frontend / homepage only when sources are newer than outputs (`FORCE_FRONTEND=1` / `FORCE_HOMEPAGE=1` to force).
-2. Rsyncs the repo to EC2.
-3. Prunes **dangling images only** (`docker image prune -f`) — never BuildKit cache.
-4. Hashes panel/worker inputs on EC2 (Dockerfiles, requirements, entrypoints, `relocation_jobs/` excluding bind-mounted `static/`). Skips `docker build` when the hash matches and the tagged image already exists.
-5. Recreates panel + worker containers (static files are bind-mounted into the panel, so CSS/homepage updates apply without a panel image rebuild).
-6. Recreates Caddy, starts Alloy when Grafana Cloud env is set, and runs health checks.
+1. **Preflight** — SSH, Dockerfiles, local `deploy/ec2/Caddyfile`, `pg` running, `pgdata` present, root disk under 95%.
+2. Conditionally rebuilds local frontend / homepage when the source **content hash** changes (`FORCE_FRONTEND=1` / `FORCE_HOMEPAGE=1` to force).
+3. Rsyncs the repo to EC2.
+4. Prunes **dangling images only** (`docker image prune -f`) — never BuildKit cache, never volumes, never `pg`.
+5. Hashes panel/worker inputs on EC2 (Dockerfiles, `.dockerignore`, requirements, entrypoints, `relocation_jobs/` excluding bind-mounted `static/`). Skips `docker build` when the hash matches and the tagged image already exists.
+6. Builds any needed images **before** swapping containers (a worker rebuild no longer takes the panel down first).
+7. Recreates panel + worker containers (static files are bind-mounted into the panel, so CSS/homepage updates apply without a panel image rebuild). Optional role propagator when `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL` is set. Optional Playwright sidecar when `DEPLOY_PLAYWRIGHT_WORKER=1` and `Dockerfile.ec2-worker-playwright` exists (PR #6).
+8. Recreates Caddy, starts Alloy when Grafana Cloud env is set, prunes dangling images, runs health checks, and prints a rebuilt-vs-skipped summary with timings.
 
 `deploy` does **not** call `open-sg`. After Cloudflare origin lock-down, reopening `0.0.0.0/0` on every deploy would undo the SG lockdown — run `open-sg` only when you intentionally want world-open 80/443.
+
+Plan-only (no rsync, no docker writes):
+
+```bash
+./scripts/ec2_app_deploy.sh check            # hashes + would rebuild/skip (SSH if env present)
+./scripts/ec2_app_deploy.sh check --local    # CI / no secrets
+./scripts/ec2_app_deploy.sh deploy --dry-run
+./scripts/ec2_app_deploy.sh sync --dry-run   # rsync -n
+```
+
+Current flow, safety rails, and the push-to-deploy roadmap: [ec2-deploy.md](ec2-deploy.md).
 
 **Disk (root EBS):** each rebuild can leave the previous panel/worker image dangling (~GB). `deploy` prunes dangling images before and after builds so old+new layers do not stack, but **keeps BuildKit cache** (pip / tectonic / Playwright). Use `prune` alone only when the box is tight; it trims builder cache while keeping recent cache warm. Routine deploys should not need `prune` if disk is healthy. If prune still cannot free enough headroom, grow the EBS volume. Prefer keeping root usage well under ~80% — full disk has caused host hangs (`no space left on device`).
 
@@ -229,6 +245,7 @@ docker logs relocation-caddy --tail 50
 
 ## Related
 
+- [ec2-deploy.md](ec2-deploy.md) — deploy phases, `check` / `--dry-run`, safety rails, push-to-deploy roadmap (not enabled)
 - [monitoring.md](monitoring.md) — Grafana Cloud Free, Alloy, alerts, 522 runbook
 - [nowpayments.md](nowpayments.md) — credit packs + Full Access checkout
 - [aws-postgres.md](aws-postgres.md) — Postgres on EC2

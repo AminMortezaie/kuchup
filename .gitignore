@@ -21,7 +21,15 @@ data/
 **/.DS_Store
 /dist/
 /dist/mcp-resume-reframe-for-claude.zip
-/deploy/
+# Operator-local EC2 payloads (Caddyfile, Alloy, tectonic-warm) live on the
+# laptop and the server today. Track public templates under deploy/ec2/ when
+# they are reviewed into git — see docs/operations/ec2-deploy.md.
+/deploy/*
+!/deploy/ec2/
+/deploy/ec2/*
+!/deploy/ec2/README.md
+relocation_jobs/static/dist/.source-hash
+relocation_jobs/static/homepage/.source-hash
 /design-skills/
 # Vendor / agent skill installs (use skills-lock locally; not product code)
 .agents/
