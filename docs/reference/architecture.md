@@ -37,7 +37,7 @@ relocate.me (country page)
     ↓
 build_companies.py       ← careers URL discovery → Postgres catalog
     ↓
-v2 fetch (panel) or scrape_jobs.py (CLI)  ← ATS scrape → Postgres catalog
+v2 fetch (panel / fetch-worker)  ← ATS scrape → Postgres catalog
     ↓
 web/server.py            ← Flask API (catalog + per-user tracking merge)
     ↓

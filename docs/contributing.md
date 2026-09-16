@@ -1,6 +1,6 @@
 # Contributing
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-09-16
 
 Developer setup and where to work. Product usage: [README](../README.md). Doc index: [README.md](README.md).
 
@@ -134,7 +134,7 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 - Country fetch: in-process asyncio (`fetch/country_runner.py`)
 - Concurrency: default 16, hard cap 16 (`core/ats_constants.py`)
 - Live state: `fetch_runs` + `GET /api/fetch/status`
-- CLI: `scrape_jobs.py`, `build_companies.py` for batch/offline
+- CLI: `apps/fetch-worker/run.py`, `build_companies.py` for batch/offline
 
 ---
 

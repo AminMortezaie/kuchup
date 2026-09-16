@@ -193,10 +193,6 @@ def fetch_hibob_job_detail(url: str) -> JobFetchResult:
     return JobFetchResult(text, location)
 
 
-def fetch_hibob_job_text(url: str) -> str:
-    return fetch_hibob_job_detail(url).text
-
-
 def fetch_pinpointhq_job_detail(url: str) -> JobFetchResult:
     text, location = pinpointhq_job_detail_fetch(url)
     return JobFetchResult(text, location)

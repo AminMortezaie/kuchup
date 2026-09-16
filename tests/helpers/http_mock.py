@@ -1,4 +1,4 @@
-"""Reusable helpers for mocking requests.get/post in scrape_jobs tests."""
+"""Reusable helpers for mocking requests.get/post in scrape tests."""
 
 from __future__ import annotations
 
@@ -88,12 +88,8 @@ def install_requests_mock(
         calls["post"].append((url, kwargs))
         return _resolve(post_routes, url, kwargs, default_post)
 
-    modules = [module]
-    if module != "relocation_jobs.scrape_jobs":
-        modules.append("relocation_jobs.scrape_jobs")
-    for mod in modules:
-        monkeypatch.setattr(f"{mod}.requests.get", fake_get)
-        monkeypatch.setattr(f"{mod}.requests.post", fake_post)
+    monkeypatch.setattr(f"{module}.requests.get", fake_get)
+    monkeypatch.setattr(f"{module}.requests.post", fake_post)
     return calls
 
 

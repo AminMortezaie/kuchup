@@ -295,7 +295,7 @@ add_company(
 )
 ```
 
-Returns `workspace_path` (e.g. `/company/germany/example-gmbh`) for the panel company workspace. After adding, run a **Fetch** on the panel (or `scrape_jobs.py`) to load open roles.
+Returns `workspace_path` (e.g. `/company/germany/example-gmbh`) for the panel company workspace. After adding, run a **Fetch** on the panel (or the fetch-worker) to load open roles.
 
 #### Add a position (manual / LinkedIn-only)
 

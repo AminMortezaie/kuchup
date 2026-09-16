@@ -1,6 +1,6 @@
 # Core business rules
 
-Plain-language contracts extracted from the code (`catalog_service`, `db`, `catalog_db`, `scrape_jobs`, `location_tags`). Use these for tests, refactors, and bug investigations — not as marketing copy.
+Plain-language contracts extracted from the code (`catalog`, `positions`, `scrape`, `panel`). Use these for tests, refactors, and bug investigations — not as marketing copy.
 
 ## Data ownership
 
