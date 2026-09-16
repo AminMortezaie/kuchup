@@ -1,0 +1,5 @@
+it's time to rewrite the fetch process using simple and lightweight go threads.
+
+to keep the code working and not reformating the whole code, go application will do just the process of fetching and sends data to postgres and control the context of cancelation in golang to keep it simple and straight.
+
+/ponytail what do you think about it?
