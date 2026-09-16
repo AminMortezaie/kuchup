@@ -130,6 +130,7 @@ def _app_schema(db):
     from relocation_jobs.fetch.repo import clear_running_fetch_runs_for_tests
 
     get_connection().execute("DELETE FROM company_fetch_attempts")
+    get_connection().execute("DELETE FROM fetch_jobs")
     clear_running_fetch_runs_for_tests()
     fetch_state.reset_for_tests()
     yield

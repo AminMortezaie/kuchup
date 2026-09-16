@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from relocation_jobs.core.db import db_transaction, get_connection
-from relocation_jobs.fetch.types import AttemptStatus, CompanyFetchAttempt
+from relocation_jobs.fetch.types import (
+    AttemptStatus,
+    CompanyFetchAttempt,
+    FetchJob,
+    FetchJobKind,
+    FetchJobStatus,
+)
 from relocation_jobs.users.applied import local_day_utc_bounds
 
 UI_LOG_MAX_LINES = 200
@@ -541,6 +547,314 @@ def reap_orphan_running_fetch_runs(*, finished_at: str | None = None) -> int:
 def clear_running_fetch_runs_for_tests() -> None:
     with db_transaction() as conn:
         conn.execute("DELETE FROM fetch_runs WHERE status = 'running'")
+
+
+def _fetch_job_from_row(row) -> FetchJob:
+    data = dict(row)
+    payload = _json_loads(data.pop("payload_json", None), default={}) or {}
+    return FetchJob.from_row(data, payload=payload)
+
+
+def _parse_utc(moment: str) -> datetime:
+    return datetime.fromisoformat(str(moment).replace("Z", "+00:00"))
+
+
+def _retry_available_at(failed_at: str, attempts: int, retry_seconds: int) -> str:
+    delay = 0
+    if retry_seconds:
+        delay = min(int(retry_seconds) * (2 ** max(attempts - 1, 0)), 600)
+    return (_parse_utc(failed_at) + timedelta(seconds=delay)).replace(microsecond=0).isoformat()
+
+
+def _stale_cutoff(moment: str, stale_seconds: int) -> str:
+    delta = timedelta(seconds=max(1, int(stale_seconds)))
+    return (_parse_utc(moment) - delta).replace(microsecond=0).isoformat()
+
+
+def _open_job_clauses(
+    *,
+    country: str | None = None,
+    fetch_run_id: int | None = None,
+    statuses: tuple[FetchJobStatus, ...],
+) -> tuple[str, list]:
+    clauses = ["status IN (" + ", ".join(["%s"] * len(statuses)) + ")"]
+    params: list = [status.value for status in statuses]
+    if country:
+        clauses.append("country = %s")
+        params.append(country)
+    if fetch_run_id is not None:
+        clauses.append("fetch_run_id = %s")
+        params.append(int(fetch_run_id))
+    return " AND ".join(clauses), params
+
+
+def enqueue_company_fetch_job(
+    *,
+    country: str,
+    company_name: str,
+    fetch_run_id: int | None = None,
+    user_id: int | None = None,
+    payload: dict | None = None,
+    max_attempts: int = 3,
+) -> int:
+    now = _utc_now()
+    name = (company_name or "").strip()
+    params = (
+        FetchJobKind.COMPANY.value,
+        country,
+        name,
+        FetchJobStatus.QUEUED.value,
+        max(1, int(max_attempts)),
+        _json_dumps(payload or {}) or "{}",
+        fetch_run_id,
+        int(user_id) if user_id is not None else None,
+        now,
+        now,
+        FetchJobKind.COMPANY.value,
+        country,
+        name,
+    )
+    with db_transaction() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO fetch_jobs (
+                kind, country, company_name, status, max_attempts,
+                payload_json, fetch_run_id, user_id, created_at, updated_at
+            )
+            SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM fetch_jobs
+                WHERE kind = %s
+                  AND country = %s
+                  AND company_name = %s
+                  AND status IN ('queued', 'claimed')
+            )
+            RETURNING id
+            """,
+            params,
+        )
+        row = cur.fetchone()
+        if cur.rowcount:
+            return int(row["id"])
+        existing = conn.execute(
+            """
+            SELECT id FROM fetch_jobs
+            WHERE kind = %s
+              AND country = %s
+              AND company_name = %s
+              AND status IN ('queued', 'claimed')
+            ORDER BY id
+            LIMIT 1
+            """,
+            (FetchJobKind.COMPANY.value, country, name),
+        ).fetchone()
+        if not existing:
+            raise RuntimeError("failed to enqueue company fetch job")
+        return int(existing["id"])
+
+
+def claim_fetch_jobs(
+    *,
+    worker_id: str,
+    limit: int = 1,
+    country: str | None = None,
+    fetch_run_id: int | None = None,
+    now: str | None = None,
+) -> list[FetchJob]:
+    claimed_at = now or _utc_now()
+    where, params = _open_job_clauses(
+        country=country,
+        fetch_run_id=fetch_run_id,
+        statuses=(FetchJobStatus.QUEUED,),
+    )
+    where += " AND (available_at IS NULL OR available_at <= %s)"
+    params.append(claimed_at)
+    take = max(1, min(int(limit), 32))
+    worker = (worker_id or "").strip() or "worker"
+    sql = f"""
+        WITH picked AS (
+            SELECT id FROM fetch_jobs
+            WHERE {where}
+            ORDER BY id
+            LIMIT %s
+            FOR UPDATE SKIP LOCKED
+        )
+        UPDATE fetch_jobs
+        SET status = %s,
+            claimed_at = %s,
+            claimed_by = %s,
+            updated_at = %s
+        WHERE id IN (SELECT id FROM picked)
+        RETURNING *
+    """
+    with db_transaction() as conn:
+        rows = conn.execute(
+            sql,
+            tuple(params + [
+                take,
+                FetchJobStatus.CLAIMED.value,
+                claimed_at,
+                worker,
+                claimed_at,
+            ]),
+        ).fetchall()
+    return [_fetch_job_from_row(row) for row in rows]
+
+
+def complete_fetch_job(job_id: int, *, now: str | None = None) -> FetchJob | None:
+    finished_at = now or _utc_now()
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            UPDATE fetch_jobs
+            SET status = %s,
+                finished_at = %s,
+                updated_at = %s,
+                last_error = NULL
+            WHERE id = %s AND status = %s
+            RETURNING *
+            """,
+            (
+                FetchJobStatus.DONE.value,
+                finished_at,
+                finished_at,
+                int(job_id),
+                FetchJobStatus.CLAIMED.value,
+            ),
+        ).fetchone()
+    return _fetch_job_from_row(row) if row else None
+
+
+def fail_fetch_job(
+    job_id: int,
+    *,
+    error_message: str,
+    retry_seconds: int = 60,
+    now: str | None = None,
+) -> FetchJob | None:
+    failed_at = now or _utc_now()
+    error = (error_message or "").strip() or "fetch failed"
+    with db_transaction() as conn:
+        current = conn.execute(
+            "SELECT attempts, max_attempts FROM fetch_jobs WHERE id = %s AND status = %s",
+            (int(job_id), FetchJobStatus.CLAIMED.value),
+        ).fetchone()
+        if not current:
+            return None
+        attempts = int(current["attempts"] or 0) + 1
+        max_attempts = max(1, int(current["max_attempts"] or 1))
+        dead = attempts >= max_attempts
+        row = conn.execute(
+            """
+            UPDATE fetch_jobs
+            SET status = %s,
+                attempts = %s,
+                available_at = %s,
+                claimed_at = NULL,
+                claimed_by = NULL,
+                finished_at = %s,
+                last_error = %s,
+                updated_at = %s
+            WHERE id = %s AND status = %s
+            RETURNING *
+            """,
+            (
+                FetchJobStatus.DEAD.value if dead else FetchJobStatus.QUEUED.value,
+                attempts,
+                None if dead else _retry_available_at(failed_at, attempts, retry_seconds),
+                failed_at if dead else None,
+                error,
+                failed_at,
+                int(job_id),
+                FetchJobStatus.CLAIMED.value,
+            ),
+        ).fetchone()
+    return _fetch_job_from_row(row) if row else None
+
+
+def reclaim_stale_claimed_fetch_jobs(
+    *,
+    stale_seconds: int,
+    now: str | None = None,
+) -> int:
+    moment = now or _utc_now()
+    with db_transaction() as conn:
+        cur = conn.execute(
+            """
+            UPDATE fetch_jobs
+            SET status = %s,
+                claimed_at = NULL,
+                claimed_by = NULL,
+                updated_at = %s
+            WHERE status = %s
+              AND claimed_at IS NOT NULL
+              AND claimed_at <= %s
+            """,
+            (
+                FetchJobStatus.QUEUED.value,
+                moment,
+                FetchJobStatus.CLAIMED.value,
+                _stale_cutoff(moment, stale_seconds),
+            ),
+        )
+    return int(cur.rowcount or 0)
+
+
+def count_open_fetch_jobs(
+    *,
+    country: str | None = None,
+    fetch_run_id: int | None = None,
+) -> int:
+    where, params = _open_job_clauses(
+        country=country,
+        fetch_run_id=fetch_run_id,
+        statuses=(FetchJobStatus.QUEUED, FetchJobStatus.CLAIMED),
+    )
+    row = get_connection().execute(
+        f"SELECT COUNT(*) AS total FROM fetch_jobs WHERE {where}",
+        tuple(params),
+    ).fetchone()
+    return int((row or {}).get("total") or 0)
+
+
+def get_fetch_job(job_id: int) -> FetchJob | None:
+    row = get_connection().execute(
+        "SELECT * FROM fetch_jobs WHERE id = %s",
+        (int(job_id),),
+    ).fetchone()
+    return _fetch_job_from_row(row) if row else None
+
+
+def list_fetch_jobs(
+    *,
+    country: str | None = None,
+    status: FetchJobStatus | None = None,
+    fetch_run_id: int | None = None,
+    limit: int = 100,
+) -> list[FetchJob]:
+    clauses: list[str] = []
+    params: list = []
+    if country:
+        clauses.append("country = %s")
+        params.append(country)
+    if status is not None:
+        clauses.append("status = %s")
+        params.append(status.value)
+    if fetch_run_id is not None:
+        clauses.append("fetch_run_id = %s")
+        params.append(int(fetch_run_id))
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    params.append(max(1, min(int(limit), 500)))
+    rows = get_connection().execute(
+        f"""
+        SELECT * FROM fetch_jobs
+        {where}
+        ORDER BY id
+        LIMIT %s
+        """,
+        tuple(params),
+    ).fetchall()
+    return [_fetch_job_from_row(row) for row in rows]
 
 
 def delete_fetch_runs_for_country(country_key: str) -> int:

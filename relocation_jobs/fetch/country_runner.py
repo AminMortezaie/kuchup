@@ -23,7 +23,7 @@ OnLog = Callable[[str], None]
 OnCompanyResult = Callable[[str, int, list[dict]], None]
 
 
-def _companies_to_fetch(country_key: str, *, ats_type: str | None) -> list[dict]:
+def companies_to_fetch(country_key: str, *, ats_type: str | None) -> list[dict]:
     companies = list_country_company_stubs(country_key)
     if not companies:
         raise LookupError(f"No catalog for country: {country_key}")
@@ -34,6 +34,18 @@ def _companies_to_fetch(country_key: str, *, ats_type: str | None) -> list[dict]
         if not companies:
             raise LookupError(f"No companies with ATS '{ats_type}' in {country_key}")
     return companies
+
+
+def stamp_country_fetch_meta(country_key: str, new_jobs_total: int) -> None:
+    ts = now_iso()
+    refreshed = load_country_catalog(country_key) or {}
+    patch_country_catalog_meta(
+        country_key,
+        updated=ts,
+        jobs_fetched=ts,
+        last_fetch_new_jobs=new_jobs_total,
+        total=len(refreshed.get("companies") or []),
+    )
 
 
 def _cancel_checker(run_id: int) -> Callable[[], bool]:
@@ -165,7 +177,7 @@ async def run_country_fetch(
     on_log: OnLog | None = None,
     on_company_result: OnCompanyResult | None = None,
 ) -> tuple[int, int, bool]:
-    companies = _companies_to_fetch(country_key, ats_type=ats_type)
+    companies = companies_to_fetch(country_key, ats_type=ats_type)
     total = len(companies)
     workers = max(1, min(concurrency, total))
     enrich_concurrency = max(1, min(4, workers))
@@ -200,15 +212,7 @@ async def run_country_fetch(
     finally:
         clear_cancel_checker()
 
-    ts = now_iso()
-    refreshed = load_country_catalog(country_key) or {}
-    patch_country_catalog_meta(
-        country_key,
-        updated=ts,
-        jobs_fetched=ts,
-        last_fetch_new_jobs=new_jobs_total,
-        total=len(refreshed.get("companies") or []),
-    )
+    stamp_country_fetch_meta(country_key, new_jobs_total)
     if not cancelled:
         report(done, None, "done")
     return new_jobs_total, done, cancelled

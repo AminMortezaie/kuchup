@@ -13,9 +13,12 @@ from relocation_jobs.users.repo import resolve_scheduler_user_id
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch import state as fetch_state
-from relocation_jobs.fetch.runner import run_country_fetch_blocking
+from relocation_jobs.fetch.runner import (
+    recover_pending_fetch_jobs_blocking,
+    run_country_fetch_blocking,
+)
 from relocation_jobs.fetch.listing_check import run_listing_check_cycle
-from relocation_jobs.fetch.timeouts import country_timeout_seconds
+from relocation_jobs.fetch.timeouts import country_timeout_seconds, fetch_job_stale_seconds
 from relocation_jobs.scrape.aggregator_seeds import ensure_aggregator_seeds
 
 LOGGER = logging.getLogger("relocation_jobs.fetch.scheduler")
@@ -63,6 +66,7 @@ def bootstrap_scheduler() -> None:
     init_db()
     configure_logging()
     fetch_repo.reap_orphan_running_fetch_runs()
+    fetch_repo.reclaim_stale_claimed_fetch_jobs(stale_seconds=fetch_job_stale_seconds())
     ensure_aggregator_seeds()
 
 
@@ -136,12 +140,17 @@ def run_fetch_cycle(*, user_id: int | None = None) -> dict:
             concurrency=concurrency,
         )
 
+    recovered = {"new_jobs": 0, "done": 0, "cancelled": False, "countries": []}
+    if not fetch_state.fetch_is_running():
+        recovered = recover_pending_fetch_jobs_blocking(concurrency=concurrency)
+
     result = {
         "skipped": False,
         "started": started,
         "not_started": skipped,
         "countries": list(countries),
         "concurrency": concurrency,
+        "recovered": recovered,
     }
     log_event(
         "Scheduled fetch cycle finished",

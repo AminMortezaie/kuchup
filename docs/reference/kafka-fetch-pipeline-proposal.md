@@ -16,6 +16,8 @@ The app has **no message broker today**. Async work is limited to the **fetch/sc
 
 **Recommended direction (default):** do **not** add Kafka until fetch scaling or multi-consumer fan-out is a real requirement. If a queue is needed sooner, prefer a **Postgres job table** or **Redis Streams** on the existing EC2 host. If Kafka is adopted, place infra in `core/kafka_client.py`, contracts in a new `events/` domain, producers at `fetch/scheduler` + `web/routes/fetch`, consumers in `scripts/*_worker.py`; keep `fetch_runs` as durable audit.
 
+**Shipped (2026-09-16):** Phase 1 Postgres `fetch_jobs` + `FOR UPDATE SKIP LOCKED` for the **scheduler worker** country path (`run_country_fetch_blocking`). Leftover queued jobs are reclaimed on worker boot and drained at the end of a cycle. Panel `start_country_fetch` / single-company fetch stay in-process. Redis Streams and Kafka are not in this step.
+
 **Not recommended:** Kafka for board reads (see [board-read-model-proposal.md](board-read-model-proposal.md)); Kafka for MCP application queue (that name is a user list, not a work queue); replacing Postgres as source of truth for catalog or tracking.
 
 **Decision needed:** stay on current thread model vs **Postgres queue** vs **Redis Streams** vs **Kafka** — see [Decision: broker choice](#decision-broker-choice).
@@ -95,6 +97,8 @@ Keep `fetch/runner.py` thread model; tune concurrency and instance size.
 | Same host as catalog; no new service | Not ideal for many independent consumers |
 | Transactions with catalog writes | Replay/streaming weaker than Kafka |
 | Matches layer rules (`fetch/repo.py`) | |
+
+**Job schema (Phase 1):** `fetch_jobs(id, kind, country, company_name, status, attempts, max_attempts, payload_json, fetch_run_id, …)`. Active uniqueness: one `queued`/`claimed` row per `(kind, country, company_name)` for `kind=company`. Claim SQL uses `FOR UPDATE SKIP LOCKED`. Retry: on failure, `attempts += 1` and status returns to `queued` with `available_at` backoff until `max_attempts`, then `dead`. Stale `claimed` rows (worker crash) are reclaimed to `queued`. Next cycle may enqueue a new row once the previous is `done` or `dead`.
 
 **Fit:** retry, per-company durability, modest parallelism — without Kafka ops.
 
@@ -219,11 +223,14 @@ flowchart TB
 - Baseline: fetch cycle duration, orphan rate, 409 busy rate, worker OOMs ([ec2-panel.md](../operations/ec2-panel.md)).
 - Confirm whether pain is concurrency, mutex, or catalog write contention ([aws-postgres.md](../operations/aws-postgres.md) notes per-thread DB connections).
 
-### Phase 1 — Postgres job queue (optional, broker-agnostic)
+### Phase 1 — Postgres job queue (scheduler worker)
 
-- Add `fetch_jobs` table + claim loop in worker.
-- Scheduler enqueues countries/companies instead of `start_country_fetch` + `wait_for_fetch_thread`.
-- Keep `fetch_runs` for run-level UI.
+- `fetch_jobs` table + claim loop (`FOR UPDATE SKIP LOCKED`) in `fetch/repo.py` / `fetch/queue.py`.
+- Scheduler `run_country_fetch_blocking` enqueues one row per company, then the worker claims and runs `fetch_and_persist_company`.
+- Failed jobs retry until `max_attempts`, then `dead`. Stale `claimed` rows return to `queued` on worker boot (`reclaim_stale_claimed_fetch_jobs`).
+- Keep `fetch_runs` for run-level UI. Panel country/company thread fetch is unchanged.
+
+**Not in this phase:** Redis Streams, Kafka, `events/` domain, changing `POST /api/fetch`.
 
 ### Phase 2 — Kafka (only if Phase 1 outgrows Postgres queue)
 
@@ -257,8 +264,8 @@ flowchart TB
 
 ## Done when
 
-- [ ] Broker choice decided (A / B / C / D)
-- [ ] If B+: job schema + idempotency rules documented
+- [x] Broker choice for the first step: **B — Postgres job table** (Redis Streams / Kafka still deferred)
+- [x] If B+: job schema + idempotency rules documented
 - [ ] If D: topics, consumer group, deploy runbook in [ec2-panel.md](../operations/ec2-panel.md)
-- [ ] Parity: admin `worker` stats and `GET /api/fetch/status` unchanged or intentionally migrated
-- [ ] Tests: enqueue → process → catalog row + `company_fetch_attempts`
+- [x] Parity: admin `worker` stats and `GET /api/fetch/status` unchanged (`fetch_runs` remains audit)
+- [x] Tests: enqueue → claim → process → retry/dead + blocking runner consume path

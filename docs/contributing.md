@@ -131,7 +131,7 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ## Fetch & scrape
 
-- Country fetch: in-process asyncio (`fetch/country_runner.py`)
+- Country fetch: scheduler uses Postgres `fetch_jobs` + SKIP LOCKED (`fetch/queue.py`); panel country fetch is still in-process asyncio (`fetch/country_runner.py`)
 - Concurrency: default 16, hard cap 16 (`core/ats_constants.py`)
 - Live state: `fetch_runs` + `GET /api/fetch/status`
 - CLI: `scrape_jobs.py`, `build_companies.py` for batch/offline

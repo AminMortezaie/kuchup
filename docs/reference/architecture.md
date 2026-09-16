@@ -54,7 +54,7 @@ relocation_jobs/
 ├── positions/    repo + service — apply, reject, not-for-me
 ├── panel/        relocation board flatten + stats
 ├── remote/       remote board service + country list (aggregators)
-├── fetch/        scheduler (when/what), runner (panel threads), country_runner (semaphore), pipeline (scrape+persist)
+├── fetch/        scheduler, runner, queue (SKIP LOCKED), country_runner, pipeline
 ├── scrape/       boards/, merge, enrich, aggregator_* 
 ├── companies/    company CRUD
 ├── users/        history, applied, entitlements
@@ -147,20 +147,21 @@ apps/fetch-worker/run.py          (scripts/fetch_scheduler_worker.py is a Docker
   → run_scheduled_pass            listing check, then countries
   → run_fetch_cycle               when / which countries
   → runner.run_country_fetch_blocking
-       asyncio.run(run_country_fetch) — no panel thread
-  → country_runner                asyncio.Semaphore (only concurrency knob)
-  → pipeline.fetch_and_persist_company
-       load company → scrape → sync_company_board_to_catalog → record attempt
+       enqueue fetch_jobs (one row per company)
+       drain FOR UPDATE SKIP LOCKED → pipeline.fetch_and_persist_company
   → scrape/ + catalog/repo.py
 ```
+
+Panel fire-and-forget (`start_country_fetch` / `start_company_fetch`) still uses `country_runner` in-process (thread + UI poll). Leftover `queued` jobs are reclaimed on worker boot and drained at the end of a scheduler cycle.
 
 Package spine: `relocation_jobs.fetch` exports `bootstrap_scheduler`, `run_fetch_cycle`, `start_country_fetch` (lazy; avoid importing scheduler from `__init__`).
 
 After a country or company **run** finishes (`fetch/runner.py`), enqueue `type=country`. Scrape/pipeline/country_runner do not enqueue.
 
 - Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`
+- Queue: `FETCH_JOB_MAX_ATTEMPTS` (default 3), `FETCH_JOB_STALE_SECONDS` (company timeout + 60), `FETCH_JOB_RETRY_SECONDS` (default 60; `0` retries immediately)
 - Cap: `core/ats_constants.MAX_CONCURRENCY`
-- Status: `GET /api/fetch/status`
+- Status: `GET /api/fetch/status` (`fetch_runs` audit; `fetch_jobs` is the work queue)
 - Panel fire-and-forget only: `start_country_fetch` / `start_company_fetch` (thread + UI poll)
 
 ## Async / SQS

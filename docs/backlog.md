@@ -138,9 +138,9 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ---
 
-## Fetch pipeline queue (Kafka / Postgres / Redis Streams)
+## Fetch pipeline queue (Postgres first step)
 
-**Status:** planned (proposal written)  
+**Status:** in progress (Postgres `fetch_jobs` first step shipped; Redis Streams / Kafka deferred)  
 **Priority:** low (until fetch scale or reliability bites)  
 **Context:** Fetch/scrape is the only async workload. Today it uses in-process threads, a global `fetch_runs` mutex, and sequential countries in the EC2 scheduler. No message broker. See [reference/kafka-fetch-pipeline-proposal.md](reference/kafka-fetch-pipeline-proposal.md).
 
@@ -153,21 +153,21 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ### Approach (summary)
 
-1. **Default:** stay on status quo until measured pain.
-2. **First queue step:** Postgres `fetch_jobs` + `FOR UPDATE SKIP LOCKED` (same EC2, no new service).
-3. **Optional:** Redis Streams for progress fan-out (Redis already on host).
-4. **Kafka:** only if multiple consumer types or many worker replicas are required.
-5. **Code layout if events:** `core/kafka_client.py` + `events/` domain; producers at `fetch/scheduler` + `web/routes/fetch`; consumers in `scripts/*_worker.py`; keep `fetch_runs` audit.
+1. **Shipped (first step):** Postgres `fetch_jobs` + `FOR UPDATE SKIP LOCKED` on the existing EC2 worker (no new service). Scheduler country fetch enqueues per-company jobs and consumes them; `fetch_runs` stays the run-level audit.
+2. **Default for other surfaces:** panel `start_country_fetch` / single-company fetch remain in-process until a later PR.
+3. **Deferred:** Redis Streams for progress fan-out; Kafka / SQS for this pipeline (SQS is the multi-user *user-submitted* job proposal, not this worker queue).
 
 ### Decision pending
 
-- **A** status quo vs **B** Postgres queue vs **C** Redis Streams vs **D** Kafka
+- Further broker (Redis Streams / Kafka) still open. Postgres queue is the implemented first step.
 
 ### Done when
 
-- [ ] Proposal approved (broker choice in doc resolved)
+- [x] First queue step: `fetch_jobs` + SKIP LOCKED consume + tests
+- [ ] Proposal approved (remaining broker choice in doc)
 - [ ] Baseline metrics: cycle duration, busy skips, orphan reaps
-- [ ] If implemented: fetch tests + EC2 deploy runbook updated
+- [x] Fetch tests + EC2 deploy runbook updated
+- [ ] Redis Streams / Kafka (explicitly not this step)
 
 ---
 

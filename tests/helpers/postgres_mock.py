@@ -135,6 +135,7 @@ class FakePgConnection:
         "mcp_user_documents",
         "job_status_events",
         "fetch_runs",
+        "fetch_jobs",
         "job_tracking",
         "company_tracking",
         "credit_ledger",
@@ -159,6 +160,7 @@ class FakePgConnection:
         "mcp_user_documents",
         "job_status_events",
         "fetch_runs",
+        "fetch_jobs",
         "company_fetch_attempts",
         "job_tracking",
         "company_tracking",
@@ -211,6 +213,8 @@ class FakePgConnection:
         out = re.sub(r"\bDROP COLUMN IF EXISTS\b", "DROP COLUMN", out, flags=re.I)
         out = re.sub(r"\bJSONB\b", "TEXT", out, flags=re.I)
         out = re.sub(r"'::(jsonb|text)", "'", out, flags=re.I)
+        out = re.sub(r"\s+FOR UPDATE SKIP LOCKED\b", "", out, flags=re.I)
+        out = re.sub(r"\s+FOR UPDATE\b", "", out, flags=re.I)
         return out, returning
 
 

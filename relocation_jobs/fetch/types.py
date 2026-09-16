@@ -13,6 +13,43 @@ class AttemptStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class FetchJobKind(str, Enum):
+    COMPANY = "company"
+
+
+class FetchJobStatus(str, Enum):
+    QUEUED = "queued"
+    CLAIMED = "claimed"
+    DONE = "done"
+    DEAD = "dead"
+
+
+class FetchJob(BaseSchema):
+    id: int
+    kind: FetchJobKind
+    country: str
+    status: FetchJobStatus
+    attempts: int
+    max_attempts: int
+    created_at: str
+    updated_at: str
+    company_name: Optional[str] = None
+    payload: dict
+    fetch_run_id: Optional[int] = None
+    user_id: Optional[int] = None
+    available_at: Optional[str] = None
+    claimed_at: Optional[str] = None
+    claimed_by: Optional[str] = None
+    finished_at: Optional[str] = None
+    last_error: Optional[str] = None
+
+    @classmethod
+    def from_row(cls, row: dict, *, payload: dict | None = None) -> FetchJob:
+        data = dict(row)
+        data["payload"] = payload if payload is not None else {}
+        return cls.model_validate(data)
+
+
 class CompanyFetchAttempt(BaseSchema):
     id: int
     country: str

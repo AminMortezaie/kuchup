@@ -13,7 +13,8 @@ from relocation_jobs.fetch.client import make_fetch_client
 from relocation_jobs.fetch.country_runner import run_country_fetch
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
-from relocation_jobs.fetch.timeouts import country_timeout_seconds
+from relocation_jobs.fetch.queue import drain_company_fetch_jobs, enqueue_country_company_jobs
+from relocation_jobs.fetch.timeouts import country_timeout_seconds, fetch_job_stale_seconds
 
 
 def _finish_lines(cancelled: bool, exit_code: int, *, done_line: str) -> tuple[str, str]:
@@ -112,6 +113,108 @@ def _country_fetch_worker(
         raise TimeoutError(f"Country fetch timed out after {limit}s")
     if exit_code == 0 and companies_done > 0:
         enqueue_country_opportunity_refresh(country_key)
+
+
+def _queued_country_fetch_worker(
+    country_key: str,
+    *,
+    run_id: int,
+    user_id: int,
+    ats_type: str | None,
+    concurrency: int = 1,
+    timeout: float | None = None,
+) -> None:
+    exit_code = 1
+    cancelled = False
+    timed_out = False
+    new_jobs_total = 0
+    companies_done = 0
+
+    def on_progress(progress: dict) -> None:
+        fetch_state.update_progress(run_id, progress)
+
+    def on_company_result(company_name: str, new_count: int, jobs: list[dict]) -> None:
+        fetch_state.record_company_result(run_id, company_name, new_count, jobs)
+
+    def append_log(line: str) -> None:
+        fetch_state.append_log(run_id, line)
+        log_event(line)
+
+    try:
+        enqueue_country_company_jobs(
+            country_key,
+            fetch_run_id=run_id,
+            user_id=user_id,
+            ats_type=ats_type,
+        )
+
+        async def _run():
+            nonlocal new_jobs_total, companies_done, cancelled
+            async with make_fetch_client(concurrency=concurrency) as client:
+                coro = drain_company_fetch_jobs(
+                    client,
+                    concurrency=concurrency,
+                    country=country_key,
+                    fetch_run_id=run_id,
+                    on_progress=on_progress,
+                    on_log=append_log,
+                    on_company_result=on_company_result,
+                )
+                if timeout is None:
+                    return await coro
+                return await asyncio.wait_for(coro, timeout=timeout)
+
+        new_jobs_total, companies_done, cancelled, _countries = asyncio.run(_run())
+        exit_code = 130 if cancelled else 0
+    except TimeoutError:
+        timed_out = True
+        limit = timeout if timeout is not None else country_timeout_seconds()
+        append_log(f"Error: timed out after {limit}s")
+        exit_code = 1
+    except Exception as exc:
+        append_log(f"Error: {exc}")
+        exit_code = 1
+    finally:
+        _complete_run(
+            run_id,
+            exit_code=exit_code,
+            cancelled=cancelled,
+            new_jobs=new_jobs_total,
+            companies_done=companies_done,
+            done_line=f"Done {companies_done} companies, {new_jobs_total} new jobs",
+        )
+    if timed_out:
+        limit = timeout if timeout is not None else country_timeout_seconds()
+        raise TimeoutError(f"Country fetch timed out after {limit}s")
+    if exit_code == 0 and companies_done > 0:
+        enqueue_country_opportunity_refresh(country_key)
+
+
+def recover_pending_fetch_jobs_blocking(*, concurrency: int = 1) -> dict:
+    empty = {
+        "new_jobs": 0,
+        "done": 0,
+        "cancelled": False,
+        "countries": [],
+    }
+    fetch_repo.reclaim_stale_claimed_fetch_jobs(stale_seconds=fetch_job_stale_seconds())
+    if fetch_repo.count_open_fetch_jobs() == 0:
+        return empty
+
+    async def _run():
+        async with make_fetch_client(concurrency=concurrency) as client:
+            return await drain_company_fetch_jobs(client, concurrency=concurrency)
+
+    new_jobs_total, companies_done, cancelled, countries = asyncio.run(_run())
+    if companies_done > 0:
+        for country in sorted(countries):
+            enqueue_country_opportunity_refresh(country)
+    return {
+        "new_jobs": new_jobs_total,
+        "done": companies_done,
+        "cancelled": cancelled,
+        "countries": sorted(countries),
+    }
 
 
 def _begin_country_run(
@@ -268,9 +371,10 @@ def run_country_fetch_blocking(
         concurrency=concurrency,
     )
     limit = country_timeout_seconds() if timeout is None else timeout
-    _country_fetch_worker(
+    _queued_country_fetch_worker(
         country_key,
         run_id=run_id,
+        user_id=user_id,
         ats_type=None,
         concurrency=workers,
         timeout=limit,
