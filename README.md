@@ -248,6 +248,7 @@ panel, fetch worker, and Caddy, with Cloudflare in front. Guide:
 [ec2-panel.md](docs/operations/ec2-panel.md).
 
 ```bash
+./scripts/ec2_app_deploy.sh check       # plan only — no rsync, no docker writes
 ./scripts/ec2_app_deploy.sh deploy      # frontend build, rsync, images, restart
 ./scripts/ec2_app_deploy.sh sync        # UI / static only
 ./scripts/ec2_app_deploy.sh status

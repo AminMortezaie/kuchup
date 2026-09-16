@@ -1,0 +1,22 @@
+# Foundation only — does NOT SSH to EC2 and does NOT run on git push.
+# Enable a real deploy job later behind a GitHub Environment approval gate.
+# See docs/operations/ec2-deploy.md.
+name: EC2 deploy (disabled)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remind that live deploy is not wired
+        run: |
+          echo "This workflow does not SSH to EC2, does not use deploy secrets,"
+          echo "and is not triggered on push. See docs/operations/ec2-deploy.md."
+      - name: Deploy plan (local)
+        run: ./scripts/ec2_app_deploy.sh check --local

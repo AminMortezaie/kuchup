@@ -29,3 +29,15 @@ jobs:
 
       - name: Tests and coverage
         run: ./scripts/run_ci_tests.sh
+
+  deploy-sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shellcheck EC2 deploy scripts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck -x scripts/ec2_app_deploy.sh scripts/ec2_redis.sh
+      - name: Deploy check (local, no SSH)
+        run: ./scripts/ec2_app_deploy.sh check --local
