@@ -103,10 +103,6 @@ def fetch_lever_job_detail(url: str) -> JobFetchResult:
         return _empty_fetch()
 
 
-def fetch_lever_job_text(url: str) -> str:
-    return fetch_lever_job_detail(url).text
-
-
 def fetch_recruitee_job_detail(url: str) -> JobFetchResult:
     match = re.search(r"https?://([^/]+)/o/([a-z0-9-]+)", url, re.I)
     if not match:
@@ -198,10 +194,6 @@ def fetch_pinpointhq_job_detail(url: str) -> JobFetchResult:
     return JobFetchResult(text, location)
 
 
-def fetch_pinpointhq_job_text(url: str) -> str:
-    return fetch_pinpointhq_job_detail(url).text
-
-
 def fetch_workday_job_detail(url: str) -> JobFetchResult:
     api = workday_job_detail_api_url(url)
     if not api:
@@ -224,17 +216,9 @@ def fetch_workday_job_detail(url: str) -> JobFetchResult:
         return _empty_fetch()
 
 
-def fetch_workday_job_text(url: str) -> str:
-    return fetch_workday_job_detail(url).text
-
-
 def fetch_workable_job_detail(url: str) -> JobFetchResult:
     text, location = workable_job_detail_fetch(url)
     return JobFetchResult(text, location)
-
-
-def fetch_workable_job_text(url: str) -> str:
-    return fetch_workable_job_detail(url).text
 
 
 def fetch_join_job_detail(url: str) -> JobFetchResult:
@@ -242,17 +226,9 @@ def fetch_join_job_detail(url: str) -> JobFetchResult:
     return JobFetchResult(text, location)
 
 
-def fetch_join_job_text(url: str) -> str:
-    return fetch_join_job_detail(url).text
-
-
 def fetch_personio_job_detail(url: str) -> JobFetchResult:
     text, location = personio_job_detail_fetch(url)
     return JobFetchResult(text, location)
-
-
-def fetch_personio_job_text(url: str) -> str:
-    return fetch_personio_job_detail(url).text
 
 
 _JOB_DETAIL_FETCHERS = {
