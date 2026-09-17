@@ -474,6 +474,7 @@ def test_slug_collision_canonical_noindex_and_sitemap_keeps_one(v2_client, seede
     assert f'rel="canonical" href="https://kuchup.com/jobs/{primary}"' in alt_body
     assert "application/ld+json" not in alt_body
 
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
     assert f"https://kuchup.com/jobs/{primary}</loc>" in sitemap
     assert f"https://kuchup.com/jobs/{alternate}</loc>" not in sitemap
     hub = v2_client.get("/jobs").get_data(as_text=True)
