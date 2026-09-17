@@ -1,6 +1,6 @@
 # Panel statistics
 
-**Last updated:** 2026-09-16
+**Last updated:** 2026-09-17
 
 How admin/user stats are computed. Implementation: `panel/stats.py`, `relocation_jobs/static/js/stats-dashboard.js`.
 
@@ -17,11 +17,31 @@ Home pane only: worker status and `user_count`. Other panes hit their own routes
 | Home | `GET /api/admin/dashboard` then async `GET /api/admin/panel-stats` |
 | Catalog / Fetch problems | `GET /api/admin/catalog` |
 | Users | `GET /api/admin/users` (+ credit-orders / credits/audit) |
+| Activation | `GET /api/admin/activation-metrics` |
 | New jobs | `GET /api/admin/recent-jobs` |
 | Fetch runs | `GET /api/admin/fetch-runs` |
 | Config | `GET /api/admin/config` |
 
 `panel_stats` is `null` on the home payload — load via `GET /api/admin/panel-stats`.
+
+### Activation (`GET /api/admin/activation-metrics`)
+
+Read-time funnel for Amin. SQL lives in `admin/repo.py`; the pane is `static/js/admin.js` `#activation`. No new tables and no extra roles.
+
+| Metric | Source | Real? |
+|--------|--------|-------|
+| **Total users** | `users` row count | Yes |
+| **Signups this week / weekly cohorts** | `users.created_at` grouped by ISO week (Monday UTC) | Yes |
+| **free / full / grandfathered** | `users.plan` (`relocation_jobs/users/entitlements.py`) | Yes |
+| **Job track** | Distinct users with a `job_tracking` row | Yes |
+| **Workspace** | Distinct users with an `mcp_applications` row | Yes — artifacts only; page views of `/company/…` are not stored |
+| **MCP** | `users.mcp_quota_used > 0` or an MCP OAuth/API token | Yes — read-only MCP with no quota/token is not stored |
+| **Credit purchase** | Distinct users with a **paid** `credit_orders` row, `kind=credits` | Yes |
+| **Full purchase** | Distinct users with a **paid** `credit_orders` row, `kind=full_access` | Yes |
+| **Subsequent login** | `users.last_login_at` after `users.created_at` | Yes — Google OAuth callback stamps `last_login_at` on every successful login (including first). First login uses the same timestamp as `created_at`, so it does not count as a return. |
+| **Latest activity** | Newest timestamp per stored signal above | Yes where the signal exists |
+
+Admin plan grants are not purchases. Pending checkout orders are not counted.
 
 ### Your pipeline (`panel_stats`)
 

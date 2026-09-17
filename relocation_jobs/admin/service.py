@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 
+from relocation_jobs.admin import repo as admin_repo
 from relocation_jobs.users.applied import _timezone, local_day_utc_bounds
+from relocation_jobs.users.entitlements import PLANS
+from relocation_jobs.payments.types import ORDER_KIND_CREDITS, ORDER_KIND_FULL_ACCESS
 
 from relocation_jobs.core.ats_constants import (
     DEFAULT_CONCURRENCY,
@@ -208,4 +211,200 @@ def get_admin_dashboard(
             company_fetch_enabled=company_fetch_enabled,
         ),
         "panel_stats": None,
+    }
+
+
+_WORKSPACE_NOTE = (
+    "Users with at least one mcp_applications row (company-workspace CV/cover-letter artifacts). "
+    "Opening /company/… without saving an artifact is not stored."
+)
+_MCP_NOTE = (
+    "Users with MCP quota consumed (users.mcp_quota_used > 0) or a stored MCP OAuth/API token. "
+    "Read-only MCP use with no quota charge and no token is not stored."
+)
+_COHORT_WEEKS = 12
+_PLAN_ORDER = ("free", "full", "grandfathered")
+
+
+def _parse_ts(value: str | None) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        try:
+            parsed = datetime.fromisoformat(raw[:10])
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _iso_week(day: date) -> tuple[str, str]:
+    iso = day.isocalendar()
+    monday = day - timedelta(days=day.weekday())
+    return monday.isoformat(), f"{iso.year}-W{iso.week:02d}"
+
+
+def _signup_cohorts(users: list[dict], *, today: date) -> tuple[int, list[dict]]:
+    counts: dict[str, int] = {}
+    labels: dict[str, str] = {}
+    this_monday = _iso_week(today)[0]
+    for user in users:
+        parsed = _parse_ts(user.get("created_at"))
+        if parsed is None:
+            continue
+        week_start, iso_week = _iso_week(parsed.date())
+        counts[week_start] = counts.get(week_start, 0) + 1
+        labels[week_start] = iso_week
+    window = [
+        (today - timedelta(days=today.weekday()) - timedelta(weeks=offset)).isoformat()
+        for offset in range(_COHORT_WEEKS)
+    ]
+    keys = sorted(set(counts) | set(window), reverse=True)
+    cohorts = [
+        {
+            "week_start": key,
+            "iso_week": labels.get(key) or _iso_week(date.fromisoformat(key))[1],
+            "signups": counts.get(key, 0),
+        }
+        for key in keys
+    ]
+    return counts.get(this_monday, 0), cohorts
+
+
+def _plan_counts(users: list[dict]) -> dict[str, int]:
+    by_plan = {plan: 0 for plan in _PLAN_ORDER}
+    for user in users:
+        plan = (user.get("plan") or "free").strip().lower() or "free"
+        if plan not in PLANS:
+            plan = "free"
+        by_plan[plan] = by_plan.get(plan, 0) + 1
+    return by_plan
+
+
+def _step(*, key: str, label: str, count: int | None, available: bool, definition: str) -> dict:
+    return {
+        "key": key,
+        "label": label,
+        "available": available,
+        "count": count,
+        "definition": definition,
+    }
+
+
+def _event(*, key: str, label: str, row: dict | None, available: bool = True, gap: str = "") -> dict:
+    payload = {
+        "key": key,
+        "label": label,
+        "available": available,
+        "at": None,
+        "user_id": None,
+        "username": None,
+        "gap": gap,
+    }
+    if not available or not row:
+        return payload
+    payload["at"] = row.get("at") or None
+    payload["user_id"] = row.get("user_id")
+    payload["username"] = row.get("username")
+    return payload
+
+
+def _latest_mcp_event() -> dict | None:
+    latest = None
+    latest_ts = None
+    for row in admin_repo.mcp_activity_rows():
+        parsed = _parse_ts(row.get("at"))
+        if parsed is None:
+            continue
+        if latest_ts is None or parsed > latest_ts:
+            latest = row
+            latest_ts = parsed
+    return latest
+
+
+def get_activation_metrics() -> dict:
+    users = admin_repo.list_users_for_activation()
+    today = datetime.now(timezone.utc).date()
+    signups_this_week, cohorts = _signup_cohorts(users, today=today)
+    this_monday, this_label = _iso_week(today)
+    return {
+        "total_users": len(users),
+        "signups_this_week": signups_this_week,
+        "current_week": {"week_start": this_monday, "iso_week": this_label},
+        "plans": _plan_counts(users),
+        "signup_cohorts": cohorts,
+        "activation": [
+            _step(
+                key="subsequent_login",
+                label="Subsequent login",
+                count=admin_repo.count_users_with_subsequent_login(),
+                available=True,
+                definition=(
+                    "Users whose last_login_at is after created_at "
+                    "(they signed in again after signup)."
+                ),
+            ),
+            _step(
+                key="job_track",
+                label="Job track",
+                count=admin_repo.count_users_with_job_track(),
+                available=True,
+                definition="Users with at least one job_tracking row.",
+            ),
+            _step(
+                key="workspace",
+                label="Workspace",
+                count=admin_repo.count_users_with_workspace(),
+                available=True,
+                definition=_WORKSPACE_NOTE,
+            ),
+            _step(
+                key="mcp",
+                label="MCP",
+                count=admin_repo.count_users_with_mcp(),
+                available=True,
+                definition=_MCP_NOTE,
+            ),
+            _step(
+                key="credit_purchase",
+                label="Credit purchase",
+                count=admin_repo.count_users_with_paid_order(ORDER_KIND_CREDITS),
+                available=True,
+                definition="Users with at least one paid credit_orders row (kind=credits).",
+            ),
+            _step(
+                key="full_purchase",
+                label="Full purchase",
+                count=admin_repo.count_users_with_paid_order(ORDER_KIND_FULL_ACCESS),
+                available=True,
+                definition="Users with at least one paid credit_orders row (kind=full_access).",
+            ),
+        ],
+        "latest_activity": [
+            _event(key="signup", label="Latest signup", row=admin_repo.latest_signup()),
+            _event(
+                key="subsequent_login",
+                label="Latest subsequent login",
+                row=admin_repo.latest_subsequent_login(),
+            ),
+            _event(key="job_track", label="Latest job track", row=admin_repo.latest_job_track()),
+            _event(key="workspace", label="Latest workspace artifact", row=admin_repo.latest_workspace()),
+            _event(key="mcp", label="Latest MCP signal", row=_latest_mcp_event()),
+            _event(
+                key="credit_purchase",
+                label="Latest credit purchase",
+                row=admin_repo.latest_paid_order(ORDER_KIND_CREDITS),
+            ),
+            _event(
+                key="full_purchase",
+                label="Latest Full purchase",
+                row=admin_repo.latest_paid_order(ORDER_KIND_FULL_ACCESS),
+            ),
+        ],
     }

@@ -35,6 +35,7 @@ function showPaneSkeleton(pane) {
     catalog: "adminCatalog",
     problems: "adminFetchProblems",
     users: "adminUsers",
+    activation: "adminActivation",
     jobs: "adminNewJobs",
     runs: "adminFetchRuns",
     config: "adminConfig",
@@ -483,6 +484,110 @@ function renderNewJobs(data) {
   `;
 }
 
+function metricValue(step) {
+  if (!step?.available) return "—";
+  const count = Number(step.count ?? 0);
+  return Number.isFinite(count) ? String(count) : "—";
+}
+
+function metricPct(count, total) {
+  if (!total) return "0%";
+  return `${Math.round((Number(count) / total) * 100)}%`;
+}
+
+function renderActivation(data) {
+  const total = Number(data.total_users || 0);
+  const plans = data.plans || {};
+  const currentWeek = data.current_week || {};
+  const steps = data.activation || [];
+  const activity = data.latest_activity || [];
+  const cohorts = data.signup_cohorts || [];
+
+  const planCards = ["free", "full", "grandfathered"].map((plan) => `
+    <div class="stat-card">
+      <div class="value">${plans[plan] ?? 0}</div>
+      <div class="label">${plan}</div>
+    </div>
+  `).join("");
+
+  const stepCards = steps.map((step) => `
+    <div class="stat-card${step.available ? "" : " stat-card--muted"}">
+      <div class="value">${metricValue(step)}</div>
+      <div class="label">${escapeHtml(step.label)}${step.available && total ? ` · ${metricPct(step.count, total)}` : ""}</div>
+    </div>
+  `).join("");
+
+  const gapNotes = steps
+    .filter((step) => !step.available || (step.definition && String(step.definition).includes("not stored")))
+    .map((step) => `<li><strong>${escapeHtml(step.label)}:</strong> ${escapeHtml(step.definition || "")}</li>`)
+    .join("");
+
+  const cohortRows = cohorts.map((row) => `
+    <tr>
+      ${adminCell(escapeHtml(row.iso_week || "—"), "Week")}
+      ${adminCell(escapeHtml(row.week_start || "—"), "Week start")}
+      ${adminCell(row.signups ?? 0, "Signups")}
+    </tr>
+  `).join("");
+
+  const activityRows = activity.map((row) => {
+    const when = row.available ? formatTs(row.at) : "—";
+    const who = row.available && row.username
+      ? escapeHtml(row.username)
+      : (row.available ? "—" : "not stored");
+    return `
+      <tr>
+        ${adminCell(escapeHtml(row.label), "Signal")}
+        ${adminCell(when, "Latest")}
+        ${adminCell(who, "User")}
+      </tr>
+    `;
+  }).join("");
+
+  $("adminActivation").innerHTML = `
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Users and signups</h2>
+      <p class="hint">Live counts from Postgres. This week is ISO ${escapeHtml(currentWeek.iso_week || "—")} (Monday ${escapeHtml(currentWeek.week_start || "—")}, UTC).</p>
+      <div class="admin-stats-grid">
+        <div class="stat-card">
+          <div class="value stat-card--accent">${total}</div>
+          <div class="label">Total users</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${data.signups_this_week ?? 0}</div>
+          <div class="label">Signups this week</div>
+        </div>
+        ${planCards}
+      </div>
+    </section>
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Activation funnel</h2>
+      <p class="hint">Users who have done each step at least once. Percentages are of total users. Gaps show as — rather than a fake zero.</p>
+      <div class="admin-stats-grid">${stepCards}</div>
+      ${gapNotes ? `<ul class="hint admin-footnote" style="margin-top:0.85rem">${gapNotes}</ul>` : ""}
+    </section>
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Weekly signup cohorts</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--responsive">
+          <thead><tr><th>Week</th><th>Week start</th><th>Signups</th></tr></thead>
+          <tbody>${cohortRows || '<tr><td colspan="3">No signups yet</td></tr>'}</tbody>
+        </table>
+      </div>
+    </section>
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Latest activity</h2>
+      <p class="hint">Newest timestamp for each stored signal.</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--responsive">
+          <thead><tr><th>Signal</th><th>Latest</th><th>User</th></tr></thead>
+          <tbody>${activityRows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderConfig(data) {
   const redisLabel = data.countries_store === "redis" && data.redis_ping
     ? "redis (connected)"
@@ -535,6 +640,10 @@ async function loadRunsPane() {
   renderFetchRuns(await apiGet("/api/admin/fetch-runs?limit=15"));
 }
 
+async function loadActivationPane() {
+  renderActivation(await apiGet("/api/admin/activation-metrics"));
+}
+
 async function loadConfigPane() {
   renderConfig(await apiGet("/api/admin/config"));
 }
@@ -544,6 +653,7 @@ const PANE_LOADERS = {
   catalog: loadCatalogPane,
   problems: loadProblemsPane,
   users: loadUsersPane,
+  activation: loadActivationPane,
   jobs: loadJobsPane,
   runs: loadRunsPane,
   config: loadConfigPane,

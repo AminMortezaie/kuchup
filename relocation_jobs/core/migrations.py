@@ -107,6 +107,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "users_admin_column_v1", _ensure_users_admin_column)
     run_migration_once(conn, "users_google_auth_v1", _ensure_users_google_auth)
     run_migration_once(conn, "users_entitlements_v1", _ensure_users_entitlements)
+    run_migration_once(conn, "users_last_login_at_v1", _ensure_users_last_login_at)
     run_migration_once(conn, "user_opportunities_v1", _ensure_user_opportunities_tables)
     run_migration_once(conn, "user_preferences_confirmed_v1", _ensure_preferences_confirmed)
     run_migration_once(conn, "user_opportunities_refreshed_at_v1", _ensure_opportunities_refreshed_at)
@@ -240,6 +241,10 @@ def _ensure_users_entitlements(conn) -> None:
     conn.execute(
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS mcp_quota_used INTEGER NOT NULL DEFAULT 0"
     )
+
+
+def _ensure_users_last_login_at(conn) -> None:
+    conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TEXT")
 
 
 def _ensure_user_opportunities_tables(conn) -> None:
