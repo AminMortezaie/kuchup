@@ -34,6 +34,14 @@ def _set_created(user_id: int, created_at: str) -> None:
         )
 
 
+def _set_last_login(user_id: int, last_login_at: str) -> None:
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET last_login_at = %s WHERE id = %s",
+            (last_login_at, user_id),
+        )
+
+
 def _step(payload: dict, key: str) -> dict:
     return next(row for row in payload["activation"] if row["key"] == key)
 
@@ -60,7 +68,7 @@ def test_activation_metrics_requires_admin(client, db):
     assert resp.status_code == 403
 
 
-def test_activation_metrics_counts_real_signals_and_login_gap(v2_auth_client, db):
+def test_activation_metrics_counts_real_signals_and_subsequent_login(v2_auth_client, db):
     _reset_admin_quota()
     tracker = _user("act-track")
     workspace = _user("act-workspace")
@@ -71,7 +79,10 @@ def test_activation_metrics_counts_real_signals_and_login_gap(v2_auth_client, db
     grandpa = _user("act-grandpa", plan="grandfathered")
 
     last_week = (datetime.now(timezone.utc) - timedelta(days=8)).replace(microsecond=0)
+    returned_at = datetime.now(timezone.utc).replace(microsecond=0)
     _set_created(int(tracker["id"]), last_week.isoformat())
+    _set_last_login(int(tracker["id"]), returned_at.isoformat())
+    _set_last_login(int(grandpa["id"]), grandpa["created_at"])
 
     positions_repo.set_looking_to_apply(
         int(tracker["id"]),
@@ -144,9 +155,9 @@ def test_activation_metrics_counts_real_signals_and_login_gap(v2_auth_client, db
     assert payload["plans"] == {"free": 5, "full": 2, "grandfathered": 1}
 
     login = _step(payload, "subsequent_login")
-    assert login["available"] is False
-    assert login["count"] is None
-    assert "login-events" in login["definition"]
+    assert login["available"] is True
+    assert login["count"] == 1
+    assert "last_login_at" in login["definition"]
 
     assert _step(payload, "job_track")["available"] is True
     assert _step(payload, "job_track")["count"] == 1
@@ -160,7 +171,9 @@ def test_activation_metrics_counts_real_signals_and_login_gap(v2_auth_client, db
     assert by_week[last_week_key] == 1
     assert payload["signups_this_week"] == payload["total_users"] - 1
 
-    assert _activity(payload, "subsequent_login")["available"] is False
+    assert _activity(payload, "subsequent_login")["available"] is True
+    assert _activity(payload, "subsequent_login")["username"] == "act-track"
+    assert _activity(payload, "subsequent_login")["at"]
     assert _activity(payload, "job_track")["username"] == "act-track"
     assert _activity(payload, "workspace")["username"] == "act-workspace"
     assert _activity(payload, "mcp")["username"] == "act-mcp"

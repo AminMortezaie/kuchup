@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
+from relocation_jobs.admin.service import get_activation_metrics
 from relocation_jobs.core.auth import login_or_register_google
+from relocation_jobs.core.db import db_transaction
 from relocation_jobs.core.google_oauth import decode_oauth_state, encode_oauth_state
 from relocation_jobs.users.repo import get_user_by_email, get_user_by_google_sub, user_count
 
@@ -43,6 +47,46 @@ def test_login_or_register_google_creates_and_promotes_admin(db, monkeypatch):
     )
     assert again["id"] == user["id"]
     assert get_user_by_google_sub("sub-owner-1")["id"] == user["id"]
+    assert user["last_login_at"] == user["created_at"]
+
+
+def test_google_login_sets_last_login_at_on_return(db, monkeypatch):
+    monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
+    monkeypatch.setenv("PANEL_ADMIN_EMAILS", "")
+    monkeypatch.setattr(
+        "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "user_id": uid},
+    )
+    user = login_or_register_google(
+        {
+            "google_sub": "sub-return-1",
+            "email": "returner@example.com",
+            "display_name": "Returner",
+        }
+    )
+    assert user["last_login_at"]
+    assert user["last_login_at"] == user["created_at"]
+    past = (datetime.now(timezone.utc) - timedelta(days=2)).replace(microsecond=0).isoformat()
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET created_at = %s, last_login_at = %s WHERE id = %s",
+            (past, past, user["id"]),
+        )
+    again = login_or_register_google(
+        {
+            "google_sub": "sub-return-1",
+            "email": "returner@example.com",
+            "display_name": "Returner",
+        }
+    )
+    assert again["last_login_at"] > past
+    stored = get_user_by_google_sub("sub-return-1")
+    assert stored["last_login_at"] == again["last_login_at"]
+    login = next(
+        step for step in get_activation_metrics()["activation"] if step["key"] == "subsequent_login"
+    )
+    assert login["available"] is True
+    assert login["count"] == 1
 
 
 def test_login_or_register_google_respects_allow_register(db, monkeypatch):
@@ -71,6 +115,7 @@ def test_auth_disabled_auto_logins_admin_on_localhost(client, db, monkeypatch):
     assert body["authenticated"] is True
     assert body["user"]["email"] == "admin@example.com"
     assert body["user"]["is_admin"] is True
+    assert not get_user_by_email("admin@example.com").get("last_login_at")
 
 
 def test_auth_disabled_ignored_off_localhost(client, db, monkeypatch):
@@ -114,3 +159,6 @@ def test_google_callback_sets_session(client, db, monkeypatch):
     assert body["user"]["email"] == "callback@example.com"
     assert body["user"]["display_name"] == "Callback User"
     assert body["user"]["is_admin"] is False
+    stored = get_user_by_google_sub("sub-callback")
+    assert stored["last_login_at"]
+    assert stored["last_login_at"] == stored["created_at"]

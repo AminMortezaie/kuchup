@@ -214,10 +214,6 @@ def get_admin_dashboard(
     }
 
 
-_LOGIN_GAP = (
-    "No last_login or login-events table exists. Flask sessions are cookie-only, "
-    "and login only enqueues opportunity refresh — that timestamp is not unique to a return visit."
-)
 _WORKSPACE_NOTE = (
     "Users with at least one mcp_applications row (company-workspace CV/cover-letter artifacts). "
     "Opening /company/… without saving an artifact is not stored."
@@ -347,9 +343,12 @@ def get_activation_metrics() -> dict:
             _step(
                 key="subsequent_login",
                 label="Subsequent login",
-                count=None,
-                available=False,
-                definition=_LOGIN_GAP,
+                count=admin_repo.count_users_with_subsequent_login(),
+                available=True,
+                definition=(
+                    "Users whose last_login_at is after created_at "
+                    "(they signed in again after signup)."
+                ),
             ),
             _step(
                 key="job_track",
@@ -392,9 +391,7 @@ def get_activation_metrics() -> dict:
             _event(
                 key="subsequent_login",
                 label="Latest subsequent login",
-                row=None,
-                available=False,
-                gap=_LOGIN_GAP,
+                row=admin_repo.latest_subsequent_login(),
             ),
             _event(key="job_track", label="Latest job track", row=admin_repo.latest_job_track()),
             _event(key="workspace", label="Latest workspace artifact", row=admin_repo.latest_workspace()),

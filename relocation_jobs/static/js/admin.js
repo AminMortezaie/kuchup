@@ -577,7 +577,7 @@ function renderActivation(data) {
     </section>
     <section class="admin-panel">
       <h2 class="admin-panel-title">Latest activity</h2>
-      <p class="hint">Newest timestamp for each stored signal. Subsequent login has no timestamp in the schema.</p>
+      <p class="hint">Newest timestamp for each stored signal.</p>
       <div class="admin-table-wrap">
         <table class="admin-table admin-table--responsive">
           <thead><tr><th>Signal</th><th>Latest</th><th>User</th></tr></thead>

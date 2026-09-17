@@ -55,6 +55,7 @@ def test_admin_js_loads_dashboard_once():
     assert "/api/admin/catalog" in admin_js
     assert "/api/admin/users" in admin_js
     assert "/api/admin/activation-metrics" in admin_js
+    assert "Subsequent login has no timestamp" not in admin_js
     assert "/api/admin/fetch-runs" in admin_js
     assert "/api/admin/recent-jobs" in admin_js
     assert "/api/admin/config" in admin_js

@@ -38,8 +38,8 @@ Read-time funnel for Amin. SQL lives in `admin/repo.py`; the pane is `static/js/
 | **MCP** | `users.mcp_quota_used > 0` or an MCP OAuth/API token | Yes — read-only MCP with no quota/token is not stored |
 | **Credit purchase** | Distinct users with a **paid** `credit_orders` row, `kind=credits` | Yes |
 | **Full purchase** | Distinct users with a **paid** `credit_orders` row, `kind=full_access` | Yes |
-| **Subsequent login** | — | **Gap.** No `last_login` / login-events table; Flask sessions are cookie-only |
-| **Latest activity** | Newest timestamp per stored signal above | Yes where the signal exists; subsequent login shows the gap |
+| **Subsequent login** | `users.last_login_at` after `users.created_at` | Yes — Google OAuth callback stamps `last_login_at` on every successful login (including first). First login uses the same timestamp as `created_at`, so it does not count as a return. |
+| **Latest activity** | Newest timestamp per stored signal above | Yes where the signal exists |
 
 Admin plan grants are not purchases. Pending checkout orders are not counted.
 

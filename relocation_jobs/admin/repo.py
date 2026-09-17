@@ -77,12 +77,37 @@ def count_users_with_paid_order(kind: str) -> int:
     )
 
 
+def count_users_with_subsequent_login() -> int:
+    return _count(
+        """
+        SELECT COUNT(*) AS n FROM users
+        WHERE last_login_at IS NOT NULL
+          AND TRIM(last_login_at) <> ''
+          AND last_login_at > created_at
+        """
+    )
+
+
 def latest_signup() -> dict | None:
     return _one(
         """
         SELECT id AS user_id, username, created_at AS at
         FROM users
         ORDER BY created_at DESC, id DESC
+        LIMIT 1
+        """
+    )
+
+
+def latest_subsequent_login() -> dict | None:
+    return _one(
+        """
+        SELECT id AS user_id, username, last_login_at AS at
+        FROM users
+        WHERE last_login_at IS NOT NULL
+          AND TRIM(last_login_at) <> ''
+          AND last_login_at > created_at
+        ORDER BY last_login_at DESC, id DESC
         LIMIT 1
         """
     )

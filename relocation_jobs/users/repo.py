@@ -7,6 +7,7 @@ from relocation_jobs.core.migrations import (
     _ensure_users_admin_column,
     _ensure_users_entitlements,
     _ensure_users_google_auth,
+    _ensure_users_last_login_at,
 )
 
 
@@ -243,6 +244,7 @@ def create_google_user(
         "display_name": display_name.strip(),
         "plan": plan_value,
         "created_at": now,
+        "last_login_at": None,
         "is_admin": bool(is_admin),
     }
 
@@ -277,7 +279,7 @@ def get_user_by_username(username: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
+            SELECT id, username, email, google_sub, display_name, plan, created_at, last_login_at, is_admin
             FROM users WHERE LOWER(username) = LOWER(%s)
             """,
             (username.strip(),),
@@ -294,7 +296,7 @@ def get_user_by_google_sub(google_sub: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
+            SELECT id, username, email, google_sub, display_name, plan, created_at, last_login_at, is_admin
             FROM users WHERE google_sub = %s
             """,
             (google_sub.strip(),),
@@ -311,7 +313,7 @@ def get_user_by_email(email: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, username, email, google_sub, display_name, plan, created_at, is_admin
+            SELECT id, username, email, google_sub, display_name, plan, created_at, last_login_at, is_admin
             FROM users WHERE LOWER(email) = LOWER(%s)
             """,
             (email.strip(),),
@@ -354,6 +356,15 @@ def update_user_mcp_quota(user_id: int, *, quota_date: str, quota_used: int) -> 
         )
 
 
+def set_user_last_login_at(user_id: int, at: str | None = None) -> None:
+    stamp = (at or "").strip() or _utc_now()
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET last_login_at = %s WHERE id = %s",
+            (stamp, user_id),
+        )
+
+
 def touch_google_profile(
     user_id: int,
     *,
@@ -391,6 +402,7 @@ def login_or_register_google_user(
                 display_name=display_name or existing.get("display_name") or "",
             )
             existing = get_user_by_id(int(existing["id"]))
+    is_new = False
     if existing is None:
         if not allow_new:
             raise ValueError("Registration is disabled")
@@ -400,10 +412,14 @@ def login_or_register_google_user(
             display_name=display_name,
             is_admin=is_admin,
         )
+        is_new = True
     elif is_admin and not existing.get("is_admin"):
         set_user_admin(int(existing["id"]), True)
         existing = get_user_by_id(int(existing["id"]))
     assert existing is not None
+    at = existing.get("created_at") if is_new else _utc_now()
+    set_user_last_login_at(int(existing["id"]), at=at)
+    existing["last_login_at"] = at
     return existing
 
 
@@ -429,23 +445,24 @@ def get_user_by_id(user_id: int) -> dict | None:
             row = conn.execute(
                 """
                 SELECT id, username, email, google_sub, display_name, plan,
-                       mcp_quota_date, mcp_quota_used, created_at, is_admin
+                       mcp_quota_date, mcp_quota_used, created_at, last_login_at, is_admin
                 FROM users WHERE id = %s
                 """,
                 (user_id,),
             ).fetchone()
         except Exception as exc:
             message = str(exc).lower()
-            if "is_admin" not in message and "plan" not in message and "email" not in message and "mcp_quota" not in message:
+            if "is_admin" not in message and "plan" not in message and "email" not in message and "mcp_quota" not in message and "last_login" not in message:
                 raise
             with db_transaction() as migrate_conn:
                 _ensure_users_admin_column(migrate_conn)
                 _ensure_users_google_auth(migrate_conn)
                 _ensure_users_entitlements(migrate_conn)
+                _ensure_users_last_login_at(migrate_conn)
             row = conn.execute(
                 """
                 SELECT id, username, email, google_sub, display_name, plan,
-                       mcp_quota_date, mcp_quota_used, created_at, is_admin
+                       mcp_quota_date, mcp_quota_used, created_at, last_login_at, is_admin
                 FROM users WHERE id = %s
                 """,
                 (user_id,),
