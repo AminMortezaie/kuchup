@@ -147,6 +147,7 @@ class CompanyPositionApplication(BaseSchema):
     cover_letter_pdf_filename: str = ""
     has_description: bool = False
     listing_unavailable: bool = False
+    closed_at: str = ""
 
 
 class CompanyApplicationsResponse(BaseSchema):

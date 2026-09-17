@@ -127,6 +127,33 @@ def test_list_company_applications_keeps_closed_looking_to_apply(
     payload = service.list_company_applications(COUNTRY, COMPANY, user_id=1)
     urls = {p.url for p in payload.positions}
     assert closed["url"] in urls
+    match = next(p for p in payload.positions if p.url == closed["url"])
+    assert match.closed_at == closed["closed_at"]
+    assert match.looking_to_apply is True
+    assert match.rejected is False
+
+
+def test_list_company_applications_keeps_rejected_roles(
+    v2_auth_client, seeded_catalog_v2, mcp_documents,
+):
+    from relocation_jobs.catalog.repo import get_company
+
+    company = get_company("uk", COMPANY)
+    url = company["matching_jobs"][0]["url"]
+    v2_auth_client.post(
+        "/api/jobs/rejected",
+        json={
+            "country": COUNTRY,
+            "company": COMPANY,
+            "url": url,
+            "rejected": True,
+        },
+    )
+
+    payload = service.list_company_applications(COUNTRY, COMPANY, user_id=1)
+    match = next(p for p in payload.positions if p.url == url)
+    assert match.rejected is True
+    assert match.closed_at == ""
 
 
 def test_list_company_applications_resolves_slug(
