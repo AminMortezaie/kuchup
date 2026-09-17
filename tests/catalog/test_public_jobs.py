@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import json
+from datetime import date, timedelta
 
 from relocation_jobs.catalog.repo import get_company, get_public_job_by_slug, sync_company_board_to_catalog
-from relocation_jobs.catalog.service import job_posting_json_ld
+from relocation_jobs.catalog.service import (
+    collision_slug_prefix,
+    job_claims_visa_sponsorship,
+    job_posting_json_ld,
+    public_sitemap_jobs,
+    valid_through_date,
+)
 from relocation_jobs.core.slug import public_job_slug_base
 from tests.helpers.seed import merge_and_save_jobs
 
@@ -108,6 +115,85 @@ def test_job_posting_json_ld_uses_kuchup_hiring_org(seeded_catalog_v2):
     assert payload["applyUrl"] == payload["url"]
     assert "Kuchup" in payload["description"]
     json.dumps(payload)
+
+
+def test_valid_through_rolls_forward_while_open():
+    posted = "2026-06-07"
+    through = valid_through_date(posted, "")
+    assert through >= date.today().isoformat()
+    assert through == (date.today() + timedelta(days=30)).isoformat()
+    closed = valid_through_date(posted, "2026-07-01")
+    assert closed == "2026-07-01"
+
+
+def test_json_ld_omits_visa_suffix_when_jd_denies_sponsorship(seeded_catalog_v2):
+    job = _visa_job(seeded_catalog_v2)
+    found = get_public_job_by_slug(job["public_slug"])
+    assert found is not None
+    found = {
+        **found,
+        "visa_sponsorship": True,
+        "description_text": (
+            "Kindly note that relocation or visa support is not offered for this role."
+        ),
+    }
+    assert job_claims_visa_sponsorship(found) is False
+    payload = job_posting_json_ld(found)
+    assert payload["title"] == f"{found['title']} at Acme Backend Ltd"
+    assert "Visa Sponsorship" not in payload["title"]
+
+
+def test_sitemap_keeps_one_url_for_slug_collision(seeded_catalog_v2):
+    del seeded_catalog_v2
+    company = get_company("uk", "Acme Backend Ltd")
+    company["matching_jobs"] = [
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/111?gh_jid=111",
+            "fetched": "2026-09-01",
+            "last_seen": "2026-09-16",
+            "visa_sponsorship": True,
+            "description_text": "<p>Visa sponsorship available.</p>",
+        },
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/222?gh_jid=222",
+            "fetched": "2026-09-01",
+            "last_seen": "2026-09-16",
+            "visa_sponsorship": True,
+            "description_text": "<p>Visa sponsorship available.</p>",
+        },
+    ]
+    sync_company_board_to_catalog("uk", company)
+    reloaded = get_company("uk", "Acme Backend Ltd")
+    jobs = list(reloaded["matching_jobs"])
+    slugs = sorted(j["public_slug"] for j in jobs)
+    assert slugs[1].startswith(f"{slugs[0]}-")
+    listed = public_sitemap_jobs(jobs)
+    listed_slugs = [j["public_slug"] for j in listed]
+    assert slugs[0] in listed_slugs
+    assert slugs[1] not in listed_slugs
+    alt = next(j for j in jobs if j["public_slug"] == slugs[1])
+    assert collision_slug_prefix(alt) == slugs[0]
+
+
+def test_sitemap_keeps_collision_when_base_denies_visa():
+    base = {
+        "id": 1,
+        "public_slug": "acme-shared-title",
+        "visa_sponsorship": True,
+        "description_text": (
+            "Kindly note that relocation or visa support is not offered for this role."
+        ),
+    }
+    alt = {
+        "id": 2,
+        "public_slug": "acme-shared-title-2",
+        "visa_sponsorship": True,
+        "description_text": "<p>Visa sponsorship available.</p>",
+    }
+    listed_slugs = [j["public_slug"] for j in public_sitemap_jobs([base, alt])]
+    assert listed_slugs == ["acme-shared-title-2"]
 
 
 def test_job_location_label_includes_city_and_country(seeded_catalog_v2):
