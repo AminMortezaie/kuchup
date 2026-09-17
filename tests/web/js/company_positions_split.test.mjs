@@ -5,7 +5,7 @@ import {
   isHistoryPosition,
   partitionCompanyPositions,
   preferredWorkspacePosition,
-} from "../../relocation_jobs/static/js/company-positions.js";
+} from "../../../relocation_jobs/static/js/company-positions.js";
 
 test("rejected and closed roles are history", () => {
   assert.equal(isHistoryPosition({ rejected: true }), true);
