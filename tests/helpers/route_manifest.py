@@ -76,6 +76,7 @@ PANEL_API_ROUTES: dict[str, frozenset[str]] = {
     "/api/admin/panel-stats": frozenset({"GET"}),
     "/api/admin/recent-jobs": frozenset({"GET"}),
     "/api/admin/config": frozenset({"GET"}),
+    "/api/admin/activation-metrics": frozenset({"GET"}),
     "/api/credits/packs": frozenset({"GET"}),
     "/api/credits": frozenset({"GET"}),
     "/api/credits/checkout": frozenset({"POST"}),

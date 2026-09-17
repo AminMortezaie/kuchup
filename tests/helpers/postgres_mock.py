@@ -151,12 +151,20 @@ class FakePgConnection:
         "country_meta",
         "custom_countries",
         "users",
+        "mcp_oauth_tokens",
+        "mcp_api_tokens",
+        "mcp_project_masters",
+        "mcp_interview_notes",
     )
 
     _TRACKING_TABLES = (
         "mcp_applications",
         "mcp_master_resumes",
         "mcp_user_documents",
+        "mcp_oauth_tokens",
+        "mcp_api_tokens",
+        "mcp_project_masters",
+        "mcp_interview_notes",
         "job_status_events",
         "fetch_runs",
         "company_fetch_attempts",
