@@ -2,6 +2,7 @@
 
 import { removeCountry } from "./api.js";
 import { initAdminWorker } from "./admin-worker.js";
+import { loadTeamDocsPane } from "./admin-docs.js";
 import { buildAdminStatsHtml } from "./stats-dashboard.js";
 import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge, toast } from "./utils.js";
 import { adminPaneFromHash, initAdminPanes, initAppShell } from "./app-shell.js";
@@ -33,6 +34,7 @@ function showPaneSkeleton(pane) {
   }
   const mounts = {
     catalog: "adminCatalog",
+    docs: "adminTeamDocs",
     problems: "adminFetchProblems",
     users: "adminUsers",
     activation: "adminActivation",
@@ -650,6 +652,7 @@ async function loadConfigPane() {
 
 const PANE_LOADERS = {
   home: loadHome,
+  docs: loadTeamDocsPane,
   catalog: loadCatalogPane,
   problems: loadProblemsPane,
   users: loadUsersPane,

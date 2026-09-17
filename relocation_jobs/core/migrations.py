@@ -127,6 +127,58 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "location_gate_override_v1", _apply_location_gate_override_column)
     run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
     run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
+    run_migration_once(conn, "team_docs_v1", _team_docs_v1)
+
+
+def _team_docs_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS team_doc_folders (
+            id SERIAL PRIMARY KEY,
+            parent_id INTEGER REFERENCES team_doc_folders(id) ON DELETE CASCADE,
+            slug TEXT NOT NULL,
+            title TEXT NOT NULL,
+            path TEXT NOT NULL UNIQUE,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS team_docs (
+            id SERIAL PRIMARY KEY,
+            folder_id INTEGER NOT NULL REFERENCES team_doc_folders(id) ON DELETE CASCADE,
+            slug TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (folder_id, slug)
+        )
+        """
+    )
+    now = _utc_now()
+    for sort_order, (slug, title) in enumerate(
+        (
+            ("product", "Product"),
+            ("business", "Business"),
+            ("marketing", "Marketing"),
+            ("tech", "Tech"),
+        ),
+        start=1,
+    ):
+        conn.execute(
+            """
+            INSERT INTO team_doc_folders (
+                slug, title, path, sort_order, created_at, updated_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (path) DO NOTHING
+            """,
+            (slug, title, f"/{slug}", sort_order, now, now),
+        )
 
 
 def _company_fetch_attempts_v1(conn) -> None:
