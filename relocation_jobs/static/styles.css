@@ -5262,12 +5262,6 @@ body.screen-loading #loadingBar {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  width: min(280px, 100%);
-  padding: 28px 24px 24px;
-  border-radius: var(--radius-card);
-  border: var(--rule-width) solid var(--color-rule);
-  background: var(--color-paper);
-  box-shadow: var(--shadow-card);
   transform: translateY(12px) scale(0.97);
   opacity: 0;
   transition:
