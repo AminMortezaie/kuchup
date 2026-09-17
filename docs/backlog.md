@@ -4,6 +4,37 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 
 ---
 
+## Homepage export must not import the DB pool (blocks deploy)
+
+**Status:** planned (partial workaround shipped 2026-09-16)  
+**Priority:** medium  
+**Context:** First `./scripts/ec2_app_deploy.sh deploy` on 2026-09-16 never reached rsync. `maybe_build_homepage` runs `scripts/build_homepage.sh` → `export_homepage_countries.py`, which imports `catalog.custom_countries` → `core.db`. Phase 0 added an unconditional `from psycopg_pool import ConnectionPool` in `db.py`. System `/usr/bin/python3` has no `psycopg_pool` → `ModuleNotFoundError` and the deploy script exits.
+
+**Partial workaround:** `build_homepage.sh` now prefers `.venv/bin/python3`. That unblocked this deploy after installing `psycopg[binary,pool]` in the venv. It is not the real fix.
+
+### Problem / goal
+
+Marketing JSON export should not load the Postgres pool (or fail the whole EC2 deploy) when:
+
+- the caller is system Python without extras
+- `.env` / `DATABASE_URL` is unset (`store unavailable ('DATABASE_URL'); using defaults` plus `ConnectionPool.__del__` noise at shutdown)
+
+Deploy must still work if homepage sources are newer than `static/homepage/`.
+
+### Approach
+
+1. Stop `custom_countries` (or the export scripts) from importing `core.db` just to dump `homepage/data/countries.json`. Keep the existing fallback when the store is down.
+2. Keep `build_homepage.sh` on the project venv; do not go back to bare `python3`.
+3. Optional: skip homepage rebuild in `ec2_app_deploy.sh` unless marketing sources actually changed *and* export deps are present — never abort panel/worker deploy on a marketing-script import error.
+
+### Done when
+
+- [ ] `export_homepage_countries.py` runs without `psycopg_pool` installed
+- [ ] Missing `DATABASE_URL` is a quiet fallback, not a destructor traceback
+- [ ] `ec2_app_deploy.sh deploy` still rsyncs panel/worker if homepage export cannot talk to Postgres
+
+---
+
 ## Live weekly rotation of country-page sample ATS URLs
 
 **Status:** planned  
