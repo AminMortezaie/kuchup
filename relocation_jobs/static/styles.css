@@ -5338,6 +5338,7 @@ body.screen-loading #loadingBar {
 }
 
 .screen-loader-label {
+  display: none;
   margin: 4px 0 0;
   text-align: center;
   font-size: 0.92rem;
