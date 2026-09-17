@@ -1,6 +1,11 @@
 /** Company workspace — per-position tailored CV / cover letter + PDF preview. */
 
 import { initAppShell } from "./app-shell.js";
+import {
+  isHistoryPosition,
+  partitionCompanyPositions,
+  preferredWorkspacePosition,
+} from "./company-positions.js";
 import { companyWorkspacePath } from "./company-workspace.js";
 import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { $, escapeHtml, finishLoadingProgress, setLoadingProgress } from "./utils.js";
@@ -14,6 +19,7 @@ let selectedKey = "";
 let savedTexContent = "";
 let texEditing = false;
 let artifactMode = "cv";
+let historyExpanded = false;
 
 function isCoverLetter() {
   return artifactMode === "cover-letter";
@@ -143,6 +149,13 @@ async function api(path, options = {}) {
 
 function positionBadges(position) {
   const badges = [];
+  if (position.rejected) {
+    const when = position.rejected_date ? ` · ${position.rejected_date}` : "";
+    badges.push(`<span class="company-position-badge company-position-badge--rejected">Rejected${when}</span>`);
+  }
+  if (String(position.closed_at || "").trim()) {
+    badges.push('<span class="company-position-badge company-position-badge--closed">Closed</span>');
+  }
   if (position.has_pdf) badges.push('<span class="company-position-badge company-position-badge--pdf">PDF</span>');
   else if (position.has_tailored_tex) badges.push('<span class="company-position-badge company-position-badge--tex">CV</span>');
   if (position.has_cover_letter_pdf) {
@@ -176,14 +189,89 @@ function renderUpgradeHint() {
   el.innerHTML = `+${hidden} more ${noun} waiting. A new role costs 1 credit after you act on a shown role. <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.`;
 }
 
+function positionItemHtml(position) {
+  const selected = position.idempotency_key === selectedKey ? " company-position-item--active" : "";
+  const history = isHistoryPosition(position) ? " company-position-item--history" : "";
+  const meta = [position.location, position.master_resume_slug].filter(Boolean).join(" · ");
+  const reapply = position.rejected
+    ? `<button type="button" class="reapply-btn company-position-reapply" data-key="${escapeHtml(position.idempotency_key)}" title="Return to open positions so you can apply again">Reapply</button>`
+    : "";
+  return `
+    <li class="company-position-row">
+      <button
+        type="button"
+        class="company-position-item${selected}${history}"
+        data-key="${escapeHtml(position.idempotency_key)}"
+      >
+        <span class="company-position-item-title">${escapeHtml(position.title || "Untitled role")}</span>
+        <span class="company-position-item-meta">${escapeHtml(meta)}</span>
+        <span class="company-position-item-badges">${positionBadges(position)}</span>
+      </button>
+      ${reapply}
+    </li>`;
+}
+
+function updatePositionsHint(active) {
+  const hint = $("companyPositionsHint");
+  if (!hint) return;
+  hint.hidden = false;
+  if (!active.length && positions.length) {
+    hint.textContent = "Rejected and closed roles are in History / Past.";
+    return;
+  }
+  const withCv = active.filter((p) => p.has_tailored_tex || p.has_pdf).length;
+  const withCl = active.filter((p) => p.has_cover_letter_tex || p.has_cover_letter_pdf).length;
+  const parts = [];
+  if (withCv) parts.push(`${withCv} tailored CV`);
+  if (withCl) parts.push(`${withCl} cover letter`);
+  const n = active.length;
+  const noun = n === 1 ? "role" : "roles";
+  hint.textContent = parts.length
+    ? `${parts.join(" · ")} across ${n} active ${noun}.`
+    : "Select a role to preview its tailored CV.";
+}
+
+function activeSectionHtml(active, { showHeading }) {
+  const heading = showHeading
+    ? `<h3 class="company-position-group-title">Active <span class="company-position-group-count">${active.length}</span></h3>`
+    : "";
+  const body = active.length
+    ? `<ul class="company-position-list">${active.map(positionItemHtml).join("")}</ul>`
+    : `<p class="company-position-empty">No active positions.</p>`;
+  return `<div class="company-position-group">${heading}${body}</div>`;
+}
+
+function historySectionHtml(history, expanded) {
+  if (!history.length) return "";
+  const count = history.length;
+  const noun = count === 1 ? "role" : "roles";
+  return `
+    <div class="company-position-history">
+      <button
+        type="button"
+        class="company-position-history-toggle"
+        data-company-history-toggle
+        aria-expanded="${expanded ? "true" : "false"}"
+        aria-controls="companyHistoryList"
+      >
+        <span class="company-position-history-label">History / Past</span>
+        <span class="company-position-history-count">${count} ${noun}</span>
+        <svg class="company-position-history-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <ul class="company-position-list" id="companyHistoryList" ${expanded ? "" : "hidden"}>
+        ${history.map(positionItemHtml).join("")}
+      </ul>
+    </div>`;
+}
+
 function renderPositionList() {
   const list = $("companyPositionList");
-  const hint = $("companyPositionsHint");
   if (!list) return;
   renderUpgradeHint();
 
   if (!positions.length) {
-    list.innerHTML = `<li class="company-position-empty">No open positions in catalog.</li>`;
+    list.innerHTML = `<p class="company-position-empty">No open positions in catalog.</p>`;
+    const hint = $("companyPositionsHint");
     if (hint) {
       hint.hidden = false;
       hint.textContent = "Refresh jobs from Jobs if this company should have roles.";
@@ -191,34 +279,9 @@ function renderPositionList() {
     return;
   }
 
-  const withCv = positions.filter((p) => p.has_tailored_tex || p.has_pdf).length;
-  const withCl = positions.filter((p) => p.has_cover_letter_tex || p.has_cover_letter_pdf).length;
-  const parts = [];
-  if (withCv) parts.push(`${withCv} tailored CV`);
-  if (withCl) parts.push(`${withCl} cover letter`);
-  if (hint) {
-    hint.hidden = false;
-    hint.textContent = parts.length
-      ? `${parts.join(" · ")} across ${positions.length} roles.`
-      : "Select a role to preview its tailored CV.";
-  }
-
-  list.innerHTML = positions.map((position) => {
-    const active = position.idempotency_key === selectedKey ? " company-position-item--active" : "";
-    const meta = [position.location, position.master_resume_slug].filter(Boolean).join(" · ");
-    return `
-      <li>
-        <button
-          type="button"
-          class="company-position-item${active}"
-          data-key="${escapeHtml(position.idempotency_key)}"
-        >
-          <span class="company-position-item-title">${escapeHtml(position.title || "Untitled role")}</span>
-          <span class="company-position-item-meta">${escapeHtml(meta)}</span>
-          <span class="company-position-item-badges">${positionBadges(position)}</span>
-        </button>
-      </li>`;
-  }).join("");
+  const { active, history } = partitionCompanyPositions(positions);
+  updatePositionsHint(active);
+  list.innerHTML = `${activeSectionHtml(active, { showHeading: history.length > 0 })}${historySectionHtml(history, historyExpanded)}`;
 }
 
 let jdVisible = false;
@@ -628,6 +691,7 @@ function renderPositionCard(position) {
 
 async function loadPositionDetail(idempotencyKey, position, { quiet = false } = {}) {
   selectedKey = idempotencyKey;
+  if (isHistoryPosition(position)) historyExpanded = true;
   texEditing = false;
   syncArtifactTabs();
   resetJobDescription();
@@ -750,12 +814,7 @@ async function loadWorkspace() {
     }
 
     renderPositionList();
-    const preferred = positions.find((p) => p.has_pdf)
-      || positions.find((p) => p.has_tailored_tex)
-      || positions.find((p) => p.has_cover_letter_pdf)
-      || positions.find((p) => p.has_cover_letter_tex)
-      || positions.find((p) => p.looking_to_apply || p.pinned)
-      || positions[0];
+    const preferred = preferredWorkspacePosition(positions);
     if (preferred?.idempotency_key) {
       artifactMode = preferred.has_pdf || preferred.has_tailored_tex
         ? "cv"
@@ -822,6 +881,28 @@ async function rerenderPdf() {
   }
 }
 
+async function reapplyFromList(idempotencyKey) {
+  const position = positions.find((p) => p.idempotency_key === idempotencyKey);
+  if (!position?.url) return;
+  showError("");
+  try {
+    await api("/api/jobs/reapply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        country: routeCountry,
+        company: companyName,
+        url: position.url,
+      }),
+    });
+    showToast("Moved back to open positions");
+    selectedKey = idempotencyKey;
+    await refreshPositionsAfterRender();
+  } catch (err) {
+    showError(err.message || "Could not reapply");
+  }
+}
+
 async function refreshAuth() {
   const res = await fetch("/api/auth/status", { credentials: "same-origin" });
   const data = await res.json();
@@ -837,6 +918,7 @@ async function logout() {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
   clearDetail();
   positions = [];
+  historyExpanded = false;
   showLogin();
 }
 
@@ -861,6 +943,18 @@ function bindEvents() {
   $("companyArtifactCv")?.addEventListener("click", () => switchArtifactMode("cv"));
   $("companyArtifactCover")?.addEventListener("click", () => switchArtifactMode("cover-letter"));
   $("companyPositionList")?.addEventListener("click", (event) => {
+    const historyToggle = event.target.closest("[data-company-history-toggle]");
+    if (historyToggle) {
+      historyExpanded = historyToggle.getAttribute("aria-expanded") !== "true";
+      renderPositionList();
+      return;
+    }
+    const reapplyBtn = event.target.closest(".company-position-reapply");
+    if (reapplyBtn) {
+      event.preventDefault();
+      void reapplyFromList(reapplyBtn.dataset.key);
+      return;
+    }
     const btn = event.target.closest(".company-position-item");
     if (!btn) return;
     selectPosition(btn.dataset.key);

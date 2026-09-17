@@ -6951,6 +6951,88 @@ body.scroll-locked {
   gap: 0.45rem;
 }
 
+.company-position-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.company-position-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.company-position-group-count {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+.company-position-history {
+  padding-top: 0.55rem;
+  border-top: 1px dashed color-mix(in srgb, var(--danger) 25%, transparent);
+}
+
+.company-position-history-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.45rem;
+  padding: 0.35rem 0.1rem;
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.company-position-history-toggle:hover {
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
+}
+
+.company-position-history-count {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.company-position-history-chevron {
+  flex: 0 0 auto;
+  transition: transform 160ms ease-out;
+}
+
+.company-position-history-toggle[aria-expanded="true"] .company-position-history-chevron {
+  transform: rotate(180deg);
+}
+
+.company-position-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.company-position-reapply {
+  align-self: flex-start;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+}
+
 .company-position-item {
   width: 100%;
   text-align: left;
@@ -7027,6 +7109,26 @@ body.scroll-locked {
 .company-position-badge--seen {
   color: var(--memory);
   border-color: color-mix(in srgb, var(--memory) 35%, transparent);
+}
+
+.company-position-badge--pin {
+  color: var(--intent);
+  border-color: color-mix(in srgb, var(--intent) 35%, transparent);
+}
+
+.company-position-badge--rejected {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.company-position-badge--closed {
+  color: var(--memory);
+  border-color: color-mix(in srgb, var(--memory) 35%, transparent);
+}
+
+.company-position-item--history {
+  opacity: 0.88;
 }
 
 .company-artifact-tabs {
