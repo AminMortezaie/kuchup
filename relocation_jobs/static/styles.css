@@ -5266,7 +5266,7 @@ body.screen-loading #loadingBar {
   width: 7.5rem;
   height: 7.5rem;
   border-radius: 50%;
-  border: none;
+  border: var(--rule-width) solid var(--color-rule);
   background: color-mix(in srgb, var(--color-paper) 72%, transparent);
   box-shadow: 0 6px 22px color-mix(in srgb, var(--color-ink) 6%, transparent);
   transform: translateY(12px) scale(0.97);
