@@ -664,19 +664,16 @@ async function init() {
     });
   });
   $("adminLogoutBtn").addEventListener("click", logout);
-  const staffForm = $("adminStaffLoginForm");
-  if (staffForm) {
-    staffForm.addEventListener("submit", async (event) => {
-      try {
-        if (await submitStaffLogin(event)) {
-          ready = true;
-          await loadPane(adminPaneFromHash(), { progress: true });
-        }
-      } catch (err) {
-        $("adminLoginError").textContent = err.message || "Staff sign-in failed";
+  $("adminStaffLoginForm").addEventListener("submit", async (event) => {
+    try {
+      if (await submitStaffLogin(event)) {
+        ready = true;
+        await loadPane(adminPaneFromHash(), { progress: true });
       }
-    });
-  }
+    } catch (err) {
+      $("adminLoginError").textContent = err.message || "Staff sign-in failed";
+    }
+  });
   $("adminRefreshBtn").addEventListener("click", async () => {
     try {
       await loadDashboard();

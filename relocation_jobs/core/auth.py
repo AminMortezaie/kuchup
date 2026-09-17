@@ -55,10 +55,6 @@ def staff_logins() -> dict[str, str]:
     return out
 
 
-def staff_login_enabled() -> bool:
-    return bool(staff_logins())
-
-
 def _dummy_staff_hash() -> str:
     global _DUMMY_STAFF_HASH
     if _DUMMY_STAFF_HASH is None:
@@ -66,25 +62,13 @@ def _dummy_staff_hash() -> str:
     return _DUMMY_STAFF_HASH
 
 
-def _matched_staff_email(identifier: str) -> str | None:
-    ident = identifier.strip().lower()
-    logins = staff_logins()
-    if ident in logins:
-        return ident
-    if "@" in ident:
-        return None
-    matches = [email for email in logins if email.split("@", 1)[0] == ident]
-    if len(matches) == 1:
-        return matches[0]
-    return None
-
-
 def verify_staff_credentials(identifier: str, password: str) -> str | None:
-    email = _matched_staff_email(identifier)
-    hashed = staff_logins().get(email or "") or _dummy_staff_hash()
+    email = identifier.strip().lower()
+    logins = staff_logins()
+    hashed = logins.get(email) or _dummy_staff_hash()
     if not password or not check_password_hash(hashed, password):
         return None
-    return email
+    return email if email in logins else None
 
 
 def auth_disabled() -> bool:
@@ -143,7 +127,6 @@ def auth_status() -> dict:
         return {
             "authenticated": False,
             "allow_register": allow_register(),
-            "staff_login": staff_login_enabled(),
         }
     user = get_user_by_id(uid)
     if not user:
@@ -151,7 +134,6 @@ def auth_status() -> dict:
         return {
             "authenticated": False,
             "allow_register": allow_register(),
-            "staff_login": staff_login_enabled(),
         }
     return {
         "authenticated": True,
@@ -166,7 +148,6 @@ def auth_status() -> dict:
         "entitlements": entitlement_status(uid),
         "credits": wallet_status(uid),
         "allow_register": allow_register(),
-        "staff_login": staff_login_enabled(),
     }
 
 

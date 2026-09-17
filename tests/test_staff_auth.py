@@ -46,15 +46,15 @@ def test_staff_login_creates_admin_and_sets_session(client, db, monkeypatch):
     assert dashboard.status_code == 200
 
 
-def test_staff_login_accepts_local_part_identifier(client, db, monkeypatch):
+def test_staff_login_rejects_local_part_identifier(client, db, monkeypatch):
     _quiet_refresh(monkeypatch)
     _set_staff_logins(monkeypatch)
     resp = client.post(
         "/api/auth/staff",
         json={"email": "kio", "password": STAFF_PASSWORD},
     )
-    assert resp.status_code == 200
-    assert resp.get_json()["user"]["email"] == STAFF_EMAIL
+    assert resp.status_code == 401
+    assert get_user_by_email(STAFF_EMAIL) is None
 
 
 def test_staff_login_rejects_wrong_password(client, db, monkeypatch):
@@ -103,7 +103,6 @@ def test_staff_login_rejects_when_unset(client, db, monkeypatch):
     assert resp.status_code == 401
     assert resp.get_json()["error"] == "Invalid email or password"
     status = client.get("/api/auth/status").get_json()
-    assert status["staff_login"] is False
     assert status["authenticated"] is False
 
 
@@ -137,7 +136,6 @@ def test_staff_login_does_not_break_google_admin(client, db, monkeypatch):
     assert body["authenticated"] is True
     assert body["user"]["email"] == "amin@example.com"
     assert body["user"]["is_admin"] is True
-    assert body["staff_login"] is True
 
 
 def test_admin_login_is_not_public_seo(client):
