@@ -4849,6 +4849,33 @@ body.fetch-modal-open {
   min-height: 1.2em;
 }
 
+.staff-login-form {
+  margin-bottom: 1rem;
+}
+
+.staff-login-form .primary {
+  margin-top: 0.2rem;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: var(--rule-width, 1px);
+  background: var(--border, #dadce0);
+}
+
 .login-actions {
   display: flex;
   justify-content: space-between;

@@ -5,7 +5,13 @@ from urllib.parse import urlencode
 
 from flask import jsonify, redirect, request
 
-from relocation_jobs.core.auth import auth_status, login_or_register_google, login_user, logout_user
+from relocation_jobs.core.auth import (
+    auth_status,
+    login_or_register_google,
+    login_or_register_staff,
+    login_user,
+    logout_user,
+)
 from relocation_jobs.core.google_oauth import (
     build_authorize_url,
     decode_oauth_state,
@@ -65,6 +71,20 @@ def register(app):
     def api_auth_logout():
         logout_user()
         return jsonify({"ok": True, "authenticated": False})
+
+    @app.post("/api/auth/staff")
+    def api_auth_staff():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email") or "").strip()
+        password = str(payload.get("password") or "")
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        try:
+            user = login_or_register_staff(email, password)
+        except ValueError:
+            return jsonify({"error": "Invalid email or password"}), 401
+        login_user(user["id"], user["username"])
+        return jsonify(auth_status())
 
     @app.get("/api/auth/google")
     def api_auth_google_start():

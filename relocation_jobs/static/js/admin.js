@@ -743,6 +743,26 @@ async function logout() {
   showLogin();
 }
 
+async function submitStaffLogin(event) {
+  event.preventDefault();
+  const error = $("adminLoginError");
+  const email = ($("adminStaffEmail")?.value || "").trim();
+  const password = $("adminStaffPassword")?.value || "";
+  if (error) error.textContent = "";
+  const res = await fetch("/api/auth/staff", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (error) error.textContent = data.error || "Invalid email or password";
+    return false;
+  }
+  return refreshAuth();
+}
+
 async function init() {
   initAppShell();
   let ready = false;
@@ -754,6 +774,16 @@ async function init() {
     });
   });
   $("adminLogoutBtn").addEventListener("click", logout);
+  $("adminStaffLoginForm").addEventListener("submit", async (event) => {
+    try {
+      if (await submitStaffLogin(event)) {
+        ready = true;
+        await loadPane(adminPaneFromHash(), { progress: true });
+      }
+    } catch (err) {
+      $("adminLoginError").textContent = err.message || "Staff sign-in failed";
+    }
+  });
   $("adminRefreshBtn").addEventListener("click", async () => {
     try {
       await loadDashboard();
