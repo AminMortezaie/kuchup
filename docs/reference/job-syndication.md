@@ -103,7 +103,7 @@ Built in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) `job_p
 | `description` | Sanitized HTML from `format_job_description` plus a Kuchup note |
 | `identifier` | Kuchup + catalog `id` |
 | `datePosted` | `fetched` / `last_seen` as `YYYY-MM-DD` |
-| `validThrough` | While open: `max(datePosted, last_seen, today) + 30 days` so a still-open role never advertises an expired window; `closed_at` when closed |
+| `validThrough` | While open: `max(datePosted, today) + 30 days` so a still-open role never advertises an expired window; `closed_at` when closed |
 | `employmentType` | `FULL_TIME` (not scraped yet) |
 | `hiringOrganization` | Kuchup, `sameAs` `https://kuchup.com`, `logo` `https://kuchup.com/logo.png` |
 | `jobLocation.addressCountry` | ISO from country key (`uk`→`GB`, `germany`→`DE`, …) |

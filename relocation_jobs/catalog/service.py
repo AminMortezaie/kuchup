@@ -47,13 +47,11 @@ def iso_date(raw: str) -> str:
     return date.today().isoformat()
 
 
-def valid_through_date(date_posted: str, closed_at: str = "", last_seen: str = "") -> str:
+def valid_through_date(date_posted: str, closed_at: str = "") -> str:
     if (closed_at or "").strip():
         return iso_date(closed_at)
     posted = date.fromisoformat(iso_date(date_posted))
-    seen = date.fromisoformat(iso_date(last_seen)) if (last_seen or "").strip() else posted
-    anchor = max(posted, seen, date.today())
-    return (anchor + timedelta(days=VALID_THROUGH_DAYS)).isoformat()
+    return (max(posted, date.today()) + timedelta(days=VALID_THROUGH_DAYS)).isoformat()
 
 
 def job_claims_visa_sponsorship(job: dict) -> bool:
@@ -73,15 +71,6 @@ def collision_slug_prefix(job: dict) -> str | None:
     return None
 
 
-def job_is_collision_alternate(job: dict, active_slugs: set[str]) -> bool:
-    prefix = collision_slug_prefix(job)
-    return bool(prefix and prefix in active_slugs)
-
-
-def public_hub_jobs(jobs: list[dict]) -> list[dict]:
-    return [job for job in jobs if job_claims_visa_sponsorship(job)]
-
-
 def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
     slugs = {
         (job.get("public_slug") or "").strip()
@@ -93,7 +82,7 @@ def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
         for job in jobs
         if (job.get("public_slug") or "").strip()
         and job_claims_visa_sponsorship(job)
-        and not job_is_collision_alternate(job, slugs)
+        and not ((prefix := collision_slug_prefix(job)) and prefix in slugs)
     ]
 
 
@@ -183,11 +172,7 @@ def job_posting_json_ld(job: dict) -> dict:
             "value": str(job.get("id") or slug),
         },
         "datePosted": posted,
-        "validThrough": valid_through_date(
-            posted,
-            job.get("closed_at") or "",
-            job.get("last_seen") or "",
-        ),
+        "validThrough": valid_through_date(posted, job.get("closed_at") or ""),
         "employmentType": "FULL_TIME",
         "hiringOrganization": {
             "@type": "Organization",

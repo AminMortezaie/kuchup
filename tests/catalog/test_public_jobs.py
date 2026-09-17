@@ -119,10 +119,10 @@ def test_job_posting_json_ld_uses_kuchup_hiring_org(seeded_catalog_v2):
 
 def test_valid_through_rolls_forward_while_open():
     posted = "2026-06-07"
-    through = valid_through_date(posted, "", "2026-09-16")
+    through = valid_through_date(posted, "")
     assert through >= date.today().isoformat()
     assert through == (date.today() + timedelta(days=30)).isoformat()
-    closed = valid_through_date(posted, "2026-07-01", "2026-09-16")
+    closed = valid_through_date(posted, "2026-07-01")
     assert closed == "2026-07-01"
 
 

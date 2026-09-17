@@ -26,7 +26,6 @@ from relocation_jobs.catalog.service import (
     job_posting_json_ld_text,
     job_posting_title,
     linkedin_jobs_xml_text,
-    public_hub_jobs,
     public_jobs_item_list_json_ld,
     public_sitemap_jobs,
 )
@@ -112,22 +111,9 @@ def _canonical_slug(job: dict) -> str:
     if not prefix:
         return slug
     primary = get_public_job_by_slug(prefix)
-    if primary is None or job_is_closed(primary):
+    if primary is None or job_is_closed(primary) or not job_claims_visa_sponsorship(primary):
         return slug
-    if not job_is_public_listing(primary):
-        return slug
-    if not job_claims_visa_sponsorship(primary):
-        return slug
-    return (primary.get("public_slug") or prefix).strip()
-
-
-def _job_page_indexable(job: dict, canonical_slug: str) -> bool:
-    if job_is_closed(job):
-        return False
-    if not job_claims_visa_sponsorship(job):
-        return False
-    slug = (job.get("public_slug") or "").strip()
-    return bool(slug) and slug == canonical_slug
+    return prefix
 
 
 def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False) -> dict:
@@ -137,7 +123,7 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
     country = (job.get("country") or "").strip().lower()
     closed = job_is_closed(job)
     visa = job_claims_visa_sponsorship(job)
-    indexable = _job_page_indexable(job, canonical_slug)
+    indexable = (not closed) and visa and slug == canonical_slug
     cta = {} if closed else _primary_cta(job, signed_in=signed_in)
     return {
         "job": job,
@@ -239,7 +225,7 @@ def _jobs_hub_groups(jobs: list[dict], country: str) -> list[dict]:
 
 def _jobs_hub_context() -> dict:
     country = _requested_country()
-    jobs = public_hub_jobs(list_active_public_jobs())
+    jobs = [j for j in list_active_public_jobs() if job_claims_visa_sponsorship(j)]
     groups = _jobs_hub_groups(jobs, country)
     listed = [job for group in groups for job in group["jobs"]]
     site = _public_site_url()
@@ -326,8 +312,6 @@ def register(app):
         entries: list[str] = []
         for row in public_sitemap_jobs(list_active_public_job_sitemap_entries()):
             slug = (row.get("public_slug") or "").strip()
-            if not slug:
-                continue
             loc = f"{public_site_url}/jobs/{escape(slug)}"
             lastmod = _xml_lastmod(row)
             entries.append(

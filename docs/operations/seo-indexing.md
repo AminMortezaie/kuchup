@@ -50,7 +50,7 @@ Visa-positive catalog jobs are public at `/jobs/<slug>`. `GET /jobs` is the HTML
 
 - Open roles: HTTP 200, listed in `/sitemap-jobs.xml` and on `/jobs` when the JD does not deny visa
 - Closed roles (dropped from the employer ATS on a successful refresh): HTTP **410**, omitted from the jobs sitemap and hub, with a link to the country marketing page
-- Still-open roles keep a future JSON-LD `validThrough` (`max(datePosted, last_seen, today) + 30 days`). `closed_at` is the close signal — an old `fetched` date does not expire an open listing
+- Still-open roles keep a future JSON-LD `validThrough` (`max(datePosted, today) + 30 days`). `closed_at` is the close signal — an old `fetched` date does not expire an open listing
 - Collision `{base}-{id}` URLs: HTTP 200, `rel=canonical` to `{base}`, `noindex`, omitted from `/sitemap-jobs.xml`
 - Unknown slugs: HTTP 404
 

@@ -865,14 +865,7 @@ def list_active_public_job_sitemap_entries() -> list[dict]:
             """,
             where_params,
         ).fetchall()
-    entries: list[dict] = []
-    for row in rows:
-        data = _row(row)
-        data["public_slug"] = (data.get("public_slug") or "").strip()
-        data["description_text"] = (data.get("description_text") or "").strip()
-        data["visa_sponsorship"] = _visa_from_db(data.get("visa_sponsorship"))
-        entries.append(data)
-    return entries
+    return [_job_row(row) for row in rows]
 
 
 def list_active_public_jobs() -> list[dict]:
