@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.slug import slug_from_name
-from relocation_jobs.scrape.descriptions import format_job_description
+from relocation_jobs.scrape.descriptions import format_job_description, visa_sponsorship_denied
 
 COUNTRY_ISO = {
     "germany": "DE",
@@ -51,7 +51,48 @@ def valid_through_date(date_posted: str, closed_at: str = "") -> str:
     if (closed_at or "").strip():
         return iso_date(closed_at)
     posted = date.fromisoformat(iso_date(date_posted))
-    return (posted + timedelta(days=VALID_THROUGH_DAYS)).isoformat()
+    return (max(posted, date.today()) + timedelta(days=VALID_THROUGH_DAYS)).isoformat()
+
+
+def job_claims_visa_sponsorship(job: dict) -> bool:
+    if job.get("visa_sponsorship") is not True:
+        return False
+    return not visa_sponsorship_denied(job.get("description_text") or "")
+
+
+def collision_slug_prefix(job: dict) -> str | None:
+    slug = (job.get("public_slug") or "").strip()
+    job_id = job.get("id")
+    if not slug or job_id in (None, ""):
+        return None
+    suffix = f"-{job_id}"
+    if slug.endswith(suffix) and len(slug) > len(suffix):
+        return slug[: -len(suffix)]
+    return None
+
+
+def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
+    slugs = {
+        (job.get("public_slug") or "").strip()
+        for job in jobs
+        if (job.get("public_slug") or "").strip()
+        and job_claims_visa_sponsorship(job)
+    }
+    return [
+        job
+        for job in jobs
+        if (job.get("public_slug") or "").strip()
+        and job_claims_visa_sponsorship(job)
+        and not ((prefix := collision_slug_prefix(job)) and prefix in slugs)
+    ]
+
+
+def job_posting_title(job: dict) -> str:
+    company = (job.get("company_name") or "").strip() or "Employer"
+    title = (job.get("title") or "").strip() or "Role"
+    if job_claims_visa_sponsorship(job):
+        return f"{title} at {company} (Visa Sponsorship)"
+    return f"{title} at {company}"
 
 
 def job_locality(job: dict) -> str:
@@ -117,8 +158,6 @@ def job_apply_url(job: dict, site: str = SITE) -> str:
 
 
 def job_posting_json_ld(job: dict) -> dict:
-    company = (job.get("company_name") or "").strip() or "Employer"
-    title = (job.get("title") or "").strip() or "Role"
     slug = (job.get("public_slug") or "").strip()
     page_url = job_apply_url(job)
     posted = iso_date(job.get("fetched") or job.get("last_seen") or "")
@@ -126,7 +165,7 @@ def job_posting_json_ld(job: dict) -> dict:
     return {
         "@context": "https://schema.org/",
         "@type": "JobPosting",
-        "title": f"{title} at {company} (Visa Sponsorship)",
+        "title": job_posting_title(job),
         "description": job_posting_description(job),
         "identifier": {
             "@type": "PropertyValue",

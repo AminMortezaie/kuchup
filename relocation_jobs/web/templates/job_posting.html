@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if closed %}Closed: {{ title }} at {{ company }}{% else %}{{ title }} at {{ company }} (Visa Sponsorship){% endif %} | Kuchup</title>
+  <title>{% if closed %}Closed: {{ title }} at {{ company }}{% else %}{{ page_title }}{% endif %} | Kuchup</title>
   <meta name="description" content="{% if closed %}This {{ title }} role at {{ company }} is no longer open. Browse similar relocation roles.{% else %}{{ title }} at {{ company }}. Track and prepare your application in Kuchup.{% endif %}">
   <link rel="canonical" href="{{ canonical }}">
-  {% if closed %}
-  <meta name="robots" content="noindex, follow">
-  {% else %}
+  {% if indexable %}
   <meta name="robots" content="index, follow">
+  {% else %}
+  <meta name="robots" content="noindex, follow">
   {% endif %}
   <meta property="og:title" content="{{ title }} at {{ company }}">
   <meta property="og:url" content="{{ canonical }}">
@@ -50,7 +50,7 @@
         <a class="jp-btn jp-btn-primary" href="{{ country_href }}">Browse similar relocation roles{% if country_label %} in {{ country_label }}{% endif %}</a>
       </p>
       {% else %}
-      <p class="jp-kicker">Visa-sponsored role</p>
+      {% if visa %}<p class="jp-kicker">Visa-sponsored role</p>{% endif %}
       <h1>{{ title }}</h1>
       <p class="jp-meta">
         <span>{{ company }}</span>

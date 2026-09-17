@@ -1,6 +1,6 @@
 # Job wrapping / syndication funnel
 
-**Last updated:** 2026-09-07
+**Last updated:** 2026-09-17
 
 Public `/jobs/<slug>` pages so LinkedInBot and Googlebot can read visa-sponsored catalog roles as `schema.org/JobPosting`, and so a LinkedIn Apply click lands on Kuchup instead of bouncing to the employer ATS.
 
@@ -45,21 +45,21 @@ flowchart LR
 | Path | Status | Who |
 |------|--------|-----|
 | `GET /jobs` | 200 | Crawlers + humans. HTML index of open visa roles, grouped by country. Optional `?country=uk`. |
-| `GET /jobs/<slug>` | 200 open · **410** closed · 404 unknown | Crawlers + humans. JSON-LD only on 200. |
+| `GET /jobs/<slug>` | 200 open · **410** closed · 404 unknown | Crawlers + humans. JSON-LD only on indexable 200s. Collision `{base}-{id}` URLs stay 200 for humans with `rel=canonical` to `{base}` and `noindex`. |
 | `GET /jobs/<slug>/save` | 302 | Humans. Unauthenticated → Google OAuth with `next=`. Authenticated → looking-to-apply, then `/company/<country>/<company-slug>`. `X-Robots-Tag: noindex`. |
 | `GET /jobs/<slug>/employer` | 302 | Humans. Compatibility redirect to `/jobs/<slug>/save`. Never 302s to the ATS. `noindex`. |
-| `GET /sitemap-jobs.xml` | 200 | Crawlers. Visa-positive, not closed, slug present. Slug URLs only — not the `/jobs` hub. |
+| `GET /sitemap-jobs.xml` | 200 | Crawlers. Visa-positive, JD does not deny visa, not closed. `{base}-{id}` omitted only when `{base}` is also visa-claiming. Slug URLs only — not the `/jobs` hub. |
 | `GET /feeds/linkedin-jobs.xml` | 200 | LinkedIn BD / wrapping ingest. LinkedIn Jobs XML, not a Google sitemap. Do not add to `robots.txt` `Sitemap:`. |
 | `GET /robots.txt` | 200 | Lists both `/sitemap.xml` and `/sitemap-jobs.xml`. |
 | `GET /logo.png` | 200 | JSON-LD `hiringOrganization.logo`. Alias of the bird PNG. |
 
 Cache: open job pages and the jobs sitemap use `public, max-age=300, stale-while-revalidate=86400`. Closed pages are `no-store`.
 
-The jobs sitemap is generated on each `GET /sitemap-jobs.xml` from Postgres (`list_active_public_job_sitemap_entries`). Do not maintain a static `sitemap-jobs.xml` file. After a fetch/merge, visa-positive open roles with a `public_slug` appear; roles the ATS dropped get `closed_at` and fall out. Cache is `max-age=300`, so crawlers may lag a few minutes.
+The jobs sitemap is generated on each `GET /sitemap-jobs.xml` from Postgres (`list_active_public_job_sitemap_entries`), then filtered in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) (`public_sitemap_jobs`). Do not maintain a static `sitemap-jobs.xml` file. After a fetch/merge, visa-positive open roles with a `public_slug` appear unless the JD explicitly denies visa/relocation. A `{base}-{id}` collision alternate is omitted only when `{base}` is itself visa-claiming; if `{base}` is JD-deny, the suffixed URL stays in the sitemap. Roles the ATS dropped get `closed_at` and fall out. Cache is `max-age=300`, so crawlers may lag a few minutes.
 
 That is separate from `/sitemap.xml`, which is the static Next export plus the Flask `/jobs` hub URL. `/sitemap.xml` changes on a marketing deploy for country/engineering pages; `/jobs` is always listed.
 
-**Syndication set:** `visa_sponsorship = 1` only. The JSON-LD title always includes `(Visa Sponsorship)`. Unknown or negative-visa roles are not public listings.
+**Syndication set:** `visa_sponsorship = 1` and the JD does not explicitly deny visa/relocation (`visa_sponsorship_denied`). JSON-LD title includes `(Visa Sponsorship)` only when that claim still holds. Catalog-true rows whose JD says the role does not offer visa/relocation stay as 200 pages (honest labels, `noindex`) but are omitted from `/jobs`, `/sitemap-jobs.xml`, and the LinkedIn XML feed.
 
 Homepage, footer, and country marketing pages (`/relocation-jobs-*`) link to `/jobs` and `/jobs?country={key}` so LinkedInBot can walk from pages it already crawled. After a homepage export/deploy, set the LinkedIn company Page website (or custom button) to `https://kuchup.com/jobs`.
 
@@ -75,7 +75,7 @@ Catalog columns on `matching_jobs` (migration `catalog_public_job_syndication_v1
 | `closed_at` | Set when merge keeps a job that the latest scrape dropped (`stale_kept`), or when the listing-check probe sees the employer URL gone twice. Cleared when the role reappears on a board scrape. Empty string = open. Rows are **not** hard-deleted. |
 | `listing_misses` | Consecutive closed probes. Reset to 0 when the probe sees the posting open or when merge sees it on the ATS board. Close at 2 (override `FETCH_LISTING_CHECK_MISSES`). |
 
-Slug shape: `slug_from_name(company) + "-" + slug_from_name(title)` ([`core/slug.py`](../../relocation_jobs/core/slug.py) `public_job_slug_base`). Example: FlixBus + Senior Backend Engineer → `flixbus-senior-backend-engineer`.
+Slug shape: `slug_from_name(company) + "-" + slug_from_name(title)` ([`core/slug.py`](../../relocation_jobs/core/slug.py) `public_job_slug_base`). Example: FlixBus + Senior Backend Engineer → `flixbus-senior-backend-engineer`. Collision: `{base}-{id}`. The unsuffixed slug is the indexable URL when both exist. The suffixed page is 200 for humans, `rel=canonical` to `{base}`, `noindex`, and omitted from the jobs sitemap and LinkedIn XML. The `/jobs` hub still lists both so location variants stay reachable.
 
 Visa-positive rows are backfilled on migrate. Later upserts assign a slug to any job missing one so a later visa-positive flip still gets a URL.
 
@@ -99,11 +99,11 @@ Built in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) `job_p
 
 | Field | Source |
 |-------|--------|
-| `title` | `{title} at {company} (Visa Sponsorship)` |
+| `title` | `{title} at {company} (Visa Sponsorship)` when the JD does not deny visa; otherwise `{title} at {company}` |
 | `description` | Sanitized HTML from `format_job_description` plus a Kuchup note |
 | `identifier` | Kuchup + catalog `id` |
 | `datePosted` | `fetched` / `last_seen` as `YYYY-MM-DD` |
-| `validThrough` | `datePosted + 30 days` while open; `closed_at` when closed |
+| `validThrough` | While open: `max(datePosted, today) + 30 days` so a still-open role never advertises an expired window; `closed_at` when closed |
 | `employmentType` | `FULL_TIME` (not scraped yet) |
 | `hiringOrganization` | Kuchup, `sameAs` `https://kuchup.com`, `logo` `https://kuchup.com/logo.png` |
 | `jobLocation.addressCountry` | ISO from country key (`uk`→`GB`, `germany`→`DE`, …) |
@@ -117,7 +117,7 @@ Built in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) `job_p
 
 ## LinkedIn XML feed
 
-`GET /feeds/linkedin-jobs.xml` is a full snapshot of the same open visa set (not a delta). LinkedIn’s job-board scrape clock is about every 24 hours **after** Talent BD accepts the feed. Hosting the URL does not start ingestion by itself.
+`GET /feeds/linkedin-jobs.xml` is a full snapshot of the same indexable visa set as the jobs sitemap (not a delta). Collision `{base}-{id}` URLs and JD-denied visa rows are omitted. LinkedIn’s job-board scrape clock is about every 24 hours **after** Talent BD accepts the feed. Hosting the URL does not start ingestion by itself.
 
 Shape: `<source>` with `partnerJobId` (catalog `id`), `company` Kuchup, catalog `title` (frozen once LinkedIn posts it), HTML `description` in CDATA, `applyUrl` `https://kuchup.com/jobs/<slug>` on the apex host (no redirect), `location` as city plus country/region, `lastBuildDate`, `expectedJobCount`, `publisherUrl`. `companyId` and `posterEmail` come from `LINKEDIN_COMPANY_ID` and `LINKEDIN_JOB_POSTER_EMAIL` in gitignored `.env`.
 
@@ -135,7 +135,7 @@ Template: [`web/templates/job_posting.html`](../../relocation_jobs/web/templates
 
 Do not send cold traffic to `/pricing` first.
 
-- Header: title, employer, location, visa badge (only if `visa_sponsorship` is true)
+- Header: title, employer, location, visa badge (only if catalog visa is true and the JD does not deny sponsorship)
 - Body: sanitized description HTML
 - Sticky CTA: **Track & prepare this application in Kuchup** → save/OAuth
 - No public ATS exit. `/jobs/<slug>/employer` redirects to `/save`. The original posting URL is on the company workspace after looking-to-apply.
@@ -160,8 +160,9 @@ Routes live in [`web/routes/job_pages.py`](../../relocation_jobs/web/routes/job_
 | [`tests/scrape/test_merge.py`](../../tests/scrape/test_merge.py) | `closed_at` set on stale, cleared on rescrape; slug preserved; `listing_misses` reset |
 | [`tests/scrape/test_listing_status.py`](../../tests/scrape/test_listing_status.py) | 404 closed, 429 unknown, closed copy, Greenhouse/Ashby probes |
 | [`tests/fetch/test_listing_check.py`](../../tests/fetch/test_listing_check.py) | Two misses set `closed_at`; unknown does not increment; open resets misses |
-| [`tests/catalog/test_public_jobs.py`](../../tests/catalog/test_public_jobs.py) | Stable slug, collision suffix, persist closed, JSON-LD hiring org, location label |
-| [`tests/web/test_job_pages.py`](../../tests/web/test_job_pages.py) | Hub `/jobs`, country filter, 200 + JSON-LD, 404, 410, sitemap visa-only, LinkedIn XML feed, OAuth `next`, save → workspace, `/employer` → `/save` |
+| [`tests/catalog/test_public_jobs.py`](../../tests/catalog/test_public_jobs.py) | Stable slug, collision suffix, persist closed, JSON-LD hiring org, location label, rolling `validThrough`, visa-denied title, sitemap collision filter |
+| [`tests/web/test_job_pages.py`](../../tests/web/test_job_pages.py) | Hub `/jobs`, country filter, 200 + JSON-LD, 404, 410, sitemap visa-only, collision canonical/`noindex`, visa-denied JD, LinkedIn XML feed, OAuth `next`, save → workspace, `/employer` → `/save` |
+| [`tests/scrape/test_enrich.py`](../../tests/scrape/test_enrich.py) | Visa detector positives/negatives, including “relocation or visa support is not offered” |
 | [`tests/web/test_public_api.py`](../../tests/web/test_public_api.py) | robots lists both sitemaps (not the LinkedIn feed); `/sitemap.xml` includes `/jobs`; `/logo.png` |
 | [`tests/helpers/route_manifest.py`](../../tests/helpers/route_manifest.py) | Job page routes in the panel route manifest |
 
@@ -173,12 +174,12 @@ Routes live in [`web/routes/job_pages.py`](../../relocation_jobs/web/routes/job_
 |------|------|
 | [`catalog/schema.py`](../../relocation_jobs/catalog/schema.py) | `public_slug` / `closed_at` / `listing_misses` migrations + visa backfill |
 | [`catalog/repo.py`](../../relocation_jobs/catalog/repo.py) | Persist slug/closed; public + listing-check queries |
-| [`catalog/service.py`](../../relocation_jobs/catalog/service.py) | JSON-LD, location label, LinkedIn XML, closed/public predicates, workspace path |
+| [`catalog/service.py`](../../relocation_jobs/catalog/service.py) | JSON-LD, location label, LinkedIn XML, closed/public predicates, visa claim, collision sitemap filter, workspace path |
 | [`scrape/listing_status.py`](../../relocation_jobs/scrape/listing_status.py) | Employer-URL probe: open / closed / unknown |
 | [`fetch/listing_check.py`](../../relocation_jobs/fetch/listing_check.py) | Scheduled listing check before country scrape |
 | [`core/slug.py`](../../relocation_jobs/core/slug.py) | `public_job_slug_base` |
 | [`scrape/merge.py`](../../relocation_jobs/scrape/merge.py) | Stale → `closed_at`; rescrape clears it; keep `public_slug` |
-| [`scrape/descriptions.py`](../../relocation_jobs/scrape/descriptions.py) | `format_job_description` for page body + JSON-LD HTML |
+| [`scrape/descriptions.py`](../../relocation_jobs/scrape/descriptions.py) | `format_job_description` for page body + JSON-LD HTML; `visa_sponsorship_denied` / `detect_visa_relocation` |
 | [`web/routes/job_pages.py`](../../relocation_jobs/web/routes/job_pages.py) | Hub, SSR detail, save, `/employer` → `/save`, `/sitemap-jobs.xml`, LinkedIn XML feed |
 | [`web/templates/job_posting.html`](../../relocation_jobs/web/templates/job_posting.html) | Interstitial HTML |
 | [`web/templates/jobs_index.html`](../../relocation_jobs/web/templates/jobs_index.html) | Public jobs hub |

@@ -856,7 +856,8 @@ def list_active_public_job_sitemap_entries() -> list[dict]:
     with db_read() as conn:
         rows = conn.execute(
             f"""
-            SELECT j.public_slug, j.last_seen, j.fetched
+            SELECT j.id, j.public_slug, j.last_seen, j.fetched, j.description_text,
+                   j.visa_sponsorship
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
             WHERE {where_sql}
@@ -864,7 +865,7 @@ def list_active_public_job_sitemap_entries() -> list[dict]:
             """,
             where_params,
         ).fetchall()
-    return [_row(row) for row in rows]
+    return [_job_row(row) for row in rows]
 
 
 def list_active_public_jobs() -> list[dict]:
@@ -873,7 +874,7 @@ def list_active_public_jobs() -> list[dict]:
         rows = conn.execute(
             f"""
             SELECT j.id, j.title, j.public_slug, j.location, j.description_text,
-                   j.fetched, j.last_seen,
+                   j.fetched, j.last_seen, j.visa_sponsorship,
                    c.name AS company_name, c.country, c.city
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
@@ -886,6 +887,7 @@ def list_active_public_jobs() -> list[dict]:
     for row in rows:
         data = _row(row)
         job = dict(data)
+        job["visa_sponsorship"] = _visa_from_db(data.get("visa_sponsorship"))
         if data.get("city"):
             job["city"] = data["city"]
         jobs.append(job)
