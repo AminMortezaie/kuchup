@@ -13,17 +13,22 @@ from relocation_jobs.catalog.repo import (
 )
 from relocation_jobs.catalog.service import (
     SITE,
+    collision_slug_prefix,
     company_workspace_path,
     group_public_jobs_by_country,
     iso_date,
+    job_claims_visa_sponsorship,
     job_description_html,
     job_is_closed,
     job_is_public_listing,
     job_locality,
     job_location_label,
     job_posting_json_ld_text,
+    job_posting_title,
     linkedin_jobs_xml_text,
+    public_hub_jobs,
     public_jobs_item_list_json_ld,
+    public_sitemap_jobs,
 )
 from relocation_jobs.core.auth import current_user_id, current_username
 from relocation_jobs.core.location_tags import country_label
@@ -101,24 +106,53 @@ def _primary_cta(job: dict, *, signed_in: bool) -> dict:
     }
 
 
+def _canonical_slug(job: dict) -> str:
+    slug = (job.get("public_slug") or "").strip()
+    prefix = collision_slug_prefix(job)
+    if not prefix:
+        return slug
+    primary = get_public_job_by_slug(prefix)
+    if primary is None or job_is_closed(primary):
+        return slug
+    if not job_is_public_listing(primary):
+        return slug
+    if not job_claims_visa_sponsorship(primary):
+        return slug
+    return (primary.get("public_slug") or prefix).strip()
+
+
+def _job_page_indexable(job: dict, canonical_slug: str) -> bool:
+    if job_is_closed(job):
+        return False
+    if not job_claims_visa_sponsorship(job):
+        return False
+    slug = (job.get("public_slug") or "").strip()
+    return bool(slug) and slug == canonical_slug
+
+
 def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False) -> dict:
     slug = job.get("public_slug") or ""
+    canonical_slug = _canonical_slug(job)
     company = (job.get("company_name") or "").strip() or "Employer"
     country = (job.get("country") or "").strip().lower()
     closed = job_is_closed(job)
+    visa = job_claims_visa_sponsorship(job)
+    indexable = _job_page_indexable(job, canonical_slug)
     cta = {} if closed else _primary_cta(job, signed_in=signed_in)
     return {
         "job": job,
         "closed": closed,
+        "indexable": indexable,
         "title": (job.get("title") or "").strip() or "Role",
+        "page_title": job_posting_title(job) if not closed else "",
         "company": company,
         "location_label": job_location_label(job) or job.get("location") or job_locality(job) or country_label(country),
         "country_label": country_label(country),
         "country_href": f"/relocation-jobs-{country}" if country else "/",
-        "visa": job.get("visa_sponsorship") is True,
+        "visa": visa,
         "description_html": job_description_html(job),
-        "json_ld": "" if closed else job_posting_json_ld_text(job),
-        "canonical": f"{_public_site_url()}/jobs/{slug}",
+        "json_ld": job_posting_json_ld_text(job) if indexable else "",
+        "canonical": f"{_public_site_url()}/jobs/{canonical_slug or slug}",
         "primary_href": cta.get("primary_href", ""),
         "primary_label": cta.get("primary_label", ""),
         "signed_in": signed_in,
@@ -205,7 +239,7 @@ def _jobs_hub_groups(jobs: list[dict], country: str) -> list[dict]:
 
 def _jobs_hub_context() -> dict:
     country = _requested_country()
-    jobs = list_active_public_jobs()
+    jobs = public_hub_jobs(list_active_public_jobs())
     groups = _jobs_hub_groups(jobs, country)
     listed = [job for group in groups for job in group["jobs"]]
     site = _public_site_url()
@@ -237,7 +271,10 @@ def register(app):
 
     @app.get("/feeds/linkedin-jobs.xml")
     def linkedin_jobs_feed():
-        body = linkedin_jobs_xml_text(list_active_public_jobs(), site=_public_site_url())
+        body = linkedin_jobs_xml_text(
+            public_sitemap_jobs(list_active_public_jobs()),
+            site=_public_site_url(),
+        )
         resp = Response(body, mimetype="application/xml")
         resp.headers["Cache-Control"] = JOB_PAGE_CACHE
         return resp
@@ -287,7 +324,7 @@ def register(app):
     def sitemap_jobs_xml():
         public_site_url = _public_site_url()
         entries: list[str] = []
-        for row in list_active_public_job_sitemap_entries():
+        for row in public_sitemap_jobs(list_active_public_job_sitemap_entries()):
             slug = (row.get("public_slug") or "").strip()
             if not slug:
                 continue

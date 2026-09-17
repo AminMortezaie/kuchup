@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import re
+from datetime import date
 from urllib.parse import parse_qs, unquote, urlparse
 
 import pytest
@@ -403,3 +406,109 @@ def test_signed_in_job_page_credit_cta_after_free_saves(v2_client, seeded_catalo
     resp = v2_client.get(f"/jobs/{jobs[3]['public_slug']}")
     assert resp.status_code == 200
     assert "Use 1 credit to track this role" in resp.get_data(as_text=True)
+
+
+def test_open_job_valid_through_is_in_the_future(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    company = get_company("uk", "Acme Backend Ltd")
+    jobs = list(company["matching_jobs"])
+    for row in jobs:
+        if row["url"] == job["url"]:
+            row["fetched"] = "2026-06-07"
+            row["last_seen"] = "2026-06-07"
+            row["visa_sponsorship"] = True
+    company["matching_jobs"] = jobs
+    sync_company_board_to_catalog("uk", company)
+    job = next(
+        j
+        for j in get_company("uk", "Acme Backend Ltd")["matching_jobs"]
+        if j["url"] == job["url"]
+    )
+    resp = v2_client.get(f"/jobs/{job['public_slug']}")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "index, follow" in body
+    match = re.search(r'<script type="application/ld\+json">(.*?)</script>', body)
+    assert match is not None
+    payload = json.loads(match.group(1))
+    assert payload["datePosted"] == "2026-06-07"
+    assert payload["validThrough"] >= date.today().isoformat()
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{job['public_slug']}</loc>" in sitemap
+
+
+def test_slug_collision_canonical_noindex_and_sitemap_keeps_one(v2_client, seeded_catalog_v2):
+    del seeded_catalog_v2
+    company = get_company("uk", "Acme Backend Ltd")
+    company["matching_jobs"] = [
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/111?gh_jid=111",
+            "visa_sponsorship": True,
+            "description_text": "<p>Visa sponsorship available.</p>",
+        },
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/222?gh_jid=222",
+            "visa_sponsorship": True,
+            "description_text": "<p>Visa sponsorship available.</p>",
+        },
+    ]
+    sync_company_board_to_catalog("uk", company)
+    jobs = get_company("uk", "Acme Backend Ltd")["matching_jobs"]
+    slugs = sorted(j["public_slug"] for j in jobs)
+    primary, alternate = slugs[0], slugs[1]
+    assert alternate.startswith(f"{primary}-")
+
+    primary_resp = v2_client.get(f"/jobs/{primary}", follow_redirects=False)
+    assert primary_resp.status_code == 200
+    primary_body = primary_resp.get_data(as_text=True)
+    assert "index, follow" in primary_body
+    assert f'rel="canonical" href="https://kuchup.com/jobs/{primary}"' in primary_body
+    assert "application/ld+json" in primary_body
+
+    alt_resp = v2_client.get(f"/jobs/{alternate}", follow_redirects=False)
+    assert alt_resp.status_code == 200
+    alt_body = alt_resp.get_data(as_text=True)
+    assert "noindex" in alt_body
+    assert f'rel="canonical" href="https://kuchup.com/jobs/{primary}"' in alt_body
+    assert "application/ld+json" not in alt_body
+
+    assert f"https://kuchup.com/jobs/{primary}</loc>" in sitemap
+    assert f"https://kuchup.com/jobs/{alternate}</loc>" not in sitemap
+    hub = v2_client.get("/jobs").get_data(as_text=True)
+    assert f"/jobs/{primary}" in hub
+    assert f"/jobs/{alternate}" in hub
+    feed = v2_client.get("/feeds/linkedin-jobs.xml").get_data(as_text=True)
+    assert f"/jobs/{primary}" in feed
+    assert f"/jobs/{alternate}" not in feed
+
+
+def test_jd_denying_visa_is_honest_and_dropped_from_sitemap(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    company = get_company("uk", "Acme Backend Ltd")
+    jobs = list(company["matching_jobs"])
+    for row in jobs:
+        if row["url"] == job["url"]:
+            row["visa_sponsorship"] = True
+            row["description_text"] = (
+                "Kindly note that relocation or visa support is not offered for this role."
+            )
+    company["matching_jobs"] = jobs
+    sync_company_board_to_catalog("uk", company)
+    job = next(
+        j
+        for j in get_company("uk", "Acme Backend Ltd")["matching_jobs"]
+        if j["url"] == job["url"]
+    )
+    resp = v2_client.get(f"/jobs/{job['public_slug']}")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "noindex" in body
+    assert "(Visa Sponsorship)" not in body
+    assert "Visa sponsorship supported" not in body
+    assert "application/ld+json" not in body
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{job['public_slug']}</loc>" not in sitemap
+    hub = v2_client.get("/jobs").get_data(as_text=True)
+    assert f"/jobs/{job['public_slug']}" not in hub

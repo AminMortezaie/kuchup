@@ -30,6 +30,8 @@ VISA_RELOCATION_POSITIVE = [
 ]
 
 VISA_RELOCATION_NEGATIVE = [
+    r"(?:relocation|visa)(?:\s+or\s+(?:relocation|visa))*(?:\s+support|\s+sponsorship)?\s+is\s+not\s+(?:offered|available|provided)",
+    r"not\s+offer(?:ed)?\s+(?:relocation|visa)",
     r"(?:no|not|cannot|can't|unable\s+to|do\s+not|don't|does\s+not|won't|will\s+not)\s+(?:\w+\s+){0,4}(?:offer\s+)?(?:visa\s+)?sponsor",
     r"(?:no|not)\s+relocation",
     r"without\s+(?:visa\s+)?sponsor",
@@ -371,12 +373,23 @@ def _escape_html(value: str) -> str:
     )
 
 
+def _normalized_visa_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "").lower())
+
+
+def visa_sponsorship_denied(text: str) -> bool:
+    normalized = _normalized_visa_text(text)
+    if not normalized:
+        return False
+    return any(re.search(p, normalized) for p in VISA_RELOCATION_NEGATIVE)
+
+
 def detect_visa_relocation(text: str) -> bool | None:
     if not text:
         return None
-    normalized = re.sub(r"\s+", " ", text.lower())
+    if visa_sponsorship_denied(text):
+        return False
+    normalized = _normalized_visa_text(text)
     if any(re.search(p, normalized) for p in VISA_RELOCATION_POSITIVE):
         return True
-    if any(re.search(p, normalized) for p in VISA_RELOCATION_NEGATIVE):
-        return False
     return False

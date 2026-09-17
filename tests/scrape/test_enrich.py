@@ -15,6 +15,14 @@ def test_detect_visa_relocation_negative():
     assert detect_visa_relocation(text) is False
 
 
+def test_detect_visa_relocation_denies_not_offered_over_visa_support_phrase():
+    text = (
+        "Please apply with your CV in English. Kindly note that relocation "
+        "or visa support is not offered for this role."
+    )
+    assert detect_visa_relocation(text) is False
+
+
 @pytest.mark.asyncio
 async def test_enrich_jobs_sets_visa_from_description():
     from relocation_jobs.scrape.enrich import enrich_jobs
