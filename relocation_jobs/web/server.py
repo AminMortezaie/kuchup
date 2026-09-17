@@ -219,6 +219,7 @@ def _static_cache_control(response):
 def admin_page():
     resp = send_from_directory(STATIC, "admin.html")
     resp.headers["Cache-Control"] = PRIVATE_CACHE
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
     return resp
 
 

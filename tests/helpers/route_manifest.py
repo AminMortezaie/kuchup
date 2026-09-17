@@ -22,6 +22,7 @@ PANEL_PAGE_ROUTES: dict[str, frozenset[str]] = {
 PANEL_API_ROUTES: dict[str, frozenset[str]] = {
     "/api/auth/status": frozenset({"GET"}),
     "/api/auth/logout": frozenset({"POST"}),
+    "/api/auth/staff": frozenset({"POST"}),
     "/api/auth/google": frozenset({"GET"}),
     "/api/auth/google/callback": frozenset({"GET"}),
     "/api/config": frozenset({"GET"}),

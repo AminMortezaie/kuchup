@@ -5,6 +5,7 @@ import secrets
 from functools import wraps
 
 from flask import g, jsonify, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from relocation_jobs.db import init_db
 from relocation_jobs.credits.service import wallet_status
@@ -23,6 +24,8 @@ from relocation_jobs.users.repo import (
     user_count,
 )
 
+_DUMMY_STAFF_HASH: str | None = None
+
 
 def secret_key() -> str:
     key = os.environ.get("PANEL_SECRET_KEY", "").strip()
@@ -38,6 +41,34 @@ def allow_register() -> bool:
 def admin_emails() -> set[str]:
     raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
     return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def staff_logins() -> dict[str, str]:
+    raw = os.environ.get("PANEL_STAFF_LOGINS", "")
+    out: dict[str, str] = {}
+    for part in raw.split(","):
+        email, sep, hashed = part.strip().partition(":")
+        email = email.strip().lower()
+        hashed = hashed.strip()
+        if sep and "@" in email and hashed:
+            out[email] = hashed
+    return out
+
+
+def _dummy_staff_hash() -> str:
+    global _DUMMY_STAFF_HASH
+    if _DUMMY_STAFF_HASH is None:
+        _DUMMY_STAFF_HASH = generate_password_hash("staff-dummy")
+    return _DUMMY_STAFF_HASH
+
+
+def verify_staff_credentials(identifier: str, password: str) -> str | None:
+    email = identifier.strip().lower()
+    logins = staff_logins()
+    hashed = logins.get(email) or _dummy_staff_hash()
+    if not password or not check_password_hash(hashed, password):
+        return None
+    return email if email in logins else None
 
 
 def auth_disabled() -> bool:
@@ -93,11 +124,17 @@ def auth_status() -> dict:
     ensure_dev_login()
     uid = current_user_id()
     if not uid:
-        return {"authenticated": False, "allow_register": allow_register()}
+        return {
+            "authenticated": False,
+            "allow_register": allow_register(),
+        }
     user = get_user_by_id(uid)
     if not user:
         logout_user()
-        return {"authenticated": False, "allow_register": allow_register()}
+        return {
+            "authenticated": False,
+            "allow_register": allow_register(),
+        }
     return {
         "authenticated": True,
         "user": {
@@ -140,6 +177,13 @@ def admin_required(view):
     return wrapped
 
 
+def _bootstrap_signed_in_user(uid: int) -> None:
+    ensure_default_preferences(uid)
+    import_month_usage(uid)
+    if opportunities_repo.needs_opportunity_bootstrap(uid):
+        enqueue_user_opportunity_refresh(uid)
+
+
 def login_or_register_google(profile: dict) -> dict:
     email = (profile.get("email") or "").strip().lower()
     google_sub = (profile.get("google_sub") or "").strip()
@@ -153,11 +197,28 @@ def login_or_register_google(profile: dict) -> dict:
         allow_new=allow_register() or user_count() == 0,
         is_admin=email in admin_emails(),
     )
-    uid = int(user["id"])
-    ensure_default_preferences(uid)
-    import_month_usage(uid)
-    if opportunities_repo.needs_opportunity_bootstrap(uid):
-        enqueue_user_opportunity_refresh(uid)
+    _bootstrap_signed_in_user(int(user["id"]))
+    return user
+
+
+def login_or_register_staff(identifier: str, password: str) -> dict:
+    email = verify_staff_credentials(identifier, password)
+    if not email:
+        raise ValueError("Invalid staff credentials")
+    user = get_user_by_email(email)
+    if user is None:
+        local = email.split("@", 1)[0] or "staff"
+        user = create_user(
+            local,
+            is_admin=True,
+            email=email,
+            google_sub=f"staff-{email}",
+            display_name=local,
+        )
+    elif not is_user_admin(int(user["id"])):
+        set_user_admin(int(user["id"]), True)
+        user = get_user_by_id(int(user["id"])) or user
+    _bootstrap_signed_in_user(int(user["id"]))
     return user
 
 

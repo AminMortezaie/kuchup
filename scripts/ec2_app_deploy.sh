@@ -131,6 +131,10 @@ admin_emails() {
   printf '%s' "${PANEL_ADMIN_EMAILS:-}"
 }
 
+staff_logins() {
+  printf '%s' "${PANEL_STAFF_LOGINS:-$(_dotenv_value PANEL_STAFF_LOGINS)}"
+}
+
 google_client_id() {
   printf '%s' "${GOOGLE_CLIENT_ID:-$(_dotenv_value GOOGLE_CLIENT_ID)}"
 }
@@ -496,13 +500,14 @@ image_needs_rebuild() {
 
 cmd_deploy() {
   load_state
-  local redis_pass db_url redis_url secret admin_emails_value
+  local redis_pass db_url redis_url secret admin_emails_value staff_logins_value
   local google_id google_secret google_redirect panel_public allow_register
   local nowpayments_key nowpayments_secret nowpayments_sandbox_flag
   local panel_hash worker_hash
   redis_pass="$(redis_password)"
   secret="$(panel_secret)"
   admin_emails_value="$(admin_emails)"
+  staff_logins_value="$(staff_logins)"
   google_id="$(google_client_id)"
   google_secret="$(google_client_secret)"
   google_redirect="$(google_redirect_uri)"
@@ -555,6 +560,7 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e PANEL_SECRET_KEY='${secret}' \\
   -e PANEL_ADMIN_USER=admin \\
   -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
+  -e PANEL_STAFF_LOGINS='${staff_logins_value}' \\
   -e GOOGLE_CLIENT_ID='${google_id}' \\
   -e GOOGLE_CLIENT_SECRET='${google_secret}' \\
   -e GOOGLE_REDIRECT_URI='${google_redirect}' \\

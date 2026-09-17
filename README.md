@@ -118,8 +118,9 @@ PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py
 ```
 
 On first startup the app creates the Postgres schema. Sign in with **Google**
-(`GOOGLE_CLIENT_*`). Accounts in `PANEL_ADMIN_EMAILS` become admins. Set
-`PANEL_ALLOW_REGISTER=1` to allow new Google users to self-register.
+(`GOOGLE_CLIENT_*`). Accounts in `PANEL_ADMIN_EMAILS` become admins. Staff without
+a Google admin email can use `/admin` email+password via `PANEL_STAFF_LOGINS`.
+Set `PANEL_ALLOW_REGISTER=1` to allow new Google users to self-register.
 
 After React UI edits: `cd frontend && npm run build` →
 `relocation_jobs/static/dist/board.js`. Hard refresh (`Cmd+Shift+R`) after
@@ -143,6 +144,7 @@ only.
 | `PANEL_SECRET_KEY` | Flask session signing |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth (required for sign-in) |
 | `PANEL_ADMIN_EMAILS` | Comma-separated Google emails granted admin |
+| `PANEL_STAFF_LOGINS` | Optional staff admin passwords: `email:werkzeug-hash,...` (see `scripts/hash_staff_password.py`) |
 | `PANEL_SCRAPE_ENABLED` | `1` locally for country + company fetch; `0` on slim production panel |
 | `PANEL_COMPANY_FETCH_ENABLED` | `1` on EC2 panel for board **Fetch jobs** without country scrape |
 | `PANEL_ALLOW_REGISTER` | Self-service Google registration after first user |

@@ -5,12 +5,14 @@
 
 ## Identity (Phase A — shipped)
 
-- Google OAuth is the only sign-in tunnel (panel + MCP).
+- Google OAuth is the product sign-in tunnel (panel + MCP).
 - Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, optional `GOOGLE_REDIRECT_URI`.
-- Admins: `PANEL_ADMIN_EMAILS` (comma-separated).
+- Admins: `PANEL_ADMIN_EMAILS` (comma-separated Google emails).
+- Staff admins (no Google admin email): `PANEL_STAFF_LOGINS` (`email:werkzeug-hash`, comma-separated). `POST /api/auth/staff` on `/admin` only. Same `is_admin` as Google admins (including team docs). Not a public/SEO page.
 - Self-serve signup: `PANEL_ALLOW_REGISTER=1`.
-- Routes: `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/status`, `POST /api/auth/logout`.
+- Routes: `GET /api/auth/google`, `GET /api/auth/google/callback`, `POST /api/auth/staff`, `GET /api/auth/status`, `POST /api/auth/logout`.
 - Production panel deploy sets `SESSION_COOKIE_SECURE=1`.
+- Longer-term: staff Google / `@kuchup.com` Workspace emails can still be added to `PANEL_ADMIN_EMAILS`.
 
 ## Plans (Phase B + freemium capacity)
 
