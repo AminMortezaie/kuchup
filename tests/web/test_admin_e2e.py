@@ -54,11 +54,21 @@ def test_admin_js_loads_dashboard_once():
     assert "/api/admin/panel-stats" in admin_js
     assert "/api/admin/catalog" in admin_js
     assert "/api/admin/users" in admin_js
+    assert "/api/admin/activation-metrics" in admin_js
     assert "/api/admin/fetch-runs" in admin_js
     assert "/api/admin/recent-jobs" in admin_js
     assert "/api/admin/config" in admin_js
     assert "renderOverview" not in admin_js
     assert "adminOverview" not in admin_js
+
+
+def test_admin_page_has_activation_pane():
+    html = (Path(STATIC_DIR) / "admin.html").read_text(encoding="utf-8")
+    assert 'data-admin-nav="activation"' in html
+    assert 'data-admin-pane="activation"' in html
+    assert 'id="adminActivation"' in html
+    shell = (Path(STATIC_DIR) / "js" / "app-shell.js").read_text(encoding="utf-8")
+    assert '"activation"' in shell
 
 
 def test_admin_dashboard_worker_last_country_run(v2_auth_client, seeded_catalog_v2, db):

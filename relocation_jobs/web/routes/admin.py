@@ -145,3 +145,12 @@ def register(app):
         except Exception as exc:
             app.logger.exception("admin config failed")
             return jsonify({"error": str(exc)}), 500
+
+    @app.get("/api/admin/activation-metrics")
+    @admin_required
+    def api_admin_activation_metrics():
+        try:
+            return jsonify(admin_service.get_activation_metrics())
+        except Exception as exc:
+            app.logger.exception("admin activation-metrics failed")
+            return jsonify({"error": str(exc)}), 500
