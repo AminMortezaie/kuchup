@@ -131,8 +131,8 @@ def update_doc(
 
 def delete_doc(doc_id: int) -> bool:
     with db_transaction() as conn:
-        row = conn.execute(
-            "DELETE FROM team_docs WHERE id = %s RETURNING id",
+        cursor = conn.execute(
+            "DELETE FROM team_docs WHERE id = %s",
             (doc_id,),
-        ).fetchone()
-    return row is not None
+        )
+        return cursor.rowcount > 0

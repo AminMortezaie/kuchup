@@ -183,3 +183,28 @@ def test_team_docs_auto_slug_suffix_and_validation(v2_auth_client, db):
         json={"title": "Nope"},
     )
     assert missing_folder_id.status_code == 400
+
+
+def test_team_docs_patch_and_delete_missing(v2_auth_client, db):
+    del db
+    product = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")
+    created = v2_auth_client.post(
+        "/api/admin/team-docs",
+        json={"folder_id": product["id"], "title": "Patch me"},
+    )
+    doc_id = created.get_json()["doc"]["id"]
+    bad_slug = v2_auth_client.patch(
+        f"/api/admin/team-docs/{doc_id}",
+        json={"slug": "!!!"},
+    )
+    assert bad_slug.status_code == 400
+    empty_folder = v2_auth_client.patch(
+        f"/api/admin/team-docs/{doc_id}",
+        json={"folder_id": ""},
+    )
+    assert empty_folder.status_code == 200
+    assert empty_folder.get_json()["doc"]["folder_id"] == product["id"]
+    missing = v2_auth_client.patch("/api/admin/team-docs/999999", json={"title": "Gone"})
+    assert missing.status_code == 404
+    deleted = v2_auth_client.delete("/api/admin/team-docs/999999")
+    assert deleted.status_code == 404
