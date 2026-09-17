@@ -18,7 +18,9 @@ export function isScreenLoadActive() {
 export function beginScreenLoad(label = "Loading…") {
   const { root, label: labelEl } = elements();
   if (!root) return;
-  if (labelEl) labelEl.textContent = label;
+  const panel = root.querySelector(".screen-loader-panel");
+  if (panel) panel.setAttribute("aria-label", label);
+  if (labelEl) labelEl.textContent = "";
   if (depth > 0) return;
 
   depth = 1;
