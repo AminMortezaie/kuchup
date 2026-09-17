@@ -44,6 +44,7 @@ pip install -r requirements-dev.txt
 python3 -m playwright install chromium
 cp .env.example .env
 # Set DATABASE_URL, PANEL_SECRET_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, PANEL_ADMIN_EMAILS
+# Optional staff admin: PANEL_STAFF_LOGINS (scripts/hash_staff_password.py)
 # (use <ELASTIC_IP> from gitignored aws-postgres.env — never commit real hosts/passwords)
 
 PANEL_SCRAPE_ENABLED=1 python3 apps/panel/run.py

@@ -8,10 +8,11 @@
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
   <link rel="manifest" href="/static/manifest.json" />
   <meta name="theme-color" content="#fcfaf7" />
+  <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=102" />
+  <link rel="stylesheet" href="/static/styles.css?v=103" />
   <link rel="stylesheet" href="/static/app-shell.css?v=12" />
 </head>
 <body>
@@ -30,8 +31,16 @@
         </a>
       </div>
       <h2>Admin sign in</h2>
-      <p class="hint">Sign in with an admin Google account.</p>
+      <p class="hint">Google works for allowlisted admin accounts. Staff can sign in with email and password.</p>
       <div class="login-error" id="adminLoginError"></div>
+      <form id="adminStaffLoginForm" class="staff-login-form">
+        <label for="adminStaffEmail">Email</label>
+        <input id="adminStaffEmail" name="email" type="text" autocomplete="username" required />
+        <label for="adminStaffPassword">Password</label>
+        <input id="adminStaffPassword" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit" class="primary" id="adminStaffSubmit">Sign in</button>
+      </form>
+      <p class="login-divider">or</p>
       <div class="login-actions">
         <a href="/panel" class="link-btn">Back to jobs</a>
         <a class="primary google-signin" href="/api/auth/google?next=/admin">
@@ -202,6 +211,6 @@
     </div>
   </div>
 
-  <script type="module" src="/static/js/admin.js?v=19"></script>
+  <script type="module" src="/static/js/admin.js?v=20"></script>
 </body>
 </html>

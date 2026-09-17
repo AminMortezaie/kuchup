@@ -459,6 +459,16 @@ def get_user_by_id(user_id: int) -> dict | None:
     return data
 
 
+def _staff_allowlist_emails() -> set[str]:
+    raw = os.environ.get("PANEL_STAFF_LOGINS", "")
+    emails: set[str] = set()
+    for part in raw.split(","):
+        email = part.strip().partition(":")[0].strip().lower()
+        if "@" in email:
+            emails.add(email)
+    return emails
+
+
 def is_user_admin(user_id: int) -> bool:
     user = get_user_by_id(user_id)
     if not user:
@@ -469,7 +479,7 @@ def is_user_admin(user_id: int) -> bool:
     if email:
         raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
         emails = {part.strip().lower() for part in raw.split(",") if part.strip()}
-        if email in emails:
+        if email in emails or email in _staff_allowlist_emails():
             return True
     admin_name = os.environ.get("PANEL_ADMIN_USER", "admin").strip().lower() or "admin"
     return user.get("username", "").strip().lower() == admin_name
@@ -508,6 +518,7 @@ def list_users_with_stats() -> list[dict]:
     admin_name = os.environ.get("PANEL_ADMIN_USER", "admin").strip().lower() or "admin"
     raw_emails = os.environ.get("PANEL_ADMIN_EMAILS", "")
     admin_emails = {part.strip().lower() for part in raw_emails.split(",") if part.strip()}
+    staff_emails = _staff_allowlist_emails()
     for row in rows:
         username = (row.get("username") or "").strip()
         email = (row.get("email") or "").strip().lower()
@@ -520,7 +531,8 @@ def list_users_with_stats() -> list[dict]:
                 "created_at": row.get("created_at"),
                 "is_admin": bool(row.get("is_admin"))
                 or username.lower() == admin_name
-                or email in admin_emails,
+                or email in admin_emails
+                or email in staff_emails,
                 "tracking_rows": int(row.get("tracking_rows") or 0),
                 "applied_positions": int(row.get("applied_positions") or 0),
                 "rejected_positions": int(row.get("rejected_positions") or 0),

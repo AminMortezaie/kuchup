@@ -204,11 +204,40 @@ Set via `ec2_app_deploy.sh` (from local `.env` / `aws-postgres.env`):
 - `DATABASE_URL` → `172.17.0.1:5432`
 - `REDIS_URL` → `172.17.0.1:6379`
 - `PANEL_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PANEL_ADMIN_EMAILS`
+- Optional staff admin passwords: `PANEL_STAFF_LOGINS` (see [Staff admin login](#staff-admin-login))
 - Checkout: `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` (see [nowpayments.md](nowpayments.md))
 - Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (starts Alloy)
 - Optional logs: `GRAFANA_CLOUD_LOKI_URL`, `GRAFANA_CLOUD_LOKI_USER` (same token needs `logs:write`; see [monitoring.md](monitoring.md))
 
 Do not commit production secrets. Rotate `PANEL_SECRET_KEY` to a long random value in `.env` before deploy if still using the placeholder.
+
+---
+
+## Staff admin login
+
+Teammates without a Google address on `PANEL_ADMIN_EMAILS` can sign in at `https://kuchup.com/admin` with email + password. Amin's Google admin path is unchanged. `/admin` is `Disallow` in `robots.txt` and sends `noindex, nofollow`.
+
+Google Workspace `@kuchup.com` emails remain a valid longer-term option: add them to `PANEL_ADMIN_EMAILS` and they can use Continue with Google. This env list is the code unblock until those accounts exist.
+
+### Add a staff user (Kio, Figo, …)
+
+1. Ask them which email they will type on `/admin` (personal is fine).
+2. Generate a hash locally — do not commit it:
+
+```bash
+python3 scripts/hash_staff_password.py
+```
+
+3. Put the hash in gitignored `.env` (comma-separated, `email:hash`):
+
+```bash
+PANEL_STAFF_LOGINS=kio@example.com:pbkdf2:sha256:600000$...,figo@example.com:pbkdf2:sha256:600000$...
+```
+
+4. Redeploy so the panel container receives the var: `./scripts/ec2_app_deploy.sh deploy`
+5. They open `https://kuchup.com/admin`, enter that email and the password you hashed, then use admin (including Docs once team docs are deployed).
+
+To revoke: remove their `email:hash` from `PANEL_STAFF_LOGINS` and redeploy. Existing sessions last until the cookie expires; they cannot sign in again.
 
 ---
 
