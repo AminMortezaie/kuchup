@@ -76,6 +76,7 @@ def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
         (job.get("public_slug") or "").strip()
         for job in jobs
         if (job.get("public_slug") or "").strip()
+        and job_claims_visa_sponsorship(job)
     }
     return [
         job

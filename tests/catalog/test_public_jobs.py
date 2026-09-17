@@ -177,6 +177,25 @@ def test_sitemap_keeps_one_url_for_slug_collision(seeded_catalog_v2):
     assert collision_slug_prefix(alt) == slugs[0]
 
 
+def test_sitemap_keeps_collision_when_base_denies_visa():
+    base = {
+        "id": 1,
+        "public_slug": "acme-shared-title",
+        "visa_sponsorship": True,
+        "description_text": (
+            "Kindly note that relocation or visa support is not offered for this role."
+        ),
+    }
+    alt = {
+        "id": 2,
+        "public_slug": "acme-shared-title-2",
+        "visa_sponsorship": True,
+        "description_text": "<p>Visa sponsorship available.</p>",
+    }
+    listed_slugs = [j["public_slug"] for j in public_sitemap_jobs([base, alt])]
+    assert listed_slugs == ["acme-shared-title-2"]
+
+
 def test_job_location_label_includes_city_and_country(seeded_catalog_v2):
     from relocation_jobs.catalog.service import job_location_label
 

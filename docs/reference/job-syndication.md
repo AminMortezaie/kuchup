@@ -48,14 +48,14 @@ flowchart LR
 | `GET /jobs/<slug>` | 200 open · **410** closed · 404 unknown | Crawlers + humans. JSON-LD only on indexable 200s. Collision `{base}-{id}` URLs stay 200 for humans with `rel=canonical` to `{base}` and `noindex`. |
 | `GET /jobs/<slug>/save` | 302 | Humans. Unauthenticated → Google OAuth with `next=`. Authenticated → looking-to-apply, then `/company/<country>/<company-slug>`. `X-Robots-Tag: noindex`. |
 | `GET /jobs/<slug>/employer` | 302 | Humans. Compatibility redirect to `/jobs/<slug>/save`. Never 302s to the ATS. `noindex`. |
-| `GET /sitemap-jobs.xml` | 200 | Crawlers. Visa-positive, JD does not deny visa, not closed, not a `{base}-{id}` collision alternate. Slug URLs only — not the `/jobs` hub. |
+| `GET /sitemap-jobs.xml` | 200 | Crawlers. Visa-positive, JD does not deny visa, not closed. `{base}-{id}` omitted only when `{base}` is also visa-claiming. Slug URLs only — not the `/jobs` hub. |
 | `GET /feeds/linkedin-jobs.xml` | 200 | LinkedIn BD / wrapping ingest. LinkedIn Jobs XML, not a Google sitemap. Do not add to `robots.txt` `Sitemap:`. |
 | `GET /robots.txt` | 200 | Lists both `/sitemap.xml` and `/sitemap-jobs.xml`. |
 | `GET /logo.png` | 200 | JSON-LD `hiringOrganization.logo`. Alias of the bird PNG. |
 
 Cache: open job pages and the jobs sitemap use `public, max-age=300, stale-while-revalidate=86400`. Closed pages are `no-store`.
 
-The jobs sitemap is generated on each `GET /sitemap-jobs.xml` from Postgres (`list_active_public_job_sitemap_entries`), then filtered in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) (`public_sitemap_jobs`). Do not maintain a static `sitemap-jobs.xml` file. After a fetch/merge, visa-positive open roles with a `public_slug` appear unless the JD explicitly denies visa/relocation or the slug is a `{base}-{id}` collision alternate. Roles the ATS dropped get `closed_at` and fall out. Cache is `max-age=300`, so crawlers may lag a few minutes.
+The jobs sitemap is generated on each `GET /sitemap-jobs.xml` from Postgres (`list_active_public_job_sitemap_entries`), then filtered in [`catalog/service.py`](../../relocation_jobs/catalog/service.py) (`public_sitemap_jobs`). Do not maintain a static `sitemap-jobs.xml` file. After a fetch/merge, visa-positive open roles with a `public_slug` appear unless the JD explicitly denies visa/relocation. A `{base}-{id}` collision alternate is omitted only when `{base}` is itself visa-claiming; if `{base}` is JD-deny, the suffixed URL stays in the sitemap. Roles the ATS dropped get `closed_at` and fall out. Cache is `max-age=300`, so crawlers may lag a few minutes.
 
 That is separate from `/sitemap.xml`, which is the static Next export plus the Flask `/jobs` hub URL. `/sitemap.xml` changes on a marketing deploy for country/engineering pages; `/jobs` is always listed.
 

@@ -485,6 +485,46 @@ def test_slug_collision_canonical_noindex_and_sitemap_keeps_one(v2_client, seede
     assert f"/jobs/{alternate}" not in feed
 
 
+def test_sitemap_and_feed_keep_collision_when_base_denies_visa(v2_client, seeded_catalog_v2):
+    del seeded_catalog_v2
+    company = get_company("uk", "Acme Backend Ltd")
+    company["matching_jobs"] = [
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/111?gh_jid=111",
+            "visa_sponsorship": True,
+            "description_text": (
+                "Kindly note that relocation or visa support is not offered for this role."
+            ),
+        },
+        {
+            "title": "Shared Title",
+            "url": "https://boards.greenhouse.io/acmebackend/jobs/222?gh_jid=222",
+            "visa_sponsorship": True,
+            "description_text": "<p>Visa sponsorship available.</p>",
+        },
+    ]
+    sync_company_board_to_catalog("uk", company)
+    jobs = get_company("uk", "Acme Backend Ltd")["matching_jobs"]
+    slugs = sorted(j["public_slug"] for j in jobs)
+    primary, alternate = slugs[0], slugs[1]
+    assert alternate.startswith(f"{primary}-")
+
+    alt_resp = v2_client.get(f"/jobs/{alternate}", follow_redirects=False)
+    assert alt_resp.status_code == 200
+    alt_body = alt_resp.get_data(as_text=True)
+    assert "index, follow" in alt_body
+    assert f'rel="canonical" href="https://kuchup.com/jobs/{alternate}"' in alt_body
+    assert "application/ld+json" in alt_body
+
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{primary}</loc>" not in sitemap
+    assert f"https://kuchup.com/jobs/{alternate}</loc>" in sitemap
+    feed = v2_client.get("/feeds/linkedin-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{alternate}]]></applyUrl>" in feed
+    assert f"https://kuchup.com/jobs/{primary}]]></applyUrl>" not in feed
+
+
 def test_jd_denying_visa_is_honest_and_dropped_from_sitemap(v2_client, seeded_catalog_v2):
     job = _publish_visa_job(seeded_catalog_v2)
     company = get_company("uk", "Acme Backend Ltd")
