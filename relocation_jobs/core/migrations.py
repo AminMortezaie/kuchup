@@ -127,6 +127,26 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "location_gate_override_v1", _apply_location_gate_override_column)
     run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
     run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
+    run_migration_once(conn, "team_docs_v1", _team_docs_v1)
+
+
+def _team_docs_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS team_docs (
+            id SERIAL PRIMARY KEY,
+            folder TEXT NOT NULL CHECK (
+                folder IN ('product', 'business', 'marketing', 'tech')
+            ),
+            slug TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (folder, slug)
+        )
+        """
+    )
 
 
 def _company_fetch_attempts_v1(conn) -> None:
