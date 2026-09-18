@@ -1,4 +1,4 @@
-const ADMIN_PANES = ["home", "catalog", "problems", "users", "activation", "jobs", "runs", "config"];
+const ADMIN_PANES = ["home", "docs", "catalog", "problems", "users", "activation", "jobs", "runs", "config"];
 const MENU_MQ = "(max-width: 900px)";
 
 export function initAppShell() {

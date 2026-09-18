@@ -18,6 +18,7 @@ from relocation_jobs.web.routes import (
     preferences,
     public,
     remote,
+    team_docs,
 )
 
 
@@ -38,5 +39,6 @@ def register_routes(app: Flask) -> None:
         preferences,
         public,
         remote,
+        team_docs,
     ):
         module.register(app)
