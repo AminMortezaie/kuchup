@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "384a5b7d8c9e",
+  "strategy": "manual-commit",
+  "branch": "cursor/phase1-team-docs-8e82",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/static/admin.html",
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/static/js/admin-docs.js",
+    "relocation_jobs/team_docs/repo.py",
+    "relocation_jobs/team_docs/service.py",
+    "relocation_jobs/web/routes/team_docs.py",
+    "tests/web/test_admin_team_docs.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/38/4a5b7d8c9e/0/metadata.json",
+      "transcript": "/38/4a5b7d8c9e/0/full.jsonl",
+      "compact_transcript": "/38/4a5b7d8c9e/0/transcript.jsonl",
+      "content_hash": "/38/4a5b7d8c9e/0/content_hash.txt",
+      "prompt": "/38/4a5b7d8c9e/0/prompt.txt"
+    }
+  ]
+}
