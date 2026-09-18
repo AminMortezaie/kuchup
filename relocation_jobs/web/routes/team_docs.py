@@ -6,12 +6,6 @@ from relocation_jobs.core.auth import admin_required
 from relocation_jobs.team_docs import service as team_docs_service
 
 
-def _optional_int(value):
-    if value is None or value == "":
-        return None
-    return int(value)
-
-
 def register(app):
     @app.get("/api/admin/team-docs")
     @admin_required
@@ -22,13 +16,12 @@ def register(app):
     @admin_required
     def api_admin_create_team_doc():
         body = request.get_json(silent=True) or {}
-        try:
-            folder_id = int(body.get("folder_id"))
-        except (TypeError, ValueError):
-            return jsonify({"error": "folder_id is required"}), 400
+        folder = str(body.get("folder") or "").strip()
+        if not folder:
+            return jsonify({"error": "folder is required"}), 400
         try:
             saved = team_docs_service.create_document(
-                folder_id=folder_id,
+                folder=folder,
                 title=str(body.get("title") or ""),
                 body=body.get("body") or "",
                 slug=(body.get("slug") or None),
@@ -51,13 +44,16 @@ def register(app):
     @admin_required
     def api_admin_update_team_doc(doc_id: int):
         body = request.get_json(silent=True) or {}
+        folder = None
+        if "folder" in body:
+            folder = str(body.get("folder") or "").strip() or None
         try:
             saved = team_docs_service.update_document(
                 doc_id,
                 title=None if "title" not in body else str(body.get("title") or ""),
                 body=None if "body" not in body else body.get("body"),
                 slug=None if "slug" not in body else body.get("slug"),
-                folder_id=_optional_int(body.get("folder_id")) if "folder_id" in body else None,
+                folder=folder,
             )
             return jsonify({"ok": True, "doc": saved})
         except (TypeError, ValueError) as exc:

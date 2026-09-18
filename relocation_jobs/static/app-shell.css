@@ -447,10 +447,6 @@
   align-items: start;
 }
 
-.admin-docs-folder {
-  margin-left: calc(var(--docs-depth, 0) * 0.75rem);
-}
-
 .admin-docs-folder-row {
   display: flex;
   align-items: center;

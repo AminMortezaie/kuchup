@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from relocation_jobs.core.paths import STATIC_DIR
-from relocation_jobs.team_docs.service import ROOT_FOLDER_PATHS
+from relocation_jobs.team_docs.service import FOLDERS
 
 
 def _folder_by_slug(tree: dict, slug: str) -> dict:
@@ -54,7 +54,7 @@ def test_team_docs_require_admin(v2_client, test_user, db):
     assert v2_client.get("/api/admin/team-docs").status_code == 403
     created = v2_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": 1, "title": "Secret", "body": "nope"},
+        json={"folder": "product", "title": "Secret", "body": "nope"},
     )
     assert created.status_code == 403
     assert created.get_json()["error"] == "Admin access required"
@@ -65,19 +65,16 @@ def test_team_docs_seed_root_folders(v2_auth_client, db):
     tree = v2_auth_client.get("/api/admin/team-docs")
     assert tree.status_code == 200
     folders = tree.get_json()["folders"]
-    assert [folder["path"] for folder in folders] == list(ROOT_FOLDER_PATHS)
+    assert [folder["path"] for folder in folders] == [f"/{slug}" for slug in FOLDERS]
     assert all(folder["docs"] == [] for folder in folders)
-    assert all(folder["folders"] == [] for folder in folders)
 
 
 def test_team_docs_crud_happy_path(v2_auth_client, db):
     del db
-    tree = v2_auth_client.get("/api/admin/team-docs").get_json()
-    product = _folder_by_slug(tree, "product")
     created = v2_auth_client.post(
         "/api/admin/team-docs",
         json={
-            "folder_id": product["id"],
+            "folder": "product",
             "title": "Launch checklist",
             "body": "# Launch\n\n- [ ] ship docs",
         },
@@ -119,17 +116,14 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
 
 def test_team_docs_move_between_seeded_folders(v2_auth_client, db):
     del db
-    tree = v2_auth_client.get("/api/admin/team-docs").get_json()
-    product = _folder_by_slug(tree, "product")
-    tech = _folder_by_slug(tree, "tech")
     created = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "API notes", "body": "wip"},
+        json={"folder": "product", "title": "API notes", "body": "wip"},
     )
     doc_id = created.get_json()["doc"]["id"]
     moved = v2_auth_client.patch(
         f"/api/admin/team-docs/{doc_id}",
-        json={"folder_id": tech["id"]},
+        json={"folder": "tech"},
     )
     assert moved.status_code == 200
     assert moved.get_json()["doc"]["path"] == "/tech/api-notes"
@@ -140,15 +134,14 @@ def test_team_docs_move_between_seeded_folders(v2_auth_client, db):
 
 def test_team_docs_duplicate_slug_rejected(v2_auth_client, db):
     del db
-    product = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")
     first = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "Roadmap", "slug": "roadmap"},
+        json={"folder": "product", "title": "Roadmap", "slug": "roadmap"},
     )
     assert first.status_code == 201
     clash = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "Other", "slug": "roadmap"},
+        json={"folder": "product", "title": "Other", "slug": "roadmap"},
     )
     assert clash.status_code == 400
     assert "already exists" in clash.get_json()["error"]
@@ -156,41 +149,39 @@ def test_team_docs_duplicate_slug_rejected(v2_auth_client, db):
 
 def test_team_docs_auto_slug_suffix_and_validation(v2_auth_client, db):
     del db
-    product = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")
     first = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "Hello"},
+        json={"folder": "product", "title": "Hello"},
     )
     second = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "Hello"},
+        json={"folder": "product", "title": "Hello"},
     )
     assert first.get_json()["doc"]["slug"] == "hello"
     assert second.status_code == 201
     assert second.get_json()["doc"]["slug"] == "hello-2"
     missing_title = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "  "},
+        json={"folder": "product", "title": "  "},
     )
     assert missing_title.status_code == 400
     missing_folder = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": 999999, "title": "Nope"},
+        json={"folder": "nope", "title": "Nope"},
     )
     assert missing_folder.status_code == 404
-    missing_folder_id = v2_auth_client.post(
+    missing_folder_name = v2_auth_client.post(
         "/api/admin/team-docs",
         json={"title": "Nope"},
     )
-    assert missing_folder_id.status_code == 400
+    assert missing_folder_name.status_code == 400
 
 
 def test_team_docs_patch_and_delete_missing(v2_auth_client, db):
     del db
-    product = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")
     created = v2_auth_client.post(
         "/api/admin/team-docs",
-        json={"folder_id": product["id"], "title": "Patch me"},
+        json={"folder": "product", "title": "Patch me"},
     )
     doc_id = created.get_json()["doc"]["id"]
     bad_slug = v2_auth_client.patch(
@@ -200,10 +191,10 @@ def test_team_docs_patch_and_delete_missing(v2_auth_client, db):
     assert bad_slug.status_code == 400
     empty_folder = v2_auth_client.patch(
         f"/api/admin/team-docs/{doc_id}",
-        json={"folder_id": ""},
+        json={"folder": ""},
     )
     assert empty_folder.status_code == 200
-    assert empty_folder.get_json()["doc"]["folder_id"] == product["id"]
+    assert empty_folder.get_json()["doc"]["folder"] == "product"
     missing = v2_auth_client.patch("/api/admin/team-docs/999999", json={"title": "Gone"})
     assert missing.status_code == 404
     deleted = v2_auth_client.delete("/api/admin/team-docs/999999")

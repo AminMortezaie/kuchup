@@ -133,52 +133,20 @@ def _migrate_schema(conn) -> None:
 def _team_docs_v1(conn) -> None:
     conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS team_doc_folders (
-            id SERIAL PRIMARY KEY,
-            parent_id INTEGER REFERENCES team_doc_folders(id) ON DELETE CASCADE,
-            slug TEXT NOT NULL,
-            title TEXT NOT NULL,
-            path TEXT NOT NULL UNIQUE,
-            sort_order INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
         CREATE TABLE IF NOT EXISTS team_docs (
             id SERIAL PRIMARY KEY,
-            folder_id INTEGER NOT NULL REFERENCES team_doc_folders(id) ON DELETE CASCADE,
+            folder TEXT NOT NULL CHECK (
+                folder IN ('product', 'business', 'marketing', 'tech')
+            ),
             slug TEXT NOT NULL,
             title TEXT NOT NULL,
             body TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            UNIQUE (folder_id, slug)
+            UNIQUE (folder, slug)
         )
         """
     )
-    now = _utc_now()
-    for sort_order, (slug, title) in enumerate(
-        (
-            ("product", "Product"),
-            ("business", "Business"),
-            ("marketing", "Marketing"),
-            ("tech", "Tech"),
-        ),
-        start=1,
-    ):
-        conn.execute(
-            """
-            INSERT INTO team_doc_folders (
-                slug, title, path, sort_order, created_at, updated_at
-            )
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (path) DO NOTHING
-            """,
-            (slug, title, f"/{slug}", sort_order, now, now),
-        )
 
 
 def _company_fetch_attempts_v1(conn) -> None:

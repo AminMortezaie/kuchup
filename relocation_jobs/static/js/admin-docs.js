@@ -1,7 +1,7 @@
-import { $, escapeHtml, escapeAttr, toast } from "./utils.js";
+import { $, escapeHtml, toast } from "./utils.js";
 
 let tree = { folders: [] };
-let selected = { folderId: null, docId: null };
+let selected = { folder: null, docId: null };
 let bound = false;
 
 async function apiJson(path, options = {}) {
@@ -15,39 +15,30 @@ async function apiJson(path, options = {}) {
   return data;
 }
 
-function flattenFolders(folders, acc = []) {
-  for (const folder of folders || []) {
-    acc.push(folder);
-    flattenFolders(folder.folders, acc);
-  }
-  return acc;
-}
-
 function selectedFolder() {
-  return flattenFolders(tree.folders).find((folder) => folder.id === selected.folderId) || null;
+  return tree.folders.find((folder) => folder.slug === selected.folder) || null;
 }
 
-function renderTree(folders, depth = 0) {
+function renderTree(folders) {
   return (folders || []).map((folder) => {
-    const activeFolder = selected.folderId === folder.id && !selected.docId;
+    const activeFolder = selected.folder === folder.slug && !selected.docId;
     const docs = (folder.docs || []).map((doc) => {
       const active = selected.docId === doc.id;
       return `
-        <button type="button" class="admin-docs-item${active ? " is-active" : ""}" data-doc-id="${doc.id}" data-folder-id="${folder.id}">
+        <button type="button" class="admin-docs-item${active ? " is-active" : ""}" data-doc-id="${doc.id}" data-folder="${escapeHtml(folder.slug)}">
           ${escapeHtml(doc.title)}
         </button>`;
     }).join("");
     return `
-      <div class="admin-docs-folder" style="--docs-depth:${depth}">
+      <div class="admin-docs-folder">
         <div class="admin-docs-folder-row">
-          <button type="button" class="admin-docs-folder-btn${activeFolder ? " is-active" : ""}" data-folder-id="${folder.id}">
+          <button type="button" class="admin-docs-folder-btn${activeFolder ? " is-active" : ""}" data-folder="${escapeHtml(folder.slug)}">
             ${escapeHtml(folder.path)}
           </button>
-          <button type="button" class="secondary-btn admin-docs-new" data-folder-id="${folder.id}">New</button>
+          <button type="button" class="secondary-btn admin-docs-new" data-folder="${escapeHtml(folder.slug)}">New</button>
         </div>
         <div class="admin-docs-children">
           ${docs || `<p class="hint admin-docs-empty">Empty folder</p>`}
-          ${renderTree(folder.folders, depth + 1)}
         </div>
       </div>`;
   }).join("");
@@ -55,8 +46,8 @@ function renderTree(folders, depth = 0) {
 
 function editorHtml() {
   const folder = selectedFolder();
-  const folderOptions = flattenFolders(tree.folders).map((item) => (
-    `<option value="${item.id}" ${item.id === selected.folderId ? "selected" : ""}>${escapeHtml(item.path)}</option>`
+  const folderOptions = tree.folders.map((item) => (
+    `<option value="${escapeHtml(item.slug)}" ${item.slug === selected.folder ? "selected" : ""}>${escapeHtml(item.path)}</option>`
   )).join("");
   if (!folder) {
     return `<p class="hint">Select a folder to add a markdown doc, or open an existing one.</p>`;
@@ -66,7 +57,7 @@ function editorHtml() {
     <form class="admin-docs-form" id="adminDocsForm">
       <label>
         <span>Folder</span>
-        <select name="folder_id">${folderOptions}</select>
+        <select name="folder">${folderOptions}</select>
       </label>
       <label>
         <span>Title</span>
@@ -94,7 +85,7 @@ function fillForm(doc) {
   form.title.value = doc?.title || "";
   form.slug.value = doc?.slug || "";
   form.body.value = doc?.body || "";
-  if (doc?.folder_id) form.folder_id.value = String(doc.folder_id);
+  if (doc?.folder) form.folder.value = doc.folder;
   const path = $("adminDocsPath");
   if (path) path.textContent = doc?.path || selectedFolder()?.path || "";
 }
@@ -103,21 +94,25 @@ function bindMount(mount) {
   if (bound) return;
   bound = true;
   mount.addEventListener("click", async (event) => {
+    if (event.target.id === "adminDocsDelete") {
+      await deleteSelected();
+      return;
+    }
     const newBtn = event.target.closest(".admin-docs-new");
     if (newBtn) {
-      selected = { folderId: Number(newBtn.dataset.folderId), docId: null };
+      selected = { folder: newBtn.dataset.folder, docId: null };
       render();
       return;
     }
     const docBtn = event.target.closest("[data-doc-id]");
     if (docBtn) {
-      selected = { folderId: Number(docBtn.dataset.folderId), docId: Number(docBtn.dataset.docId) };
+      selected = { folder: docBtn.dataset.folder, docId: Number(docBtn.dataset.docId) };
       await loadSelected();
       return;
     }
-    const folderBtn = event.target.closest("[data-folder-id].admin-docs-folder-btn");
+    const folderBtn = event.target.closest("[data-folder].admin-docs-folder-btn");
     if (folderBtn) {
-      selected = { folderId: Number(folderBtn.dataset.folderId), docId: null };
+      selected = { folder: folderBtn.dataset.folder, docId: null };
       render();
     }
   });
@@ -125,10 +120,6 @@ function bindMount(mount) {
     if (event.target.id !== "adminDocsForm") return;
     event.preventDefault();
     await saveForm(event.target);
-  });
-  mount.addEventListener("click", async (event) => {
-    if (event.target.id !== "adminDocsDelete") return;
-    await deleteSelected();
   });
 }
 
@@ -140,7 +131,7 @@ async function loadSelected() {
   }
   try {
     const data = await apiJson(`/api/admin/team-docs/${selected.docId}`);
-    selected.folderId = data.doc.folder_id;
+    selected.folder = data.doc.folder;
     render();
     fillForm(data.doc);
   } catch (err) {
@@ -152,7 +143,7 @@ async function loadSelected() {
 
 async function saveForm(form) {
   const payload = {
-    folder_id: Number(form.folder_id.value),
+    folder: form.folder.value,
     title: form.title.value,
     slug: form.slug.value.trim(),
     body: form.body.value,
@@ -169,7 +160,7 @@ async function saveForm(form) {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
-    selected = { folderId: saved.doc.folder_id, docId: saved.doc.id };
+    selected = { folder: saved.doc.folder, docId: saved.doc.id };
     tree = await apiJson("/api/admin/team-docs");
     render();
     fillForm(saved.doc);
@@ -184,8 +175,8 @@ async function deleteSelected() {
   if (!window.confirm("Delete this document?")) return;
   try {
     await apiJson(`/api/admin/team-docs/${selected.docId}`, { method: "DELETE" });
-    const folderId = selected.folderId;
-    selected = { folderId, docId: null };
+    const folder = selected.folder;
+    selected = { folder, docId: null };
     tree = await apiJson("/api/admin/team-docs");
     render();
     toast("Deleted");
@@ -214,8 +205,8 @@ function render() {
 
 export async function loadTeamDocsPane() {
   tree = await apiJson("/api/admin/team-docs");
-  if (!selected.folderId && tree.folders[0]) {
-    selected = { folderId: tree.folders[0].id, docId: null };
+  if (!selected.folder && tree.folders[0]) {
+    selected = { folder: tree.folders[0].slug, docId: null };
   }
   render();
   if (selected.docId) await loadSelected();
