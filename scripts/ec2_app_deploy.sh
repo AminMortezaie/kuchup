@@ -20,15 +20,32 @@
 # layers are reused — never wiped mid/post-deploy (use `prune` for that).
 #
 # Escape hatches:
-#   FORCE_REBUILD=1   — same as deploy --force
-#   FORCE_FRONTEND=1  — rebuild frontend even if board.js is fresh
-#   FORCE_HOMEPAGE=1  — rebuild homepage even if static export is fresh
+#   FORCE_REBUILD=1      — same as deploy --force
+#   FORCE_FRONTEND=1     — rebuild frontend even if board.js is fresh
+#   FORCE_HOMEPAGE=1     — rebuild homepage even if static export is fresh
+#   DEPLOY_LOCAL=1       — run on the EC2 box directly (self-hosted runner);
+#                          skips SSH, rsyncs within the box, reads credentials
+#                          from REMOTE_DIR/aws-postgres.env and REMOTE_DIR/.env
+#   SKIP_STATIC_BUILD=1  — skip npm/Next.js frontend+homepage builds and exclude
+#                          relocation_jobs/static/ from rsync so the previous
+#                          built assets on REMOTE_DIR are preserved (for use
+#                          with DEPLOY_LOCAL=1 on a memory-constrained runner)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-STATE_FILE="$ROOT/aws-postgres.env"
-REMOTE_DIR=/home/ec2-user/relocation-jobs
+REMOTE_DIR="${REMOTE_DIR:-/home/ec2-user/relocation-jobs}"
+DEPLOY_LOCAL="${DEPLOY_LOCAL:-0}"
+
+# When running on-box (DEPLOY_LOCAL=1) via a self-hosted runner, gitignored
+# credential files are not in the checkout; read them from REMOTE_DIR instead.
+if [[ "${DEPLOY_LOCAL}" == "1" ]]; then
+  STATE_FILE="${STATE_FILE:-${REMOTE_DIR}/aws-postgres.env}"
+  DOTENV_FILE="${DOTENV_FILE:-${REMOTE_DIR}/.env}"
+else
+  STATE_FILE="${STATE_FILE:-${ROOT}/aws-postgres.env}"
+  DOTENV_FILE="${DOTENV_FILE:-${ROOT}/.env}"
+fi
 HASH_FILE=.deploy-hashes
 REGION="${AWS_REGION:-eu-central-1}"
 EC2_SSH_USER="${EC2_SSH_USER:-ec2-user}"
@@ -62,12 +79,52 @@ load_state() {
 }
 
 ssh_cmd() {
+  if [[ "${DEPLOY_LOCAL}" == "1" ]]; then
+    # Runner is on the EC2 box — run the command locally, no SSH.
+    if [[ $# -eq 1 ]]; then
+      bash -c "$1"
+    else
+      "$@"
+    fi
+    return
+  fi
   local key_args=()
   [[ -f "$EC2_SSH_KEY" ]] && key_args=(-i "$EC2_SSH_KEY")
   ssh "${key_args[@]}" -o StrictHostKeyChecking=accept-new "${EC2_SSH_USER}@${ELASTIC_IP}" "$@"
 }
 
 rsync_cmd() {
+  # When SKIP_STATIC_BUILD=1 the runner does not build frontend/homepage, so
+  # exclude the static output directory from sync to preserve the previous
+  # build artifacts already on REMOTE_DIR (they are bind-mounted into the
+  # panel container and do not belong in the Docker image).
+  local static_exclude=()
+  [[ "${SKIP_STATIC_BUILD:-0}" == "1" ]] && static_exclude=(--exclude 'relocation_jobs/static/')
+
+  if [[ "${DEPLOY_LOCAL}" == "1" ]]; then
+    mkdir -p "${REMOTE_DIR}"
+    rsync -az --delete \
+      --exclude '.git/' \
+      --exclude '.venv/' \
+      --exclude 'node_modules/' \
+      --exclude 'frontend/node_modules/' \
+      --exclude 'homepage/node_modules/' \
+      --exclude 'homepage/.next/' \
+      --exclude 'homepage/out/' \
+      --exclude '.entire/' \
+      --exclude 'data/' \
+      --exclude '/dist/' \
+      --exclude '__pycache__/' \
+      --exclude '.env' \
+      --exclude 'aws-postgres.env' \
+      --exclude '.pytest_cache/' \
+      --exclude '*.pyc' \
+      --exclude '.deploy-hashes' \
+      "${static_exclude[@]}" \
+      "$ROOT/" "${REMOTE_DIR}/"
+    return
+  fi
+
   local key_args=()
   [[ -f "$EC2_SSH_KEY" ]] && key_args=(-e "ssh -i ${EC2_SSH_KEY} -o StrictHostKeyChecking=accept-new")
   rsync -az --delete \
@@ -87,6 +144,7 @@ rsync_cmd() {
     --exclude '.pytest_cache/' \
     --exclude '*.pyc' \
     --exclude '.deploy-hashes' \
+    "${static_exclude[@]}" \
     "${key_args[@]}" \
     "$ROOT/" "${EC2_SSH_USER}@${ELASTIC_IP}:${REMOTE_DIR}/"
 }
@@ -96,9 +154,9 @@ redis_password() {
     printf '%s' "$REDIS_PASSWORD"
     return
   fi
-  if [[ -f "$ROOT/.env" ]]; then
+  if [[ -f "${DOTENV_FILE}" ]]; then
     local url
-    url="$(grep -E '^REDIS_URL=' "$ROOT/.env" | cut -d= -f2- || true)"
+    url="$(grep -E '^REDIS_URL=' "${DOTENV_FILE}" | cut -d= -f2- || true)"
     if [[ "$url" =~ redis://:([^@]+)@ ]]; then
       printf '%s' "${BASH_REMATCH[1]}"
       return
@@ -108,9 +166,9 @@ redis_password() {
 }
 
 panel_secret() {
-  if [[ -f "$ROOT/.env" ]]; then
+  if [[ -f "${DOTENV_FILE}" ]]; then
     local key
-    key="$(grep -E '^PANEL_SECRET_KEY=' "$ROOT/.env" | cut -d= -f2- || true)"
+    key="$(grep -E '^PANEL_SECRET_KEY=' "${DOTENV_FILE}" | cut -d= -f2- || true)"
     if [[ -n "$key" && "$key" != "change-me-to-a-long-random-string" ]]; then
       printf '%s' "$key"
       return
@@ -120,9 +178,9 @@ panel_secret() {
 }
 
 admin_emails() {
-  if [[ -f "$ROOT/.env" ]]; then
+  if [[ -f "${DOTENV_FILE}" ]]; then
     local emails
-    emails="$(grep -E '^PANEL_ADMIN_EMAILS=' "$ROOT/.env" | cut -d= -f2- || true)"
+    emails="$(grep -E '^PANEL_ADMIN_EMAILS=' "${DOTENV_FILE}" | cut -d= -f2- || true)"
     if [[ -n "$emails" ]]; then
       printf '%s' "$emails"
       return
@@ -187,8 +245,8 @@ panel_public_base_url() {
 
 _dotenv_value() {
   local key="$1"
-  [[ -f "$ROOT/.env" ]] || return 0
-  grep -E "^${key}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true
+  [[ -f "${DOTENV_FILE}" ]] || return 0
+  grep -E "^${key}=" "${DOTENV_FILE}" 2>/dev/null | cut -d= -f2- || true
 }
 
 sqs_queue_url() {
@@ -272,6 +330,10 @@ _sources_newer_than() {
 
 maybe_build_frontend() {
   [[ -d "$ROOT/frontend" ]] || return 0
+  if [[ "${SKIP_STATIC_BUILD:-0}" == "1" ]]; then
+    log "Frontend build skipped (SKIP_STATIC_BUILD=1 — static assets preserved in ${REMOTE_DIR})"
+    return 0
+  fi
   local out="$ROOT/relocation_jobs/static/dist/board.js"
   if [[ "${FORCE_FRONTEND:-0}" == "1" ]] || _sources_newer_than "$ROOT/frontend" "$out"; then
     log "Building frontend (board.js)..."
@@ -283,6 +345,10 @@ maybe_build_frontend() {
 
 maybe_build_homepage() {
   [[ -d "$ROOT/homepage" ]] || return 0
+  if [[ "${SKIP_STATIC_BUILD:-0}" == "1" ]]; then
+    log "Homepage build skipped (SKIP_STATIC_BUILD=1 — static assets preserved in ${REMOTE_DIR})"
+    return 0
+  fi
   local out="$ROOT/relocation_jobs/static/homepage/index.html"
   local need=0
   if [[ "${FORCE_HOMEPAGE:-0}" == "1" ]]; then
@@ -307,7 +373,11 @@ cmd_sync() {
   load_state
   maybe_build_frontend
   maybe_build_homepage
-  log "Syncing to ${EC2_SSH_USER}@${ELASTIC_IP}:${REMOTE_DIR}"
+  if [[ "${DEPLOY_LOCAL}" == "1" ]]; then
+    log "Syncing (local) to ${REMOTE_DIR}"
+  else
+    log "Syncing to ${EC2_SSH_USER}@${ELASTIC_IP}:${REMOTE_DIR}"
+  fi
   ssh_cmd "mkdir -p ${REMOTE_DIR}"
   rsync_cmd
   log "Sync OK"
@@ -723,7 +793,8 @@ start_alloy_container() {
   # name/labels stay empty and dashboard panels show No data.
   ssh_cmd bash -s <<EOF
 set -euo pipefail
-docker pull ${ALLOY_IMAGE}
+# Only pull when not already present; the tag is pinned so it never changes.
+docker image inspect ${ALLOY_IMAGE} >/dev/null 2>&1 || docker pull ${ALLOY_IMAGE}
 docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true
 ALLOY_CONFIG=/tmp/alloy-config.alloy
 if [ -n '${loki_url}' ] && [ -n '${loki_user}' ]; then
