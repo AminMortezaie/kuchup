@@ -1,9 +1,15 @@
-# Production EC2 deploy via ./scripts/ec2_app_deploy.sh (same path as laptop deploy).
+# Production deploy via ./scripts/ec2_app_deploy.sh run on a self-hosted runner
+# that lives on the same EC2 box as kuchup.com.
 #
-# Auto: after CI succeeds on a push to main (workflow_run — not on PR CI alone).
-# Manual: workflow_dispatch (skips CI gate; redeploy current ref).
+# The runner is on-box, so Docker builds use the EC2's own BuildKit cache and
+# credentials are read from the server's gitignored aws-postgres.env / .env
+# (no GitHub secrets required).  No hairpin SSH to an Elastic IP.
 #
-# Does not call open-sg. Requires repo secrets (see docs/operations/ec2-panel.md).
+# Auto: after CI succeeds on a push to main (workflow_run).
+# Manual: workflow_dispatch (skips CI gate; can force image rebuild).
+#
+# Does NOT call open-sg.  CI stays on GitHub-hosted runners.
+# See docs/operations/ec2-panel.md#self-hosted-runner for install / ops.
 
 name: Deploy
 
@@ -13,6 +19,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Force image rebuild even if inputs are unchanged (1=yes)"
+        default: "0"
+        type: string
 
 concurrency:
   group: ec2-production-deploy
@@ -27,7 +38,7 @@ jobs:
         github.event.workflow_run.event == 'push' &&
         github.event.workflow_run.head_branch == 'main'
       )
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, kuchup-prod]
     permissions:
       contents: read
 
@@ -40,42 +51,24 @@ jobs:
                 && github.sha
                 || github.event.workflow_run.head_sha }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          npm ci --prefix frontend
-
-      - name: Write deploy credentials (gitignored paths)
+      - name: Deploy (on-box)
         env:
-          AWS_POSTGRES_ENV: ${{ secrets.AWS_POSTGRES_ENV }}
-          EC2_DEPLOY_DOTENV: ${{ secrets.EC2_DEPLOY_DOTENV }}
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-        run: |
-          umask 077
-          install -m 600 /dev/null aws-postgres.env
-          install -m 600 /dev/null .env
-          printf '%s\n' "$AWS_POSTGRES_ENV" > aws-postgres.env
-          printf '%s\n' "$EC2_DEPLOY_DOTENV" > .env
-          key="${RUNNER_TEMP}/ec2_deploy.pem"
-          install -m 600 /dev/null "$key"
-          printf '%s\n' "$EC2_SSH_KEY" > "$key"
-          echo "EC2_SSH_KEY=$key" >> "$GITHUB_ENV"
-
-      - name: Deploy to EC2
+          # Run the deploy script locally — no SSH hairpin to the Elastic IP.
+          # Credentials are read from REMOTE_DIR/aws-postgres.env and
+          # REMOTE_DIR/.env which already exist on the server.
+          DEPLOY_LOCAL: "1"
+          REMOTE_DIR: /home/ec2-user/relocation-jobs
+          # Skip expensive npm / Next.js static builds on the memory-constrained
+          # t4g.micro runner.  Static assets (board.js, homepage) live in
+          # REMOTE_DIR from the last laptop deploy and are bind-mounted into the
+          # panel container — they do not need to be in the image.
+          # Use a laptop deploy (./scripts/ec2_app_deploy.sh deploy) to push
+          # updated frontend or homepage changes.
+          SKIP_STATIC_BUILD: "1"
+          FORCE_REBUILD: ${{ github.event.inputs.force_rebuild || '0' }}
         run: ./scripts/ec2_app_deploy.sh deploy
 
-      - name: Verify https://kuchup.com/api/health
+      - name: Health check
         run: |
           code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 https://kuchup.com/api/health)"
           echo "https://kuchup.com/api/health -> HTTP ${code}"
