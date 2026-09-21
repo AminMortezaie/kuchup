@@ -29,9 +29,9 @@ Deploy must still work if homepage sources are newer than `static/homepage/`.
 
 ### Done when
 
-- [ ] `export_homepage_countries.py` runs without `psycopg_pool` installed
-- [ ] Missing `DATABASE_URL` is a quiet fallback, not a destructor traceback
-- [ ] `ec2_app_deploy.sh deploy` still rsyncs panel/worker if homepage export cannot talk to Postgres
+- [x] `export_homepage_countries.py` runs without `psycopg_pool` installed
+- [x] Missing `DATABASE_URL` is a quiet fallback, not a destructor traceback
+- [x] `ec2_app_deploy.sh deploy` still rsyncs panel/worker if homepage export cannot talk to Postgres
 
 ---
 
