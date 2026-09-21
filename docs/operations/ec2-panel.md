@@ -23,6 +23,31 @@ Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost 
 
 ---
 
+## GitHub Actions (auto-deploy)
+
+After **CI** succeeds on a push to **`main`**, the **Deploy** workflow runs `./scripts/ec2_app_deploy.sh deploy` on a GitHub-hosted runner (same script as laptop deploy). It does **not** call `open-sg`.
+
+| Trigger | When |
+|---------|------|
+| **CI → Deploy** | `workflow_run` when workflow **CI** completes successfully on a **push** to `main` (typical merge) |
+| **Manual** | Actions → **Deploy** → **Run workflow** (`workflow_dispatch`; skips CI gate) |
+
+**Repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Contents |
+|--------|----------|
+| `EC2_SSH_KEY` | Private key for `ec2-user@<ELASTIC_IP>` (same PEM as local `EC2_SSH_KEY` / `~/Downloads/relocation.pem`) |
+| `AWS_POSTGRES_ENV` | Full gitignored `aws-postgres.env` file (must include at least `ELASTIC_IP`, `DB_PASSWORD`) |
+| `EC2_DEPLOY_DOTENV` | Full production gitignored `.env` (must include `REDIS_PASSWORD` or `REDIS_URL`; same vars laptop deploy reads for OAuth, NOWPayments, AWS/SQS, Grafana, etc.) |
+
+The workflow writes those to `aws-postgres.env`, `.env`, and a temp PEM with mode `600`, then exports `EC2_SSH_KEY` for the script. Values are masked in logs when referenced as secrets.
+
+**Network:** the runner must reach EC2 on **SSH (22)**. That is separate from Cloudflare lock-down on 80/443 — do not use `open-sg` for deploy. Allow [GitHub Actions IP ranges](https://api.github.com/meta) on port 22, or use a self-hosted runner that already has SSH access.
+
+Verify after merge: Actions tab → **Deploy** job green → `curl -sf https://kuchup.com/api/health`.
+
+---
+
 ## Deploy / update
 
 From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present):
