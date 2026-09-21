@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from relocation_jobs.core.db import db_read, db_transaction
 from relocation_jobs.core.redis_client import get_redis, ping_redis, redis_enabled
@@ -100,6 +101,8 @@ def load_custom_countries_from_db() -> dict[str, str]:
 def load_country_labels_store() -> dict[str, str]:
     if countries_use_redis():
         return load_countries_from_redis()
+    if not os.environ.get("DATABASE_URL", "").strip():
+        return {}
     return load_custom_countries_from_db()
 
 

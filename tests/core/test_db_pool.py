@@ -82,10 +82,12 @@ def test_init_connection_pool_uses_psycopg_pool(monkeypatch):
         def close(self):
             pass
 
+    import psycopg_pool
+
     saved_conn = core._pg["conn"]
     core._pg["conn"] = None
     monkeypatch.setenv("DATABASE_URL", "postgresql://relocation:PASSWORD@127.0.0.1:5432/relocation_jobs")
-    monkeypatch.setattr(core, "ConnectionPool", CapturingPool)
+    monkeypatch.setattr(psycopg_pool, "ConnectionPool", CapturingPool)
     monkeypatch.setattr(core, "_pool", None)
     try:
         core.init_connection_pool()
@@ -99,24 +101,16 @@ def test_init_connection_pool_uses_psycopg_pool(monkeypatch):
 
 
 def test_init_connection_pool_skips_when_test_override_present():
-    called = []
-
-    class BoomPool:
-        def __init__(self, *args, **kwargs):
-            called.append(kwargs)
-            raise AssertionError("pool must not open when tests inject a connection")
-
     saved_pool = core._pool
+    saved_conn = core._pg["conn"]
     core._pool = None
-    original = core.ConnectionPool
-    core.ConnectionPool = BoomPool
+    core._pg["conn"] = object()
     try:
         core.init_connection_pool()
-        assert called == []
         assert core._pool is None
     finally:
-        core.ConnectionPool = original
         core._pool = saved_pool
+        core._pg["conn"] = saved_conn
 
 
 def test_threads_checkout_distinct_pooled_connections():

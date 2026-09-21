@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 import psycopg
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
 
 from relocation_jobs.core.job_identity import normalize_job_url
 
@@ -17,7 +16,7 @@ POOL_MIN_SIZE = 2
 POOL_MAX_SIZE = 8
 
 _pool_lock = threading.Lock()
-_pool: ConnectionPool | None = None
+_pool = None
 _pg = {"conn": None, "initialized": False}
 _thread_local = threading.local()
 
@@ -110,6 +109,9 @@ def init_connection_pool(*, force: bool = False) -> None:
     global _pool
     if _pg.get("conn") is not None:
         return
+    conninfo = os.environ.get("DATABASE_URL", "").strip()
+    if not conninfo:
+        return
     with _pool_lock:
         if _pool is not None and not force:
             return
@@ -119,8 +121,10 @@ def init_connection_pool(*, force: bool = False) -> None:
             except Exception:
                 pass
             _pool = None
+        from psycopg_pool import ConnectionPool
+
         _pool = ConnectionPool(
-            conninfo=os.environ["DATABASE_URL"],
+            conninfo=conninfo,
             min_size=POOL_MIN_SIZE,
             max_size=POOL_MAX_SIZE,
             kwargs=_connect_kwargs(),
@@ -136,7 +140,7 @@ def reset_connection_pool_after_fork() -> None:
     init_connection_pool()
 
 
-def _get_pool() -> ConnectionPool:
+def _get_pool():
     pool = _pool
     if pool is None:
         init_connection_pool()
