@@ -23,28 +23,70 @@ Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost 
 
 ---
 
-## GitHub Actions (auto-deploy)
+## Self-hosted runner (auto-deploy) {#self-hosted-runner}
 
-After **CI** succeeds on a push to **`main`**, the **Deploy** workflow runs `./scripts/ec2_app_deploy.sh deploy` on a GitHub-hosted runner (same script as laptop deploy). It does **not** call `open-sg`.
+The **Deploy** workflow (`.github/workflows/deploy.yml`) runs on a self-hosted GitHub Actions runner installed directly on the EC2 instance (`runs-on: [self-hosted, kuchup-prod]`). Being on-box means:
 
-| Trigger | When |
-|---------|------|
-| **CI → Deploy** | `workflow_run` when workflow **CI** completes successfully on a **push** to `main` (typical merge) |
-| **Manual** | Actions → **Deploy** → **Run workflow** (`workflow_dispatch`; skips CI gate) |
+- No need to open EC2 SSH to GitHub's SaaS IP ranges (which change and cannot be reliably allow-listed in the security group).
+- Docker builds reuse the EC2's own **BuildKit daemon cache** — no layer re-download between deploys.
+- Credentials are read from the server's existing gitignored `aws-postgres.env` / `.env`; **no GitHub repository secrets needed**.
 
-**Repository secrets** (Settings → Secrets and variables → Actions):
+**CI** (unit tests, Go tests) stays on GitHub-hosted runners and is not affected.
 
-| Secret | Contents |
-|--------|----------|
-| `EC2_SSH_KEY` | Private key for `ec2-user@<ELASTIC_IP>` (same PEM as local `EC2_SSH_KEY` / `~/Downloads/relocation.pem`) |
-| `AWS_POSTGRES_ENV` | Full gitignored `aws-postgres.env` file (must include at least `ELASTIC_IP`, `DB_PASSWORD`) |
-| `EC2_DEPLOY_DOTENV` | Full production gitignored `.env` (must include `REDIS_PASSWORD` or `REDIS_URL`; same vars laptop deploy reads for OAuth, NOWPayments, AWS/SQS, Grafana, etc.) |
+### Install and register the runner
 
-The workflow writes those to `aws-postgres.env`, `.env`, and a temp PEM with mode `600`, then exports `EC2_SSH_KEY` for the script. Values are masked in logs when referenced as secrets.
+SSH onto the EC2 instance and run:
 
-**Network:** the runner must reach EC2 on **SSH (22)**. That is separate from Cloudflare lock-down on 80/443 — do not use `open-sg` for deploy. Allow [GitHub Actions IP ranges](https://api.github.com/meta) on port 22, or use a self-hosted runner that already has SSH access.
+```bash
+mkdir -p ~/actions-runner && cd ~/actions-runner
 
-Verify after merge: Actions tab → **Deploy** job green → `curl -sf https://kuchup.com/api/health`.
+# arm64 (t4g).  Check https://github.com/actions/runner/releases for the latest version.
+curl -Lo actions-runner-linux-arm64.tar.gz \
+  https://github.com/actions/runner/releases/download/v2.325.0/actions-runner-linux-arm64-2.325.0.tar.gz
+tar xzf actions-runner-linux-arm64.tar.gz
+
+# Get a one-time registration token:
+# GitHub → repository → Settings → Actions → Runners → New self-hosted runner
+./config.sh \
+  --url https://github.com/AminMortezaie/kuchup \
+  --token <REGISTRATION_TOKEN> \
+  --name kuchup-prod \
+  --labels kuchup-prod \
+  --unattended
+
+# Install and start as a systemd user service
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+One runner per box. The concurrency group (`ec2-production-deploy`, `cancel-in-progress: false`) queues rather than cancels concurrent deploys.
+
+### GitHub secrets
+
+None required for deploy credentials. `aws-postgres.env` and `.env` already live on the server at `/home/ec2-user/relocation-jobs/` — the deploy script reads them via `DEPLOY_LOCAL=1`.
+
+The runner does require a valid `GITHUB_TOKEN` to check out the repository (provided automatically by GitHub Actions for public repos).
+
+### Triggers
+
+| Trigger | Condition |
+|---------|-----------|
+| **Auto** | `workflow_run` — CI workflow completes successfully on a **push** to `main` |
+| **Manual** | Actions → **Deploy** → **Run workflow** (`workflow_dispatch`); optional **Force rebuild** input |
+
+### Memory and ops on t4g.micro
+
+- CI runs on GitHub-hosted runners, not the EC2 — do not add test or lint steps to the Deploy workflow.
+- The Deploy job runs `./scripts/ec2_app_deploy.sh deploy` with `DEPLOY_LOCAL=1` and `SKIP_STATIC_BUILD=1`. Docker image rebuilds (when Python code changes) can temporarily use **300–600 MB** RAM. Watch `./scripts/ec2_app_deploy.sh status` after a large rebuild.
+- `SKIP_STATIC_BUILD=1` skips `npm run build` and `Next.js` export — these are expensive on t4g.micro and unnecessary for Python-only changes. **Static assets (`board.js`, homepage) are preserved from the last laptop deploy** and bind-mounted into the panel container. To deploy updated frontend or homepage assets, run a laptop deploy (`./scripts/ec2_app_deploy.sh deploy`) which does the full npm/Next.js build.
+- Concurrency is 1: only one deploy runs at a time. If a deploy is queued when another is running, GitHub holds it until the first finishes.
+
+### Verify after runner install
+
+1. Repository → **Actions** → **Runners** — confirm `kuchup-prod` shows **Online**.
+2. Push any commit to `main` (or **Actions → Deploy → Run workflow**).
+3. Actions → **Deploy** job → confirm it runs on `kuchup-prod` (not `ubuntu-latest`) and completes green.
+4. `curl -sf https://kuchup.com/api/health`
 
 ---
 
@@ -77,7 +119,7 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 
 **DB safety:** prune never runs `docker volume prune`, `docker system prune --volumes`, or anything that stops/removes container `pg`. Postgres data is in named volume `pgdata`. Each prune asserts `pg` is running and `pgdata` exists before and after; it aborts if either check fails.
 
-**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip (and split the Playwright browser install into its own layer). Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default).
+**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip (and split the Playwright browser install into its own layer). Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default). Each build also passes `--build-arg BUILDKIT_INLINE_CACHE=1` and `--cache-from <image>:ec2` so that if the BuildKit daemon cache is cold (e.g. after a Docker restart or disk-pressure GC), cached layers can still be recovered from the local image's embedded cache metadata. **Routine deploys skip the build entirely** when the content hash of Dockerfiles + requirements + source matches the saved hash on EC2 (`.deploy-hashes`) — no cache lookup needed. The Alloy container image is pulled only when not already present locally (pinned tag `v1.8.3` never changes).
 
 | Image | Dockerfile | Role |
 |-------|------------|------|
