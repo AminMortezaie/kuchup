@@ -171,7 +171,6 @@ def flatten_companies(
     ats_type: str | None = None,
     user_id: int | None = None,
     opportunity_company_keys: frozenset[tuple[str, str]] | None = None,
-    opportunity_country_keys: frozenset[str] | None = None,
 ) -> tuple[list[dict], list[dict], int]:
     filters = FlattenFilters.from_kwargs(
         country_key=country_key,
@@ -191,7 +190,6 @@ def flatten_companies(
         position_rejected_only=position_rejected_only,
         position_looking_to_apply_only=position_looking_to_apply_only,
         opportunity_company_keys=opportunity_company_keys,
-        opportunity_country_keys=opportunity_country_keys,
     )
     ctx = load_context(filters.user_id, filters.country_key)
     country_cache: dict[str, dict] = {}
@@ -433,15 +431,10 @@ def _country_keys_for_filters(filters: FlattenFilters) -> list[str]:
             return []
         if kind == CATALOG_KIND_RELOCATION and is_remote_country_key(key):
             return []
-        if filters.opportunity_country_keys is not None and key not in filters.opportunity_country_keys:
-            return []
         return [key]
     keys = sorted(supported_countries())
     if kind == CATALOG_KIND_REMOTE:
         keys = [k for k in keys if is_remote_country_key(k)]
     else:
         keys = [k for k in keys if not is_remote_country_key(k)]
-    if filters.opportunity_country_keys is not None:
-        allowed = filters.opportunity_country_keys
-        keys = [k for k in keys if k in allowed]
     return keys

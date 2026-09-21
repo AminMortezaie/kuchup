@@ -36,17 +36,10 @@ def test_consume_mcp_quota_blocks_free_user(db, monkeypatch):
 
 def test_admin_plan_endpoint(auth_client, db, seeded_catalog_v2, monkeypatch):
     monkeypatch.setattr(
-        "relocation_jobs.opportunities.service.enqueue_user_opportunity_refresh",
-        lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
-    )
-    monkeypatch.setattr(
         "relocation_jobs.web.routes.admin.enqueue_user_opportunity_refresh",
         lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
     )
     user = create_user("grantme", email="grantme@example.com", google_sub="sub-grant")
-    from relocation_jobs.opportunities.service import save_preferences_and_refresh
-
-    save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
     resp = auth_client.patch(
         f"/api/admin/users/{user['id']}/plan",
         json={"plan": "grandfathered"},
@@ -77,13 +70,10 @@ def test_empty_opportunity_board_does_not_enqueue_or_write(client, db, seeded_ca
 
     uid = int(user["id"])
     assert opportunities_repo.count_user_opportunities(uid) == 0
-    assert opportunities_repo.get_user_preferences(uid).target_countries == ()
     assert broadcast_repo.list_assignments(uid) == []
     assert opportunities_repo.needs_opportunity_bootstrap(uid) is True
     assert called == []
-    prefs = client.get("/api/preferences").get_json()["preferences"]
-    assert prefs["target_countries"] == ["germany"]
-    assert opportunities_repo.get_user_preferences(uid).target_countries == ()
+    assert client.get("/api/preferences").status_code == 404
     second = client.get("/api/board?country=all").get_json()
     assert second["meta"]["opportunity_count"] == 0
     assert called == []

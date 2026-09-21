@@ -166,11 +166,7 @@ def ensure_company_assignments(
 
 
 def seed_free_assignments(user_id: int, countries: list[str]) -> int:
-    opportunities_repo.save_user_preferences(
-        user_id,
-        target_countries=countries,
-        preferences_confirmed=True,
-    )
+    opportunities_repo.ensure_user_preferences_row(user_id)
     raw = list_companies_for_opportunity_match(list(countries))
     ranked = sorted(
         [item for item in raw if int(item.get("open_job_count") or 0) > 0],
