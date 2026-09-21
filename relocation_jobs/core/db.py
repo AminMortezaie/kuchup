@@ -4,10 +4,10 @@ import os
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
 
 from relocation_jobs.core.job_identity import normalize_job_url
 
@@ -16,8 +16,10 @@ _PgOperationalError = psycopg.OperationalError
 POOL_MIN_SIZE = 2
 POOL_MAX_SIZE = 8
 
+ConnectionPool: Any = None
+
 _pool_lock = threading.Lock()
-_pool: ConnectionPool | None = None
+_pool: Any | None = None
 _pg = {"conn": None, "initialized": False}
 _thread_local = threading.local()
 
@@ -106,9 +108,23 @@ def close_connection_pool() -> None:
         pass
 
 
+def _connection_pool_class():
+    global ConnectionPool
+    patched = ConnectionPool
+    if patched is not None:
+        return patched
+    from psycopg_pool import ConnectionPool as pool_cls
+
+    ConnectionPool = pool_cls
+    return pool_cls
+
+
 def init_connection_pool(*, force: bool = False) -> None:
     global _pool
     if _pg.get("conn") is not None:
+        return
+    conninfo = os.environ.get("DATABASE_URL", "").strip()
+    if not conninfo:
         return
     with _pool_lock:
         if _pool is not None and not force:
@@ -119,8 +135,9 @@ def init_connection_pool(*, force: bool = False) -> None:
             except Exception:
                 pass
             _pool = None
-        _pool = ConnectionPool(
-            conninfo=os.environ["DATABASE_URL"],
+        pool_cls = _connection_pool_class()
+        _pool = pool_cls(
+            conninfo=conninfo,
             min_size=POOL_MIN_SIZE,
             max_size=POOL_MAX_SIZE,
             kwargs=_connect_kwargs(),
@@ -136,7 +153,7 @@ def reset_connection_pool_after_fork() -> None:
     init_connection_pool()
 
 
-def _get_pool() -> ConnectionPool:
+def _get_pool():
     pool = _pool
     if pool is None:
         init_connection_pool()

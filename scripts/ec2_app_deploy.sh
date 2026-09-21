@@ -295,7 +295,9 @@ maybe_build_homepage() {
   fi
   if [[ "$need" -eq 1 ]]; then
     log "Building homepage (static export)..."
-    "$ROOT/scripts/build_homepage.sh"
+    if ! "$ROOT/scripts/build_homepage.sh"; then
+      log "WARN: homepage static export failed — continuing panel/worker deploy with existing static/homepage"
+    fi
   else
     log "Homepage up to date — skipping static export"
   fi
