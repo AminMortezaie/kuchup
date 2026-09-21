@@ -52,7 +52,6 @@ def test_reconcile_keeps_sticky_when_newer_companies_appear():
     rows = reconcile_sticky_slots(
         existing=existing,
         ranked_open=ranked,
-        prefs_countries={"germany"},
         limits=limits,
         is_admin=False,
     )
@@ -91,7 +90,6 @@ def test_reconcile_fills_vacant_with_newest_open():
     rows = reconcile_sticky_slots(
         existing=existing,
         ranked_open=ranked,
-        prefs_countries={"germany"},
         limits=limits,
         is_admin=False,
     )
@@ -117,8 +115,18 @@ def test_reconcile_drops_empty_unengaged_but_keeps_engaged_company():
     rows = reconcile_sticky_slots(
         existing=existing,
         ranked_open=ranked,
-        prefs_countries={"germany"},
         limits=limits,
         is_admin=False,
     )
     assert {row.company_name for row in rows} == {"Saved", "Fresh"}
+
+
+def test_reconcile_considers_all_countries_not_prefs_subset():
+    limits = CapacityLimits(company_slots=1, jobs_per_company=3, total_position_budget=30)
+    ranked = [
+        CompanyCandidate(country="uk", company_name="UkCo", newest_fetched="2026-08-01", open_job_count=2),
+        CompanyCandidate(country="germany", company_name="DeCo", newest_fetched="2026-07-01", open_job_count=2),
+    ]
+    rows = reconcile_sticky_slots(existing=[], ranked_open=ranked, limits=limits, is_admin=False)
+    assert len(rows) == 1
+    assert rows[0].country == "uk"

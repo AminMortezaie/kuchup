@@ -3,7 +3,6 @@
 export const state = {
   boardCatalog: [],
   boardMeta: {},
-  preferences: null,
   boardUserStats: {},
   boardScopeKey: "",
   boardRequestKey: "",

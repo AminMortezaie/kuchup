@@ -18,7 +18,6 @@ class FlattenFilters(BaseSchema):
     ats_type: str | None = None
     catalog_kind: str = "relocation"
     opportunity_company_keys: frozenset[tuple[str, str]] | None = None
-    opportunity_country_keys: frozenset[str] | None = None
     position_filters: PositionFilters = PositionFilters()
 
     @property

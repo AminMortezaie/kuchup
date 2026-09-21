@@ -45,10 +45,8 @@ def register(app):
         )
         hide_empty = False if defer_empty else requested_hide_empty
         opportunity_company_keys = None
-        opportunity_country_keys = None
         if not opportunity_scope.bypass:
             opportunity_company_keys = opportunity_scope.company_keys
-            opportunity_country_keys = opportunity_scope.country_keys
         companies, file_meta, fetch_problem_count = flatten_companies(
             flags["country_key"],
             visa_only=flags["visa_only"],
@@ -67,7 +65,6 @@ def register(app):
             ats_type=flags["ats_type"],
             user_id=g.user_id,
             opportunity_company_keys=opportunity_company_keys,
-            opportunity_country_keys=opportunity_country_keys,
         )
         companies = apply_capacity_to_board_page(g.user_id, companies)
         if defer_empty:

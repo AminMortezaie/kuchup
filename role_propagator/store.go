@@ -2,7 +2,6 @@ package rolepropagator
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -12,7 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const defaultCountry = "germany"
+var remoteCountryKeys = map[string]bool{
+	"remote-ok":    true,
+	"remote-dxb":   true,
+	"remote-joblet": true,
+}
 
 type Store struct {
 	conn *pgx.Conn
@@ -44,24 +47,6 @@ func utcNow() string {
 
 func periodKey() string {
 	return time.Now().UTC().Format("2006-01")
-}
-
-func parseCountryList(raw string) []string {
-	var data []any
-	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &data); err != nil {
-		return nil
-	}
-	out := make([]string, 0, len(data))
-	seen := map[string]bool{}
-	for _, item := range data {
-		v := strings.ToLower(strings.TrimSpace(fmt.Sprint(item)))
-		if v == "" || seen[v] {
-			continue
-		}
-		seen[v] = true
-		out = append(out, v)
-	}
-	return out
 }
 
 func adminEmails() map[string]bool {
@@ -134,25 +119,31 @@ func (s *Store) LoadUser(ctx context.Context, userID int) (UserRow, error) {
 	return u, nil
 }
 
-func (s *Store) PrefsCountries(ctx context.Context, userID int) ([]string, error) {
-	var raw *string
-	err := s.conn.QueryRow(ctx, `
-		SELECT target_countries_json FROM user_preferences WHERE user_id = $1
-	`, userID).Scan(&raw)
-	if err == pgx.ErrNoRows {
-		return []string{defaultCountry}, nil
-	}
+func (s *Store) ListRelocationCountries(ctx context.Context) ([]string, error) {
+	rows, err := s.conn.Query(ctx, `
+		SELECT DISTINCT country FROM companies
+		WHERE COALESCE(country, '') <> ''
+		ORDER BY country ASC
+	`)
 	if err != nil {
 		return nil, err
 	}
-	var countries []string
-	if raw != nil {
-		countries = parseCountryList(*raw)
+	defer rows.Close()
+	var out []string
+	seen := map[string]bool{}
+	for rows.Next() {
+		var country string
+		if err := rows.Scan(&country); err != nil {
+			return nil, err
+		}
+		key := strings.ToLower(strings.TrimSpace(country))
+		if key == "" || remoteCountryKeys[key] || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, key)
 	}
-	if len(countries) == 0 {
-		return []string{defaultCountry}, nil
-	}
-	return countries, nil
+	return out, rows.Err()
 }
 
 func (s *Store) ListCandidates(ctx context.Context, countries []string) ([]Candidate, error) {
@@ -319,14 +310,10 @@ func (s *Store) InsertAssignment(ctx context.Context, userID int, period, countr
 
 func (s *Store) UserIDsForCountry(ctx context.Context, country string) ([]int, error) {
 	key := strings.ToLower(strings.TrimSpace(country))
-	if key == "" {
+	if key == "" || remoteCountryKeys[key] {
 		return nil, nil
 	}
-	rows, err := s.conn.Query(ctx, `
-		SELECT u.id, p.target_countries_json
-		FROM users u
-		LEFT JOIN user_preferences p ON p.user_id = u.id
-	`)
+	rows, err := s.conn.Query(ctx, `SELECT id FROM users ORDER BY id ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -334,23 +321,10 @@ func (s *Store) UserIDsForCountry(ctx context.Context, country string) ([]int, e
 	var out []int
 	for rows.Next() {
 		var id int
-		var raw *string
-		if err := rows.Scan(&id, &raw); err != nil {
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		countries := []string{defaultCountry}
-		if raw != nil {
-			parsed := parseCountryList(*raw)
-			if len(parsed) > 0 {
-				countries = parsed
-			}
-		}
-		for _, c := range countries {
-			if c == key {
-				out = append(out, id)
-				break
-			}
-		}
+		out = append(out, id)
 	}
 	return out, rows.Err()
 }

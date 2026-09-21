@@ -2,19 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-DEFAULT_TARGET_COUNTRIES: tuple[str, ...] = ("germany",)
-
-
-@dataclass(frozen=True)
-class UserPreferences:
-    user_id: int
-    target_countries: tuple[str, ...] = ()
-    seniority: str = ""
-    keywords: tuple[str, ...] = ()
-    remote_ok: bool = False
-    preferences_confirmed: bool = False
-    opportunities_refreshed_at: str | None = None
-
 
 @dataclass(frozen=True)
 class CompanyCandidate:
@@ -38,10 +25,7 @@ class OpportunityRow:
 class BoardOpportunityScope:
     bypass: bool
     company_keys: frozenset[tuple[str, str]]
-    country_keys: frozenset[str]
     opportunity_count: int
-    needs_preferences: bool
     board_capped: bool
     board_company_cap: int | None
     plan: str
-    target_countries: tuple[str, ...]

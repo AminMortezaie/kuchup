@@ -111,6 +111,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_opportunities_v1", _ensure_user_opportunities_tables)
     run_migration_once(conn, "user_preferences_confirmed_v1", _ensure_preferences_confirmed)
     run_migration_once(conn, "user_opportunities_refreshed_at_v1", _ensure_opportunities_refreshed_at)
+    run_migration_once(conn, "user_preferences_drop_country_prefs_v1", _drop_user_preferences_country_columns)
     run_migration_once(conn, "user_opportunities_reveal_v1", _ensure_opportunity_reveal_columns)
     run_migration_once(conn, "position_broadcast_assignments_v1", _ensure_position_broadcast_tables)
     run_migration_once(conn, "credit_wallet_v1", _ensure_credit_wallet_tables)
@@ -325,6 +326,17 @@ def _ensure_opportunities_refreshed_at(conn) -> None:
         ADD COLUMN IF NOT EXISTS opportunities_refreshed_at TEXT
         """
     )
+
+
+def _drop_user_preferences_country_columns(conn) -> None:
+    for column in (
+        "target_countries_json",
+        "seniority",
+        "keywords_json",
+        "remote_ok",
+        "preferences_confirmed",
+    ):
+        conn.execute(f"ALTER TABLE user_preferences DROP COLUMN IF EXISTS {column}")
 
 
 def _ensure_opportunity_reveal_columns(conn) -> None:
