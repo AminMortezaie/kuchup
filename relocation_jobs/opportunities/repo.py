@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from relocation_jobs.core.db import _utc_now, db_read, db_transaction
-from relocation_jobs.opportunities.types import OpportunityRow, UserPreferences
+from relocation_jobs.opportunities.types import OpportunityRow
 
 
 def ensure_user_preferences_row(user_id: int) -> None:
@@ -15,23 +15,6 @@ def ensure_user_preferences_row(user_id: int) -> None:
             """,
             (user_id, now),
         )
-
-
-def get_user_preferences(user_id: int) -> UserPreferences:
-    with db_read() as conn:
-        row = conn.execute(
-            """
-            SELECT opportunities_refreshed_at
-            FROM user_preferences WHERE user_id = %s
-            """,
-            (user_id,),
-        ).fetchone()
-    if not row:
-        return UserPreferences(user_id=user_id)
-    return UserPreferences(
-        user_id=user_id,
-        opportunities_refreshed_at=(row.get("opportunities_refreshed_at") or "").strip() or None,
-    )
 
 
 def list_user_opportunity_rows(user_id: int) -> list[OpportunityRow]:

@@ -4,12 +4,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class UserPreferences:
-    user_id: int
-    opportunities_refreshed_at: str | None = None
-
-
-@dataclass(frozen=True)
 class CompanyCandidate:
     country: str
     company_name: str

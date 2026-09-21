@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
-from relocation_jobs.opportunities.service import ensure_user_preferences_row
+from relocation_jobs.opportunities import repo as opportunities_repo
 from relocation_jobs.users.repo import create_user
 from tests.helpers.seed import seed_free_assignments
 
@@ -11,10 +11,8 @@ from tests.helpers.seed import seed_free_assignments
 def test_ensure_user_preferences_row_is_idempotent(db):
     user = create_user("oppuser", email="oppuser@example.com", google_sub="sub-opp")
     uid = int(user["id"])
-    ensure_user_preferences_row(uid)
-    ensure_user_preferences_row(uid)
-    from relocation_jobs.opportunities import repo as opportunities_repo
-
+    opportunities_repo.ensure_user_preferences_row(uid)
+    opportunities_repo.ensure_user_preferences_row(uid)
     assert opportunities_repo.needs_opportunity_bootstrap(uid) is True
 
 

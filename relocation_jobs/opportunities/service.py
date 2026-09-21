@@ -10,10 +10,6 @@ def opportunity_company_key(country: str, company_name: str) -> tuple[str, str]:
     return ((country or "").strip().lower(), (company_name or "").strip().lower())
 
 
-def ensure_user_preferences_row(user_id: int) -> None:
-    opportunities_repo.ensure_user_preferences_row(user_id)
-
-
 def resolve_board_opportunity_scope(user_id: int) -> BoardOpportunityScope:
     user = get_user_by_id(user_id)
     if not user:

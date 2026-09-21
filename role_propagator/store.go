@@ -2,7 +2,6 @@ package rolepropagator
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -48,24 +47,6 @@ func utcNow() string {
 
 func periodKey() string {
 	return time.Now().UTC().Format("2006-01")
-}
-
-func parseCountryList(raw string) []string {
-	var data []any
-	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &data); err != nil {
-		return nil
-	}
-	out := make([]string, 0, len(data))
-	seen := map[string]bool{}
-	for _, item := range data {
-		v := strings.ToLower(strings.TrimSpace(fmt.Sprint(item)))
-		if v == "" || seen[v] {
-			continue
-		}
-		seen[v] = true
-		out = append(out, v)
-	}
-	return out
 }
 
 func adminEmails() map[string]bool {
