@@ -26,9 +26,6 @@ def load_catalog_board_page(
 ) -> tuple[list[dict], list[dict], int, int | None, bool]:
     flags = panel_flags or {}
     opportunity_company_keys = None
-    opportunity_country_keys = None
-    # Remote catalog is not scoped by relocation target_countries (Germany defaults
-    # would otherwise empty the Remote board). Cap/plan still surface in meta.
     apply_opportunity_scope = (
         opportunity_scope is not None
         and not opportunity_scope.bypass
@@ -36,7 +33,6 @@ def load_catalog_board_page(
     )
     if apply_opportunity_scope:
         opportunity_company_keys = opportunity_scope.company_keys
-        opportunity_country_keys = opportunity_scope.country_keys
     filters = FlattenFilters.from_kwargs(
         country_key=country_key,
         user_id=user_id,
@@ -44,7 +40,6 @@ def load_catalog_board_page(
         ats_type=ats_type,
         catalog_kind=catalog_kind,
         opportunity_company_keys=opportunity_company_keys,
-        opportunity_country_keys=opportunity_country_keys,
         visa_only=flags.get("visa_only", False),
         hide_applied=flags.get("hide_applied", False),
         hide_empty=flags.get("hide_empty", False),

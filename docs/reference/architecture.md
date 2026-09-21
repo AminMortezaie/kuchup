@@ -111,9 +111,7 @@ Python board/API **reads** assignment state. Board GET does not enqueue. Login, 
 5. Reinject orphans per [business-rules.md](business-rules.md)
 6. Apply panel filters + search; paginate with **visible offset**
 
-Board GET does **not** write prefs, enqueue refresh, or insert assignment rows. Empty slots stay empty until login / `PUT /api/preferences` / payment / a finished fetch enqueues Go.
-
-`GET /api/preferences` returns in-memory defaults (`germany`) when no row exists; it does not insert.
+Board GET does **not** enqueue refresh or insert assignment rows. Empty slots stay empty until login / payment / a finished fetch enqueues Go.
 
 `capacity_meta_for_user` may call `credit_balance` (credits own monthly grant). Legacy credit import runs on login, not on board read.
 
@@ -180,7 +178,6 @@ Producer: `async_jobs/enqueue.py`. Requires `SQS_USER_OPPORTUNITY_REFRESH_QUEUE_
 
 ## Users, entitlements, payments
 
-- Prefs: `PUT /api/preferences` → `save_preferences_and_refresh` → enqueue user refresh
 - Entitlements: `users/entitlements.py` (caps, plan). Admin: `PATCH /api/admin/users/<id>/plan` → enqueue
 - Payment success: `payments/service.py` sets plan / grants credits, then enqueues user refresh
 

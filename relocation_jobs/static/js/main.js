@@ -16,7 +16,6 @@ import { toast, $ } from "./utils.js";
 import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
 import { initAppShell } from "./app-shell.js";
-import { openPreferencesDialog } from "./preferences.js";
 import { openCreditsDialog } from "./credits.js";
 import {
   loadCollapsedCompanies,
@@ -51,7 +50,6 @@ async function init() {
   bindHeaderBar();
   registerFetchActions();
   publishFetchUi();
-  $("preferencesLink")?.addEventListener("click", () => openPreferencesDialog());
   $("creditsLink")?.addEventListener("click", () => openCreditsDialog());
   document.querySelectorAll("[data-open-credits]").forEach((el) => {
     el.addEventListener("click", () => openCreditsDialog());
@@ -74,12 +72,6 @@ async function init() {
   showJobsLoading();
   setLoadingProgress(10);
   await Promise.all([loadConfig(), loadAtsTypes()]);
-  try {
-    const { fetchPreferences } = await import("./preferences.js");
-    await fetchPreferences();
-  } catch {
-    /* board still works with defaults */
-  }
   await loadCountries();
   setAdminNavVisible(Boolean(state.authState.user?.is_admin));
   setLoadingProgress(40);

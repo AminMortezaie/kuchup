@@ -17,7 +17,6 @@ func TestReconcileKeepsStickyWhenNewerCompaniesAppear(t *testing.T) {
 			{Country: "germany", CompanyName: "StepStone", NewestFetched: "2026-06-01", OpenJobCount: 3},
 			{Country: "germany", CompanyName: "OldCo", NewestFetched: "2026-05-01", OpenJobCount: 2},
 		},
-		map[string]bool{"germany": true},
 		&cap,
 	)
 	names := map[string]bool{}
@@ -39,7 +38,6 @@ func TestReconcileFillsVacantWithNewestOpen(t *testing.T) {
 			{Country: "germany", CompanyName: "FlicksBoss", NewestFetched: "2026-08-01", OpenJobCount: 5},
 			{Country: "germany", CompanyName: "StepStone", NewestFetched: "2026-06-01", OpenJobCount: 3},
 		},
-		map[string]bool{"germany": true},
 		&cap,
 	)
 	names := map[string]bool{}
@@ -61,7 +59,6 @@ func TestReconcileDropsEmptyUnengagedButKeepsEngaged(t *testing.T) {
 		[]Candidate{
 			{Country: "germany", CompanyName: "Fresh", NewestFetched: "2026-08-01", OpenJobCount: 4},
 		},
-		map[string]bool{"germany": true},
 		&cap,
 	)
 	names := map[string]bool{}
@@ -91,7 +88,7 @@ func TestPickJobsCapsAtThreeAndKeepsStickyCap(t *testing.T) {
 			Country: "germany", CompanyName: string(rune('A' + i)), NewestFetched: "2026-08-01", OpenJobCount: 1,
 		})
 	}
-	rows := ReconcileSticky(nil, ranked, map[string]bool{"germany": true}, &cap)
+	rows := ReconcileSticky(nil, ranked, &cap)
 	if len(rows) != 10 {
 		t.Fatalf("cap: got %d", len(rows))
 	}

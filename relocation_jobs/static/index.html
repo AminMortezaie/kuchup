@@ -119,7 +119,6 @@
               <p class="user-dropdown-name" id="userName">Account</p>
               <a href="/apply" class="user-dropdown-admin">Resumes & interview notes</a>
               <button type="button" class="user-dropdown-admin" data-open-credits>Credits</button>
-              <button type="button" class="user-dropdown-admin" id="preferencesLink">Where to work</button>
               <a href="/admin" class="user-dropdown-admin" id="adminLink" hidden>Admin</a>
               <button type="button" class="user-dropdown-signout" id="logoutBtn">Sign out</button>
             </div>
@@ -641,23 +640,6 @@
       </div>
     </form>
   </div>
-
-  <dialog class="preferences-dialog" id="preferencesDialog">
-    <form id="preferencesForm" class="preferences-form">
-      <h2 id="preferencesTitle">Where you want to work</h2>
-      <p class="hint" id="preferencesHint">Your board filters to matched companies in these countries.</p>
-      <div class="pref-check-list" id="preferencesCountryList"></div>
-      <label class="pref-check pref-check-remote">
-        <input type="checkbox" id="preferencesRemoteOk" />
-        <span>I’m also open to remote roles</span>
-      </label>
-      <p class="login-error" id="preferencesError"></p>
-      <div class="preferences-actions">
-        <button type="button" class="dialog-btn" id="preferencesCancelBtn">Cancel</button>
-        <button type="submit" class="dialog-btn primary" id="preferencesSaveBtn">Save preferences</button>
-      </div>
-    </form>
-  </dialog>
 
   <script type="module" src="/static/js/position-card.js?v=13"></script>
   <script type="module" crossorigin src="/static/dist/board.js?v=18"></script>

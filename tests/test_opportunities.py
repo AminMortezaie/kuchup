@@ -3,23 +3,17 @@ from __future__ import annotations
 import pytest
 
 from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
-from relocation_jobs.opportunities.service import save_preferences_and_refresh
+from relocation_jobs.opportunities import repo as opportunities_repo
 from relocation_jobs.users.repo import create_user
 from tests.helpers.seed import seed_free_assignments
 
 
-def test_save_preferences_does_not_write_slots(db, seeded_catalog_v2, monkeypatch):
-    monkeypatch.setattr(
-        "relocation_jobs.opportunities.service.enqueue_user_opportunity_refresh",
-        lambda uid: {"queued": False, "synced": False, "type": "user", "user_id": uid},
-    )
+def test_ensure_user_preferences_row_is_idempotent(db):
     user = create_user("oppuser", email="oppuser@example.com", google_sub="sub-opp")
-    result = save_preferences_and_refresh(int(user["id"]), target_countries=["uk"])
-    assert result["refresh"]["queued"] is False
-    assert "uk" in result["preferences"]["target_countries"]
-    from relocation_jobs.opportunities import repo as opportunities_repo
-
-    assert opportunities_repo.count_user_opportunities(int(user["id"])) == 0
+    uid = int(user["id"])
+    opportunities_repo.ensure_user_preferences_row(uid)
+    opportunities_repo.ensure_user_preferences_row(uid)
+    assert opportunities_repo.needs_opportunity_bootstrap(uid) is True
 
 
 def test_production_repos_do_not_create_assignment_rows():

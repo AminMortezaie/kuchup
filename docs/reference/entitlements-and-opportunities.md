@@ -19,7 +19,7 @@
 | Plan | Board | Positions | MCP daily |
 |------|-------|-----------|-----------|
 | `free` | Sticky company slots via `FREE_BOARD_COMPANY_CAP` (default **10**), open-role only | 3 stable active roles/company; 30 promotional credits/calendar month; optional top-ups | `FREE_MCP_DAILY_REQUESTS` (default 20) |
-| `full` / `grandfathered` | Prefs-scoped, no company cap | All roles | `FULL_MCP_DAILY_REQUESTS` (default 500; `0` = unlimited) |
+| `full` / `grandfathered` | All propagated companies, no company cap | All roles | `FULL_MCP_DAILY_REQUESTS` (default 500; `0` = unlimited) |
 | Admin | Bypass opportunity filter | Bypass | Bypass |
 
 ### Module map
@@ -28,7 +28,7 @@
 |--------|------|
 | [`core/sqs_client.py`](../../relocation_jobs/core/sqs_client.py) | SQS transport only |
 | [`async_jobs/`](../../relocation_jobs/async_jobs/) | Typed SQS enqueue only (no Python consumer) |
-| [`opportunities/`](../../relocation_jobs/opportunities/) | Preference + opportunity **reads**; enqueue refresh. Runtime sticky: Go `ReconcileSticky`. Python `reconcile.py` is test-only. |
+| [`opportunities/`](../../relocation_jobs/opportunities/) | Opportunity **reads**; enqueue refresh. Runtime sticky: Go `ReconcileSticky` (all relocation catalog countries). Python `reconcile.py` is test-only. |
 | [`broadcast/`](../../relocation_jobs/broadcast/) | Freemium peek / consume / capacity meta. Replacement **writes**: Go via `type=replace` |
 | [`credits/`](../../relocation_jobs/credits/) | Monthly/purchased grants, wallet balance, immutable ledger, atomic spend/refund |
 | [`payments/`](../../relocation_jobs/payments/) | Provider-neutral checkout orchestration + NOWPayments adapter |
@@ -72,10 +72,9 @@ Visa job pages at `GET /jobs/<slug>` are the LinkedIn/Google on-ramp. The primar
 - Company workspace (`GET /api/mcp/companies/<country>/<company>/applications`) uses the same assignment cap. Looking-to-apply, applied, pinned, and rejected roles stay visible even if they sit outside the current 3. `GET /api/jobs` and `GET /api/companies/<country>/<name>` apply the same filter.
 - Meta includes capacity: `company_slots_used/cap`, `positions_used/budget`, `jobs_per_company_peek`, `upgrade_reason`.
 - **Remote board** does **not** apply relocation opportunity keys.
-- **Default preferences:** `germany` until confirmed.
 - Free at slot/budget wall → upgrade CTAs on board strip and company cards.
 
-Preferences API + onboarding UI (Phase C): unchanged (`GET`/`PUT /api/preferences`).
+Country/remote work preference onboarding was removed; propagation and board reads are not gated by per-user target countries.
 
 ## Credit checkout and Full Access (Phase F — shipped)
 

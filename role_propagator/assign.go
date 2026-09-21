@@ -29,25 +29,19 @@ func companyKey(country, name string) [2]string {
 	return [2]string{strings.ToLower(strings.TrimSpace(country)), strings.ToLower(strings.TrimSpace(name))}
 }
 
-func ReconcileSticky(existing []Opportunity, rankedOpen []Candidate, prefsCountries map[string]bool, cap *int) []Opportunity {
+func ReconcileSticky(existing []Opportunity, rankedOpen []Candidate, cap *int) []Opportunity {
 	byOpen := map[[2]string]Candidate{}
 	for _, c := range rankedOpen {
 		if c.OpenJobCount <= 0 {
 			continue
 		}
 		key := companyKey(c.Country, c.CompanyName)
-		if !prefsCountries[key[0]] {
-			continue
-		}
 		byOpen[key] = c
 	}
 	kept := make([]Opportunity, 0, len(existing))
 	keptKeys := map[[2]string]bool{}
 	for _, row := range existing {
 		key := companyKey(row.Country, row.CompanyName)
-		if !prefsCountries[key[0]] {
-			continue
-		}
 		if !row.Engaged {
 			if _, ok := byOpen[key]; !ok {
 				continue

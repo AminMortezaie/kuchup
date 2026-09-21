@@ -138,13 +138,9 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	if err != nil {
 		return err
 	}
-	countries, err := store.PrefsCountries(ctx, userID)
+	countries, err := store.ListRelocationCountries(ctx)
 	if err != nil {
 		return err
-	}
-	prefs := map[string]bool{}
-	for _, c := range countries {
-		prefs[c] = true
 	}
 	candidates, err := store.ListCandidates(ctx, countries)
 	if err != nil {
@@ -159,7 +155,7 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 		n := envInt("FREE_BOARD_COMPANY_CAP", 10)
 		capPtr = &n
 	}
-	slots := ReconcileSticky(existing, candidates, prefs, capPtr)
+	slots := ReconcileSticky(existing, candidates, capPtr)
 	if err := store.ReplaceOpportunities(ctx, userID, slots); err != nil {
 		return err
 	}

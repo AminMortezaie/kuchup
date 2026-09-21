@@ -1,19 +1,6 @@
 /** Board capacity / plan strip from API meta. */
 
 import { $, escapeHtml } from "./utils.js";
-import { isRemotePanel } from "./panel-mode.js";
-
-const COUNTRY_LABELS = {
-  germany: "Germany",
-  netherlands: "Netherlands",
-  uk: "United Kingdom",
-  portugal: "Portugal",
-  ireland: "Ireland",
-};
-
-function countryLabel(id) {
-  return COUNTRY_LABELS[id] || String(id);
-}
 
 function hideBanner(el) {
   el.hidden = true;
@@ -28,18 +15,11 @@ function paintBanner(el, text, actionHtml = "") {
   `;
 }
 
-function unconfirmedCopy(targets) {
-  const names = (targets.length ? targets : ["germany"]).map((id) => countryLabel(String(id)));
-  return `Matching ${escapeHtml(names.join(", "))}. Change countries from your account menu.`;
-}
-
 export function renderBoardScopeBanner(meta = {}) {
   const el = $("boardScopeBanner");
   if (!el) return;
-  const remote = isRemotePanel() || meta.catalog_kind === "remote";
-  const targets = Array.isArray(meta.target_countries) ? meta.target_countries : [];
 
-  if (!remote && Boolean(meta.board_capped)) {
+  if (Boolean(meta.board_capped)) {
     paintBanner(
       el,
       "Company board is full",
@@ -64,10 +44,6 @@ export function renderBoardScopeBanner(meta = {}) {
     $("boardScopeUpgradeBtn")?.addEventListener("click", () => {
       import("./credits.js").then((mod) => mod.openCreditsDialog());
     });
-    return;
-  }
-  if (!remote && Boolean(meta.needs_preferences)) {
-    paintBanner(el, unconfirmedCopy(targets));
     return;
   }
   hideBanner(el);

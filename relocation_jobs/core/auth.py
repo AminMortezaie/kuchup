@@ -9,7 +9,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from relocation_jobs.db import init_db
 from relocation_jobs.credits.service import wallet_status
-from relocation_jobs.opportunities.service import ensure_default_preferences
 from relocation_jobs.opportunities import repo as opportunities_repo
 from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
 from relocation_jobs.broadcast.service import import_month_usage
@@ -91,7 +90,7 @@ def ensure_dev_login() -> None:
             email=email,
             google_sub=f"local-dev-{email}",
         )
-        ensure_default_preferences(int(user["id"]))
+        opportunities_repo.ensure_user_preferences_row(int(user["id"]))
         import_month_usage(int(user["id"]))
         enqueue_user_opportunity_refresh(int(user["id"]))
     elif not is_user_admin(int(user["id"])):
@@ -178,7 +177,7 @@ def admin_required(view):
 
 
 def _bootstrap_signed_in_user(uid: int) -> None:
-    ensure_default_preferences(uid)
+    opportunities_repo.ensure_user_preferences_row(uid)
     import_month_usage(uid)
     if opportunities_repo.needs_opportunity_bootstrap(uid):
         enqueue_user_opportunity_refresh(uid)

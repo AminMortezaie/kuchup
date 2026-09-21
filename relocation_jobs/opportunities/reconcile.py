@@ -12,23 +12,18 @@ def reconcile_sticky_slots(
     *,
     existing: list[OpportunityRow],
     ranked_open: list[CompanyCandidate],
-    prefs_countries: frozenset[str] | set[str],
     limits: CapacityLimits,
     is_admin: bool,
 ) -> list[OpportunityRow]:
-    """Keep sticky slots still in prefs; fill vacant slots with newest open-role companies."""
-    countries = frozenset(c.strip().lower() for c in prefs_countries if c)
     by_open = {
         company_key(c.country, c.company_name): c
         for c in ranked_open
-        if c.open_job_count > 0 and c.country in countries
+        if c.open_job_count > 0
     }
     kept: list[OpportunityRow] = []
     kept_keys: set[tuple[str, str]] = set()
     for row in existing:
         key = company_key(row.country, row.company_name)
-        if key[0] not in countries:
-            continue
         if not row.engaged and key not in by_open:
             continue
         kept.append(row)
@@ -36,7 +31,6 @@ def reconcile_sticky_slots(
 
     cap = None if is_admin else limits.company_slots
     if cap is not None and len(kept) > cap:
-        # Prefer engaged, then newest.
         kept.sort(
             key=lambda r: (r.engaged, r.newest_fetched or "", r.company_name.lower()),
             reverse=True,
