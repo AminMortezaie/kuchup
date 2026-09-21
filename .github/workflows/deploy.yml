@@ -1,0 +1,82 @@
+# Production EC2 deploy via ./scripts/ec2_app_deploy.sh (same path as laptop deploy).
+#
+# Auto: after CI succeeds on a push to main (workflow_run — not on PR CI alone).
+# Manual: workflow_dispatch (skips CI gate; redeploy current ref).
+#
+# Does not call open-sg. Requires repo secrets (see docs/operations/ec2-panel.md).
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ec2-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: >-
+            ${{ github.event_name == 'workflow_dispatch'
+                && github.sha
+                || github.event.workflow_run.head_sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          npm ci --prefix frontend
+
+      - name: Write deploy credentials (gitignored paths)
+        env:
+          AWS_POSTGRES_ENV: ${{ secrets.AWS_POSTGRES_ENV }}
+          EC2_DEPLOY_DOTENV: ${{ secrets.EC2_DEPLOY_DOTENV }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          umask 077
+          install -m 600 /dev/null aws-postgres.env
+          install -m 600 /dev/null .env
+          printf '%s\n' "$AWS_POSTGRES_ENV" > aws-postgres.env
+          printf '%s\n' "$EC2_DEPLOY_DOTENV" > .env
+          key="${RUNNER_TEMP}/ec2_deploy.pem"
+          install -m 600 /dev/null "$key"
+          printf '%s\n' "$EC2_SSH_KEY" > "$key"
+          echo "EC2_SSH_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Deploy to EC2
+        run: ./scripts/ec2_app_deploy.sh deploy
+
+      - name: Verify https://kuchup.com/api/health
+        run: |
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 https://kuchup.com/api/health)"
+          echo "https://kuchup.com/api/health -> HTTP ${code}"
+          test "${code}" = "200"
