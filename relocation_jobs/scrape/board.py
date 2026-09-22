@@ -24,6 +24,7 @@ from relocation_jobs.scrape.boards.http_sync import (
 from relocation_jobs.scrape.boards.job_shop import fetch_job_shop_board
 from relocation_jobs.scrape.boards.joblet import fetch_joblet_board
 from relocation_jobs.scrape.boards.join import fetch_join_board
+from relocation_jobs.scrape.boards.kake import fetch_kake_board
 from relocation_jobs.scrape.boards.lever import fetch_lever_board
 from relocation_jobs.scrape.boards.personio import fetch_personio_board
 from relocation_jobs.scrape.boards.pinpointhq import fetch_pinpointhq_board
@@ -58,6 +59,7 @@ _BOARD_FETCHERS: dict[str, BoardFetcher] = {
     "job_shop": fetch_job_shop_board,
     "joblet": fetch_joblet_board,
     "join": fetch_join_board,
+    "kake": fetch_kake_board,
     "lever": fetch_lever_board,
     "lever_eu": fetch_lever_board,
     "movingimage": fetch_movingimage_board,

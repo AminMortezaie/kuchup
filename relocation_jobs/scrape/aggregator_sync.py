@@ -14,6 +14,7 @@ _SOURCE_LABEL = {
     "remoteok": "remoteok",
     "remotedxb": "remotedxb",
     "joblet": "joblet",
+    "kake": "kake",
 }
 
 

@@ -21,6 +21,11 @@ def test_ensure_aggregator_seeds_creates_countries_and_sources(db):
     assert joblet is not None
     assert joblet["ats_type"] == "joblet"
     assert joblet.get("catalog_kind") == "remote"
+    kake = get_company("remote-kake", "Kake")
+    assert kake is not None
+    assert kake["ats_type"] == "kake"
+    assert kake["careers_url"] == "https://kake.co/jobs"
+    assert kake.get("catalog_kind") == "remote"
     assert get_company("uae", "Remote DXB") is None
 
 

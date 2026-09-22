@@ -617,6 +617,15 @@ def _detect_greenhouse_from_url(careers_url: str) -> tuple[str | None, str | Non
     return ("greenhouse_eu" if eu else "greenhouse"), f"https://{host}/{slug}"
 
 
+def _detect_kake_from_url(careers_url: str) -> tuple[str | None, str | None]:
+    host = (urlparse(careers_url or "").hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host != "kake.co":
+        return None, None
+    return "kake", "https://kake.co/jobs"
+
+
 def _detect_ats_from_careers_url(careers_url: str) -> tuple[str | None, str | None]:
     for detector in (
         _detect_greenhouse_from_url,
@@ -631,6 +640,7 @@ def _detect_ats_from_careers_url(careers_url: str) -> tuple[str | None, str | No
         _detect_join_from_url,
         _detect_applytojob_from_url,
         _detect_bamboohr_from_url,
+        _detect_kake_from_url,
         _detect_recruitee_board_url,
         _detect_recruitee_from_careers_host,
     ):
@@ -748,6 +758,7 @@ ATS_HINT_URL_DETECTORS = (
     _detect_join_from_url,
     _detect_applytojob_from_url,
     _detect_bamboohr_from_url,
+    _detect_kake_from_url,
     _detect_recruitee_board_url,
     _detect_recruitee_from_careers_host,
     _detect_job_shop_from_url,
@@ -760,6 +771,7 @@ _CAREERS_PAGE_AS_ATS = frozenset({
     "jibe",
     "movingimage",
     "project_a",
+    "kake",
     "remotedxb",
     "remoteok",
     "rss",

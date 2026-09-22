@@ -7,9 +7,9 @@ CATALOG_KIND_RELOCATION = "relocation"
 CATALOG_KIND_REMOTE = "remote"
 CATALOG_KINDS = frozenset({CATALOG_KIND_RELOCATION, CATALOG_KIND_REMOTE})
 
-REMOTE_COUNTRY_KEYS = frozenset({"remote-ok", "remote-dxb", "remote-joblet"})
-AGGREGATOR_ATS_TYPES = frozenset({"remoteok", "remotedxb", "joblet"})
-AGGREGATOR_SOURCE_KEYS = frozenset({"remoteok", "remotedxb", "joblet", "aggregator"})
+REMOTE_COUNTRY_KEYS = frozenset({"remote-ok", "remote-dxb", "remote-joblet", "remote-kake"})
+AGGREGATOR_ATS_TYPES = frozenset({"remoteok", "remotedxb", "joblet", "kake"})
+AGGREGATOR_SOURCE_KEYS = frozenset({"remoteok", "remotedxb", "joblet", "kake", "aggregator"})
 SOURCED_ATS_TYPE = "sourced"
 
 

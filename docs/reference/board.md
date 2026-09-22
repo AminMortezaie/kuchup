@@ -22,7 +22,7 @@ Two panels share the same board **read contract** (`companies` / `meta` / `user_
 
 Shared helpers live in [`relocation_jobs/shared/board_contract.py`](../../relocation_jobs/shared/board_contract.py). Remote board orchestration is under [`relocation_jobs/remote/`](../../relocation_jobs/remote/). Do not gate remote behind a `board_kind` flag inside relocation routes.
 
-Remote boards: `remote-ok`, `remote-dxb`, `remote-joblet` (Remotedxb is not under `uae`).
+Remote boards: `remote-ok`, `remote-dxb`, `remote-joblet`, `remote-kake` (Remotedxb is not under `uae`).
 
 ---
 
