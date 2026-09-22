@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "348e0bd586c2",
+  "session_id": "8332b1e4-8115-4dae-9b0c-640488ed4b2c",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-22T18:42:19.770832Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "scripts/ec2_app_deploy.sh",
+    "scripts/ec2_redis.sh"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "3ad0b307c584",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 43673,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 98048,
+    "output_tokens": 2722,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-22T18:42:19.766381Z",
+    "agent_lines": 6,
+    "agent_removed": 5,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 6,
+    "total_lines_changed": 11,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
