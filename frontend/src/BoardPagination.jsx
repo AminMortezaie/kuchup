@@ -1,15 +1,15 @@
 function pageRange(current, total) {
-  if (total <= 3) {
+  // Mobile row budget: Prev + ≤5 slots + Next. Keep windows short.
+  if (total <= 5) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
-  const pages = new Set([1, total, current, current - 1, current + 1]);
-  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
-  const out = [];
-  for (let i = 0; i < sorted.length; i += 1) {
-    if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push("…");
-    out.push(sorted[i]);
+  if (current <= 3) {
+    return [1, 2, 3, "…", total];
   }
-  return out;
+  if (current >= total - 2) {
+    return [1, "…", total - 2, total - 1, total];
+  }
+  return [1, "…", current, "…", total];
 }
 
 export default function BoardPagination({ pagination }) {
@@ -35,22 +35,24 @@ export default function BoardPagination({ pagination }) {
         >
           Previous
         </button>
-        {pageRange(page, totalPages).map((item, idx) => (
-          typeof item === "number" ? (
-            <button
-              key={`page-${item}`}
-              type="button"
-              className={`filter-btn board-page-num${item === page ? " is-active" : ""}`}
-              disabled={loading || item === page}
-              aria-current={item === page ? "page" : undefined}
-              onClick={() => window.relocationJobs?.goToBoardPage?.(item)}
-            >
-              {item}
-            </button>
-          ) : (
-            <span key={`gap-${idx}`} className="board-page-gap" aria-hidden="true">{item}</span>
-          )
-        ))}
+        <div className="board-pagination-pages">
+          {pageRange(page, totalPages).map((item, idx) => (
+            typeof item === "number" ? (
+              <button
+                key={`page-${item}`}
+                type="button"
+                className={`filter-btn board-page-num${item === page ? " is-active" : ""}`}
+                disabled={loading || item === page}
+                aria-current={item === page ? "page" : undefined}
+                onClick={() => window.relocationJobs?.goToBoardPage?.(item)}
+              >
+                {item}
+              </button>
+            ) : (
+              <span key={`gap-${idx}`} className="board-page-gap" aria-hidden="true">{item}</span>
+            )
+          ))}
+        </div>
         <button
           type="button"
           className="filter-btn board-page-nav"
