@@ -34,11 +34,8 @@
 #                          built assets on REMOTE_DIR are preserved (for use
 #                          with DEPLOY_LOCAL=1 on a memory-constrained runner)
 #
-# Worker cgroup caps (no extra swap). Exceeding the cap OOM-kills that
-# container; --restart unless-stopped brings it back. Postgres, Redis,
-# panel, MCP, role propagator, Caddy, and Alloy stay uncapped here.
-#   light HTTP worker: 512m (above ~416MiB Grafana last; concurrency 2)
-#   Playwright sidecar: 640m (cannot repeat the ~837MiB Chromium spike)
+# Worker caps (no extra swap): OOM kills that container and restart brings
+# it back. Other containers stay uncapped. See docs/operations/ec2-panel.md.
 
 set -euo pipefail
 

@@ -152,42 +152,15 @@ If a worker hits its cap, the kernel OOM-kills that container (exit 137). `--res
 
 On `t4g.micro`, keep the **light** worker concurrency at **2** (one event loop + semaphore). Do not raise it without watching worker RSS. The Playwright sidecar, when enabled, uses concurrency **1**. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
 
-### Light vs Playwright images (measure after merge)
+### Light vs Playwright images
 
-Default production is the light worker. Playwright stays a separate image so you can compare sizes, then decide whether to keep Python+Chromium or rewrite that path in Go.
-
-| Image | What it installs | Expected size win |
-|-------|------------------|-------------------|
-| `relocation-fetch-worker:ec2` | `requirements.txt` only | Drops Playwright pip + Chromium headless shell + OS browser deps — typically **~300–500MB** (task ballpark ~400MB). Confirm with `image-sizes`. |
-| `relocation-fetch-worker:playwright` | `requirements-playwright.txt` + `playwright install --with-deps --only-shell chromium` | Same class as the pre-split worker. |
-
-Local (or on EC2 after rsync):
-
-```bash
-DOCKER_BUILDKIT=1 docker build -f Dockerfile.ec2-worker -t relocation-fetch-worker:ec2 .
-DOCKER_BUILDKIT=1 docker build -f Dockerfile.ec2-worker-playwright -t relocation-fetch-worker:playwright .
-docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep fetch-worker
-```
-
-On EC2 after a deploy that built both:
+Routine deploy builds the light image only and removes the sidecar. `image-sizes` (above) compares them. The light image drops Chromium and its OS deps — typically **~300–500MB**.
 
 ```bash
 DEPLOY_PLAYWRIGHT_WORKER=1 ./scripts/ec2_app_deploy.sh deploy --force
-./scripts/ec2_app_deploy.sh image-sizes
-```
-
-Leave `DEPLOY_PLAYWRIGHT_WORKER` unset on routine deploys (sidecar container is removed). To run the Chromium path locally without Docker:
-
-```bash
-FETCH_SCHEDULE_ENABLED=1 python3 apps/playwright-worker/run.py --once
-# optional: also scrape generic/ashby/teamtailor via browser fallbacks
-FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS=1 FETCH_SCHEDULE_ENABLED=1 python3 apps/playwright-worker/run.py --once
-```
-
-Light worker locally (HTTP ATS only; Playwright-required companies are skipped even if Chromium is installed):
-
-```bash
 FETCH_WORKER_KIND=http FETCH_SCHEDULE_ENABLED=1 python3 apps/fetch-worker/run.py --once
+FETCH_SCHEDULE_ENABLED=1 python3 apps/playwright-worker/run.py --once
+# sidecar only: FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS=1
 ```
 
 **Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.
@@ -314,7 +287,7 @@ Cloudflare **522** means the origin timed out or refused — not an application 
 | Panel localhost fail / Exited | Panel or Caddy down |
 | Up but hang / SSH banner timeout | Host wedged (disk or memory) |
 
-Known causes: Docker filling the root volume; an uncapped fetch-worker spike (Grafana saw ~837MiB max on the ~2GiB host). Worker containers now have cgroup caps — see [Worker memory caps](#worker-memory-caps) — so an over-limit worker is OOM-killed and restarted instead of wedging the host. Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
+Known causes: Docker filling the root volume; fetch-worker memory pressure. Caps and the OOM-restart tradeoff: [Worker memory caps](#worker-memory-caps). Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
 
 ---
 

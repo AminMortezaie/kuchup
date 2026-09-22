@@ -37,7 +37,7 @@ Trigger (scheduler or POST /api/fetch)
   → Postgres (catalog + fetch_runs + company_fetch_attempts)
 ```
 
-Production runs this in a **separate container** (`relocation-fetch-worker`, `Dockerfile.ec2-worker` — light HTTP ATS). Playwright/Chromium boards are an opt-in sidecar (`Dockerfile.ec2-worker-playwright`). The panel container has `PANEL_SCRAPE_ENABLED=0` and does not scrape ([ec2-panel.md](../operations/ec2-panel.md)).
+Production runs this in a **separate container** (`relocation-fetch-worker`, `Dockerfile.ec2-worker`). The panel container has `PANEL_SCRAPE_ENABLED=0` and does not scrape ([ec2-panel.md](../operations/ec2-panel.md)).
 
 Everything else — `GET /api/board`, apply/reject/not-for-me, MCP tools — is **synchronous Postgres** on the request thread.
 
@@ -241,7 +241,7 @@ flowchart TB
 
 - Broker **outside** the Python package: EC2 compose, Confluent Cloud, or MSK.
 - Panel container: `KAFKA_BOOTSTRAP_SERVERS` only if it publishes (manual fetch).
-- Worker container: consumer; HTTP ATS in the light image, Playwright in the sidecar (`Dockerfile.ec2-worker-playwright`).
+- Worker container: consumer + Playwright (existing `Dockerfile.ec2-worker`).
 - Tests: `reset_kafka_client()` in `conftest.py`; use testcontainers or mock producer (same pattern as Redis).
 
 ---

@@ -137,22 +137,14 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ## Fetch & scrape
 
-Production fetch is a light HTTP image plus an opt-in Chromium sidecar:
-
-| Image | Playwright | Role |
-|-------|------------|------|
-| Slim panel (`Dockerfile.ec2`) | No | HTTP API, company-fetch without country scrape (`PANEL_COMPANY_FETCH_ENABLED=1`) |
-| Light fetch worker (`Dockerfile.ec2-worker`) | No | 6-hour HTTP country scrape (`FETCH_WORKER_KIND=http`, cgroup **512m**) |
-| Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `jibe` / `atlassian` / `hibob` (cgroup **640m**) |
-
-Default deploy runs `apps/fetch-worker/run.py` only. Browser boards use `apps/playwright-worker/run.py`.
+Images, `FETCH_WORKER_KIND`, and memory caps: [operations/ec2-panel.md](operations/ec2-panel.md).
 
 - Country fetch: in-process asyncio (`fetch/country_runner.py`)
 - ATS scrape cap: `MAX_CONCURRENCY` 16 (`core/ats_constants.py`)
 - Production scheduler: `FETCH_SCHEDULE_CONCURRENCY=2` (do not raise on `t4g.micro` without watching RSS)
 - Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Live state: `fetch_runs` + `GET /api/fetch/status`
-- CLI: `apps/fetch-worker/run.py`, `scripts/build_companies.py` for batch/offline
+- CLI: `apps/fetch-worker/run.py` (HTTP), `apps/playwright-worker/run.py` (Chromium), `scripts/build_companies.py` for batch/offline
 
 ---
 
