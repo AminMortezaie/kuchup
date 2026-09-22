@@ -30,10 +30,13 @@ def test_admin_docs_pane_is_private_shell():
     assert "admin-docs-index" in docs_js
     assert "admin-docs-row" in docs_js
     assert "No docs yet" in docs_js
-    assert "admin-docs-new" not in docs_js
+    assert "admin-docs-new" in docs_js
+    assert 'data-folder="${escapeAttr(folder.slug)}"' in docs_js
     assert "admin-docs-prose" in docs_js
     assert 'id="adminDocsEdit"' in docs_js
     assert "admin-docs-cancel" in docs_js
+    assert "docBylineHtml" in docs_js
+    assert "admin-docs-editor" in docs_js
 
 
 def test_team_docs_not_on_sitemap_or_homepage(v2_client):
@@ -94,6 +97,8 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
     doc = created.get_json()["doc"]
     assert doc["slug"] == "launch-checklist"
     assert doc["path"] == "/product/launch-checklist"
+    assert doc["created_by"] == "admin"
+    assert doc["updated_by"] == "admin"
     assert doc["body"] == "# Launch\n\n- [ ] ship docs"
     assert "<h1>Launch</h1>" in doc["html"]
     assert "<li>[ ] ship docs</li>" in doc["html"]
@@ -116,6 +121,8 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
     assert saved["title"] == "Launch checklist v2"
     assert saved["slug"] == "launch-v2"
     assert saved["path"] == "/product/launch-v2"
+    assert saved["created_by"] == "admin"
+    assert saved["updated_by"] == "admin"
     assert saved["body"] == "shipped"
     assert saved["html"] == "<p>shipped</p>"
 
@@ -192,6 +199,42 @@ def test_team_docs_move_between_seeded_folders(v2_auth_client, db):
     listed = v2_auth_client.get("/api/admin/team-docs").get_json()
     assert _folder_by_slug(listed, "product")["docs"] == []
     assert _folder_by_slug(listed, "tech")["docs"][0]["title"] == "API notes"
+
+
+def test_team_docs_editor_stamping(v2_auth_client, db):
+    del db
+    from relocation_jobs.users.repo import create_user
+
+    other = create_user(
+        "othereditor",
+        is_admin=True,
+        email="other@example.com",
+        google_sub="test-sub-othereditor",
+        display_name="Other Editor",
+    )
+    created = v2_auth_client.post(
+        "/api/admin/team-docs",
+        json={"folder": "product", "title": "Notes", "body": "v1"},
+    )
+    assert created.status_code == 201
+    doc = created.get_json()["doc"]
+    assert doc["created_by"] == "admin"
+    assert doc["updated_by"] == "admin"
+    with v2_auth_client.session_transaction() as sess:
+        sess["user_id"] = other["id"]
+        sess["username"] = other["username"]
+    updated = v2_auth_client.patch(
+        f"/api/admin/team-docs/{doc['id']}",
+        json={"body": "v2"},
+    )
+    assert updated.status_code == 200
+    saved = updated.get_json()["doc"]
+    assert saved["created_by"] == "admin"
+    assert saved["updated_by"] == "Other Editor"
+    summary = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")["docs"][0]
+    assert summary["updated_by"] == "Other Editor"
+    assert "created_by_user_id" not in summary
+    assert "updated_by_user_id" not in summary
 
 
 def test_team_docs_duplicate_slug_rejected(v2_auth_client, db):

@@ -476,6 +476,15 @@
   color: var(--color-muted);
 }
 
+.admin-docs-section-head .admin-docs-new {
+  margin-left: auto;
+  flex: 0 0 auto;
+  min-height: 1.8rem;
+  height: 1.8rem;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
+}
+
 .admin-docs-kicker {
   margin: 0;
   font-size: 0.75rem;
@@ -540,7 +549,22 @@
   color: var(--color-muted);
 }
 
-.admin-docs-index time { margin-bottom: var(--space-2xs); }
+.admin-docs-row-meta {
+  display: block;
+  margin-bottom: var(--space-2xs);
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.admin-docs-row-meta time,
+.admin-docs-row-meta .admin-docs-editor {
+  font-size: inherit;
+  color: inherit;
+}
+
+.admin-docs-byline-sep {
+  color: var(--color-muted);
+}
 
 .admin-docs-byline { margin-top: var(--space-xs); }
 

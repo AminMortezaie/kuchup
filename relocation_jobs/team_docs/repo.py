@@ -11,6 +11,8 @@ def _doc_row(row, *, include_body: bool) -> dict:
         "title": row["title"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        "created_by_user_id": row["created_by_user_id"],
+        "updated_by_user_id": row["updated_by_user_id"],
     }
     if include_body:
         payload["body"] = row["body"] or ""
@@ -21,7 +23,8 @@ def list_doc_summaries() -> list[dict]:
     with db_read() as conn:
         rows = conn.execute(
             """
-            SELECT id, folder, slug, title, created_at, updated_at
+            SELECT id, folder, slug, title, created_at, updated_at,
+                   created_by_user_id, updated_by_user_id
             FROM team_docs
             ORDER BY folder ASC, LOWER(slug) ASC, id ASC
             """
@@ -33,7 +36,8 @@ def get_doc(doc_id: int) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, folder, slug, title, body, created_at, updated_at
+            SELECT id, folder, slug, title, body, created_at, updated_at,
+                   created_by_user_id, updated_by_user_id
             FROM team_docs
             WHERE id = %s
             """,
@@ -46,7 +50,8 @@ def find_doc_in_folder(folder: str, slug: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, folder, slug, title, created_at, updated_at
+            SELECT id, folder, slug, title, created_at, updated_at,
+                   created_by_user_id, updated_by_user_id
             FROM team_docs
             WHERE folder = %s AND slug = %s
             """,
@@ -55,16 +60,27 @@ def find_doc_in_folder(folder: str, slug: str) -> dict | None:
     return _doc_row(row, include_body=False) if row else None
 
 
-def insert_doc(*, folder: str, slug: str, title: str, body: str) -> dict:
+def insert_doc(
+    *,
+    folder: str,
+    slug: str,
+    title: str,
+    body: str,
+    editor_user_id: int,
+) -> dict:
     now = _utc_now()
     with db_transaction() as conn:
         row = conn.execute(
             """
-            INSERT INTO team_docs (folder, slug, title, body, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id, folder, slug, title, body, created_at, updated_at
+            INSERT INTO team_docs (
+                folder, slug, title, body, created_at, updated_at,
+                created_by_user_id, updated_by_user_id
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, folder, slug, title, body, created_at, updated_at,
+                      created_by_user_id, updated_by_user_id
             """,
-            (folder, slug, title, body, now, now),
+            (folder, slug, title, body, now, now, editor_user_id, editor_user_id),
         ).fetchone()
     return _doc_row(row, include_body=True)
 
@@ -76,17 +92,20 @@ def update_doc(
     slug: str,
     title: str,
     body: str,
+    editor_user_id: int,
 ) -> dict | None:
     now = _utc_now()
     with db_transaction() as conn:
         row = conn.execute(
             """
             UPDATE team_docs
-            SET folder = %s, slug = %s, title = %s, body = %s, updated_at = %s
+            SET folder = %s, slug = %s, title = %s, body = %s, updated_at = %s,
+                updated_by_user_id = %s
             WHERE id = %s
-            RETURNING id, folder, slug, title, body, created_at, updated_at
+            RETURNING id, folder, slug, title, body, created_at, updated_at,
+                      created_by_user_id, updated_by_user_id
             """,
-            (folder, slug, title, body, now, doc_id),
+            (folder, slug, title, body, now, editor_user_id, doc_id),
         ).fetchone()
     return _doc_row(row, include_body=True) if row else None
 
