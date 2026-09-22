@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "2703dff07284",
+  "strategy": "manual-commit",
+  "branch": "fix/admin-docs-markdown-tables",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/team_docs/markdown.py",
+    "relocation_jobs/web/routes/team_docs.py",
+    "tests/team_docs/test_markdown.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/27/03dff07284/0/metadata.json",
+      "transcript": "/27/03dff07284/0/full.jsonl",
+      "compact_transcript": "/27/03dff07284/0/transcript.jsonl",
+      "content_hash": "/27/03dff07284/0/content_hash.txt",
+      "prompt": "/27/03dff07284/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 191538,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 439168,
+    "output_tokens": 9916,
+    "api_call_count": 1
+  }
+}
