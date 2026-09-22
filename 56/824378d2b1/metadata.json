@@ -1,0 +1,17 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "56824378d2b1",
+  "strategy": "manual-commit",
+  "branch": "fix/mobile-board-pagination",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/56/824378d2b1/0/metadata.json",
+      "transcript": "/56/824378d2b1/0/full.jsonl",
+      "compact_transcript": "/56/824378d2b1/0/transcript.jsonl",
+      "content_hash": "/56/824378d2b1/0/content_hash.txt",
+      "prompt": "/56/824378d2b1/0/prompt.txt"
+    }
+  ]
+}
