@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7f2ca751d878",
+  "session_id": "85e8e68b-c84e-413e-a333-aeaab9968f84",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-22T23:57:32.186782Z",
+  "branch": "cursor/fix-mobile-pagination-85e1",
+  "checkpoints_count": 3,
+  "save_step_count": 2,
+  "files_touched": [
+    "frontend/src/BoardPagination.jsx",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "29e2c2f7c95c",
+  "checkpoint_transcript_start": 51,
+  "transcript_lines_at_start": 51,
+  "compact_transcript_start": 4,
+  "token_usage": {
+    "input_tokens": 40079,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2576256,
+    "output_tokens": 20577,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-22T23:57:32.155869Z",
+    "agent_lines": 32,
+    "agent_removed": 27,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 32,
+    "total_lines_changed": 59,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 15,
+      "agent_lines_removed": 9,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 32,
+      "agent_lines_removed": 27,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
