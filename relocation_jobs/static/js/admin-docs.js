@@ -35,13 +35,27 @@ function whenHtml(value) {
   return `<time datetime="${escapeAttr(value || "")}">${escapeHtml(label)}</time>`;
 }
 
+function docEditorLabel(doc) {
+  return (doc?.updated_by || "").trim();
+}
+
+function docBylineHtml(doc) {
+  const bits = [];
+  const time = whenHtml(doc?.updated_at);
+  if (time) bits.push(time);
+  const editor = docEditorLabel(doc);
+  if (editor) bits.push(`<span class="admin-docs-editor">${escapeHtml(editor)}</span>`);
+  if (!bits.length) return "";
+  return bits.join('<span class="admin-docs-byline-sep" aria-hidden="true"> · </span>');
+}
+
 function indexHtml() {
   const sections = (tree.folders || []).map((folder) => {
     const docs = folder.docs || [];
     const items = docs.map((doc) => `
       <li>
         <button type="button" class="admin-docs-row" data-doc-id="${Number(doc.id)}">
-          ${whenHtml(doc.updated_at)}
+          <span class="admin-docs-row-meta">${docBylineHtml(doc)}</span>
           <span class="admin-docs-row-title">${escapeHtml(doc.title)}</span>
         </button>
       </li>`).join("");
@@ -76,7 +90,7 @@ function articleHtml(doc) {
       </div>
       <p class="admin-docs-kicker">${escapeHtml(folderTitle(doc.folder))}</p>
       <h2 class="admin-docs-title">${escapeHtml(doc.title)}</h2>
-      <p class="admin-docs-byline">${whenHtml(doc.updated_at)}</p>
+      <p class="admin-docs-byline">${docBylineHtml(doc)}</p>
       <div class="admin-docs-prose" id="adminDocsProse"></div>
     </article>`;
 }

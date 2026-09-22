@@ -129,6 +129,16 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "public_job_saves_v1", _ensure_public_job_saves_table)
     run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
     run_migration_once(conn, "team_docs_v1", _team_docs_v1)
+    run_migration_once(conn, "team_docs_editors_v1", _team_docs_editors_v1)
+
+
+def _team_docs_editors_v1(conn) -> None:
+    conn.execute(
+        "ALTER TABLE team_docs ADD COLUMN IF NOT EXISTS created_by_user_id INTEGER"
+    )
+    conn.execute(
+        "ALTER TABLE team_docs ADD COLUMN IF NOT EXISTS updated_by_user_id INTEGER"
+    )
 
 
 def _team_docs_v1(conn) -> None:

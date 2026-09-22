@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import jsonify, request
+from flask import g, jsonify, request
 
 from relocation_jobs.core.auth import admin_required
 from relocation_jobs.team_docs import service as team_docs_service
@@ -35,6 +35,7 @@ def register(app):
                 title=str(body.get("title") or ""),
                 body=body.get("body") or "",
                 slug=(body.get("slug") or None),
+                editor_user_id=g.user_id,
             )
             return jsonify({"ok": True, "doc": _with_html(saved)}), 201
         except (TypeError, ValueError) as exc:
@@ -64,6 +65,7 @@ def register(app):
                 body=None if "body" not in body else body.get("body"),
                 slug=None if "slug" not in body else body.get("slug"),
                 folder=folder,
+                editor_user_id=g.user_id,
             )
             return jsonify({"ok": True, "doc": _with_html(saved)})
         except (TypeError, ValueError) as exc:

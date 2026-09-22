@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from relocation_jobs.team_docs import repo
+from relocation_jobs.users.repo import get_user_by_id
 
 _TITLE_MAX = 200
 _SLUG_MAX = 80
@@ -58,15 +59,39 @@ def _require_folder(folder: str) -> str:
     return slug
 
 
+def _editor_label(user_id: int | None) -> str:
+    if not user_id:
+        return ""
+    user = get_user_by_id(int(user_id))
+    if not user:
+        return ""
+    display_name = (user.get("display_name") or "").strip()
+    if display_name:
+        return display_name
+    email = (user.get("email") or "").strip()
+    if email:
+        return email
+    return (user.get("username") or "").strip()
+
+
 def _with_path(doc: dict) -> dict:
     folder = doc["folder"]
     return {**doc, "path": f"/{folder}/{doc['slug']}", "folder_path": f"/{folder}"}
 
 
+def _public_doc(doc: dict) -> dict:
+    payload = _with_path(doc)
+    payload["created_by"] = _editor_label(doc.get("created_by_user_id"))
+    payload["updated_by"] = _editor_label(doc.get("updated_by_user_id"))
+    payload.pop("created_by_user_id", None)
+    payload.pop("updated_by_user_id", None)
+    return payload
+
+
 def list_folder_tree() -> dict:
     by_folder: dict[str, list[dict]] = {}
     for doc in repo.list_doc_summaries():
-        by_folder.setdefault(doc["folder"], []).append(_with_path(doc))
+        by_folder.setdefault(doc["folder"], []).append(_public_doc(doc))
     return {
         "folders": [
             {
@@ -84,7 +109,7 @@ def get_document(doc_id: int) -> dict:
     doc = repo.get_doc(doc_id)
     if not doc:
         raise LookupError("Document not found")
-    return _with_path(doc)
+    return _public_doc(doc)
 
 
 def create_document(
@@ -93,6 +118,7 @@ def create_document(
     title: str,
     body: str = "",
     slug: str | None = None,
+    editor_user_id: int,
 ) -> dict:
     folder = _require_folder(folder)
     clean_title = _clean_title(title)
@@ -106,8 +132,9 @@ def create_document(
         slug=allocated,
         title=clean_title,
         body=_clean_body(body),
+        editor_user_id=editor_user_id,
     )
-    return _with_path(saved)
+    return _public_doc(saved)
 
 
 def update_document(
@@ -117,6 +144,7 @@ def update_document(
     body: str | None = None,
     slug: str | None = None,
     folder: str | None = None,
+    editor_user_id: int,
 ) -> dict:
     current = repo.get_doc(doc_id)
     if not current:
@@ -137,10 +165,11 @@ def update_document(
         slug=next_slug,
         title=next_title,
         body=next_body,
+        editor_user_id=editor_user_id,
     )
     if not saved:
         raise LookupError("Document not found")
-    return _with_path(saved)
+    return _public_doc(saved)
 
 
 def delete_document(doc_id: int) -> None:
