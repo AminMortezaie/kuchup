@@ -28,6 +28,9 @@ def test_admin_docs_pane_is_private_shell():
     assert '"docs"' in shell_js
     assert 'raw.split("/")[0]' in shell_js
     assert "admin-docs-index" in docs_js
+    assert "admin-docs-row" in docs_js
+    assert "No docs yet" in docs_js
+    assert "admin-docs-new" not in docs_js
     assert "admin-docs-prose" in docs_js
     assert 'id="adminDocsEdit"' in docs_js
     assert "admin-docs-cancel" in docs_js
@@ -204,6 +207,36 @@ def test_team_docs_duplicate_slug_rejected(v2_auth_client, db):
     )
     assert clash.status_code == 400
     assert "already exists" in clash.get_json()["error"]
+
+
+def test_team_docs_folder_docs_sorted_by_slug(v2_auth_client, db):
+    del db
+    specs = [
+        ("zebra-note", "Zebra note"),
+        ("alpha-note", "Alpha note"),
+        ("middle-note", "Middle note"),
+    ]
+    for slug, title in specs:
+        res = v2_auth_client.post(
+            "/api/admin/team-docs",
+            json={"folder": "product", "title": title, "slug": slug},
+        )
+        assert res.status_code == 201
+
+    listed = v2_auth_client.get("/api/admin/team-docs").get_json()
+    product_docs = _folder_by_slug(listed, "product")["docs"]
+    assert [item["slug"] for item in product_docs] == ["alpha-note", "middle-note", "zebra-note"]
+
+    alpha_id = next(item["id"] for item in product_docs if item["slug"] == "alpha-note")
+    updated = v2_auth_client.patch(
+        f"/api/admin/team-docs/{alpha_id}",
+        json={"title": "ZZZ renamed — sorts last by title"},
+    )
+    assert updated.status_code == 200
+
+    relisted = v2_auth_client.get("/api/admin/team-docs").get_json()
+    slugs = [item["slug"] for item in _folder_by_slug(relisted, "product")["docs"]]
+    assert slugs == ["alpha-note", "middle-note", "zebra-note"]
 
 
 def test_team_docs_auto_slug_suffix_and_validation(v2_auth_client, db):

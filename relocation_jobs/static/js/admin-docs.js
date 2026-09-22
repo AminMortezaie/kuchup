@@ -37,21 +37,22 @@ function whenHtml(value) {
 
 function indexHtml() {
   const sections = (tree.folders || []).map((folder) => {
-    const items = (folder.docs || []).map((doc) => `
+    const docs = folder.docs || [];
+    const items = docs.map((doc) => `
       <li>
-        ${whenHtml(doc.updated_at)}
-        <h3>
-          <button type="button" class="admin-docs-link" data-doc-id="${Number(doc.id)}">${escapeHtml(doc.title)}</button>
-        </h3>
+        <button type="button" class="admin-docs-row" data-doc-id="${Number(doc.id)}">
+          ${whenHtml(doc.updated_at)}
+          <span class="admin-docs-row-title">${escapeHtml(doc.title)}</span>
+        </button>
       </li>`).join("");
     const list = items
       ? `<ol class="admin-docs-index">${items}</ol>`
-      : `<p class="hint">No docs in this section yet.</p>`;
+      : `<p class="admin-docs-empty">No docs yet</p>`;
     return `
       <section class="admin-docs-section">
         <div class="admin-docs-section-head">
-          <h2 class="admin-docs-kicker">${escapeHtml(folder.title)}</h2>
-          <button type="button" class="secondary-btn admin-docs-new" data-folder="${escapeAttr(folder.slug)}">New</button>
+          <h2 class="admin-docs-section-label">${escapeHtml(folder.title)}</h2>
+          <span class="admin-docs-count">${docs.length}</span>
         </div>
         ${list}
       </section>`;
@@ -153,14 +154,6 @@ function bindMount(mount) {
     }
     if (event.target.closest("#adminDocsBack")) {
       window.location.hash = "docs";
-      return;
-    }
-    const newBtn = event.target.closest(".admin-docs-new");
-    if (newBtn) {
-      currentDoc = null;
-      selected = { folder: newBtn.dataset.folder, docId: null };
-      mode = "edit";
-      render();
       return;
     }
     const docBtn = event.target.closest("[data-doc-id]");

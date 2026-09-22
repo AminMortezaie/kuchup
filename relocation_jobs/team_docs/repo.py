@@ -23,7 +23,7 @@ def list_doc_summaries() -> list[dict]:
             """
             SELECT id, folder, slug, title, created_at, updated_at
             FROM team_docs
-            ORDER BY title ASC, id ASC
+            ORDER BY folder ASC, LOWER(slug) ASC, id ASC
             """
         ).fetchall()
     return [_doc_row(row, include_body=False) for row in rows]
