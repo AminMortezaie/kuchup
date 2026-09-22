@@ -5706,17 +5706,11 @@ body.scroll-locked {
 
   .board-pagination-controls {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
     width: 100%;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .board-pagination-controls::-webkit-scrollbar {
-    display: none;
   }
 
   .filter-btn.board-page-nav {
@@ -5757,8 +5751,13 @@ body.scroll-locked {
   }
 
   .filter-select,
-  .filter-btn {
+  .filter-bar .filter-btn,
+  .filter-bar-actions .filter-btn {
     width: 100%;
+  }
+
+  .board-pagination-controls .filter-btn {
+    width: auto;
   }
 
   .filter-chips {
