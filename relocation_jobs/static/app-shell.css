@@ -458,8 +458,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
 }
 
 .admin-docs-kicker {
@@ -468,7 +468,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 
 .admin-docs-index {
@@ -482,21 +482,19 @@
 .admin-docs-index time,
 .admin-docs-byline {
   display: block;
-  margin: 0 0 0.35rem;
   font-size: 0.8125rem;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 
-.admin-docs-byline {
-  margin-top: 0.75rem;
-}
+.admin-docs-index time { margin-bottom: var(--space-2xs); }
+
+.admin-docs-byline { margin-top: var(--space-xs); }
 
 .admin-docs-index h3 {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
@@ -511,24 +509,17 @@
   text-align: left;
 }
 
-.admin-docs-link {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
 .admin-docs-link:hover,
 .admin-docs-link:focus-visible,
 .admin-docs-back:hover,
 .admin-docs-back:focus-visible {
   text-decoration: underline;
-  text-underline-offset: 0.16em;
 }
 
 .admin-docs-back {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-ink-2, var(--muted));
+  color: var(--color-ink-2);
 }
 
 .admin-docs-article-bar {
@@ -536,27 +527,24 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
 }
 
 .admin-docs-title {
-  margin: 0.35rem 0 0;
+  margin: var(--space-2xs) 0 0;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 2vw + 1rem, 2.1rem);
+  font-size: 1.75rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
   line-height: 1.2;
-  overflow-wrap: anywhere;
-  color: var(--text);
+  color: var(--color-ink);
 }
 
 .admin-docs-prose {
-  margin-top: 1.5rem;
-  color: var(--color-ink-2, var(--text));
+  margin-top: var(--space-md);
+  color: var(--color-ink-2);
   font-size: 1rem;
   line-height: 1.7;
-  overflow-wrap: anywhere;
 }
 
 .admin-docs-prose > * + * {
@@ -569,9 +557,8 @@
 .admin-docs-prose h4 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.025em;
   line-height: 1.25;
-  color: var(--text);
+  color: var(--color-ink);
 }
 
 .admin-docs-prose h1 { font-size: 1.6rem; }
@@ -579,56 +566,28 @@
 .admin-docs-prose h3,
 .admin-docs-prose h4 { font-size: 1.1rem; }
 
-.admin-docs-prose strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.admin-docs-prose em { font-style: italic; }
-
 .admin-docs-prose ul,
 .admin-docs-prose ol { padding-left: 1.2rem; }
 
 .admin-docs-prose li + li { margin-top: 0.45em; }
 
-.admin-docs-prose a {
-  color: var(--text);
-  font-weight: 600;
-  text-underline-offset: 0.18em;
-}
-
-.admin-docs-prose a:hover,
-.admin-docs-prose a:focus-visible { text-decoration: underline; }
+.admin-docs-prose a { color: var(--color-ink); }
 
 .admin-docs-prose code {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 0.875em;
-  color: var(--text);
 }
 
 .admin-docs-prose pre {
   overflow-x: auto;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card, 1rem);
-  background: var(--color-paper-2, var(--surface2));
+  padding: var(--space-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--color-paper-2);
 }
 
 .admin-docs-prose pre code {
   font-size: 0.8125rem;
   line-height: 1.55;
-}
-
-.admin-docs-prose blockquote {
-  margin-left: 0;
-  padding-left: 0.9rem;
-  border-left: 3px solid var(--border-strong, var(--border));
-  color: var(--muted);
-}
-
-.admin-docs-prose hr {
-  border: 0;
-  border-top: 1px solid var(--border);
 }
 
 .admin-docs-section-head .admin-docs-new {
@@ -640,7 +599,7 @@
 }
 
 .admin-docs-read .admin-docs-form {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
 }
 
 .admin-docs-form {

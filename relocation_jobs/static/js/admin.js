@@ -2,7 +2,7 @@
 
 import { removeCountry } from "./api.js";
 import { initAdminWorker } from "./admin-worker.js";
-import { loadTeamDocsPane, syncTeamDocsHash } from "./admin-docs.js?v=2";
+import { loadTeamDocsPane, syncTeamDocsHash } from "./admin-docs.js";
 import { buildAdminStatsHtml } from "./stats-dashboard.js";
 import { $, escapeHtml, escapeAttr, setLoadingProgress, finishLoadingProgress, formatActivityBadge, toast } from "./utils.js";
 import { adminPaneFromHash, initAdminPanes, initAppShell } from "./app-shell.js";

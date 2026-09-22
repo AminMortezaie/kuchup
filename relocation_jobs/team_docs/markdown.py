@@ -3,7 +3,7 @@ from __future__ import annotations
 import html
 import re
 
-_FENCE_OPEN = re.compile(r"^(?P<mark>`{3,}|~{3,})(?P<lang>.*)$")
+_FENCE_OPEN = re.compile(r"^(?P<mark>`{3,}|~{3,})")
 _HEADING = re.compile(r"^(#{1,6})\s+(\S.*?)\s*#*\s*$")
 _HR = re.compile(r"^ {0,3}(?:(?:-\s*){3,}|(?:\*\s*){3,}|(?:_\s*){3,})\s*$")
 _UL = re.compile(r"^(\s*)[-*+]\s+(.+)$")
