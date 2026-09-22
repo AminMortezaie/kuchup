@@ -431,6 +431,11 @@
   .layout:has(.app-shell:not(.hidden):not([hidden])) {
     padding: 0;
   }
+
+  .admin-docs-prose p,
+  .admin-docs-prose li {
+    text-align: start;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -583,6 +588,12 @@
 .admin-docs-back:hover,
 .admin-docs-back:focus-visible {
   text-decoration: underline;
+}
+
+.admin-docs-article,
+.admin-docs-read {
+  box-sizing: border-box;
+  padding-inline: clamp(1rem, 6vw, 4.5rem);
 }
 
 .admin-docs-article-bar {
