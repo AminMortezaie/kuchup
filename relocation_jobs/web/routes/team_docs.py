@@ -4,6 +4,13 @@ from flask import jsonify, request
 
 from relocation_jobs.core.auth import admin_required
 from relocation_jobs.team_docs import service as team_docs_service
+from relocation_jobs.team_docs.markdown import render_markdown
+
+
+def _with_html(doc: dict) -> dict:
+    if "body" not in doc:
+        return doc
+    return {**doc, "html": render_markdown(doc.get("body") or "")}
 
 
 def register(app):
@@ -26,7 +33,7 @@ def register(app):
                 body=body.get("body") or "",
                 slug=(body.get("slug") or None),
             )
-            return jsonify({"ok": True, "doc": saved}), 201
+            return jsonify({"ok": True, "doc": _with_html(saved)}), 201
         except (TypeError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 400
         except LookupError as exc:
@@ -36,7 +43,7 @@ def register(app):
     @admin_required
     def api_admin_get_team_doc(doc_id: int):
         try:
-            return jsonify({"doc": team_docs_service.get_document(doc_id)})
+            return jsonify({"doc": _with_html(team_docs_service.get_document(doc_id))})
         except LookupError as exc:
             return jsonify({"error": str(exc)}), 404
 
@@ -55,7 +62,7 @@ def register(app):
                 slug=None if "slug" not in body else body.get("slug"),
                 folder=folder,
             )
-            return jsonify({"ok": True, "doc": saved})
+            return jsonify({"ok": True, "doc": _with_html(saved)})
         except (TypeError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 400
         except LookupError as exc:
