@@ -5713,18 +5713,14 @@ body.scroll-locked {
 
   .board-pagination-controls {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 0.35rem;
     width: 100%;
   }
 
   .board-pagination-pages {
-    flex: 1 1 auto;
-    min-width: 0;
-    justify-content: center;
-    flex-wrap: wrap;
     gap: 0.35rem;
   }
 
