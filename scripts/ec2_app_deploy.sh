@@ -90,7 +90,8 @@ ssh_cmd() {
   fi
   local key_args=()
   [[ -f "$EC2_SSH_KEY" ]] && key_args=(-i "$EC2_SSH_KEY")
-  ssh "${key_args[@]}" -o StrictHostKeyChecking=accept-new "${EC2_SSH_USER}@${ELASTIC_IP}" "$@"
+  # ${arr[@]+...}: bash 3.2 + set -u treats empty "${arr[@]}" as unbound
+  ssh ${key_args[@]+"${key_args[@]}"} -o StrictHostKeyChecking=accept-new "${EC2_SSH_USER}@${ELASTIC_IP}" "$@"
 }
 
 rsync_cmd() {
@@ -120,7 +121,7 @@ rsync_cmd() {
       --exclude '.pytest_cache/' \
       --exclude '*.pyc' \
       --exclude '.deploy-hashes' \
-      "${static_exclude[@]}" \
+      ${static_exclude[@]+"${static_exclude[@]}"} \
       "$ROOT/" "${REMOTE_DIR}/"
     return
   fi
@@ -144,8 +145,8 @@ rsync_cmd() {
     --exclude '.pytest_cache/' \
     --exclude '*.pyc' \
     --exclude '.deploy-hashes' \
-    "${static_exclude[@]}" \
-    "${key_args[@]}" \
+    ${static_exclude[@]+"${static_exclude[@]}"} \
+    ${key_args[@]+"${key_args[@]}"} \
     "$ROOT/" "${EC2_SSH_USER}@${ELASTIC_IP}:${REMOTE_DIR}/"
 }
 

@@ -24,7 +24,7 @@ ssh_cmd() {
   if [[ -f "$EC2_SSH_KEY" ]]; then
     key_args=(-i "$EC2_SSH_KEY")
   fi
-  ssh "${key_args[@]}" -o StrictHostKeyChecking=accept-new "${EC2_SSH_USER}@${ELASTIC_IP}" "$@"
+  ssh ${key_args[@]+"${key_args[@]}"} -o StrictHostKeyChecking=accept-new "${EC2_SSH_USER}@${ELASTIC_IP}" "$@"
 }
 
 log() { printf '[redis] %s\n' "$*"; }
