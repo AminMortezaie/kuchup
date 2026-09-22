@@ -5713,6 +5713,7 @@ body.scroll-locked {
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .board-pagination-controls::-webkit-scrollbar {
@@ -5720,16 +5721,17 @@ body.scroll-locked {
   }
 
   .filter-btn.board-page-nav {
-    flex: 1 1 5rem;
-    min-width: 0;
+    flex: 0 0 auto;
     justify-content: center;
-    padding-inline: 0.65rem;
+    padding-inline: 0.75rem;
   }
 
   .filter-btn.board-page-num {
     flex: 0 0 var(--control-height);
+    box-sizing: border-box;
     width: var(--control-height);
     min-width: var(--control-height);
+    max-width: var(--control-height);
     padding-inline: 0;
   }
 
