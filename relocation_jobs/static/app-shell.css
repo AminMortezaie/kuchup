@@ -545,6 +545,7 @@
   color: var(--color-ink-2);
   font-size: 1rem;
   line-height: 1.7;
+  overflow-x: auto;
 }
 
 .admin-docs-prose > * + * {
@@ -570,6 +571,30 @@
 .admin-docs-prose ol { padding-left: 1.2rem; }
 
 .admin-docs-prose li + li { margin-top: 0.45em; }
+
+.admin-docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.admin-docs-prose th,
+.admin-docs-prose td {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-docs-prose th {
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+}
+
+.admin-docs-prose th[align="right"],
+.admin-docs-prose td[align="right"] { text-align: right; }
 
 .admin-docs-prose a { color: var(--color-ink); }
 

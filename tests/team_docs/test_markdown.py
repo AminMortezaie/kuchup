@@ -1,4 +1,4 @@
-from relocation_jobs.team_docs.markdown import render_markdown
+from relocation_jobs.team_docs.markdown import drop_matching_lead_h1, render_markdown
 
 
 def test_renders_article_blocks():
@@ -53,3 +53,28 @@ def test_emphasis_does_not_eat_snake_case():
 def test_empty_markdown():
     assert render_markdown(None) == ""
     assert render_markdown("   \n") == ""
+
+
+def test_renders_gfm_tables_with_alignment():
+    html = render_markdown(
+        "| Measure | Snapshot |\n"
+        "| --- | ---: |\n"
+        "| Companies | Approximately 418 |\n"
+        "| Roles | **1,453** |\n\n"
+        "After table.\n"
+    )
+    assert "<table><thead><tr><th>Measure</th><th align=\"right\">Snapshot</th></tr></thead>" in html
+    assert "<tbody><tr><td>Companies</td><td align=\"right\">Approximately 418</td></tr>" in html
+    assert "<td align=\"right\"><strong>1,453</strong></td>" in html
+    assert html.endswith("<p>After table.</p>")
+
+
+def test_drops_lead_h1_when_it_matches_title():
+    html = drop_matching_lead_h1(
+        render_markdown("# Admin audit snapshot — 2026-09-17\n\n## Purpose\n\nBody.\n"),
+        "Admin audit snapshot — 2026-09-17",
+    )
+    assert not html.startswith("<h1>")
+    assert html.startswith("<h2>Purpose</h2><p>Body.</p>")
+    kept = drop_matching_lead_h1(render_markdown("# Other\n\nBody.\n"), "Admin audit snapshot — 2026-09-17")
+    assert kept.startswith("<h1>Other</h1>")
