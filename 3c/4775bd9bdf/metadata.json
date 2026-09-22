@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3c4775bd9bdf",
+  "strategy": "manual-commit",
+  "branch": "cursor/fix-mobile-pagination-85e1",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "frontend/src/BoardPagination.jsx",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3c/4775bd9bdf/0/metadata.json",
+      "transcript": "/3c/4775bd9bdf/0/full.jsonl",
+      "compact_transcript": "/3c/4775bd9bdf/0/transcript.jsonl",
+      "content_hash": "/3c/4775bd9bdf/0/content_hash.txt",
+      "prompt": "/3c/4775bd9bdf/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 312888,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2097536,
+    "output_tokens": 26318,
+    "api_call_count": 1
+  }
+}

@@ -1,0 +1,2 @@
+fix this pagination on mobile version.
+next and prev should be keep pinned and also the numbers should be correct to fill the space do ur work on cursor/fix-mobile-pagination-85e1
