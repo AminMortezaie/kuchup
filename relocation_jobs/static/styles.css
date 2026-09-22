@@ -1707,6 +1707,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   gap: 0.5rem;
 }
 
+.board-pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .filter-btn.board-page-num {
   min-width: 2.25rem;
   justify-content: center;
@@ -5706,11 +5713,19 @@ body.scroll-locked {
 
   .board-pagination-controls {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
+    justify-content: space-between;
+    gap: 0.35rem;
     width: 100%;
+  }
+
+  .board-pagination-pages {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
   .filter-btn.board-page-nav {

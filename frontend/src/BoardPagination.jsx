@@ -35,22 +35,24 @@ export default function BoardPagination({ pagination }) {
         >
           Previous
         </button>
-        {pageRange(page, totalPages).map((item, idx) => (
-          typeof item === "number" ? (
-            <button
-              key={`page-${item}`}
-              type="button"
-              className={`filter-btn board-page-num${item === page ? " is-active" : ""}`}
-              disabled={loading || item === page}
-              aria-current={item === page ? "page" : undefined}
-              onClick={() => window.relocationJobs?.goToBoardPage?.(item)}
-            >
-              {item}
-            </button>
-          ) : (
-            <span key={`gap-${idx}`} className="board-page-gap" aria-hidden="true">{item}</span>
-          )
-        ))}
+        <div className="board-pagination-pages">
+          {pageRange(page, totalPages).map((item, idx) => (
+            typeof item === "number" ? (
+              <button
+                key={`page-${item}`}
+                type="button"
+                className={`filter-btn board-page-num${item === page ? " is-active" : ""}`}
+                disabled={loading || item === page}
+                aria-current={item === page ? "page" : undefined}
+                onClick={() => window.relocationJobs?.goToBoardPage?.(item)}
+              >
+                {item}
+              </button>
+            ) : (
+              <span key={`gap-${idx}`} className="board-page-gap" aria-hidden="true">{item}</span>
+            )
+          ))}
+        </div>
         <button
           type="button"
           className="filter-btn board-page-nav"
