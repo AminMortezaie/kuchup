@@ -103,7 +103,7 @@ Names should state **what** and **when**, not generic verbs.
 
 ## Deploy
 
-Production is EC2 (not Render): slim panel without Playwright; Playwright lives on `relocation-fetch-worker`. See [ec2-panel.md](../operations/ec2-panel.md).
+Production is EC2 (not Render): slim panel without Playwright; the default fetch worker is HTTP-only. Chromium is the opt-in `relocation-playwright-worker` sidecar. See [ec2-panel.md](../operations/ec2-panel.md).
 
 - `DATABASE_URL` points at AWS Postgres; after a laptop IP change run `./scripts/aws_postgres_migrate.sh sync-sg`.
 - No dependency on process-local cache for correctness across processes.

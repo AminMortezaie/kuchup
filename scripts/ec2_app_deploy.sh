@@ -33,6 +33,12 @@
 #                          relocation_jobs/static/ from rsync so the previous
 #                          built assets on REMOTE_DIR are preserved (for use
 #                          with DEPLOY_LOCAL=1 on a memory-constrained runner)
+#
+# Worker cgroup caps (no extra swap). Exceeding the cap OOM-kills that
+# container; --restart unless-stopped brings it back. Postgres, Redis,
+# panel, MCP, role propagator, Caddy, and Alloy stay uncapped here.
+#   light HTTP worker: 512m (above ~416MiB Grafana last; concurrency 2)
+#   Playwright sidecar: 640m (cannot repeat the ~837MiB Chromium spike)
 
 set -euo pipefail
 
@@ -61,6 +67,8 @@ WORKER_CONTAINER=relocation-fetch-worker
 PLAYWRIGHT_WORKER_IMAGE=relocation-fetch-worker:playwright
 PLAYWRIGHT_WORKER_CONTAINER=relocation-playwright-worker
 DEPLOY_PLAYWRIGHT_WORKER="${DEPLOY_PLAYWRIGHT_WORKER:-0}"
+FETCH_WORKER_MEMORY=512m
+PLAYWRIGHT_WORKER_MEMORY=640m
 PROPAGATOR_IMAGE=relocation-role-propagator:ec2
 PROPAGATOR_CONTAINER=relocation-role-propagator
 CADDY_CONTAINER=relocation-caddy
@@ -750,6 +758,7 @@ EOF
 set -euo pipefail
 docker rm -f ${WORKER_CONTAINER} 2>/dev/null || true
 docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
+  --memory=${FETCH_WORKER_MEMORY} --memory-swap=${FETCH_WORKER_MEMORY} \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -e PANEL_SCRAPE_ENABLED=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
@@ -822,6 +831,7 @@ EOF
 set -euo pipefail
 docker rm -f ${PLAYWRIGHT_WORKER_CONTAINER} 2>/dev/null || true
 docker run -d --name ${PLAYWRIGHT_WORKER_CONTAINER} --restart unless-stopped \\
+  --memory=${PLAYWRIGHT_WORKER_MEMORY} --memory-swap=${PLAYWRIGHT_WORKER_MEMORY} \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -e PANEL_SCRAPE_ENABLED=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\

@@ -137,6 +137,19 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`, `FETCH_WORKER_KIND=http`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
 
+### Worker memory caps
+
+`scripts/ec2_app_deploy.sh` sets `--memory` and `--memory-swap` to the same value, so the container gets no extra swap:
+
+| Container | Cap | Why |
+|-----------|-----|-----|
+| `relocation-fetch-worker` | **512m** | HTTP scrape at concurrency 2. Grafana last on the old combined worker was ~416MiB; 512m leaves headroom without room for the ~837MiB Chromium spike. |
+| `relocation-playwright-worker` | **640m** | One browser (concurrency 1). Hard ceiling under the ~837MiB max that pressured the ~2GiB host. |
+
+Postgres, Redis, panel, MCP, role propagator, Caddy, and Alloy are unchanged in this deploy path.
+
+If a worker hits its cap, the kernel OOM-kills that container (exit 137). `--restart unless-stopped` starts it again. The in-flight country cycle is lost and the next 6h pass retries. That is the tradeoff: a killed worker beats a wedged host (SSH timeout / Cloudflare 522). `./scripts/ec2_app_deploy.sh status` prints `oom=` from `State.OOMKilled`.
+
 On `t4g.micro`, keep the **light** worker concurrency at **2** (one event loop + semaphore). Do not raise it without watching worker RSS. The Playwright sidecar, when enabled, uses concurrency **1**. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
 
 ### Light vs Playwright images (measure after merge)
@@ -301,7 +314,7 @@ Cloudflare **522** means the origin timed out or refused — not an application 
 | Panel localhost fail / Exited | Panel or Caddy down |
 | Up but hang / SSH banner timeout | Host wedged (disk or memory) |
 
-Known causes: Docker filling the root volume; fetch-worker memory pressure (no swap). Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
+Known causes: Docker filling the root volume; an uncapped fetch-worker spike (Grafana saw ~837MiB max on the ~2GiB host). Worker containers now have cgroup caps — see [Worker memory caps](#worker-memory-caps) — so an over-limit worker is OOM-killed and restarted instead of wedging the host. Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
 
 ---
 

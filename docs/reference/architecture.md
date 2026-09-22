@@ -170,6 +170,7 @@ Playwright-only ATS boards need the sidecar or a local scrape (`PANEL_SCRAPE_ENA
 - Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all`)
 - ATS scrape cap: `core/ats_constants.MAX_CONCURRENCY` (16)
 - Timeouts (`fetch/timeouts.py`): `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
+- Memory (`ec2_app_deploy.sh`): light worker `--memory=512m` (swap limit equal), Playwright sidecar `--memory=640m`. Other containers are uncapped. An over-limit worker is OOM-killed and restarted.
 - Status: `GET /api/fetch/status`
 - Panel fire-and-forget only: `start_country_fetch` / `start_company_fetch` (thread + UI poll)
 

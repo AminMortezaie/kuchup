@@ -137,14 +137,15 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ## Fetch & scrape
 
-Production is **two images**:
+Production fetch is a light HTTP image plus an opt-in Chromium sidecar:
 
 | Image | Playwright | Role |
 |-------|------------|------|
 | Slim panel (`Dockerfile.ec2`) | No | HTTP API, company-fetch without country scrape (`PANEL_COMPANY_FETCH_ENABLED=1`) |
-| Fetch worker (`Dockerfile.ec2-worker`) | Yes | 6-hour country scrape |
+| Light fetch worker (`Dockerfile.ec2-worker`) | No | 6-hour HTTP country scrape (`FETCH_WORKER_KIND=http`, cgroup **512m**) |
+| Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `jibe` / `atlassian` / `hibob` (cgroup **640m**) |
 
-There is one fetch-worker app on `main` (`apps/fetch-worker/run.py`). A split “light HTTP” worker is **not** on `main`.
+Default deploy runs `apps/fetch-worker/run.py` only. Browser boards use `apps/playwright-worker/run.py`.
 
 - Country fetch: in-process asyncio (`fetch/country_runner.py`)
 - ATS scrape cap: `MAX_CONCURRENCY` 16 (`core/ats_constants.py`)
