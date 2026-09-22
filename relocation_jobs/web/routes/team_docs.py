@@ -4,13 +4,16 @@ from flask import jsonify, request
 
 from relocation_jobs.core.auth import admin_required
 from relocation_jobs.team_docs import service as team_docs_service
-from relocation_jobs.team_docs.markdown import render_markdown
+from relocation_jobs.team_docs.markdown import drop_matching_lead_h1, render_markdown
 
 
 def _with_html(doc: dict) -> dict:
     if "body" not in doc:
         return doc
-    return {**doc, "html": render_markdown(doc.get("body") or "")}
+    return {
+        **doc,
+        "html": drop_matching_lead_h1(render_markdown(doc.get("body") or ""), doc.get("title")),
+    }
 
 
 def register(app):

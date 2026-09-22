@@ -9,18 +9,34 @@ _HR = re.compile(r"^ {0,3}(?:(?:-\s*){3,}|(?:\*\s*){3,}|(?:_\s*){3,})\s*$")
 _UL = re.compile(r"^(\s*)[-*+]\s+(.+)$")
 _OL = re.compile(r"^(\s*)\d+[.)]\s+(.+)$")
 _QUOTE = re.compile(r"^>\s?(.*)$")
+_TABLE_ROW = re.compile(r"^\s*\|.+\|\s*$")
+_TABLE_SEP_CELL = re.compile(r"^:?-{3,}:?$")
 _CODE = re.compile(r"`([^`\n]+)`")
 _LINK = re.compile(r"\[([^\]\n]+)\]\(([^)\s]+)\)")
 _STRONG = re.compile(r"\*\*(.+?)\*\*|(?<![\w])__(.+?)__(?![\w])")
 _EM = re.compile(r"(?<!\*)\*(?!\s)([^*]+?)(?<!\s)\*(?!\*)")
 _SAFE_URL = re.compile(r"^(?:https?://|mailto:)[^\s<>\"']+$", re.IGNORECASE)
 _SAFE_PATH = re.compile(r"^/(?!/)[^\s<>\"']*$")
+_TAG = re.compile(r"<[^>]+>")
 
 
 def render_markdown(source: str | None) -> str:
     text = "" if source is None else str(source)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     return "".join(_render_blocks(text.split("\n")))
+
+
+def drop_matching_lead_h1(rendered: str, title: str | None) -> str:
+    want = " ".join((title or "").split())
+    if not want or not rendered.startswith("<h1>"):
+        return rendered
+    end = rendered.find("</h1>")
+    if end < 0:
+        return rendered
+    lead = " ".join(_TAG.sub("", html.unescape(rendered[4:end])).split())
+    if lead != want:
+        return rendered
+    return rendered[end + 5 :]
 
 
 def _render_blocks(lines: list[str]) -> list[str]:
@@ -36,6 +52,22 @@ def _render_blocks(lines: list[str]) -> list[str]:
     return blocks
 
 
+def _table_cells(line: str) -> list[str]:
+    stripped = line.strip()
+    if stripped.startswith("|"):
+        stripped = stripped[1:]
+    if stripped.endswith("|"):
+        stripped = stripped[:-1]
+    return [cell.strip() for cell in stripped.split("|")]
+
+
+def _is_table_sep(line: str) -> bool:
+    if not _TABLE_ROW.match(line):
+        return False
+    cells = _table_cells(line)
+    return bool(cells) and all(_TABLE_SEP_CELL.match(cell) for cell in cells)
+
+
 def _block_kind(line: str) -> str | None:
     stripped = line.strip()
     if not stripped:
@@ -48,6 +80,8 @@ def _block_kind(line: str) -> str | None:
         return "heading"
     if _QUOTE.match(line):
         return "quote"
+    if _TABLE_ROW.match(line):
+        return "table"
     if _UL.match(line):
         return "ul"
     if _OL.match(line):
@@ -65,6 +99,8 @@ def _next_block(lines: list[str], index: int) -> tuple[str, int]:
         return _render_heading(lines[index]), index + 1
     if kind == "quote":
         return _render_quote(lines, index)
+    if kind == "table":
+        return _render_table(lines, index)
     if kind in {"ul", "ol"}:
         return _render_list(lines, index, ordered=kind == "ol")
     return _render_paragraph(lines, index)
@@ -105,6 +141,32 @@ def _render_list(lines: list[str], index: int, *, ordered: bool) -> tuple[str, i
         index += 1
     tag = "ol" if ordered else "ul"
     return f"<{tag}>{''.join(items)}</{tag}>", index
+
+
+def _align_attr(cell: str) -> str:
+    return ' align="right"' if cell.endswith(":") and not cell.startswith(":") else ""
+
+
+def _render_table(lines: list[str], index: int) -> tuple[str, int]:
+    rows: list[str] = []
+    while index < len(lines) and _TABLE_ROW.match(lines[index]):
+        rows.append(lines[index])
+        index += 1
+    if len(rows) >= 2 and _is_table_sep(rows[1]):
+        aligns = [_align_attr(cell) for cell in _table_cells(rows[1])]
+        head = _table_row_html(_table_cells(rows[0]), "th", aligns)
+        body = "".join(_table_row_html(_table_cells(row), "td", aligns) for row in rows[2:])
+        return f"<table><thead>{head}</thead><tbody>{body}</tbody></table>", index
+    body = "".join(_table_row_html(_table_cells(row), "td", []) for row in rows)
+    return f"<table><tbody>{body}</tbody></table>", index
+
+
+def _table_row_html(cells: list[str], tag: str, alignments: list[str]) -> str:
+    parts = [
+        f"<{tag}{alignments[i] if i < len(alignments) else ''}>{_inline(cell)}</{tag}>"
+        for i, cell in enumerate(cells)
+    ]
+    return f"<tr>{''.join(parts)}</tr>"
 
 
 def _render_paragraph(lines: list[str], index: int) -> tuple[str, int]:
