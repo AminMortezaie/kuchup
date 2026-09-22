@@ -1,0 +1,37 @@
+see the cursor/github-actions-deploy-f32b
+i want to add secrets to githb actions.
+tell me how
+
+---
+
+help me which value should i put for EC2_SSH_KEY
+
+---
+
+i just do it pbcopy < ~/Downloads/relocation.pem how can i copy the ssh key to put on github
+
+---
+
+fine
+
+---
+
+where is AWS_POSTGRES_ENV
+
+---
+
+fine now EC2_DEPLOY_DOTENV
+
+---
+
+also we need to add github to allowed on AWS to can deploy from it on my server how to do this?
+
+---
+
+so it cannot be automatically you mean?
+
+---
+
+i don't know why but on local deploy i see that it's downloading no needed files.
+
+check for deploy process and see if it has been changed or not.

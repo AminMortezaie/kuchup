@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "348e0bd586c2",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 9,
+  "files_touched": [
+    "scripts/ec2_app_deploy.sh"
+  ],
+  "sessions": [
+    {
+      "metadata": "/34/8e0bd586c2/0/metadata.json",
+      "transcript": "/34/8e0bd586c2/0/full.jsonl",
+      "compact_transcript": "/34/8e0bd586c2/0/transcript.jsonl",
+      "content_hash": "/34/8e0bd586c2/0/content_hash.txt",
+      "prompt": "/34/8e0bd586c2/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 45104,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1554176,
+    "output_tokens": 15617,
+    "api_call_count": 2
+  }
+}
