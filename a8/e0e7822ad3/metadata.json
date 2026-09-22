@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a8e0e7822ad3",
+  "strategy": "manual-commit",
+  "branch": "fix/mobile-board-pagination",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a8/e0e7822ad3/0/metadata.json",
+      "transcript": "/a8/e0e7822ad3/0/full.jsonl",
+      "compact_transcript": "/a8/e0e7822ad3/0/transcript.jsonl",
+      "content_hash": "/a8/e0e7822ad3/0/content_hash.txt",
+      "prompt": "/a8/e0e7822ad3/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8067,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 452096,
+    "output_tokens": 2625,
+    "api_call_count": 1
+  }
+}
