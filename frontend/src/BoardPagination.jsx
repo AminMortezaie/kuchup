@@ -1,5 +1,5 @@
 function pageRange(current, total) {
-  if (total <= 7) {
+  if (total <= 3) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
   const pages = new Set([1, total, current, current - 1, current + 1]);
