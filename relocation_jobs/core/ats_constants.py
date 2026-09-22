@@ -81,7 +81,6 @@ ATS_TYPE_CHOICES: tuple[tuple[str, str], ...] = (
 )
 
 PLAYWRIGHT_REQUIRED_ATS = frozenset({"atlassian", "hibob", "jibe"})
-PLAYWRIGHT_FALLBACK_ATS = frozenset({"", "ashby", "generic", "teamtailor"})
 
 BOL_CAREERS_API = "https://careers.bol.com/api/v1/jobs/"
 

@@ -68,7 +68,6 @@ async def test_http_worker_skips_playwright_only_companies(db, monkeypatch):
 async def test_playwright_worker_only_fetches_required_ats(db, monkeypatch):
     del db
     monkeypatch.setenv("FETCH_WORKER_KIND", "playwright")
-    monkeypatch.delenv("FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS", raising=False)
     monkeypatch.setattr(
         "relocation_jobs.fetch.worker_kind.PLAYWRIGHT_AVAILABLE",
         True,

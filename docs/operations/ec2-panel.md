@@ -160,7 +160,6 @@ Routine deploy builds the light image only and removes the sidecar. `image-sizes
 DEPLOY_PLAYWRIGHT_WORKER=1 ./scripts/ec2_app_deploy.sh deploy --force
 FETCH_WORKER_KIND=http FETCH_SCHEDULE_ENABLED=1 python3 apps/fetch-worker/run.py --once
 FETCH_SCHEDULE_ENABLED=1 python3 apps/playwright-worker/run.py --once
-# sidecar only: FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS=1
 ```
 
 **Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.

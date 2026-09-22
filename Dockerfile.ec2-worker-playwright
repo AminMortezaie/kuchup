@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# Playwright/Chromium fetch worker for jibe, atlassian, hibob (and optional
-# generic/ashby/teamtailor browser fallbacks). Not the default EC2 worker.
+# Playwright/Chromium fetch worker for jibe, atlassian, hibob.
+# Not the default EC2 worker.
 # slim + chromium headless shell only — full bookworm + both chromium builds was ~2.5GB.
 FROM python:3.12-slim-bookworm
 

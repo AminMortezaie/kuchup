@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import os
 
-from relocation_jobs.core.ats_constants import (
-    PLAYWRIGHT_FALLBACK_ATS,
-    PLAYWRIGHT_REQUIRED_ATS,
-)
+from relocation_jobs.core.ats_constants import PLAYWRIGHT_REQUIRED_ATS
 from relocation_jobs.core.ats_detection import PLAYWRIGHT_AVAILABLE
 
 _KIND_HTTP = "http"
@@ -23,11 +20,6 @@ def worker_kind() -> str:
     return _KIND_ALL if PLAYWRIGHT_AVAILABLE else _KIND_HTTP
 
 
-def playwright_fallbacks_enabled() -> bool:
-    raw = (os.environ.get("FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS") or "0").strip().lower()
-    return raw not in ("0", "false", "no")
-
-
 def worker_includes_ats(ats_type: str | None) -> bool:
     key = (ats_type or "").strip().lower()
     required = key in PLAYWRIGHT_REQUIRED_ATS
@@ -37,7 +29,5 @@ def worker_includes_ats(ats_type: str | None) -> bool:
     if kind == _KIND_HTTP:
         return not required
     if kind == _KIND_PLAYWRIGHT:
-        if required:
-            return True
-        return playwright_fallbacks_enabled() and key in PLAYWRIGHT_FALLBACK_ATS
+        return required
     return True

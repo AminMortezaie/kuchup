@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from relocation_jobs.core.ats_constants import (
-    PLAYWRIGHT_FALLBACK_ATS,
-    PLAYWRIGHT_REQUIRED_ATS,
-)
+from relocation_jobs.core.ats_constants import PLAYWRIGHT_REQUIRED_ATS
 from relocation_jobs.fetch.worker_kind import worker_includes_ats, worker_kind
 
 
@@ -20,9 +17,8 @@ def test_http_worker_skips_playwright_required_ats(monkeypatch):
     assert worker_includes_ats("atlassian") is False
 
 
-def test_playwright_worker_only_required_ats_by_default(monkeypatch):
+def test_playwright_worker_only_required_ats(monkeypatch):
     monkeypatch.setenv("FETCH_WORKER_KIND", "playwright")
-    monkeypatch.delenv("FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS", raising=False)
     monkeypatch.setattr(
         "relocation_jobs.fetch.worker_kind.PLAYWRIGHT_AVAILABLE",
         True,
@@ -33,19 +29,6 @@ def test_playwright_worker_only_required_ats_by_default(monkeypatch):
     assert worker_includes_ats("greenhouse") is False
     assert worker_includes_ats("generic") is False
     assert worker_includes_ats("ashby") is False
-
-
-def test_playwright_worker_can_include_fallback_ats(monkeypatch):
-    monkeypatch.setenv("FETCH_WORKER_KIND", "playwright")
-    monkeypatch.setenv("FETCH_PLAYWRIGHT_INCLUDE_FALLBACKS", "1")
-    monkeypatch.setattr(
-        "relocation_jobs.fetch.worker_kind.PLAYWRIGHT_AVAILABLE",
-        True,
-    )
-    for ats in PLAYWRIGHT_FALLBACK_ATS:
-        assert worker_includes_ats(ats) is True
-    assert worker_includes_ats("lever") is False
-    assert worker_includes_ats("hibob") is True
 
 
 def test_missing_playwright_never_includes_required_ats(monkeypatch):
