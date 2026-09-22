@@ -53,6 +53,7 @@ function indexHtml() {
         <div class="admin-docs-section-head">
           <h2 class="admin-docs-section-label">${escapeHtml(folder.title)}</h2>
           <span class="admin-docs-count">${docs.length}</span>
+          <button type="button" class="secondary-btn admin-docs-new" data-folder="${escapeAttr(folder.slug)}">New</button>
         </div>
         ${list}
       </section>`;
@@ -154,6 +155,14 @@ function bindMount(mount) {
     }
     if (event.target.closest("#adminDocsBack")) {
       window.location.hash = "docs";
+      return;
+    }
+    const newBtn = event.target.closest(".admin-docs-new");
+    if (newBtn) {
+      currentDoc = null;
+      selected = { folder: newBtn.dataset.folder, docId: null };
+      mode = "edit";
+      render();
       return;
     }
     const docBtn = event.target.closest("[data-doc-id]");

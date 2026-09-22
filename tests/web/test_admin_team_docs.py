@@ -30,7 +30,8 @@ def test_admin_docs_pane_is_private_shell():
     assert "admin-docs-index" in docs_js
     assert "admin-docs-row" in docs_js
     assert "No docs yet" in docs_js
-    assert "admin-docs-new" not in docs_js
+    assert "admin-docs-new" in docs_js
+    assert 'data-folder="${escapeAttr(folder.slug)}"' in docs_js
     assert "admin-docs-prose" in docs_js
     assert 'id="adminDocsEdit"' in docs_js
     assert "admin-docs-cancel" in docs_js
