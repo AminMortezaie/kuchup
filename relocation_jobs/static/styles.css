@@ -5721,8 +5721,11 @@ body.scroll-locked {
 
   .filter-btn.board-page-nav {
     flex: 0 0 auto;
+    width: auto;
+    max-width: none;
     justify-content: center;
     padding-inline: 0.75rem;
+    white-space: nowrap;
   }
 
   .filter-btn.board-page-num {
