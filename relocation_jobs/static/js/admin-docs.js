@@ -29,12 +29,8 @@ function folderTitle(slug) {
   return folder?.title || slug || "";
 }
 
-function stamp(value) {
-  return formatLocalDateTime(value || "");
-}
-
 function whenHtml(value) {
-  const label = stamp(value);
+  const label = formatLocalDateTime(value || "");
   if (!label) return "";
   return `<time datetime="${escapeAttr(value || "")}">${escapeHtml(label)}</time>`;
 }
@@ -45,7 +41,7 @@ function indexHtml() {
       <li>
         ${whenHtml(doc.updated_at)}
         <h3>
-          <button type="button" class="admin-docs-link" data-doc-id="${Number(doc.id)}" data-folder="${escapeAttr(folder.slug)}">${escapeHtml(doc.title)}</button>
+          <button type="button" class="admin-docs-link" data-doc-id="${Number(doc.id)}">${escapeHtml(doc.title)}</button>
         </h3>
       </li>`).join("");
     const list = items
@@ -101,7 +97,7 @@ function editorHtml() {
         <span>Slug</span>
         <input name="slug" type="text" maxlength="80" placeholder="auto-from-title" ${creating ? "" : "required"} />
       </label>
-      <label class="admin-docs-body-label">
+      <label>
         <span>Markdown</span>
         <textarea name="body" rows="18" spellcheck="false" placeholder="# Heading&#10;&#10;Write markdown…"></textarea>
       </label>
@@ -206,12 +202,6 @@ function render() {
 }
 
 async function loadSelected() {
-  if (!selected.docId) {
-    mode = "index";
-    currentDoc = null;
-    render();
-    return;
-  }
   try {
     const data = await apiJson(`/api/admin/team-docs/${selected.docId}`);
     currentDoc = data.doc;
@@ -237,7 +227,7 @@ async function openFromHash() {
     render();
     return;
   }
-  selected = { folder: selected.folder, docId: id };
+  selected.docId = id;
   await loadSelected();
 }
 
