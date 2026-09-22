@@ -1,13 +1,3 @@
-there is a strange bug in free user see this UX for the pages.
-why this happening cause in my account it's not happening.
+<timestamp>Wednesday, Sep 23, 2026, 1:36 AM (UTC+4)</timestamp>
 
----
-
-no no. see this. i meant this.
-
----
-
-no my problem is with pagination not free or full user.
-why it shows like?
-see the page numbers and next and prev buttons.
-the size of them is not correct.
+you need to open up pr request to apply it.
