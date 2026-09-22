@@ -1,16 +1,15 @@
 function pageRange(current, total) {
-  // 4 page pills fit between Prev/Next at ~400px; ellipsis after that.
-  if (total <= 4) {
+  // Mobile row budget: Prev + ≤5 slots + Next. Keep windows short.
+  if (total <= 5) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
-  const pages = new Set([1, total, current, current - 1, current + 1]);
-  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
-  const out = [];
-  for (let i = 0; i < sorted.length; i += 1) {
-    if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push("…");
-    out.push(sorted[i]);
+  if (current <= 3) {
+    return [1, 2, 3, "…", total];
   }
-  return out;
+  if (current >= total - 2) {
+    return [1, "…", total - 2, total - 1, total];
+  }
+  return [1, "…", current, "…", total];
 }
 
 export default function BoardPagination({ pagination }) {
