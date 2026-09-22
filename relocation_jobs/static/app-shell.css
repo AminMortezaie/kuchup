@@ -440,11 +440,6 @@
   }
 }
 
-.admin-docs-read,
-.admin-docs-article {
-  max-width: 40rem;
-}
-
 .admin-docs-lead {
   margin: 0 0 var(--space-md);
 }
