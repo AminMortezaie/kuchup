@@ -77,7 +77,8 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 
 ```
 apps/panel/run.py              Flask panel
-apps/fetch-worker/run.py       Scheduled country scrape (Playwright image in prod)
+apps/fetch-worker/run.py       Scheduled country scrape (HTTP ATS)
+apps/playwright-worker/run.py  Chromium boards (jibe / atlassian / hibob)
 apps/role-propagator/run.py    Go SQS role assignment writer
 apps/mcp/run.py                Claude Desktop MCP (stdio)
 apps/mcp/run_http.py           HTTP MCP + OAuth
@@ -136,21 +137,14 @@ Go assignment writer (sticky company slots + free-tier job picks). Run via `pyth
 
 ## Fetch & scrape
 
-Production is **two images**:
-
-| Image | Playwright | Role |
-|-------|------------|------|
-| Slim panel (`Dockerfile.ec2`) | No | HTTP API, company-fetch without country scrape (`PANEL_COMPANY_FETCH_ENABLED=1`) |
-| Fetch worker (`Dockerfile.ec2-worker`) | Yes | 6-hour country scrape |
-
-There is one fetch-worker app on `main` (`apps/fetch-worker/run.py`). A split “light HTTP” worker is **not** on `main`.
+Images, `FETCH_WORKER_KIND`, and memory caps: [operations/ec2-panel.md](operations/ec2-panel.md).
 
 - Country fetch: in-process asyncio (`fetch/country_runner.py`)
 - ATS scrape cap: `MAX_CONCURRENCY` 16 (`core/ats_constants.py`)
 - Production scheduler: `FETCH_SCHEDULE_CONCURRENCY=2` (do not raise on `t4g.micro` without watching RSS)
 - Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Live state: `fetch_runs` + `GET /api/fetch/status`
-- CLI: `apps/fetch-worker/run.py`, `scripts/build_companies.py` for batch/offline
+- CLI: `apps/fetch-worker/run.py` (HTTP), `apps/playwright-worker/run.py` (Chromium), `scripts/build_companies.py` for batch/offline
 
 ---
 

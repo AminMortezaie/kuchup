@@ -14,12 +14,13 @@
 | Redis | `relocation-redis` | 6379 |
 | Panel (gunicorn, 2 workers × 8 threads) | `relocation-panel` | 127.0.0.1:10000 |
 | Remote MCP (OAuth + Streamable HTTP) | `relocation-mcp` | 127.0.0.1:10001 |
-| Fetch worker (scheduler) | `relocation-fetch-worker` | — |
+| Fetch worker (HTTP ATS scheduler) | `relocation-fetch-worker` | — |
+| Playwright worker (opt-in Chromium sidecar) | `relocation-playwright-worker` | — |
 | Role propagator (SQS assignments) | `relocation-role-propagator` | — |
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
 | Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The fetch worker needs Postgres (and SQS when opportunity refresh is enabled); it runs country scrapes every **6 hours** (sequential countries, concurrency **2**). Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The **default fetch worker is a light HTTP image** (Greenhouse / Lever / Ashby / … APIs and HTML). It needs Postgres (and SQS when opportunity refresh is enabled) and runs country scrapes every **6 hours** (sequential countries, concurrency **2**). Playwright/Chromium boards (`jibe`, `atlassian`, `hibob`) are a **separate opt-in sidecar** — not started on a normal deploy. Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
 
 ---
 
@@ -102,6 +103,7 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 ./scripts/ec2_app_deploy.sh status           # doctor: disk/RAM, containers, /api/health, verdict
 ./scripts/ec2_app_deploy.sh logs panel 100   # docker logs (panel|caddy|mcp|worker|alloy|all)
 ./scripts/ec2_app_deploy.sh worker-logs      # follow fetch scheduler logs
+./scripts/ec2_app_deploy.sh image-sizes      # compare light vs Playwright image sizes
 ```
 
 **What `deploy` does**
@@ -115,30 +117,54 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 
 `deploy` does **not** call `open-sg`. After Cloudflare origin lock-down, reopening `0.0.0.0/0` on every deploy would undo the SG lockdown — run `open-sg` only when you intentionally want world-open 80/443.
 
-**Disk (root EBS):** each rebuild can leave the previous panel/worker image dangling (~GB). `deploy` prunes dangling images before and after builds so old+new layers do not stack, but **keeps BuildKit cache** (pip / tectonic / Playwright). Use `prune` alone only when the box is tight; it trims builder cache while keeping recent cache warm. Routine deploys should not need `prune` if disk is healthy. If prune still cannot free enough headroom, grow the EBS volume. Prefer keeping root usage well under ~80% — full disk has caused host hangs (`no space left on device`).
+**Disk (root EBS):** each rebuild can leave the previous panel/worker image dangling (~GB). `deploy` prunes dangling images before and after builds so old+new layers do not stack, but **keeps BuildKit cache** (pip / tectonic; Playwright cache only if the sidecar was built). Use `prune` alone only when the box is tight; it trims builder cache while keeping recent cache warm. Routine deploys should not need `prune` if disk is healthy. If prune still cannot free enough headroom, grow the EBS volume. Prefer keeping root usage well under ~80% — full disk has caused host hangs (`no space left on device`).
 
 **DB safety:** prune never runs `docker volume prune`, `docker system prune --volumes`, or anything that stops/removes container `pg`. Postgres data is in named volume `pgdata`. Each prune asserts `pg` is running and `pgdata` exists before and after; it aborts if either check fails.
 
-**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip (and split the Playwright browser install into its own layer). Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default). Each build also passes `--build-arg BUILDKIT_INLINE_CACHE=1` and `--cache-from <image>:ec2` so that if the BuildKit daemon cache is cold (e.g. after a Docker restart or disk-pressure GC), cached layers can still be recovered from the local image's embedded cache metadata. **Routine deploys skip the build entirely** when the content hash of Dockerfiles + requirements + source matches the saved hash on EC2 (`.deploy-hashes`) — no cache lookup needed. The Alloy container image is pulled only when not already present locally (pinned tag `v1.8.3` never changes).
+**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip. The Playwright sidecar splits the Chromium install into its own layer. Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default). Each build also passes `--build-arg BUILDKIT_INLINE_CACHE=1` and `--cache-from <image>:ec2` so that if the BuildKit daemon cache is cold (e.g. after a Docker restart or disk-pressure GC), cached layers can still be recovered from the local image's embedded cache metadata. **Routine deploys skip the build entirely** when the content hash of Dockerfiles + requirements + source matches the saved hash on EC2 (`.deploy-hashes`) — no cache lookup needed. The Alloy container image is pulled only when not already present locally (pinned tag `v1.8.3` never changes).
 
 | Image | Dockerfile | Role |
 |-------|------------|------|
 | `relocation-panel:ec2` | `Dockerfile.ec2` | Slim panel — no Playwright; includes **tectonic** for PDF render; `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. Same image runs `relocation-mcp` via `docker-entrypoint-mcp.sh`. |
-| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | Playwright + 6h scheduler; writes to shared Postgres (no TeX) |
+| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Light HTTP ATS scheduler (no Chromium); `FETCH_WORKER_KIND=http`; writes to shared Postgres (no TeX) |
+| `relocation-fetch-worker:playwright` | `Dockerfile.ec2-worker-playwright` | **Opt-in.** Chromium worker for `jibe` / `atlassian` / `hibob`; not started unless `DEPLOY_PLAYWRIGHT_WORKER=1` |
 
 **PDF render:** the panel image installs pinned tectonic and warms its package cache at build time. After deploy, smoke with `docker exec relocation-panel tectonic --version`, then **Re-render PDF** on a master or company workspace on [kuchup.com](https://kuchup.com).
 
-Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); the worker skips a cycle if another fetch is already running (`fetch_runs.status = running`).
+Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); the worker skips a cycle if another fetch is already running (`fetch_runs.status = running`). Light and Playwright workers share that lock — do not run both loops on the same 6h cadence unless you accept skipped cycles.
 
-**Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the worker or a local scrape.
+**Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the Playwright sidecar or a local scrape with Chromium. The light worker skips those companies (no empty-board merge / `ImportError`).
 
-**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
+**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`, `FETCH_WORKER_KIND=http`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
 
-On `t4g.micro`, keep concurrency at **2** (one event loop + semaphore; Playwright capped at 1 browser). Do not raise it without watching worker RSS. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
+### Worker memory caps
+
+`scripts/ec2_app_deploy.sh` sets `--memory` and `--memory-swap` to the same value, so the container gets no extra swap:
+
+| Container | Cap | Why |
+|-----------|-----|-----|
+| `relocation-fetch-worker` | **512m** | HTTP scrape at concurrency 2. Grafana last on the old combined worker was ~416MiB; 512m leaves headroom without room for the ~837MiB Chromium spike. |
+| `relocation-playwright-worker` | **640m** | One browser (concurrency 1). Hard ceiling under the ~837MiB max that pressured the ~2GiB host. |
+
+Postgres, Redis, panel, MCP, role propagator, Caddy, and Alloy are unchanged in this deploy path.
+
+If a worker hits its cap, the kernel OOM-kills that container (exit 137). `--restart unless-stopped` starts it again. The in-flight country cycle is lost and the next 6h pass retries. That is the tradeoff: a killed worker beats a wedged host (SSH timeout / Cloudflare 522). `./scripts/ec2_app_deploy.sh status` prints `oom=` from `State.OOMKilled`.
+
+On `t4g.micro`, keep the **light** worker concurrency at **2** (one event loop + semaphore). Do not raise it without watching worker RSS. The Playwright sidecar, when enabled, uses concurrency **1**. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
+
+### Light vs Playwright images
+
+Routine deploy builds the light image only and removes the sidecar. `image-sizes` (above) compares them. The light image drops Chromium and its OS deps — typically **~300–500MB**.
+
+```bash
+DEPLOY_PLAYWRIGHT_WORKER=1 ./scripts/ec2_app_deploy.sh deploy --force
+FETCH_WORKER_KIND=http FETCH_SCHEDULE_ENABLED=1 python3 apps/fetch-worker/run.py --once
+FETCH_SCHEDULE_ENABLED=1 python3 apps/playwright-worker/run.py --once
+```
 
 **Most companies flagged `fetch_problem` but cycles finish in ~1s?** That was thread exhaustion (`can't start new thread`) before the 2026-09-02 concurrency change — not ATS breakage. Look at `company_fetch_attempts.error_message`, not Grafana. Restart: `docker restart relocation-fetch-worker`. Durable logs survive in Postgres; `docker logs` are wiped on deploy.
 
-**Scheduler stuck?** If `worker-logs` shows no new lines for 2+ hours while the container is Up, a Playwright scrape may have hung. Restart: `docker restart relocation-fetch-worker`. Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90` ([architecture.md](../reference/architecture.md#fetch)). Incident history: [fetch-scheduler-timeout-practices.md](../archive/fetch-scheduler-timeout-practices.md).
+**Scheduler stuck?** If `worker-logs` shows no new lines for 2+ hours while the container is Up, an HTTP scrape may have hung (or the opt-in Playwright sidecar, if running). Restart: `docker restart relocation-fetch-worker` (and `relocation-playwright-worker` if you started it). Timeouts: `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90` ([architecture.md](../reference/architecture.md#fetch)). Incident history: [fetch-scheduler-timeout-practices.md](../archive/fetch-scheduler-timeout-practices.md).
 
 ---
 
@@ -260,7 +286,7 @@ Cloudflare **522** means the origin timed out or refused — not an application 
 | Panel localhost fail / Exited | Panel or Caddy down |
 | Up but hang / SSH banner timeout | Host wedged (disk or memory) |
 
-Known causes: Docker filling the root volume; fetch-worker memory pressure (no swap). Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
+Known causes: Docker filling the root volume; fetch-worker memory pressure. Caps and the OOM-restart tradeoff: [Worker memory caps](#worker-memory-caps). Prefer **stop/start** over terminate (EBS may have `DeleteOnTermination`). Full monitoring runbook: [monitoring.md](monitoring.md).
 
 ---
 
@@ -318,6 +344,7 @@ ssh -i relocation.pem ec2-user@<ELASTIC_IP>
 docker ps
 docker logs relocation-panel --tail 50
 docker logs relocation-fetch-worker --tail 50
+docker logs relocation-playwright-worker --tail 50
 docker logs relocation-caddy --tail 50
 ```
 

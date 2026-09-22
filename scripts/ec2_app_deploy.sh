@@ -8,21 +8,24 @@
 #   ./scripts/ec2_app_deploy.sh prune             # free dangling images + trim builder cache
 #   ./scripts/ec2_app_deploy.sh open-sg           # open HTTP/HTTPS on security group (manual)
 #   ./scripts/ec2_app_deploy.sh status            # doctor: containers, disk/RAM, health, verdict
-#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|propagator|alloy|all
+#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|playwright-worker|propagator|alloy|all
 #   ./scripts/ec2_app_deploy.sh worker-logs       # tail fetch scheduler logs (alias)
+#   ./scripts/ec2_app_deploy.sh image-sizes       # docker image sizes (light vs Playwright worker)
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
 # Optional Grafana Cloud (Alloy): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
 # GRAFANA_CLOUD_API_TOKEN in .env. Logs: GRAFANA_CLOUD_LOKI_URL, GRAFANA_CLOUD_LOKI_USER
 # (token needs logs:write). See docs/operations/monitoring.md
 # Disk: root fills from leftover panel/worker images; deploy prunes dangling
-# images only. BuildKit cache is kept across deploys so tectonic/pip/playwright
-# layers are reused — never wiped mid/post-deploy (use `prune` for that).
+# images only. BuildKit cache is kept across deploys so tectonic/pip (and
+# Playwright, when the opt-in sidecar is built) layers are reused — never
+# wiped mid/post-deploy (use `prune` for that).
 #
 # Escape hatches:
 #   FORCE_REBUILD=1      — same as deploy --force
 #   FORCE_FRONTEND=1     — rebuild frontend even if board.js is fresh
 #   FORCE_HOMEPAGE=1     — rebuild homepage even if static export is fresh
+#   DEPLOY_PLAYWRIGHT_WORKER=1 — also build/run the Chromium sidecar worker
 #   DEPLOY_LOCAL=1       — run on the EC2 box directly (self-hosted runner);
 #                          skips SSH, rsyncs within the box, reads credentials
 #                          from REMOTE_DIR/aws-postgres.env and REMOTE_DIR/.env
@@ -30,6 +33,9 @@
 #                          relocation_jobs/static/ from rsync so the previous
 #                          built assets on REMOTE_DIR are preserved (for use
 #                          with DEPLOY_LOCAL=1 on a memory-constrained runner)
+#
+# Worker caps (no extra swap): OOM kills that container and restart brings
+# it back. Other containers stay uncapped. See docs/operations/ec2-panel.md.
 
 set -euo pipefail
 
@@ -55,6 +61,11 @@ PANEL_CONTAINER=relocation-panel
 MCP_CONTAINER=relocation-mcp
 WORKER_IMAGE=relocation-fetch-worker:ec2
 WORKER_CONTAINER=relocation-fetch-worker
+PLAYWRIGHT_WORKER_IMAGE=relocation-fetch-worker:playwright
+PLAYWRIGHT_WORKER_CONTAINER=relocation-playwright-worker
+DEPLOY_PLAYWRIGHT_WORKER="${DEPLOY_PLAYWRIGHT_WORKER:-0}"
+FETCH_WORKER_MEMORY=512m
+PLAYWRIGHT_WORKER_MEMORY=640m
 PROPAGATOR_IMAGE=relocation-role-propagator:ec2
 PROPAGATOR_CONTAINER=relocation-role-propagator
 CADDY_CONTAINER=relocation-caddy
@@ -309,6 +320,7 @@ container_for_log_service() {
     caddy) printf '%s' "$CADDY_CONTAINER" ;;
     mcp) printf '%s' "$MCP_CONTAINER" ;;
     worker) printf '%s' "$WORKER_CONTAINER" ;;
+    playwright-worker|pw-worker) printf '%s' "$PLAYWRIGHT_WORKER_CONTAINER" ;;
     propagator) printf '%s' "$PROPAGATOR_CONTAINER" ;;
     alloy) printf '%s' "$ALLOY_CONTAINER" ;;
     pg) printf '%s' "pg" ;;
@@ -491,8 +503,18 @@ list_paths() {
       printf '%s\n' \
         Dockerfile.ec2-worker \
         requirements.txt \
-        requirements-playwright.txt \
         scripts/fetch_scheduler_worker.py
+      find relocation_jobs \
+        \( -path 'relocation_jobs/static' -o -path 'relocation_jobs/static/*' \
+           -o -name '__pycache__' -o -name '*.pyc' \) -prune \
+        -o -type f -print
+      ;;
+    playwright-worker)
+      printf '%s\n' \
+        Dockerfile.ec2-worker-playwright \
+        requirements.txt \
+        requirements-playwright.txt \
+        apps/playwright-worker/run.py
       find relocation_jobs \
         \( -path 'relocation_jobs/static' -o -path 'relocation_jobs/static/*' \
            -o -name '__pycache__' -o -name '*.pyc' \) -prune \
@@ -674,7 +696,7 @@ EOF
 
   worker_hash="$(remote_image_hash worker)"
   if image_needs_rebuild worker "$WORKER_IMAGE" "$worker_hash"; then
-    log "Building ${WORKER_IMAGE} on EC2 (Playwright)..."
+    log "Building ${WORKER_IMAGE} on EC2 (light HTTP ATS)..."
     ssh_cmd bash -s <<EOF
 set -euo pipefail
 cd ${REMOTE_DIR}
@@ -728,19 +750,20 @@ EOF
     ssh_cmd "docker rm -f ${PROPAGATOR_CONTAINER} 2>/dev/null || true" || true
   fi
 
-  log "Starting fetch worker container..."
+  log "Starting fetch worker container (light HTTP ATS)..."
   ssh_cmd bash -s <<EOF
 set -euo pipefail
 docker rm -f ${WORKER_CONTAINER} 2>/dev/null || true
 docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
+  --memory=${FETCH_WORKER_MEMORY} --memory-swap=${FETCH_WORKER_MEMORY} \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -e PANEL_SCRAPE_ENABLED=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
   -e FETCH_SCHEDULE_CONCURRENCY=2 \\
+  -e FETCH_WORKER_KIND=http \\
   -e FETCH_COMPANY_TIMEOUT_SECONDS=300 \\
   -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
-  -e PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90 \\
   -e PANEL_ADMIN_USER=admin \\
   -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
   -e DATABASE_URL='${db_url}' \\
@@ -750,6 +773,8 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${WORKER_IMAGE}
 EOF
+
+  start_playwright_worker_container "${db_url}" "${admin_emails_value}" "${sqs_url}" "${aws_region}" "${aws_key}" "${aws_secret}"
 
   log "Starting Caddy reverse proxy..."
   ssh_cmd bash -s <<EOF
@@ -771,6 +796,58 @@ EOF
   remote_docker_prune "" "after deploy"
   # open-sg is intentional/manual — do not reopen 0.0.0.0/0 on every deploy.
   cmd_status
+}
+
+start_playwright_worker_container() {
+  local db_url="$1" admin_emails_value="$2" sqs_url="$3" aws_region="$4" aws_key="$5" aws_secret="$6"
+  if [[ "${DEPLOY_PLAYWRIGHT_WORKER}" != "1" ]]; then
+    log "Playwright worker skipped — set DEPLOY_PLAYWRIGHT_WORKER=1 to build/run the Chromium sidecar"
+    ssh_cmd "docker rm -f ${PLAYWRIGHT_WORKER_CONTAINER} 2>/dev/null || true" || true
+    return 0
+  fi
+  local playwright_hash
+  playwright_hash="$(remote_image_hash playwright-worker)"
+  if image_needs_rebuild playwright-worker "$PLAYWRIGHT_WORKER_IMAGE" "$playwright_hash"; then
+    log "Building ${PLAYWRIGHT_WORKER_IMAGE} on EC2 (Playwright/Chromium)..."
+    ssh_cmd bash -s <<EOF
+set -euo pipefail
+cd ${REMOTE_DIR}
+cache_args=()
+if docker image inspect ${PLAYWRIGHT_WORKER_IMAGE} >/dev/null 2>&1; then
+  cache_args=(--cache-from ${PLAYWRIGHT_WORKER_IMAGE})
+fi
+DOCKER_BUILDKIT=1 docker build \\
+  --build-arg BUILDKIT_INLINE_CACHE=1 \\
+  "\${cache_args[@]}" \\
+  -f Dockerfile.ec2-worker-playwright -t ${PLAYWRIGHT_WORKER_IMAGE} .
+EOF
+  fi
+  remote_save_hash playwright-worker "$playwright_hash"
+  log "Starting Playwright fetch worker container..."
+  ssh_cmd bash -s <<EOF
+set -euo pipefail
+docker rm -f ${PLAYWRIGHT_WORKER_CONTAINER} 2>/dev/null || true
+docker run -d --name ${PLAYWRIGHT_WORKER_CONTAINER} --restart unless-stopped \\
+  --memory=${PLAYWRIGHT_WORKER_MEMORY} --memory-swap=${PLAYWRIGHT_WORKER_MEMORY} \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
+  -e PANEL_SCRAPE_ENABLED=1 \\
+  -e FETCH_SCHEDULE_ENABLED=1 \\
+  -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
+  -e FETCH_SCHEDULE_CONCURRENCY=1 \\
+  -e FETCH_WORKER_KIND=playwright \\
+  -e FETCH_LISTING_CHECK_ENABLED=0 \\
+  -e FETCH_COMPANY_TIMEOUT_SECONDS=300 \\
+  -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
+  -e PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90 \\
+  -e PANEL_ADMIN_USER=admin \\
+  -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
+  -e DATABASE_URL='${db_url}' \\
+  -e AWS_REGION='${aws_region}' \\
+  -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
+  -e AWS_ACCESS_KEY_ID='${aws_key}' \\
+  -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
+  ${PLAYWRIGHT_WORKER_IMAGE}
+EOF
 }
 
 start_alloy_container() {
@@ -828,14 +905,21 @@ docker run -d --name ${ALLOY_CONTAINER} --restart unless-stopped \\
 EOF
 }
 
+cmd_image_sizes() {
+  load_state
+  log "=== Docker image sizes ==="
+  ssh_cmd "docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'relocation-(panel:ec2|fetch-worker:ec2|fetch-worker:playwright|role-propagator:ec2)' || true"
+  log "Expected: light fetch-worker is smaller than :playwright by Chromium + OS browser deps (~300–500MB)."
+}
+
 cmd_logs() {
   load_state
   local follow_flag="" svc containers c
   [[ "$LOG_FOLLOW" == "1" ]] && follow_flag="-f"
   if [[ "$LOG_SERVICE" == "all" ]]; then
-    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $PROPAGATOR_CONTAINER $ALLOY_CONTAINER"
+    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $PLAYWRIGHT_WORKER_CONTAINER $PROPAGATOR_CONTAINER $ALLOY_CONTAINER"
   else
-    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|propagator|alloy|pg|redis|all)"
+    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|playwright-worker|propagator|alloy|pg|redis|all)"
     containers="$c"
   fi
   for c in $containers; do
@@ -869,7 +953,7 @@ cmd_status() {
   ssh_cmd "docker ps -a --filter name=^pg\$ --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" || true
   log "Restart / OOM:"
   ssh_cmd bash -s <<'EOF' || true
-for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-role-propagator relocation-alloy pg relocation-redis; do
+for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-playwright-worker relocation-role-propagator relocation-alloy pg relocation-redis; do
   docker inspect -f '{{.Name}} restart={{.RestartCount}} oom={{.State.OOMKilled}} exit={{.State.ExitCode}} status={{.State.Status}}' "$c" 2>/dev/null || true
 done
 EOF
@@ -879,6 +963,8 @@ EOF
   ssh_cmd "docker logs ${CADDY_CONTAINER} --tail 20 2>&1" || log "  caddy not running"
   log "Fetch worker logs (last 20 lines):"
   ssh_cmd "docker logs ${WORKER_CONTAINER} --tail 20 2>&1" || log "  worker not running"
+  log "Playwright worker logs (last 20 lines):"
+  ssh_cmd "docker logs ${PLAYWRIGHT_WORKER_CONTAINER} --tail 20 2>&1" || log "  playwright worker not running"
   log "Role propagator logs (last 20 lines):"
   ssh_cmd "docker logs ${PROPAGATOR_CONTAINER} --tail 20 2>&1" || log "  propagator not running"
 
@@ -943,7 +1029,7 @@ while [[ $# -gt 0 ]]; do
       LOG_FOLLOW=1
       shift
       ;;
-    sync|deploy|prune|open-sg|status|worker-logs|logs)
+    sync|deploy|prune|open-sg|status|worker-logs|image-sizes|logs)
       ACTION="$1"
       shift
       ;;
@@ -961,7 +1047,7 @@ while [[ $# -gt 0 ]]; do
         fi
         shift
       else
-        die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs} [--force]"
+        die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs|image-sizes} [--force]"
       fi
       ;;
   esac
@@ -980,5 +1066,9 @@ case "$ACTION" in
     LOG_FOLLOW=1
     cmd_logs
     ;;
-  *) die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs} [--force]" ;;
+  image-sizes)
+    load_state
+    cmd_image_sizes
+    ;;
+  *) die "Usage: $0 {sync|deploy|prune|open-sg|status|logs|worker-logs|image-sizes} [--force]" ;;
 esac
