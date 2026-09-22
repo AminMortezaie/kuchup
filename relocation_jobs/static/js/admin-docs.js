@@ -6,15 +6,6 @@ let mode = "index";
 let currentDoc = null;
 let bound = false;
 
-function markup(strings, ...values) {
-  let out = strings[0];
-  for (let i = 0; i < values.length; i += 1) {
-    out += values[i] ?? "";
-    out += strings[i + 1];
-  }
-  return out;
-}
-
 async function apiJson(path, options = {}) {
   const res = await fetch(path, {
     credentials: "same-origin",
@@ -45,12 +36,12 @@ function stamp(value) {
 function whenHtml(value) {
   const label = stamp(value);
   if (!label) return "";
-  return markup`<time datetime="${escapeAttr(value || "")}">${escapeHtml(label)}</time>`;
+  return `<time datetime="${escapeAttr(value || "")}">${escapeHtml(label)}</time>`;
 }
 
 function indexHtml() {
   const sections = (tree.folders || []).map((folder) => {
-    const items = (folder.docs || []).map((doc) => markup`
+    const items = (folder.docs || []).map((doc) => `
       <li>
         ${whenHtml(doc.updated_at)}
         <h3>
@@ -58,9 +49,9 @@ function indexHtml() {
         </h3>
       </li>`).join("");
     const list = items
-      ? markup`<ol class="admin-docs-index">${items}</ol>`
+      ? `<ol class="admin-docs-index">${items}</ol>`
       : `<p class="hint">No docs in this section yet.</p>`;
-    return markup`
+    return `
       <section class="admin-docs-section">
         <div class="admin-docs-section-head">
           <h2 class="admin-docs-kicker">${escapeHtml(folder.title)}</h2>
@@ -69,7 +60,7 @@ function indexHtml() {
         ${list}
       </section>`;
   }).join("");
-  return markup`
+  return `
     <div class="admin-docs-index-page">
       <p class="hint admin-docs-lead">Staff-only notes, grouped by section.</p>
       ${sections || `<p class="hint">No sections yet.</p>`}
@@ -77,7 +68,7 @@ function indexHtml() {
 }
 
 function articleHtml(doc) {
-  return markup`
+  return `
     <article class="admin-docs-article">
       <div class="admin-docs-article-bar">
         <button type="button" class="admin-docs-back" id="adminDocsBack">All docs</button>
@@ -94,9 +85,9 @@ function articleHtml(doc) {
 
 function editorHtml() {
   const creating = !currentDoc;
-  const folderOptions = (tree.folders || []).map((item) => markup`
+  const folderOptions = (tree.folders || []).map((item) => `
     <option value="${escapeAttr(item.slug)}" ${item.slug === (currentDoc?.folder || selected.folder) ? "selected" : ""}>${escapeHtml(item.path)}</option>`).join("");
-  return markup`
+  return `
     <form class="admin-docs-form" id="adminDocsForm">
       <label>
         <span>Folder</span>
@@ -127,7 +118,7 @@ function editorShell() {
   const creating = !currentDoc;
   const kicker = creating ? (folderTitle(selected.folder) || "New") : "Edit";
   const title = creating ? "New doc" : currentDoc.title;
-  return markup`
+  return `
     <section class="admin-docs-read">
       <p class="admin-docs-kicker">${escapeHtml(kicker)}</p>
       <h2 class="admin-docs-title">${escapeHtml(title)}</h2>
