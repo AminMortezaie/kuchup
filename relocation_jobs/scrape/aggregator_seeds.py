@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from relocation_jobs.catalog.custom_countries import upsert_custom_country
 from relocation_jobs.catalog.repo import get_company, upsert_company
 from relocation_jobs.core.location_tags import (
-    add_custom_country,
+    _invalidate_custom_countries_cache,
+    load_custom_countries,
     normalize_country_key,
-    supported_country_keys,
 )
 from relocation_jobs.scrape.merge import now_iso
 
@@ -30,13 +31,22 @@ AGGREGATOR_SEEDS: tuple[dict[str, str], ...] = (
         "ats_type": "joblet",
         "careers_url": "https://joblet.ai/jobs?employmentType=Remote",
     },
+    {
+        "country_key": "remote-kake",
+        "country_label": "Kake",
+        "name": "Kake",
+        "ats_type": "kake",
+        "careers_url": "https://kake.co/jobs",
+    },
 )
 
 
 def _ensure_seed_country(country_key: str, country_label: str) -> str:
     key = normalize_country_key(country_key)
-    if key not in supported_country_keys():
-        add_custom_country(country_label)
+    if load_custom_countries().get(key) == country_label:
+        return key
+    upsert_custom_country(key, country_label)
+    _invalidate_custom_countries_cache()
     return key
 
 

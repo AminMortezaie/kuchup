@@ -90,13 +90,18 @@ def test_remote_board_includes_only_remote_catalog(v2_auth_client, db):
     assert "remote-ok" in ids
     assert "remote-dxb" in ids
     assert "remote-joblet" in ids
+    assert "remote-kake" in ids
     assert "uk" not in ids
+    labels = {c["id"]: c["label"] for c in countries}
+    assert labels["remote-kake"] == "Kake"
 
     relo_countries = v2_auth_client.get("/api/countries").get_json()
     relo_ids = {c["id"] for c in relo_countries}
     assert "remote-ok" not in relo_ids
     assert "remote-dxb" not in relo_ids
     assert "remote-joblet" not in relo_ids
+    assert "remote-kake" not in relo_ids
+    assert "kake" not in relo_ids
 
 
 def test_remote_panel_route_serves_shell(v2_auth_client):
