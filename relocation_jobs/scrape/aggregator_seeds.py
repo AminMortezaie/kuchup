@@ -4,8 +4,8 @@ from relocation_jobs.catalog.custom_countries import upsert_custom_country
 from relocation_jobs.catalog.repo import get_company, upsert_company
 from relocation_jobs.core.location_tags import (
     _invalidate_custom_countries_cache,
+    load_custom_countries,
     normalize_country_key,
-    supported_country_keys,
 )
 from relocation_jobs.scrape.merge import now_iso
 
@@ -43,7 +43,7 @@ AGGREGATOR_SEEDS: tuple[dict[str, str], ...] = (
 
 def _ensure_seed_country(country_key: str, country_label: str) -> str:
     key = normalize_country_key(country_key)
-    if key in supported_country_keys():
+    if load_custom_countries().get(key) == country_label:
         return key
     upsert_custom_country(key, country_label)
     _invalidate_custom_countries_cache()
