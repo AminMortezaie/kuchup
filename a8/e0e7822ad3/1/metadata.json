@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a8e0e7822ad3",
+  "session_id": "fe73ae7f-0586-4b99-b6ca-dc95fb16b391",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-22T21:37:01.199211Z",
+  "branch": "fix/mobile-board-pagination",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/static/styles.css"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "9658d8adbc9f",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 27553,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 221952,
+    "output_tokens": 1834,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-22T21:37:01.195105Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 3,
+    "total_committed": 0,
+    "total_lines_changed": 3,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 17,
+      "user_lines_removed": 3,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/static/styles.css": 5,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/styles.css": 3
+      }
+    }
+  ]
+}
