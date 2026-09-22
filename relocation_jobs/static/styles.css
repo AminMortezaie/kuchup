@@ -5715,7 +5715,6 @@ body.scroll-locked {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    justify-content: space-between;
     gap: 0.35rem;
     width: 100%;
   }
@@ -5723,8 +5722,9 @@ body.scroll-locked {
   .board-pagination-pages {
     flex: 1 1 auto;
     min-width: 0;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.35rem;
   }
 
