@@ -1,5 +1,6 @@
 function pageRange(current, total) {
-  if (total <= 3) {
+  // 4 page pills fit between Prev/Next at ~400px; ellipsis after that.
+  if (total <= 4) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
   const pages = new Set([1, total, current, current - 1, current + 1]);

@@ -5713,7 +5713,7 @@ body.scroll-locked {
 
   .board-pagination-controls {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.35rem;
     width: 100%;
@@ -5721,9 +5721,11 @@ body.scroll-locked {
 
   .board-pagination-pages {
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.35rem;
+    width: 100%;
     min-width: 0;
   }
 
