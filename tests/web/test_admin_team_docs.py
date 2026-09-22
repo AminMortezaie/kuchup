@@ -17,12 +17,20 @@ def test_admin_docs_pane_is_private_shell():
     html = (Path(STATIC_DIR) / "admin.html").read_text(encoding="utf-8")
     admin_js = (Path(STATIC_DIR) / "js" / "admin.js").read_text(encoding="utf-8")
     shell_js = (Path(STATIC_DIR) / "js" / "app-shell.js").read_text(encoding="utf-8")
+    docs_js = (Path(STATIC_DIR) / "js" / "admin-docs.js").read_text(encoding="utf-8")
     assert 'name="robots" content="noindex, nofollow"' in html
     assert 'data-admin-nav="docs"' in html
     assert 'data-admin-pane="docs"' in html
     assert 'id="adminTeamDocs"' in html
+    assert ">Admin Docs</span>" in html
+    assert ">Admin Docs</h1>" in html
     assert "./admin-docs.js" in admin_js
     assert '"docs"' in shell_js
+    assert 'raw.split("/")[0]' in shell_js
+    assert "admin-docs-index" in docs_js
+    assert "admin-docs-prose" in docs_js
+    assert 'id="adminDocsEdit"' in docs_js
+    assert "admin-docs-cancel" in docs_js
 
 
 def test_team_docs_not_on_sitemap_or_homepage(v2_client):
@@ -84,6 +92,8 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
     assert doc["slug"] == "launch-checklist"
     assert doc["path"] == "/product/launch-checklist"
     assert doc["body"] == "# Launch\n\n- [ ] ship docs"
+    assert "<h1>Launch</h1>" in doc["html"]
+    assert "<li>[ ] ship docs</li>" in doc["html"]
 
     listed = v2_auth_client.get("/api/admin/team-docs").get_json()
     product_docs = _folder_by_slug(listed, "product")["docs"]
@@ -104,6 +114,7 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
     assert saved["slug"] == "launch-v2"
     assert saved["path"] == "/product/launch-v2"
     assert saved["body"] == "shipped"
+    assert saved["html"] == "<p>shipped</p>"
 
     deleted = v2_auth_client.delete(f"/api/admin/team-docs/{doc['id']}")
     assert deleted.status_code == 200
@@ -112,6 +123,54 @@ def test_team_docs_crud_happy_path(v2_auth_client, db):
     assert missing.status_code == 404
     empty = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "product")
     assert empty["docs"] == []
+
+
+def test_team_docs_reader_html_is_admin_only(v2_auth_client, test_user, db):
+    del db
+    created = v2_auth_client.post(
+        "/api/admin/team-docs",
+        json={
+            "folder": "tech",
+            "title": "Launch note",
+            "body": (
+                "# Hello\n\n**safe**\n\n<script>alert(1)</script>\n\n"
+                "[bad](javascript:alert(1))\n\n"
+                '<img src=x onerror="alert(1)">'
+            ),
+        },
+    )
+    assert created.status_code == 201
+    doc = created.get_json()["doc"]
+    html = doc["html"]
+    assert "<h1>Hello</h1>" in html
+    assert "<strong>safe</strong>" in html
+    assert "<script>" not in html
+    assert "<img" not in html
+    assert "javascript:" not in html
+    assert "&lt;img" in html
+
+    fetched = v2_auth_client.get(f"/api/admin/team-docs/{doc['id']}")
+    assert fetched.status_code == 200
+    assert fetched.get_json()["doc"]["html"] == html
+
+    summary = _folder_by_slug(v2_auth_client.get("/api/admin/team-docs").get_json(), "tech")["docs"][0]
+    assert "html" not in summary
+    assert "body" not in summary
+
+    with v2_auth_client.session_transaction() as sess:
+        sess.clear()
+        sess["user_id"] = test_user["id"]
+        sess["username"] = test_user["username"]
+        sess.permanent = True
+    assert v2_auth_client.get("/api/admin/team-docs").status_code == 403
+    blocked = v2_auth_client.get(f"/api/admin/team-docs/{doc['id']}")
+    assert blocked.status_code == 403
+    assert blocked.get_json()["error"] == "Admin access required"
+    patched = v2_auth_client.patch(
+        f"/api/admin/team-docs/{doc['id']}",
+        json={"body": "hijack"},
+    )
+    assert patched.status_code == 403
 
 
 def test_team_docs_move_between_seeded_folders(v2_auth_client, db):

@@ -47,7 +47,8 @@ export function showAdminPane(name) {
 }
 
 export function adminPaneFromHash() {
-  const name = (window.location.hash || "#home").slice(1);
+  const raw = (window.location.hash || "#home").slice(1);
+  const name = raw.split("/")[0];
   return ADMIN_PANES.includes(name) ? name : "home";
 }
 
