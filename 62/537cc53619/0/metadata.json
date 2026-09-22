@@ -1,0 +1,73 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "62537cc53619",
+  "session_id": "ef636290-5f9a-4fe7-82b9-4ed0ae4a7ba6",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-22T21:45:47.303051Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "relocation_jobs/static/app-shell.css"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "a6d06bcaf6e2",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 4678,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 693760,
+    "output_tokens": 964,
+    "api_call_count": 1
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-22T21:41:01.353482Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "1fa96fe7dcac",
+      "timestamp": "2026-09-22T21:41:01.353482Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-22T21:45:47.292448Z",
+    "agent_lines": 5,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 5,
+    "total_lines_changed": 5,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
