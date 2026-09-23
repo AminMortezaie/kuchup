@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import date
 
 from relocation_jobs.core.job_identity import job_idempotency_key
-from relocation_jobs.core.location_tags import filter_jobs_by_expected_locations
 from relocation_jobs.core.scrape_cancel import FetchCancelled, raise_if_cancelled
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.types import is_infra_fetch_error
@@ -115,15 +114,11 @@ def _emit_review(
     on_review: Callable | None,
     raw: list[dict],
     included: list[dict],
-    company: dict,
-    catalog_country: str,
     name: str,
 ) -> None:
     if not review_mode or not on_review:
         return
-    filtered_out = review_filtered_jobs(
-        raw, included, company, catalog_country=catalog_country,
-    )
+    filtered_out = review_filtered_jobs(raw, included)
     on_review(build_review_payload(included=included, filtered=filtered_out))
     log_event(
         f"review: {len(included)} included, {len(filtered_out)} filtered",
@@ -136,18 +131,13 @@ async def _filter_board_listings(
     company: dict,
     *,
     fetch_board: Callable,
-    catalog_country: str,
 ) -> tuple[list[dict], list[dict]]:
     name = company.get("name") or ""
     raw = await fetch_board(client, company)
     log_event(f"board returned {len(raw)} raw job(s)", company=name)
     title_matched = filter_relevant_jobs(raw, True)
     log_event(f"relevance filter: {len(raw)} → {len(title_matched)}", company=name)
-    matched, _skipped = filter_jobs_by_expected_locations(
-        title_matched, company, catalog_country=catalog_country,
-    )
-    log_event(f"location filter: {len(title_matched)} → {len(matched)}", company=name)
-    return matched, raw
+    return title_matched, raw
 
 
 async def _maybe_enrich_scraped_board(
@@ -201,7 +191,6 @@ async def scrape_company_board(
     scraped, raw = await _filter_board_listings(
         client, company,
         fetch_board=fetch_board,
-        catalog_country=catalog_country,
     )
     raise_if_cancelled()
     _emit_review(
@@ -209,8 +198,6 @@ async def scrape_company_board(
         on_review=on_review,
         raw=raw,
         included=scraped,
-        company=company,
-        catalog_country=catalog_country,
         name=name,
     )
     known = {job_idempotency_key(j.get("url", "")) for j in existing}
@@ -263,8 +250,6 @@ async def _scrape_aggregator_board(
         on_review=on_review,
         raw=raw,
         included=matched,
-        company=company,
-        catalog_country=catalog_country,
         name=name,
     )
     if on_company_result and job_total > 0:

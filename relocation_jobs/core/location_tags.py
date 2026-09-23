@@ -7,12 +7,10 @@ import re
 import threading
 import time
 import unicodedata
-from datetime import date
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from relocation_jobs.core.paths import data_dir, ensure_data_dir
-from relocation_jobs.shared.board_contract import is_remote_country_key
 
 SUGGESTED_CITIES: dict[str, tuple[str, ...]] = {
     "germany": (
@@ -1034,67 +1032,3 @@ def job_matches_expected_locations(
         return True, None
     return False, "location mismatch"
 
-
-def filter_jobs_by_expected_locations(
-    jobs: list[dict],
-    company: dict,
-    *,
-    catalog_country: str = "",
-) -> tuple[list[dict], list[dict]]:
-    """Split jobs into included vs excluded by company office tags."""
-    expected = company_expected_locations(company, catalog_country=catalog_country)
-    if not expected:
-        return jobs, []
-
-    included: list[dict] = []
-    excluded: list[dict] = []
-    for job in jobs:
-        ok, reason = job_matches_expected_locations(job, expected)
-        if ok:
-            included.append(job)
-        else:
-            excluded.append({**job, "location_filter_reason": reason})
-    return included, excluded
-
-
-def job_fails_office_location_gate(
-    job: dict,
-    company: dict,
-    *,
-    catalog_country: str = "",
-) -> tuple[bool, str | None]:
-    """True when the company has office tags and the listing is outside them."""
-    if is_remote_country_key(catalog_country):
-        return False, None
-    expected = company_expected_locations(company, catalog_country=catalog_country)
-    if not expected:
-        return False, None
-    ok, reason = job_matches_expected_locations(job, expected)
-    if ok:
-        return False, None
-    return True, reason
-
-
-def tag_wrong_location_jobs(
-    jobs: list[dict],
-    company: dict,
-    *,
-    catalog_country: str = "",
-    tagged_date: str | None = None,
-) -> None:
-    """Mark catalog jobs outside office tags as not_for_me with reason wrong_location."""
-    expected = company_expected_locations(company, catalog_country=catalog_country)
-    if not expected:
-        return
-    stamp = tagged_date or date.today().isoformat()
-    for job in jobs:
-        ok, _ = job_matches_expected_locations(job, expected)
-        if ok:
-            if job.get("not_for_me_reason") == "wrong_location":
-                job.pop("not_for_me", None)
-                job.pop("not_for_me_reason", None)
-                job.pop("not_for_me_date", None)
-            continue
-        job["not_for_me"] = True
-        job["not_for_me_reason"] = "wrong_location"
-        job["not_for_me_date"] = job.get("not_for_me_date") or stamp

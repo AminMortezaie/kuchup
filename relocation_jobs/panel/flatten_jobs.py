@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from relocation_jobs.catalog.service import skip_closed_unengaged
-from relocation_jobs.core.location_tags import company_expected_locations, job_matches_expected_locations
 from relocation_jobs.panel.flatten_orphans import stats_job_entry
 from relocation_jobs.panel.tracking import catalog_not_for_me, job_dict, resolve_track, resolve_track_flags
 from relocation_jobs.positions.state import (
     derive_bucket,
-    effective_wrong_location,
     passes_position_filters,
     position_view_from_row,
 )
@@ -24,9 +22,8 @@ def not_for_me_entry(
     job_tracking: dict | None,
     status_history: dict | None,
     mcp_applications: dict | None,
-    wrong_location: bool,
 ) -> dict:
-    entry = job_dict(
+    return job_dict(
         job,
         company_name=company_name,
         company=company,
@@ -36,20 +33,6 @@ def not_for_me_entry(
         status_history=status_history,
         mcp_applications=mcp_applications,
     )
-    if wrong_location:
-        entry["not_for_me"] = True
-        if not entry.get("not_for_me_reason"):
-            entry["not_for_me_reason"] = "wrong_location"
-    return entry
-
-
-def job_fails_office_location_gate(job: dict, expected_locations) -> tuple[bool, str | None]:
-    if not expected_locations:
-        return False, None
-    ok, reason = job_matches_expected_locations(job, expected_locations)
-    if ok:
-        return False, None
-    return True, reason
 
 
 def partition_stored_jobs(
@@ -71,17 +54,13 @@ def partition_stored_jobs(
     rejected_jobs: list[dict] = []
     positions_not_for_me = 0
     positions_hidden_by_visa = 0
-    expected_locations = company_expected_locations(company, catalog_country=country_key)
 
     for job in stored_jobs:
-        fails_gate, _ = job_fails_office_location_gate(job, expected_locations)
-
         if user_id:
             track = resolve_track(
                 job_tracking, country=country_key, company_name=company_name, job=job,
             )
-            wrong_location = effective_wrong_location(fails_gate=fails_gate, track=track)
-            view = position_view_from_row(track, wrong_location=wrong_location)
+            view = position_view_from_row(track)
             if view.bucket == PositionBucket.NOT_FOR_ME:
                 positions_not_for_me += 1
                 not_for_me_jobs.append(not_for_me_entry(
@@ -93,7 +72,6 @@ def partition_stored_jobs(
                     job_tracking=job_tracking,
                     status_history=status_history,
                     mcp_applications=mcp_applications,
-                    wrong_location=wrong_location,
                 ))
                 continue
             if skip_closed_unengaged(
@@ -102,7 +80,7 @@ def partition_stored_jobs(
                 looking_to_apply=bool(track.get("looking_to_apply")),
             ):
                 continue
-        elif catalog_not_for_me(job) or fails_gate:
+        elif catalog_not_for_me(job):
             positions_not_for_me += 1
             not_for_me_jobs.append(not_for_me_entry(
                 job,
@@ -113,7 +91,6 @@ def partition_stored_jobs(
                 job_tracking=None,
                 status_history=None,
                 mcp_applications=mcp_applications,
-                wrong_location=fails_gate,
             ))
             continue
 
@@ -164,10 +141,8 @@ def partition_stored_jobs_for_stats(
     jobs: list[dict] = []
     rejected_jobs: list[dict] = []
     positions_not_for_me = 0
-    expected_locations = company_expected_locations(company, catalog_country=country_key)
 
     for job in stored_jobs:
-        fails_gate, _ = job_fails_office_location_gate(job, expected_locations)
         track: dict = {}
         if user_id:
             track = resolve_track_flags(
@@ -177,8 +152,7 @@ def partition_stored_jobs_for_stats(
                 company_name=company_name,
                 job=job,
             )
-            wrong_location = effective_wrong_location(fails_gate=fails_gate, track=track)
-            view = position_view_from_row(track, wrong_location=wrong_location)
+            view = position_view_from_row(track)
             if view.bucket == PositionBucket.NOT_FOR_ME:
                 positions_not_for_me += 1
                 continue
@@ -188,7 +162,7 @@ def partition_stored_jobs_for_stats(
                 looking_to_apply=bool(track.get("looking_to_apply")),
             ):
                 continue
-        elif catalog_not_for_me(job) or fails_gate:
+        elif catalog_not_for_me(job):
             positions_not_for_me += 1
             continue
         elif skip_closed_unengaged(

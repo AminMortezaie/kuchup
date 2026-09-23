@@ -24,7 +24,7 @@ def test_aggregator_review_lists_filtered_with_employer():
     from relocation_jobs.scrape.filter import filter_relevant_jobs
 
     matched = filter_relevant_jobs(raw, True)
-    filtered = review_filtered_jobs(raw, matched, {"name": "Remote OK"})
+    filtered = review_filtered_jobs(raw, matched)
     payload = build_review_payload(included=matched, filtered=filtered)
     assert len(payload["included"]) >= 1
     assert any(j["title"].startswith("Acme") for j in payload["included"])
