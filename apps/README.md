@@ -8,10 +8,11 @@ Thin, discoverable entrypoints for the product’s runnable services. Python dom
 | **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker (HTTP ATS; default production image) |
 | **playwright-worker** | `python3 apps/playwright-worker/run.py` | Chromium boards only (`jibe`, `atlassian`, `hibob`) |
 | **role-propagator** | `python3 apps/role-propagator/run.py` | SQS assignment writer (company slots + roles) |
+| **ats-scrape** | `go run ./apps/ats-scrape` | HTTP ATS board fetch. The light fetch worker shells this out; stdin is company JSON, stdout is the job list |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 
-Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Playwright worker Docker CMD is `apps/playwright-worker/run.py`. Go propagator: `python3 apps/role-propagator/run.py` (or `go run ./apps/role-propagator`).
+Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `scripts/fetch_scheduler_worker.py`, `scripts/mcp_server.py`, `scripts/mcp_http_server.py`. Playwright worker Docker CMD is `apps/playwright-worker/run.py`. Go propagator: `python3 apps/role-propagator/run.py` (or `go run ./apps/role-propagator`). Go board fetch: `go run ./apps/ats-scrape`.
 
 ## Domains vs apps
 
@@ -19,6 +20,7 @@ Equivalent scripts (used by Docker / deploy): `scripts/panel_server.py`, `script
 apps/                  ← how you run it (deployables)
 relocation_jobs/       ← Python domain (catalog, panel, fetch, scrape, …)
 role_propagator/       ← Go domain (sticky slots + role assignment)
+ats_scrape/            ← Go HTTP ATS board fetch (`apps/ats-scrape`)
 frontend/              ← React board widget → static/dist/
 homepage/              ← marketing site (Next.js; same-origin /api/public/*)
 scripts/               ← ops + legacy entry paths for Docker

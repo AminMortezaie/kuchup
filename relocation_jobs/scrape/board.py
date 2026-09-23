@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 
 from relocation_jobs.core.ats_constants import ATS_TYPE_CHOICES, PLAYWRIGHT_REQUIRED_ATS
 from relocation_jobs.core.ats_detection import PLAYWRIGHT_AVAILABLE
 from relocation_jobs.fetch.log import log_event
+from relocation_jobs.scrape.go_http import go_board_jobs, http_scrape_mode
 from relocation_jobs.scrape.boards.ashby import fetch_ashby_board
 from relocation_jobs.scrape.boards.bol import fetch_bol_board
 from relocation_jobs.scrape.boards.deel import fetch_deel_board
@@ -79,6 +81,7 @@ _BOARD_FETCHERS: dict[str, BoardFetcher] = {
 
 _SUPPORTED_ATS = frozenset(_BOARD_FETCHERS)
 _GENERIC_ATS = frozenset({"", "generic"})
+_GO_EMPTY_TO_PYTHON = frozenset({"", "generic", "teamtailor"})
 
 
 class UnsupportedAtsTypeError(LookupError):
@@ -115,6 +118,13 @@ async def fetch_ats_board(
 
     if ats_type in PLAYWRIGHT_REQUIRED_ATS and not PLAYWRIGHT_AVAILABLE:
         raise LookupError(f"Playwright not installed; skip {ats_type} board for {name}")
+
+    scraped = await asyncio.to_thread(go_board_jobs, company)
+    if scraped is not None and (
+        scraped or ats_type not in _GO_EMPTY_TO_PYTHON or http_scrape_mode() == "go"
+    ):
+        log_event(f"go ats scrape returned {len(scraped)} job(s)", company=name)
+        return scraped
 
     if ats_type in _GENERIC_ATS:
         return await fetch_generic_board(client, board_url, company)

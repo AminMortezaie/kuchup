@@ -503,7 +503,10 @@ list_paths() {
       printf '%s\n' \
         Dockerfile.ec2-worker \
         requirements.txt \
-        scripts/fetch_scheduler_worker.py
+        scripts/fetch_scheduler_worker.py \
+        go.mod \
+        go.sum
+      find ats_scrape apps/ats-scrape -type f ! -name 'ats-scrape' -print
       find relocation_jobs \
         \( -path 'relocation_jobs/static' -o -path 'relocation_jobs/static/*' \
            -o -name '__pycache__' -o -name '*.pyc' \) -prune \
@@ -762,6 +765,8 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
   -e FETCH_SCHEDULE_CONCURRENCY=2 \\
   -e FETCH_WORKER_KIND=http \\
+  -e FETCH_HTTP_SCRAPE=auto \\
+  -e ATS_SCRAPE_BIN=/usr/local/bin/ats-scrape \\
   -e FETCH_COMPANY_TIMEOUT_SECONDS=300 \\
   -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
   -e PANEL_ADMIN_USER=admin \\

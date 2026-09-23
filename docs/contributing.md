@@ -29,6 +29,7 @@ relocate.me → build_companies.py → Postgres catalog
 | **Apps (deployables)** | How you run it | [`apps/`](../apps/) — [apps/README.md](../apps/README.md) |
 | **Python domains** | Active | `relocation_jobs/` |
 | **Go assignment writer** | Active | `role_propagator/` |
+| **Go HTTP ATS scrape** | Active | `ats_scrape/` (`apps/ats-scrape`) |
 | **UI** | Shared | `relocation_jobs/static/` + `frontend/` |
 | **Postgres** | AWS EC2 Docker (Frankfurt) | `DATABASE_URL` in `.env` |
 | **Production** | EC2 kuchup.com | [operations/ec2-panel.md](operations/ec2-panel.md) |
@@ -71,7 +72,7 @@ After JS/CSS: hard refresh (`Cmd+Shift+R`). After React: `cd frontend && npm run
 | Kind | Location | Role |
 |------|----------|------|
 | **Apps (deployables)** | [`apps/`](../apps/) | How you run it — [apps/README.md](../apps/README.md) |
-| **Domains** | `relocation_jobs/`, `role_propagator/` | Python business logic; Go assignment writer |
+| **Domains** | `relocation_jobs/`, `role_propagator/`, `ats_scrape/` | Python business logic; Go assignment writer; Go HTTP ATS board fetch |
 | **Ops scripts** | `scripts/` | Deploy helpers + Docker entry paths |
 | **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel JS, React board, marketing |
 
@@ -80,9 +81,11 @@ apps/panel/run.py              Flask panel
 apps/fetch-worker/run.py       Scheduled country scrape (HTTP ATS)
 apps/playwright-worker/run.py  Chromium boards (jibe / atlassian / hibob)
 apps/role-propagator/run.py    Go SQS role assignment writer
+apps/ats-scrape/               Go HTTP ATS board fetch (`ats-scrape`)
 apps/mcp/run.py                Claude Desktop MCP (stdio)
 apps/mcp/run_http.py           HTTP MCP + OAuth
 role_propagator/               Go domain (sticky slots + role assignment)
+ats_scrape/                    Go HTTP ATS board fetch (stdin company JSON, stdout jobs)
 ```
 
 ### Domains (`relocation_jobs/`)
@@ -156,7 +159,7 @@ Images, `FETCH_WORKER_KIND`, and memory caps: [operations/ec2-panel.md](operatio
 | `pytest tests/test_route_manifest.py -o addopts=` | Fast API route check |
 | `pytest -m scrape -o addopts=` | Scraper + board coverage (not in default CI) |
 | `./scripts/run_ci_tests.sh` | Same gate as GitHub Actions (`not scrape` + coverage) |
-| `go test ./role_propagator` | Go assignment writer |
+| `go test ./role_propagator ./ats_scrape ./apps/ats-scrape` | Go assignment writer and HTTP ATS scrape |
 
 Job-state changes: read [reference/business-rules.md](reference/business-rules.md) first.
 

@@ -15,8 +15,8 @@ jobs:
         with:
           go-version: "1.25"
 
-      - name: Role propagator tests
-        run: go test ./role_propagator
+      - name: Go tests
+        run: go test ./role_propagator ./ats_scrape ./apps/ats-scrape
 
       - uses: actions/setup-python@v5
         with:

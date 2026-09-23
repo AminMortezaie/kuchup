@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.3
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.51.0
 	github.com/jackc/pgx/v5 v5.11.0
+	golang.org/x/net v0.40.0
 )
 
 require (

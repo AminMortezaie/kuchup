@@ -9,6 +9,7 @@ aws-postgres.env
 # SSH keys and local infra state (never commit real hosts/passwords)
 *.pem
 apps/role-propagator/role-propagator
+apps/ats-scrape/ats-scrape
 data/
 /companies/
 /kuchup.com-audit/

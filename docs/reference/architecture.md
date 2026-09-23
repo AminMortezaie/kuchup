@@ -13,7 +13,7 @@ One product in one repo. **Apps** are how you run it; **domains** are where logi
 | Kind | Location | Role |
 |------|----------|------|
 | **Apps** | [`apps/`](../../apps/) | Deployables — panel, fetch-worker, playwright-worker, role-propagator, mcp |
-| **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/) | Python domains (catalog, fetch, scrape, …); Go assignment writer |
+| **Domains** | [`relocation_jobs/`](../../relocation_jobs/), [`role_propagator/`](../../role_propagator/), [`ats_scrape/`](../../ats_scrape/) | Python domains (catalog, fetch, scrape, …); Go assignment writer; Go HTTP ATS board fetch |
 | **Ops** | [`scripts/`](../../scripts/) | Deploy helpers; Docker still calls these paths |
 | **UI** | `relocation_jobs/static/`, `frontend/`, `homepage/` | Panel UI, React board widget, marketing site |
 
@@ -25,6 +25,7 @@ apps/role-propagator/run.py    # Go SQS assignment writer
 apps/mcp/run.py          # stdio
 apps/mcp/run_http.py     # HTTP + OAuth
 role_propagator/               # Go domain (assignment writes)
+ats_scrape/                    # Go HTTP ATS board fetch (no catalog writes)
 ```
 
 Full table: [apps/README.md](../../apps/README.md).
@@ -150,6 +151,10 @@ apps/playwright-worker/run.py     (Dockerfile.ec2-worker-playwright; FETCH_WORKE
   → country_runner                asyncio.Semaphore (only concurrency knob)
   → pipeline.fetch_and_persist_company
        load company → scrape → sync_company_board_to_catalog → record attempt
+  → scrape/board.py
+       HTTP ATS boards: `ats-scrape` (Go) returns the job list
+       Python fallback when `FETCH_HTTP_SCRAPE=python` or the binary is missing
+       `jibe` / `atlassian` / `hibob` stay on the Playwright sidecar
   → scrape/ + catalog/repo.py
 ```
 
@@ -162,12 +167,13 @@ Production images:
 | Image | Playwright | Env |
 |-------|------------|-----|
 | Slim panel (`Dockerfile.ec2`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1` |
-| Light fetch worker (`Dockerfile.ec2-worker`) | No | `FETCH_WORKER_KIND=http`, `FETCH_SCHEDULE_ENABLED=1`, interval 6h, concurrency **2** |
+| Light fetch worker (`Dockerfile.ec2-worker`) | No | `FETCH_WORKER_KIND=http`, `FETCH_HTTP_SCRAPE=auto`, `ATS_SCRAPE_BIN=/usr/local/bin/ats-scrape`, interval 6h, concurrency **2** |
 | Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `FETCH_WORKER_KIND=playwright`; `jibe` / `atlassian` / `hibob` |
 
 Playwright-only ATS boards need the sidecar or a local scrape (`PANEL_SCRAPE_ENABLED=1`). The default EC2 worker is HTTP-only and skips those ATS types so an empty board does not close jobs.
 
 - Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all`)
+- HTTP board I/O: `FETCH_HTTP_SCRAPE` (`auto` / `go` / `python`). `auto` uses `ats-scrape` when `ATS_SCRAPE_BIN` (or `/usr/local/bin/ats-scrape`) is executable, and falls back to the Python adapters otherwise. `python` is the rollback switch. Catalog merge, fetch-run bookkeeping, and description enrich stay in Python.
 - ATS scrape cap: `core/ats_constants.MAX_CONCURRENCY` (16)
 - Timeouts (`fetch/timeouts.py`): `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Memory caps: [ec2-panel.md](../operations/ec2-panel.md#worker-memory-caps)

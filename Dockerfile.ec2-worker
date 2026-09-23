@@ -1,6 +1,14 @@
 # syntax=docker/dockerfile:1
-# Light EC2 fetch worker: HTTP ATS APIs / HTML only (Greenhouse, Lever, Ashby, …).
-# No Playwright, no Chromium. Browser boards use Dockerfile.ec2-worker-playwright.
+# Light EC2 fetch worker: Go does HTTP ATS board I/O; Python merges the catalog.
+# No browser. Browser boards use Dockerfile.ec2-worker-playwright.
+FROM golang:1.25-alpine AS ats-scrape
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY ats_scrape ./ats_scrape
+COPY apps/ats-scrape ./apps/ats-scrape
+RUN CGO_ENABLED=0 go build -o /out/ats-scrape ./apps/ats-scrape
+
 FROM python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
@@ -10,7 +18,9 @@ ENV PYTHONUNBUFFERED=1 \
     FETCH_SCHEDULE_ENABLED=1 \
     FETCH_SCHEDULE_INTERVAL_HOURS=6 \
     FETCH_SCHEDULE_CONCURRENCY=4 \
-    FETCH_WORKER_KIND=http
+    FETCH_WORKER_KIND=http \
+    ATS_SCRAPE_BIN=/usr/local/bin/ats-scrape \
+    FETCH_HTTP_SCRAPE=auto
 
 WORKDIR /app
 
@@ -23,6 +33,7 @@ RUN --mount=type=cache,id=relocation-worker-pip,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 COPY . .
+COPY --from=ats-scrape /out/ats-scrape /usr/local/bin/ats-scrape
 
 RUN mkdir -p /tmp/panel-data
 

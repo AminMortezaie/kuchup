@@ -126,7 +126,7 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 | Image | Dockerfile | Role |
 |-------|------------|------|
 | `relocation-panel:ec2` | `Dockerfile.ec2` | Slim panel — no Playwright; includes **tectonic** for PDF render; `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. Same image runs `relocation-mcp` via `docker-entrypoint-mcp.sh`. |
-| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Light HTTP ATS scheduler (no Chromium); `FETCH_WORKER_KIND=http`; writes to shared Postgres (no TeX) |
+| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Light HTTP ATS scheduler (no Chromium). Go `ats-scrape` fetches Greenhouse / Lever / Ashby and the other HTTP boards; Python merges the catalog. `FETCH_WORKER_KIND=http`, `FETCH_HTTP_SCRAPE=auto` |
 | `relocation-fetch-worker:playwright` | `Dockerfile.ec2-worker-playwright` | **Opt-in.** Chromium worker for `jibe` / `atlassian` / `hibob`; not started unless `DEPLOY_PLAYWRIGHT_WORKER=1` |
 
 **PDF render:** the panel image installs pinned tectonic and warms its package cache at build time. After deploy, smoke with `docker exec relocation-panel tectonic --version`, then **Re-render PDF** on a master or company workspace on [kuchup.com](https://kuchup.com).
@@ -135,7 +135,9 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the Playwright sidecar or a local scrape with Chromium. The light worker skips those companies (no empty-board merge / `ImportError`).
 
-**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`, `FETCH_WORKER_KIND=http`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
+**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`, `FETCH_WORKER_KIND=http`, `FETCH_HTTP_SCRAPE=auto`, `ATS_SCRAPE_BIN=/usr/local/bin/ats-scrape`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
+
+**HTTP scrape rollback:** set `FETCH_HTTP_SCRAPE=python` on `relocation-fetch-worker` and recreate the container. The image still contains the Python board adapters. `auto` (default) calls Go when the binary is present and uses Python if Go exits non-zero or the ATS is one of the Playwright boards. Empty `generic` / `teamtailor` boards still fall through to Python so a browser fallback can run where Chromium exists.
 
 ### Worker memory caps
 
@@ -143,7 +145,7 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 | Container | Cap | Why |
 |-----------|-----|-----|
-| `relocation-fetch-worker` | **512m** | HTTP scrape at concurrency 2. Grafana last on the old combined worker was ~416MiB; 512m leaves headroom without room for the ~837MiB Chromium spike. |
+| `relocation-fetch-worker` | **512m** | HTTP scrape at concurrency 2. Board HTTP runs in a short-lived `ats-scrape` process inside this cgroup, so the cap stays 512m (Python + Go child). Grafana last on the old combined worker was ~416MiB; 512m leaves headroom without room for the ~837MiB Chromium spike. |
 | `relocation-playwright-worker` | **640m** | One browser (concurrency 1). Hard ceiling under the ~837MiB max that pressured the ~2GiB host. |
 
 Postgres, Redis, panel, MCP, role propagator, Caddy, and Alloy are unchanged in this deploy path.
