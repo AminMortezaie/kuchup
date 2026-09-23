@@ -5888,6 +5888,15 @@ body.scroll-locked {
     border-bottom-right-radius: 0;
   }
 
+  /* Below 16px, iOS Safari zooms the visual viewport when a field is focused.
+     These sheets focus an input on open, so the first paint is cropped. */
+  .dialog input,
+  .dialog select,
+  .dialog textarea,
+  #editCityAddCountry {
+    font-size: 16px;
+  }
+
   .fetch-panel-backdrop.open {
     align-items: flex-end;
     padding: 0;
