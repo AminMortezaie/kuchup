@@ -222,6 +222,13 @@ _JOB_LOOKUP_COLUMNS = """
 """
 
 
+def company_owned_by_kuchup(company: dict) -> bool:
+    raw = company.get("owned_by_kuchup", 1)
+    if raw is None or raw == "":
+        return True
+    return bool(int(raw))
+
+
 def _company_row(row: dict, jobs: list[dict]) -> dict:
     sources = parse_sources(row.get("sources_json"))
     kind = normalize_catalog_kind(row.get("catalog_kind"))
@@ -248,6 +255,7 @@ def _company_row(row: dict, jobs: list[dict]) -> dict:
         "updated": row.get("updated") or "",
         "sources": sources,
         "catalog_kind": kind,
+        "owned_by_kuchup": company_owned_by_kuchup(row),
         "matching_jobs": jobs,
     }
 
@@ -1303,14 +1311,15 @@ def _upsert_company_row_on_conn(
         company_updated,
         json_sources(company),
         kind,
+        1 if company_owned_by_kuchup(company) else 0,
     )
     cur = conn.execute(
         """
         INSERT INTO companies (
             country, name, city, cities_json, locations_json, size, careers_url, ats_type, ats_url,
             fetch_problem, fetch_problem_date, fetch_ok, fetch_ok_date,
-            added, updated, sources_json, catalog_kind
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            added, updated, sources_json, catalog_kind, owned_by_kuchup
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (country, name) DO UPDATE SET
             city = EXCLUDED.city,
             cities_json = EXCLUDED.cities_json,

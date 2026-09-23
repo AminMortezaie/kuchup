@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from pathlib import Path
 
 from relocation_jobs.core.db import _normalize_url, _utc_now, db_transaction
 
@@ -130,6 +131,37 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "v2_company_fetch_attempts_v1", _company_fetch_attempts_v1)
     run_migration_once(conn, "team_docs_v1", _team_docs_v1)
     run_migration_once(conn, "team_docs_editors_v1", _team_docs_editors_v1)
+    run_migration_once(conn, "team_docs_kuchup_ownership_v1", _seed_kuchup_ownership_doc)
+
+
+_KUCHUP_OWNERSHIP_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "kuchup-company-ownership.md"
+)
+
+
+def _seed_kuchup_ownership_doc(conn) -> None:
+    title = "Kuchup company ownership and edit permissions"
+    slug = "kuchup-company-ownership"
+    existing = conn.execute(
+        "SELECT id FROM team_docs WHERE folder = %s AND slug = %s",
+        ("tech", slug),
+    ).fetchone()
+    if existing:
+        return
+    body = _KUCHUP_OWNERSHIP_DOC.read_text(encoding="utf-8").strip() + "\n"
+    now = _utc_now()
+    conn.execute(
+        """
+        INSERT INTO team_docs (
+            folder, slug, title, body, created_at, updated_at,
+            created_by_user_id, updated_by_user_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        ("tech", slug, title, body, now, now, None, None),
+    )
 
 
 def _team_docs_editors_v1(conn) -> None:

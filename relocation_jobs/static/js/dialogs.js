@@ -451,7 +451,32 @@ async function loadAddCompanyLocationsWhenNeeded() {
   }
 }
 
+function viewerIsAdmin() {
+  return Boolean(state.authState?.user?.is_admin);
+}
+
+function syncAddCompanyCatalogFields() {
+  const admin = viewerIsAdmin();
+  const urlField = $("addCompanyUrlField");
+  const urlInput = $("addCompanyUrl");
+  const atsItem = $("addCompanyAtsAccordion");
+  const subtitle = $("addCompanySubtitle");
+  if (urlField) urlField.hidden = !admin;
+  if (urlInput) {
+    urlInput.required = admin;
+    if (!admin) urlInput.value = "";
+  }
+  if (atsItem) atsItem.hidden = !admin;
+  if (!admin) setAddCompanyAts("auto");
+  if (subtitle) {
+    subtitle.textContent = admin
+      ? "Name and careers URL are required. Country, ATS, and cities are optional hints."
+      : "Add a company by name. Careers and ATS URLs stay with Kuchup admins. Choose a country.";
+  }
+}
+
 export function openAddCompanyDialog() {
+  syncAddCompanyCatalogFields();
   populateAddCompanyCountryPicker();
   $("addCompanyName").value = "";
   $("addCompanyUrl").value = "";
@@ -493,10 +518,15 @@ function resetAddCompanySubmit() {
 
 export async function submitAddCompany(e) {
   e.preventDefault();
+  const admin = viewerIsAdmin();
   const name = $("addCompanyName").value.trim();
-  const careers_url = $("addCompanyUrl").value.trim();
-  const ats = getAddCompanyAts();
+  const careers_url = admin ? $("addCompanyUrl").value.trim() : "";
+  const ats = admin ? getAddCompanyAts() : "auto";
   const countries = isAddCompanyCountryAuto() ? [] : getAddCompanySelectedCountries();
+  if (!admin && !countries.length) {
+    toast("Choose a country");
+    return;
+  }
   const locations = getAddCompanyLocations();
   setAddCompanySubmitLoading(true);
   try {
