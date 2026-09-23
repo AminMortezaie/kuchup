@@ -119,12 +119,13 @@ async def fetch_ats_board(
     if ats_type in PLAYWRIGHT_REQUIRED_ATS and not PLAYWRIGHT_AVAILABLE:
         raise LookupError(f"Playwright not installed; skip {ats_type} board for {name}")
 
-    scraped = await asyncio.to_thread(go_board_jobs, company)
-    if scraped is not None and (
-        scraped or ats_type not in _GO_EMPTY_TO_PYTHON or http_scrape_mode() == "go"
-    ):
-        log_event(f"go ats scrape returned {len(scraped)} job(s)", company=name)
-        return scraped
+    if ats_type not in PLAYWRIGHT_REQUIRED_ATS:
+        scraped = await asyncio.to_thread(go_board_jobs, company)
+        if scraped is not None and (
+            scraped or ats_type not in _GO_EMPTY_TO_PYTHON or http_scrape_mode() == "go"
+        ):
+            log_event(f"go ats scrape returned {len(scraped)} job(s)", company=name)
+            return scraped
 
     if ats_type in _GENERIC_ATS:
         return await fetch_generic_board(client, board_url, company)

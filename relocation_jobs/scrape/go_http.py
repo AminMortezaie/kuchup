@@ -28,20 +28,18 @@ def http_scrape_mode() -> str:
 
 
 def scrape_binary() -> str:
-    explicit = (os.environ.get(_BIN_ENV) or "").strip()
-    if explicit:
-        return explicit if _executable(explicit) else ""
-    return _DEFAULT_BIN if _executable(_DEFAULT_BIN) else ""
+    path, _reason = _resolve_binary()
+    return path
 
 
 def go_board_jobs(company: dict) -> list[dict] | None:
     mode = http_scrape_mode()
     if mode == _MODE_PYTHON:
         return None
-    binary = scrape_binary()
+    binary, reason = _resolve_binary()
     if not binary:
         if mode == _MODE_GO:
-            raise GoScrapeError(f"{_BIN_ENV} is not set")
+            raise GoScrapeError(reason)
         return None
     try:
         completed = subprocess.run(
@@ -62,6 +60,17 @@ def go_board_jobs(company: dict) -> list[dict] | None:
         detail = (completed.stderr or "").strip() or f"ats-scrape exited {completed.returncode}"
         raise GoScrapeError(detail)
     return None
+
+
+def _resolve_binary() -> tuple[str, str]:
+    explicit = (os.environ.get(_BIN_ENV) or "").strip()
+    if explicit:
+        if _executable(explicit):
+            return explicit, ""
+        return "", f"{_BIN_ENV} is not executable: {explicit}"
+    if _executable(_DEFAULT_BIN):
+        return _DEFAULT_BIN, ""
+    return "", f"{_BIN_ENV} is not set"
 
 
 def _executable(path: str) -> bool:
@@ -97,7 +106,14 @@ def _jobs_from_stdout(stdout: str, *, strict: bool) -> list[dict] | None:
         if strict:
             raise GoScrapeError("ats-scrape returned invalid JSON")
         return None
-    return [_job_row(row) for row in payload if isinstance(row, dict) and _job_row(row)]
+    jobs: list[dict] = []
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+        job = _job_row(row)
+        if job:
+            jobs.append(job)
+    return jobs
 
 
 def _job_row(row: dict) -> dict:

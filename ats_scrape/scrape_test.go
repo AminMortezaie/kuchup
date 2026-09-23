@@ -175,6 +175,19 @@ func TestUnsupportedATS(t *testing.T) {
 	}
 }
 
+func TestOversizedResponse(t *testing.T) {
+	client := testClient(t, func(req *http.Request) (*http.Response, error) {
+		return jsonBody(200, strings.Repeat("x", (8<<20)+1)), nil
+	})
+	_, err := Scrape(context.Background(), client, Request{
+		ATSType: "greenhouse",
+		ATSURL:  "https://boards.greenhouse.io/acmebackend",
+	})
+	if err == nil || !strings.Contains(err.Error(), "exceeds 8 MiB") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestRecruiteeOffers(t *testing.T) {
 	client := testClient(t, func(req *http.Request) (*http.Response, error) {
 		if req.URL.String() != "https://acme.recruitee.com/api/offers/" {

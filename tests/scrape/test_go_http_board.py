@@ -8,7 +8,7 @@ import pytest
 import respx
 from httpx import Response
 
-from relocation_jobs.scrape.board import fetch_ats_board
+from relocation_jobs.scrape.board import _BOARD_FETCHERS, fetch_ats_board
 from relocation_jobs.scrape.boards.greenhouse import greenhouse_jobs_api_url
 from relocation_jobs.scrape.go_http import GoScrapeError, go_board_jobs, http_scrape_mode
 
@@ -166,8 +166,44 @@ def test_unknown_http_scrape_mode(monkeypatch):
 def test_go_mode_requires_a_binary(monkeypatch):
     monkeypatch.setenv("FETCH_HTTP_SCRAPE", "go")
     monkeypatch.setenv("ATS_SCRAPE_BIN", "/tmp/missing-ats-scrape")
-    with pytest.raises(GoScrapeError, match="ATS_SCRAPE_BIN"):
+    with pytest.raises(GoScrapeError, match="not executable: /tmp/missing-ats-scrape"):
         go_board_jobs({"ats_type": "lever", "ats_url": "https://jobs.lever.co/acme"})
+
+
+def test_go_mode_unset_binary(monkeypatch):
+    monkeypatch.setenv("FETCH_HTTP_SCRAPE", "go")
+    monkeypatch.delenv("ATS_SCRAPE_BIN", raising=False)
+    with pytest.raises(GoScrapeError, match="ATS_SCRAPE_BIN is not set"):
+        go_board_jobs({"ats_type": "lever", "ats_url": "https://jobs.lever.co/acme"})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ats_type", ["hibob", "jibe", "atlassian"])
+async def test_playwright_ats_never_invokes_go_binary(tmp_path, monkeypatch, ats_type):
+    marker = tmp_path / "go-called"
+    script = tmp_path / "ats-scrape"
+    script.write_text(
+        "#!/bin/sh\n"
+        f"touch {marker}\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+    monkeypatch.setenv("FETCH_HTTP_SCRAPE", "go")
+    monkeypatch.setenv("ATS_SCRAPE_BIN", str(script))
+    monkeypatch.setattr("relocation_jobs.scrape.board.PLAYWRIGHT_AVAILABLE", True)
+
+    async def fake_fetch(client, board_url, company):
+        return [{"title": "Backend Engineer", "url": "https://example.com/jobs/1"}]
+
+    monkeypatch.setitem(_BOARD_FETCHERS, ats_type, fake_fetch)
+    jobs = await fetch_ats_board(None, {
+        "name": "Acme",
+        "ats_type": ats_type,
+        "ats_url": "https://example.com/jobs",
+    })
+    assert jobs[0]["title"] == "Backend Engineer"
+    assert not marker.exists()
 
 
 def test_bad_timeout_falls_back_to_default(monkeypatch, tmp_path):

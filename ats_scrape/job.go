@@ -1,7 +1,9 @@
 package atsscrape
 
 import (
+	"html"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -101,6 +103,14 @@ func lastSlug(raw string) string {
 		slug = slug[:i]
 	}
 	return slug
+}
+
+var tagRE = regexp.MustCompile(`<[^>]+>`)
+
+func plainText(raw string) string {
+	text := html.UnescapeString(raw)
+	text = tagRE.ReplaceAllString(text, " ")
+	return normalizeSpace(text)
 }
 
 func normalizeSpace(text string) string {

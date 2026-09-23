@@ -12,6 +12,8 @@ import (
 
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+const maxResponseBytes = 8 << 20
+
 func defaultHeaders() map[string]string {
 	return map[string]string{
 		"User-Agent":      userAgent,
@@ -63,7 +65,7 @@ func doRequest(ctx context.Context, client getter, method, rawURL string, body [
 		return response{}, err
 	}
 	defer res.Body.Close()
-	payload, err := io.ReadAll(io.LimitReader(res.Body, 32<<20))
+	payload, err := readLimited(res.Body)
 	if err != nil {
 		return response{}, err
 	}
@@ -72,6 +74,17 @@ func doRequest(ctx context.Context, client getter, method, rawURL string, body [
 		final = res.Request.URL.String()
 	}
 	return response{Status: res.StatusCode, Body: payload, Final: final}, nil
+}
+
+func readLimited(body io.Reader) ([]byte, error) {
+	payload, err := io.ReadAll(io.LimitReader(body, maxResponseBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(payload) > maxResponseBytes {
+		return nil, fmt.Errorf("response body exceeds 8 MiB")
+	}
+	return payload, nil
 }
 
 func getURL(ctx context.Context, client getter, rawURL string, headers map[string]string) (response, error) {
