@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from relocation_jobs.core.paths import data_dir, ensure_data_dir
+from relocation_jobs.shared.board_contract import is_remote_country_key
 
 SUGGESTED_CITIES: dict[str, tuple[str, ...]] = {
     "germany": (
@@ -1063,6 +1064,8 @@ def job_fails_office_location_gate(
     catalog_country: str = "",
 ) -> tuple[bool, str | None]:
     """True when the company has office tags and the listing is outside them."""
+    if is_remote_country_key(catalog_country):
+        return False, None
     expected = company_expected_locations(company, catalog_country=catalog_country)
     if not expected:
         return False, None
