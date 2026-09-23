@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hide catalog jobs on the board that should have been excluded (location + title gates)."""
+"""Hide catalog jobs on the board that fail the title relevance gate."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import sys
 
 from relocation_jobs.catalog.repo import load_country_catalog
 from relocation_jobs.core.db import get_connection
-from relocation_jobs.core.location_tags import job_fails_office_location_gate, sync_company_location_fields
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.panel.tracking import resolve_track
 from relocation_jobs.positions import repo as positions_repo
@@ -23,22 +22,10 @@ def _catalog_url(job: dict) -> str:
     return (job.get("url") or "").strip()
 
 
-def _exclusion_for_job(
-    job: dict,
-    company: dict,
-    *,
-    country_key: str,
-) -> tuple[str, str] | None:
-    fails_location, location_reason = job_fails_office_location_gate(
-        job, company, catalog_country=country_key,
-    )
-    if fails_location:
-        return "wrong_location", location_reason or "location mismatch"
-
+def _exclusion_for_job(job: dict) -> tuple[str, str] | None:
     title = (job.get("title") or "").strip()
     if title and not is_relevant(title):
         return "not_for_me", explain_title_filter(title)
-
     return None
 
 
@@ -50,7 +37,6 @@ def find_excludable_jobs(*, country_key: str | None = None) -> list[dict]:
         if not data:
             continue
         for company in data.get("companies") or []:
-            sync_company_location_fields(company, catalog_country=country)
             company_name = (company.get("name") or "").strip()
             if not company_name:
                 continue
@@ -58,7 +44,7 @@ def find_excludable_jobs(*, country_key: str | None = None) -> list[dict]:
                 url = _catalog_url(job)
                 if not url:
                     continue
-                exclusion = _exclusion_for_job(job, company, country_key=country)
+                exclusion = _exclusion_for_job(job)
                 if exclusion is None:
                     continue
                 hide_reason, detail = exclusion

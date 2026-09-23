@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from relocation_jobs.core.location_tags import (
     company_expected_locations,
-    job_fails_office_location_gate,
     job_matches_expected_locations,
     sync_company_location_fields,
 )
@@ -60,15 +59,6 @@ def test_india_listing_fails_berlin_tag():
     ok, reason = job_matches_expected_locations({"location": "Bengaluru, IN"}, expected)
     assert ok is False
     assert "india" in (reason or "")
-
-
-def test_no_office_tags_skips_gate():
-    company = {"name": "Untagged", "cities": [], "locations": []}
-    fails, reason = job_fails_office_location_gate(
-        {"location": "Paris"}, company, catalog_country="germany",
-    )
-    assert fails is False
-    assert reason is None
 
 
 def test_empty_location_keeps_benefit_of_doubt():

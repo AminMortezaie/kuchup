@@ -68,10 +68,9 @@ from relocation_jobs.mcp.types import (
     UpdatePositionResult,
     ValidationResult,
 )
-from relocation_jobs.core.location_tags import job_fails_office_location_gate
 from relocation_jobs.panel.tracking import job_dict, resolve_track
 from relocation_jobs.positions.service import set_job_applied, set_job_ats_score as _set_job_ats_score
-from relocation_jobs.positions.state import effective_wrong_location, position_view_from_row
+from relocation_jobs.positions.state import position_view_from_row
 from relocation_jobs.positions.types import PositionBucket
 from relocation_jobs.shared.timestamps import job_fetched_ts, normalize_posted_at
 from relocation_jobs.users.repo import load_job_status_history, load_job_tracking
@@ -452,11 +451,7 @@ def _company_position_from_job(
         company_name=company_name,
         job=job,
     )
-    wrong_location, _ = job_fails_office_location_gate(
-        job, company_row, catalog_country=country_key,
-    )
-    wrong_location = effective_wrong_location(fails_gate=wrong_location, track=track)
-    if position_view_from_row(track, wrong_location=wrong_location).bucket == PositionBucket.NOT_FOR_ME:
+    if position_view_from_row(track).bucket == PositionBucket.NOT_FOR_ME:
         return None
     if skip_closed_unengaged(
         job,
