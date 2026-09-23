@@ -54,6 +54,7 @@ export function syncBoardView({ loading = false, preserveContent = false } = {})
       plan: state.boardMeta?.plan || "free",
       positionRejectedOnly: Boolean($("positionRejectedOnly")?.checked),
       visaOnly: Boolean($("visaOnly")?.checked),
+      isAdmin: Boolean(state.authState?.user?.is_admin),
     },
   };
   publishBoardView(lastView);

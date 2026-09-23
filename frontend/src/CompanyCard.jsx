@@ -129,6 +129,13 @@ function formatCityLabels(labels, { expanded = false } = {}) {
   };
 }
 
+function kuchupCatalogLocked(company, ui) {
+  if (ui?.isAdmin) return false;
+  const flag = company?.owned_by_kuchup;
+  if (flag === false || flag === 0 || flag === "0") return false;
+  return true;
+}
+
 function emptyMessage(company, ui) {
   const rejectedCount = (company.rejected_jobs || []).length;
   if (company.job_count !== 0) return "No matching roles (try turning off visa filter).";
@@ -144,6 +151,7 @@ function emptyMessage(company, ui) {
     }
     return "No roles match your current filters.";
   }
+  if (kuchupCatalogLocked(company, ui)) return "No jobs yet.";
   return "No jobs yet — click Refresh jobs.";
 }
 
@@ -176,6 +184,7 @@ function CompanyCard({ company, ui }) {
   const showingNotForMe = showNotForMeSet.has(keyStr);
   const showingRejected = showRejectedSet.has(keyStr) || ui.positionRejectedOnly;
   const isFetching = ui.fetchingCompanyKey === keyStr;
+  const catalogLocked = kuchupCatalogLocked(company, ui);
   const countLabel = company.job_count === 1 ? "1 role" : `${company.job_count} roles`;
   const appliedCount = company.positions_applied_all ?? company.positions_applied ?? 0;
   const lastApplied = (company.company_applied_date || "").trim();
@@ -219,6 +228,7 @@ function CompanyCard({ company, ui }) {
       className={`company-card${companyCls}${isCollapsed ? " collapsed" : ""}`}
       data-country={company.country}
       data-company={company.name}
+      data-kuchup-lock={catalogLocked ? "1" : "0"}
     >
       <div className="company-header">
         <div className="company-header-main">
@@ -334,6 +344,7 @@ function CompanyCard({ company, ui }) {
           </div>
         </div>
         <div className="company-header-actions">
+          {catalogLocked ? null : (
           <details className="company-more">
             <summary className="icon-action-btn" aria-label={`More actions for ${company.name}`} title="More company actions">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -390,6 +401,7 @@ function CompanyCard({ company, ui }) {
               </button>
             </div>
           </details>
+          )}
           <button
             type="button"
             className="collapse-company-btn icon-action-btn"

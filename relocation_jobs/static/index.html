@@ -309,7 +309,7 @@
       <div class="dialog-header">
         <div class="dialog-header-text">
           <h2>Add company</h2>
-          <p class="dialog-subtitle">Name and careers URL are required. Country, ATS, and cities are optional hints.</p>
+          <p class="dialog-subtitle" id="addCompanySubtitle">Name and careers URL are required. Country, ATS, and cities are optional hints.</p>
         </div>
         <button type="button" class="dialog-close" id="addCompanyClose" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -331,7 +331,7 @@
           </div>
         </div>
 
-        <div class="dialog-field">
+        <div class="dialog-field" id="addCompanyUrlField">
           <label class="dialog-field-label" for="addCompanyUrl">Careers page URL</label>
           <div class="dialog-input-wrap">
             <span class="dialog-input-icon" aria-hidden="true">
@@ -642,8 +642,8 @@
   </div>
 
   <script type="module" src="/static/js/position-card.js?v=13"></script>
-  <script type="module" crossorigin src="/static/dist/board.js?v=20"></script>
-  <script type="module" src="/static/js/main.js?v=130"></script>
+  <script type="module" crossorigin src="/static/dist/board.js?v=21"></script>
+  <script type="module" src="/static/js/main.js?v=131"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js"));

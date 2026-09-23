@@ -152,6 +152,7 @@ def _build_company_row(
         "country": country_key,
         "country_label": country_label,
         "careers_url": company.get("careers_url", ""),
+        "owned_by_kuchup": bool(company.get("owned_by_kuchup", True)),
         "ats_type": company.get("ats_type", ""),
         "ats_url": company.get("ats_url", ""),
         "fetch_problem": bool(company.get("fetch_problem")),

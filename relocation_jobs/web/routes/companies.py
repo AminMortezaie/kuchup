@@ -7,13 +7,23 @@ from relocation_jobs.core.auth import login_required
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.panel_flags import company_fetch_enabled
 from relocation_jobs.core.paths import country_archive_filename, supported_countries
-from relocation_jobs.catalog.repo import get_company
+from relocation_jobs.catalog.repo import company_owned_by_kuchup, get_company
 from relocation_jobs.broadcast.service import filter_catalog_company_for_user
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.runner import start_company_fetch
 from relocation_jobs.users.entitlements import plan_is_full_access
-from relocation_jobs.users.repo import get_user_by_id
+from relocation_jobs.users.repo import get_user_by_id, is_user_admin
 from relocation_jobs.web import deps
+
+_KUCHUP_EDIT_ERROR = "Only an admin can change a Kuchup company"
+_CAREERS_URL_ERROR = "Only an admin can set a careers or ATS URL"
+
+
+def _reject_kuchup_edit(country: str, company: str):
+    row = get_company(country, company)
+    if row is None or not company_owned_by_kuchup(row) or is_user_admin(g.user_id):
+        return None
+    return jsonify({"error": _KUCHUP_EDIT_ERROR}), 403
 
 
 def register(app):
@@ -66,8 +76,6 @@ def register(app):
 
         if not name.strip():
             return jsonify({"error": "Company name is required"}), 400
-        if not careers_url.strip():
-            return jsonify({"error": "Careers page URL is required"}), 400
 
         country_keys: list[str] | None = None
         if isinstance(countries, list) and countries:
@@ -93,6 +101,11 @@ def register(app):
         if ats_hint and ats_hint not in ("auto", "") and ats_hint not in valid_ats:
             return jsonify({"error": f"Unknown ATS: {ats_hint}"}), 400
         ats_hint_arg = None if ats_hint in ("", "auto") else ats_hint
+        is_admin = is_user_admin(g.user_id)
+        if not is_admin and ((careers_url or "").strip() or ats_hint_arg):
+            return jsonify({"error": _CAREERS_URL_ERROR}), 403
+        if is_admin and not (careers_url or "").strip():
+            return jsonify({"error": "Careers page URL is required"}), 400
 
         try:
             result = deps.add_company(
@@ -102,6 +115,7 @@ def register(app):
                 country_keys=country_keys,
                 ats_hint=ats_hint_arg,
                 locations=locations,
+                owned_by_kuchup=is_admin,
             )
             return jsonify({"ok": True, "company": result})
         except LookupError as e:
@@ -123,6 +137,9 @@ def register(app):
             return jsonify({"error": f"Unknown country: {country}"}), 400
         if not company:
             return jsonify({"error": "company is required"}), 400
+        denied = _reject_kuchup_edit(country, company)
+        if denied is not None:
+            return denied
 
         try:
             company = deps.resolve_company_name(country, company)
@@ -150,6 +167,9 @@ def register(app):
             return jsonify({"error": "company is required"}), 400
         if not new_name:
             return jsonify({"error": "new_name is required"}), 400
+        denied = _reject_kuchup_edit(country, company)
+        if denied is not None:
+            return denied
 
         try:
             company = deps.resolve_company_name(country, company)
@@ -178,6 +198,9 @@ def register(app):
             return jsonify({"error": "company is required"}), 400
         if not careers_url.strip():
             return jsonify({"error": "careers_url is required"}), 400
+        denied = _reject_kuchup_edit(country, company)
+        if denied is not None:
+            return denied
 
         try:
             company = deps.resolve_company_name(country, company)
@@ -317,17 +340,6 @@ def register(app):
                 ),
             }), 503
 
-        user = get_user_by_id(g.user_id)
-        if not user or not plan_is_full_access(user.get("plan"), user_id=g.user_id):
-            return jsonify({
-                "error": "Company fetch is available on Full Access. Upgrade to refresh boards on demand.",
-            }), 403
-
-        if not HTTPX_AVAILABLE:
-            return jsonify({
-                "error": "httpx is not installed. Run: pip install httpx",
-            }), 503
-
         body = request.get_json(silent=True) or {}
         country = (body.get("country") or "").strip().lower()
         company = (body.get("company") or "").strip()
@@ -343,6 +355,21 @@ def register(app):
             company = deps.resolve_company_name(country, company)
         except LookupError as exc:
             return jsonify({"error": str(exc)}), 404
+
+        denied = _reject_kuchup_edit(country, company)
+        if denied is not None:
+            return denied
+
+        user = get_user_by_id(g.user_id)
+        if not user or not plan_is_full_access(user.get("plan"), user_id=g.user_id):
+            return jsonify({
+                "error": "Company fetch is available on Full Access. Upgrade to refresh boards on demand.",
+            }), 403
+
+        if not HTTPX_AVAILABLE:
+            return jsonify({
+                "error": "httpx is not installed. Run: pip install httpx",
+            }), 503
 
         if not fetch_state.guard_fetch_start():
             return jsonify({"error": "A fetch is already running"}), 409

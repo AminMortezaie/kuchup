@@ -407,6 +407,40 @@ def touch_company_fetch_time(country_key: str, company_name: str) -> str:
 # Company CRUD
 # ---------------------------------------------------------------------------
 
+def _add_country_hint(
+    country_key: str | None,
+    country_keys: list[str] | None,
+) -> str | None:
+    if country_keys:
+        cleaned = [
+            ensure_country_key((item or "").strip().lower())
+            for item in country_keys
+            if (item or "").strip()
+        ]
+        return cleaned[0] if cleaned else None
+    if country_key and country_key not in ("auto", "all", ""):
+        return ensure_country_key(country_key.strip().lower())
+    return None
+
+
+def _shell_company(name: str, country_key: str) -> dict:
+    now = today()
+    company = {
+        "name": name.strip(),
+        "city": "",
+        "size": "",
+        "careers_url": "",
+        "matching_jobs": [],
+        "ats_type": "",
+        "ats_url": "",
+        "sources": ["panel"],
+        "added": now,
+        "updated": now,
+    }
+    sync_company_location_fields(company, catalog_country=country_key)
+    return company
+
+
 def add_company(
     name: str,
     careers_url: str,
@@ -415,6 +449,7 @@ def add_company(
     country_keys: list[str] | None = None,
     ats_hint: str | None = None,
     locations: list[dict] | None = None,
+    owned_by_kuchup: bool = True,
 ) -> dict:
     """Add a new company to the catalog with validation.
 
@@ -424,29 +459,33 @@ def add_company(
     if not name:
         raise ValueError("Company name is required")
 
-    CompanyCreateInput(name=name, careers_url=careers_url)
+    raw_url = (careers_url or "").strip()
+    if raw_url:
+        CompanyCreateInput(name=name, careers_url=raw_url)
+        normalized_url = normalize_careers_url(raw_url)
+    elif owned_by_kuchup:
+        raise ValueError("careers_url is required")
+    else:
+        normalized_url = ""
 
-    careers_url = normalize_careers_url(careers_url)
-    hint = None
-    if country_keys:
-        cleaned_keys: list[str] = []
-        for item in country_keys:
-            key = (item or "").strip().lower()
-            if not key:
-                continue
-            cleaned_keys.append(ensure_country_key(key))
-        hint = cleaned_keys[0] if cleaned_keys else None
-    elif country_key and country_key not in ("auto", "all", ""):
-        hint = ensure_country_key(country_key.strip().lower())
+    hint = _add_country_hint(country_key, country_keys)
+    if not normalized_url and not hint:
+        raise ValueError("Choose a country")
 
-    resolved_country, _meta = resolve_country_key(name, careers_url, hint=hint)
+    resolved_country, _meta = resolve_country_key(name, normalized_url, hint=hint)
     if resolved_country not in supported_countries():
         raise ValueError(f"Unknown country: {resolved_country}")
 
     if get_company(resolved_country, name) is not None:
         raise LookupError(f"Company already exists: {name}")
 
-    company = enrich_new_company(name, careers_url, resolved_country, ats_hint=ats_hint)
+    if normalized_url:
+        company = enrich_new_company(
+            name, normalized_url, resolved_country, ats_hint=ats_hint,
+        )
+    else:
+        company = _shell_company(name, resolved_country)
+    company["owned_by_kuchup"] = bool(owned_by_kuchup)
 
     if locations is not None:
         company["locations"] = _build_locations(resolved_country, None, locations)
