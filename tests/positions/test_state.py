@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from relocation_jobs.positions.state import (
     derive_bucket,
-    effective_wrong_location,
     orphan_reinject_eligible,
     passes_position_filters,
     position_view_from_row,
@@ -23,11 +22,6 @@ def test_derive_bucket_rejected_over_applied():
 def test_derive_bucket_not_for_me_over_rejected():
     flags = TrackingFlags(not_for_me=True, rejected=True)
     assert derive_bucket(flags) == PositionBucket.NOT_FOR_ME
-
-
-def test_derive_bucket_wrong_location():
-    flags = TrackingFlags()
-    assert derive_bucket(flags, wrong_location=True) == PositionBucket.NOT_FOR_ME
 
 
 def test_orphan_reinject_skips_not_for_me():
@@ -56,14 +50,3 @@ def test_position_view_from_row():
     assert view.flags.applied is True
     assert view.bucket == PositionBucket.JOBS
     assert view.on_main_board is True
-
-
-def test_position_view_wrong_location():
-    view = position_view_from_row(None, wrong_location=True)
-    assert view.bucket == PositionBucket.NOT_FOR_ME
-
-
-def test_effective_wrong_location_respects_restore_override():
-    assert effective_wrong_location(fails_gate=True, track={"location_gate_override": 1}) is False
-    assert effective_wrong_location(fails_gate=True, track={}) is True
-    assert effective_wrong_location(fails_gate=False, track={"location_gate_override": 1}) is False

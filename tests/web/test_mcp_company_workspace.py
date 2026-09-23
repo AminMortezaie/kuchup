@@ -563,48 +563,53 @@ def test_free_user_workspace_caps_positions(seeded_catalog_v2):
     assert refreshed.jobs_hidden_count == 1
 
 
-def test_remote_workspace_keeps_position_outside_office_tags(db):
+def test_workspace_keeps_jobs_outside_office_tags(db):
     from relocation_jobs.catalog.repo import upsert_company
-    from relocation_jobs.core.location_tags import add_custom_country, job_fails_office_location_gate
+    from relocation_jobs.core.location_tags import add_custom_country
     from relocation_jobs.scrape.merge import now_iso
 
     add_custom_country("Armenia")
     ts = now_iso()
     location = "Remote (Armenia OK; Europe / non-sanctioned remote)"
-    url = "https://winatalent.com/projects/2035/Senior-Back-End-Developer"
-    company = {
-        "name": "WINaTALENT",
-        "city": "Berlin",
-        "locations": [{"country": "germany", "city": "Berlin"}],
-        "careers_url": "https://winatalent.com/",
-        "ats_type": "generic",
-        "sources": ["panel"],
-        "matching_jobs": [
+    cases = (
+        (
+            "remote-ok",
+            "WINaTALENT",
+            "https://winatalent.com/projects/2035/Senior-Back-End-Developer",
+            "https://winatalent.com/",
+        ),
+        (
+            "germany",
+            "Berlin Office Co",
+            "https://berlin-office.example/jobs/senior-backend",
+            "https://berlin-office.example/careers",
+        ),
+    )
+    for country, name, url, careers in cases:
+        upsert_company(
+            country,
             {
-                "title": "Senior Back-End Developer",
-                "url": url,
-                "location": location,
-                "fetched": ts,
-                "last_seen": ts,
-            }
-        ],
-        "added": ts,
-        "updated": ts,
-    }
-    job = company["matching_jobs"][0]
-    fails_remote, _ = job_fails_office_location_gate(
-        job, company, catalog_country="remote-ok",
-    )
-    fails_relo, reason = job_fails_office_location_gate(
-        job, company, catalog_country="germany",
-    )
-    assert fails_remote is False
-    assert fails_relo is True
-    assert "armenia" in (reason or "")
-
-    upsert_company("remote-ok", company, updated=ts)
-    payload = service.list_company_applications("remote-ok", "WINaTALENT", user_id=1)
-    assert any(item.url == url for item in payload.positions)
+                "name": name,
+                "locations": [{"country": "germany", "city": "Berlin"}],
+                "careers_url": careers,
+                "ats_type": "generic",
+                "sources": ["panel"],
+                "matching_jobs": [
+                    {
+                        "title": "Senior Back-End Developer",
+                        "url": url,
+                        "location": location,
+                        "fetched": ts,
+                        "last_seen": ts,
+                    }
+                ],
+                "added": ts,
+                "updated": ts,
+            },
+            updated=ts,
+        )
+        payload = service.list_company_applications(country, name, user_id=1)
+        assert any(item.url == url for item in payload.positions)
 
 
 def test_full_user_workspace_lists_all_positions(seeded_catalog_v2):

@@ -207,7 +207,7 @@ class TestNotForMe:
         assert url in _urls(acme["jobs"])
         assert url not in _urls(acme["not_for_me_jobs"])
 
-    def test_restore_overrides_read_time_wrong_location_gate(self, seeded_catalog_v2, test_user):
+    def test_office_mismatch_stays_on_visible_board(self, seeded_catalog_v2, test_user):
         from relocation_jobs.catalog.repo import update_matching_job_fields
         from relocation_jobs.catalog.serialize import cities_json_from_company, locations_json_from_company
         from relocation_jobs.core.db import db_transaction
@@ -233,11 +233,6 @@ class TestNotForMe:
             )
         update_matching_job_fields("uk", company, lookup_url=url, location="Paris, France")
 
-        acme = _acme(_flatten(uid))
-        assert url in _urls(acme["not_for_me_jobs"])
-        assert url not in _urls(acme["jobs"])
-
-        positions.set_job_not_for_me("uk", company, url, user_id=uid, not_for_me=False)
         acme = _acme(_flatten(uid))
         assert url in _urls(acme["jobs"])
         assert url not in _urls(acme["not_for_me_jobs"])

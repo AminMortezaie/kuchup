@@ -5,10 +5,6 @@ from __future__ import annotations
 import re
 
 from relocation_jobs.core.job_identity import job_idempotency_key
-from relocation_jobs.core.location_tags import (
-    company_expected_locations,
-    job_matches_expected_locations,
-)
 from relocation_jobs.scrape.dom_listing import _is_listing_noise_url
 from relocation_jobs.scrape.relevance import explain_title_filter, is_relevant
 
@@ -41,16 +37,12 @@ def review_entry(job: dict) -> dict | None:
 def review_filtered_jobs(
     all_scraped: list[dict],
     scraped: list[dict],
-    company: dict,
-    *,
-    catalog_country: str = "",
 ) -> list[dict]:
-    """Jobs seen on the board that did not match title/location filters, with reasons."""
+    """Jobs seen on the board that did not match the title filter, with reasons."""
     included_keys = {
         job_idempotency_key(j.get("url", ""))
         for j in scraped
     }
-    expected = company_expected_locations(company, catalog_country=catalog_country)
     filtered: list[dict] = []
     seen: set[str] = set()
     for job in all_scraped:
@@ -63,9 +55,6 @@ def review_filtered_jobs(
         title = (job.get("title") or "").strip()
         if not is_relevant(title):
             reason = explain_title_filter(title)
-        elif expected:
-            ok, loc_reason = job_matches_expected_locations(job, expected)
-            reason = loc_reason or "location mismatch" if not ok else ""
         else:
             reason = "not matched"
         if not reason:
