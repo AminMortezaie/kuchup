@@ -17,11 +17,11 @@ The board job card renders `<span class="badge citizenship">US Citizenship Requi
 - `US` — every job at that company is stamped `citizenship_required: "US"` when the board or workspace payload is built
 - empty — no citizenship tag
 
-The stamp is applied at read time. `matching_jobs` does not store a copy. Catalog sync and company upsert do not overwrite a non-empty value, so a re-scrape does not clear `US`. An empty value is filled on the next catalog write when the careers or ATS host is a GDIT Workday board.
+The stamp is applied at read time. `matching_jobs` does not store a copy. Catalog sync and company upsert set the column on insert from the company payload, default empty, and leave it out of the conflict update, so a re-scrape keeps the stored value.
 
 ## How GDIT was tagged
 
-Migration `catalog_citizenship_required_v1` adds the column and sets `citizenship_required = 'US'` when `careers_url` or `ats_url` has a GDIT Workday host. The hostname's first label is `gdit` and the host ends with `.myworkdayjobs.com`, for example `gdit.wd5.myworkdayjobs.com`. A company inserted later with that host gets the same value. The match uses that host.
+Migration `catalog_citizenship_required_v1` adds the column and runs once. It sets `citizenship_required = 'US'` where `careers_url` or `ats_url` matches `%://gdit.%myworkdayjobs.com%`, for example `https://gdit.wd5.myworkdayjobs.com/en-US/External_Career_Site`. A company added later is not tagged by that host.
 
 ## Tag another company
 
@@ -32,7 +32,7 @@ POST /api/companies/citizenship
 {"country": "remote-ok", "company": "Leidos", "citizenship_required": "US"}
 ```
 
-`citizenship_required` must be `US` or `""`. `""` clears the tag. A later catalog write fills an empty value again when the GDIT Workday host is still on the row.
+`citizenship_required` must be `US` or `""`. `""` clears the tag. The next catalog sync keeps that value.
 
 SQL on the database host:
 

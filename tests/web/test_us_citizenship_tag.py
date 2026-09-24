@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from relocation_jobs.catalog.citizenship import url_requires_us_citizenship
 from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog, upsert_company
 from relocation_jobs.catalog.schema import _migrate_citizenship_required_v1
 from relocation_jobs.core.db import db_transaction
@@ -51,19 +50,12 @@ def _remote_job(client, company: str) -> dict:
     return match["jobs"][0]
 
 
-def test_gdit_workday_host_match():
-    job = "https://gdit.wd5.myworkdayjobs.com/en-US/External_Career_Site/job/Software-Developer_RQ229108-1"
-    assert url_requires_us_citizenship(job) is True
-    assert url_requires_us_citizenship("https://www.gdit.wd1.myworkdayjobs.com/External") is True
-    assert url_requires_us_citizenship("https://leidos.wd5.myworkdayjobs.com/External") is False
-    assert url_requires_us_citizenship("https://notgdit.wd5.myworkdayjobs.com/External") is False
-    assert url_requires_us_citizenship("https://boards.greenhouse.io/gdit") is False
-
-
 def test_gdit_jobs_are_tagged_and_other_companies_are_not(v2_auth_client, db):
     del db
     ensure_aggregator_seeds()
-    upsert_company("remote-ok", _company("GDIT", careers_url=GDIT_URL, title="Software Developer"))
+    gdit = _company("GDIT", careers_url=GDIT_URL, title="Software Developer")
+    gdit["citizenship_required"] = "US"
+    upsert_company("remote-ok", gdit)
     upsert_company(
         "remote-ok",
         _company("Orbit Remote", careers_url="https://boards.greenhouse.io/orbit", title="Platform Engineer"),
@@ -99,46 +91,23 @@ def test_catalog_sync_keeps_citizenship_flag(db):
     assert get_company("uk", "Leidos")["matching_jobs"][0]["title"] == "Cleared title"
 
 
-def test_gdit_sync_refills_empty_flag(db):
-    del db
-    upsert_company("uk", _company("GDIT", careers_url=GDIT_URL, ats_url=GDIT_URL))
-    with db_transaction() as conn:
-        conn.execute(
-            "UPDATE companies SET citizenship_required = '' WHERE lower(name) = lower(%s)",
-            ("GDIT",),
-        )
-    stored = get_company("uk", "GDIT")
-    assert stored["citizenship_required"] == ""
-    sync_company_board_to_catalog("uk", stored)
-    assert get_company("uk", "GDIT")["citizenship_required"] == "US"
-
-
 def test_migration_tags_gdit_host_and_is_idempotent(db):
     del db
+    upsert_company("uk", _company("GDIT", careers_url=GDIT_URL, ats_url=GDIT_URL))
     upsert_company(
         "uk",
-        _company("Plain Co", careers_url="https://boards.greenhouse.io/plain"),
+        _company(
+            "Leidos Workday",
+            careers_url="https://leidos.wd5.myworkdayjobs.com/External",
+            ats_url="https://leidos.wd5.myworkdayjobs.com/External",
+        ),
     )
-    with db_transaction() as conn:
-        conn.execute(
-            """
-            UPDATE companies
-            SET careers_url = %s, ats_url = %s, citizenship_required = ''
-            WHERE lower(name) = lower(%s)
-            """,
-            (GDIT_URL, "", "Plain Co"),
-        )
-        _migrate_citizenship_required_v1(conn)
-        _migrate_citizenship_required_v1(conn)
-    assert get_company("uk", "Plain Co")["citizenship_required"] == "US"
-
-    upsert_company(
-        "uk",
-        _company("Still Plain", careers_url="https://boards.greenhouse.io/still-plain"),
-    )
+    assert get_company("uk", "GDIT")["citizenship_required"] == ""
     with db_transaction() as conn:
         _migrate_citizenship_required_v1(conn)
-    assert get_company("uk", "Still Plain")["citizenship_required"] == ""
+        _migrate_citizenship_required_v1(conn)
+    assert get_company("uk", "GDIT")["citizenship_required"] == "US"
+    assert get_company("uk", "Leidos Workday")["citizenship_required"] == ""
 
 
 def test_citizenship_edit_rejects_non_admins(v2_client, test_user, db):
@@ -183,6 +152,9 @@ def test_admin_can_set_and_clear_citizenship(v2_auth_client, db):
     )
     assert cleared.status_code == 200
     assert get_company("uk", "SAIC")["citizenship_required"] == ""
+    stored = get_company("uk", "SAIC")
+    sync_company_board_to_catalog("uk", stored)
+    assert get_company("uk", "SAIC")["citizenship_required"] == ""
 
 
 def test_citizenship_doc_seed_is_idempotent(v2_auth_client, db):
@@ -198,5 +170,7 @@ def test_citizenship_doc_seed_is_idempotent(v2_auth_client, db):
     fetched = v2_auth_client.get(f"/api/admin/team-docs/{matches[0]['id']}").get_json()["doc"]
     assert "citizenship_required" in fetched["body"]
     assert "gdit.wd5.myworkdayjobs.com" in fetched["body"]
+    assert "POST /api/companies/citizenship" in fetched["body"]
+    assert "fills an empty" not in fetched["body"]
     page = Path(__file__).resolve().parents[2] / "relocation_jobs/team_docs/pages/job-eligibility-us-citizenship.md"
     assert page.is_file()

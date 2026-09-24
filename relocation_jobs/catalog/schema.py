@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from relocation_jobs.catalog.citizenship import url_requires_us_citizenship
 from relocation_jobs.core.db import db_transaction
 from relocation_jobs.core.migrations import run_migration_once
 from relocation_jobs.core.slug import public_job_slug_base
@@ -150,20 +149,14 @@ def _migrate_citizenship_required_v1(conn) -> None:
         ADD COLUMN IF NOT EXISTS citizenship_required TEXT NOT NULL DEFAULT ''
         """
     )
-    rows = conn.execute(
-        "SELECT id, careers_url, ats_url, citizenship_required FROM companies"
-    ).fetchall()
-    for row in rows:
-        data = dict(row)
-        if (data.get("citizenship_required") or "").strip():
-            continue
-        careers = data.get("careers_url") or ""
-        ats = data.get("ats_url") or ""
-        if url_requires_us_citizenship(careers) or url_requires_us_citizenship(ats):
-            conn.execute(
-                "UPDATE companies SET citizenship_required = %s WHERE id = %s",
-                ("US", data["id"]),
-            )
+    conn.execute(
+        """
+        UPDATE companies
+        SET citizenship_required = 'US'
+        WHERE careers_url ILIKE '%://gdit.%myworkdayjobs.com%'
+           OR ats_url ILIKE '%://gdit.%myworkdayjobs.com%'
+        """
+    )
 
 
 def _migrate_owned_by_kuchup_v1(conn) -> None:

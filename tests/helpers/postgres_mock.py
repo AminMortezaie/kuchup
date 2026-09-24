@@ -219,6 +219,7 @@ class FakePgConnection:
             flags=re.I,
         )
         out = re.sub(r"\bDROP COLUMN IF EXISTS\b", "DROP COLUMN", out, flags=re.I)
+        out = re.sub(r"\bILIKE\b", "LIKE", out, flags=re.I)
         out = re.sub(r"\bJSONB\b", "TEXT", out, flags=re.I)
         out = re.sub(r"'::(jsonb|text)", "'", out, flags=re.I)
         return out, returning

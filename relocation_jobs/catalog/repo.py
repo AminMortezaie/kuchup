@@ -1078,20 +1078,6 @@ def update_matching_job_fields(
     }
 
 
-def _fill_empty_citizenship(conn, company_id: int, company: dict) -> None:
-    code = citizenship_code_for_write(company)
-    if not code:
-        return
-    conn.execute(
-        """
-        UPDATE companies
-        SET citizenship_required = %s
-        WHERE id = %s AND TRIM(COALESCE(citizenship_required, '')) = ''
-        """,
-        (code, company_id),
-    )
-
-
 def _upsert_company_catalog_row(
     conn,
     country_key: str,
@@ -1150,9 +1136,7 @@ def _upsert_company_catalog_row(
             citizenship_code_for_write(company),
         ),
     ).fetchone()
-    company_id = int(row["id"])
-    _fill_empty_citizenship(conn, company_id, company)
-    return company_id
+    return int(row["id"])
 
 
 def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> None:
@@ -1362,9 +1346,7 @@ def _upsert_company_row_on_conn(
     row = cur.fetchone()
     if row is None:
         raise RuntimeError(f"Failed to upsert company {name!r}")
-    company_id = row["id"] if isinstance(row, dict) else row[0]
-    _fill_empty_citizenship(conn, int(company_id), company)
-    return company_id
+    return row["id"] if isinstance(row, dict) else row[0]
 
 
 def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> None:

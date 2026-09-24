@@ -15,10 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from relocation_jobs.core.slug import slug_from_name
-from relocation_jobs.catalog.citizenship import (
-    citizenship_code_for_write,
-    normalize_citizenship_required,
-)
+from relocation_jobs.catalog.citizenship import normalize_citizenship_required
 from relocation_jobs.catalog.repo import get_company
 from relocation_jobs.catalog.repo import (
     delete_company,
@@ -561,13 +558,6 @@ def update_company_careers(
     if redetect_ats:
         ats_type, ats_url = detect_ats_for_company(canonical_name, careers_url)
         fields.update(ats_type=ats_type, ats_url=ats_url)
-    if not (company.get("citizenship_required") or "").strip():
-        code = citizenship_code_for_write({
-            "careers_url": careers_url,
-            "ats_url": fields.get("ats_url", company.get("ats_url") or ""),
-        })
-        if code:
-            fields["citizenship_required"] = code
 
     update_company_fields(country_key, canonical_name, **fields)
 
