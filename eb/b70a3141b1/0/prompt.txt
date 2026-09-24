@@ -1,11 +1,3 @@
-we have problem in recognizing "ashbyhq" ats url find the problem.
-u can use Clera sample to find what's going there and cannot set the correct ats to it.
-
----
-
-we have problem in recognizing "ashbyhq" ats url find the problem.
-u can use Clera sample to find what's going there and cannot set the correct ats to it.
-
----
+<timestamp>Thursday, Sep 24, 2026, 4:45 PM (UTC+4)</timestamp>
 
 fix it in a pr and create something like greenhouse for it.
