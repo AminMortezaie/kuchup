@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
-from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.shared.predicates import any_of
 
 _ENGINEER_TITLE_EXCLUDE_SKIP = frozenset({"marketing", "hr"})
@@ -19,31 +18,36 @@ _IRRELEVANT_TITLE_RULES: tuple[Callable[[tuple[str, list[str]]], bool], ...] = (
 )
 
 
-def _title_excludes(title_lower: str) -> list[str]:
+def _title_excludes(title_lower: str, exclude: list[str]) -> list[str]:
     if re.search(r"\b(engineer|developer|programmer)\b", title_lower):
         return [
-            kw for kw in EXCLUDE_KEYWORDS
+            kw for kw in exclude
             if kw.strip() not in _ENGINEER_TITLE_EXCLUDE_SKIP
         ]
-    return list(EXCLUDE_KEYWORDS)
+    return exclude
 
 
-def is_relevant(title: str) -> bool:
+def is_relevant(title: str, *, include: list[str], exclude: list[str]) -> bool:
     t = title.lower()
-    if not any(kw in t for kw in INCLUDE_KEYWORDS):
+    if not any(kw in t for kw in include):
         return False
-    ctx = (t, _title_excludes(t))
+    ctx = (t, _title_excludes(t, exclude))
     return not any_of(ctx, _IRRELEVANT_TITLE_RULES)
 
 
-def explain_title_filter(title: str) -> str:
-    """Human-readable reason when ``is_relevant`` rejects a title."""
+def hidden_by_active_excludes(title: str, exclude: list[str]) -> bool:
+    t = (title or "").lower()
+    ctx = (t, _title_excludes(t, exclude))
+    return any_of(ctx, _IRRELEVANT_TITLE_RULES)
+
+
+def explain_title_filter(title: str, *, include: list[str], exclude: list[str]) -> str:
     t = (title or "").lower()
     if re.search(r"\bchief technology officer\b|\bcto\b", t):
         return "Title excluded (CTO)"
-    if not any(kw in t for kw in INCLUDE_KEYWORDS):
+    if not any(kw in t for kw in include):
         return "Title not relevant (no backend/software keyword)"
-    excludes = _title_excludes(t)
+    excludes = _title_excludes(t, exclude)
     for kw in excludes:
         if kw in t:
             return f"Title excluded ({kw.strip() or kw})"

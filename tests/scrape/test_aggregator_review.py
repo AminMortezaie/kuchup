@@ -21,9 +21,15 @@ def test_aggregator_review_lists_filtered_with_employer():
             "employer": "SalesCo",
         },
     ]
+    from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
     from relocation_jobs.scrape.filter import filter_relevant_jobs
 
-    matched = filter_relevant_jobs(raw, True)
+    matched = filter_relevant_jobs(
+        raw,
+        True,
+        include=list(INCLUDE_KEYWORDS),
+        exclude=list(EXCLUDE_KEYWORDS),
+    )
     filtered = review_filtered_jobs(raw, matched)
     payload = build_review_payload(included=matched, filtered=filtered)
     assert len(payload["included"]) >= 1

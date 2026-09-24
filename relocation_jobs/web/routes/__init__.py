@@ -17,6 +17,7 @@ from relocation_jobs.web.routes import (
     payments,
     public,
     remote,
+    role_prefs,
     team_docs,
 )
 
@@ -37,6 +38,7 @@ def register_routes(app: Flask) -> None:
         payments,
         public,
         remote,
+        role_prefs,
         team_docs,
     ):
         module.register(app)

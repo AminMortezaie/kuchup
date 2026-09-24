@@ -7,8 +7,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from relocation_jobs.broadcast.service import (
+    filter_catalog_company_for_user,
     record_touch_and_maybe_reveal,
-    visible_jobs_for_company,
 )
 from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.catalog.repo import (
@@ -30,6 +30,7 @@ from relocation_jobs.core.location_tags import (
 )
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.scrape.descriptions import format_job_description
+from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.scrape.job_text import fetch_job_description
 from relocation_jobs.core.db import _normalize_url
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
@@ -540,9 +541,9 @@ def list_company_applications(
         for row in app_rows
         if (row.get("idempotency_key") or "").strip()
     }
-    visible_jobs, jobs_hidden_count = visible_jobs_for_company(
-        uid, country_key, company_name, list(company_row.get("matching_jobs") or []),
-    )
+    company_row = filter_catalog_company_for_user(uid, country_key, company_row)
+    visible_jobs = list(company_row.get("matching_jobs") or [])
+    jobs_hidden_count = int(company_row.get("jobs_hidden_count") or 0)
 
     positions: list[CompanyPositionApplication] = []
     for job in visible_jobs:
@@ -587,7 +588,11 @@ def get_position_description(idempotency_key: str) -> PositionDescription:
         title=(job.get("title") or "").strip(),
         description_text=str(description["description_text"]),
         has_description=bool(description["has_description"]),
-        needs_fetch=bool(description["needs_fetch"]) and not _non_fetchable_posting_url(job_url),
+        needs_fetch=(
+            bool(description["needs_fetch"])
+            and job_is_default_match(job)
+            and not _non_fetchable_posting_url(job_url)
+        ),
         description_html=str(description.get("description_html") or ""),
     )
 
@@ -599,6 +604,8 @@ def fetch_and_store_position_description(idempotency_key: str) -> PositionDescri
     job = get_job_by_idempotency_key(key)
     if job is None:
         raise LookupError(f"Position not found: {key}")
+    if not job_is_default_match(job):
+        raise ValueError("Job descriptions are not fetched for roles outside the default title filters")
     url = (job.get("url") or "").strip()
     if not url:
         raise ValueError("Position has no job URL")

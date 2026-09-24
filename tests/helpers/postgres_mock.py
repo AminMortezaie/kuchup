@@ -156,6 +156,7 @@ class FakePgConnection:
         "mcp_project_masters",
         "mcp_interview_notes",
         "team_docs",
+        "user_role_tag_prefs",
     )
 
     _TRACKING_TABLES = (
@@ -181,6 +182,7 @@ class FakePgConnection:
         "user_opportunities",
         "user_preferences",
         "team_docs",
+        "user_role_tag_prefs",
     )
 
     def clear_data(self) -> None:

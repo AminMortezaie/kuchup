@@ -7,6 +7,7 @@ from relocation_jobs.core.job_identity import (
     job_idempotency_key_for_job,
     stamp_job_identity,
 )
+from relocation_jobs.roles.match import job_is_default_match
 
 
 def now_iso() -> str:
@@ -85,6 +86,7 @@ def _update_from_scrape(old: dict, scraped: dict, key: str, seen_at: str) -> dic
         out["public_slug"] = slug
     out["closed_at"] = ""
     out["listing_misses"] = 0
+    out["matches_default_filter"] = 1 if job_is_default_match(scraped) else 0
     _apply_board_location(out, scraped, old)
     return out
 
@@ -96,6 +98,7 @@ def _add_from_scrape(scraped: dict, key: str, seen_at: str) -> dict:
     out["last_seen"] = seen_at
     out["closed_at"] = ""
     out["listing_misses"] = 0
+    out["matches_default_filter"] = 1 if job_is_default_match(scraped) else 0
     return out
 
 

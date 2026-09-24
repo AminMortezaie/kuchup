@@ -4,6 +4,8 @@ from collections import defaultdict
 
 from relocation_jobs.catalog.repo import sync_aggregator_employer_jobs
 from relocation_jobs.fetch.log import log_event
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
 from relocation_jobs.scrape.filter import filter_relevant_jobs
 from relocation_jobs.shared.board_contract import (
     AGGREGATOR_ATS_TYPES,
@@ -41,6 +43,7 @@ def group_jobs_by_employer(jobs: list[dict]) -> dict[str, list[dict]]:
             entry["location"] = location
         if job.get("locations") is not None:
             entry["locations"] = job["locations"]
+        entry["matches_default_filter"] = 1 if job_is_default_match(job) else 0
         description = (job.get("description_text") or "").strip()
         if description:
             entry["description_text"] = description
@@ -55,13 +58,15 @@ def sync_aggregator_board(
     raw_jobs: list[dict],
     *,
     relevant_only: bool = True,
-) -> tuple[int, int]:
+) -> tuple[int, int, list[dict]]:
     ats = (source_company.get("ats_type") or "").strip().lower()
     source = _SOURCE_LABEL.get(ats, ats or "aggregator")
-    matched = filter_relevant_jobs(raw_jobs, relevant_only)
-    grouped = group_jobs_by_employer(matched)
+    includes, excludes = default_keyword_lists()
+    listed = annotate_listings(filter_relevant_jobs(raw_jobs, False), includes, excludes)
+    grouped = group_jobs_by_employer(listed)
     employers = 0
     job_total = 0
+    matched: list[dict] = []
     careers_fallback = (
         (source_company.get("careers_url") or source_company.get("ats_url") or "").strip()
     )
@@ -75,13 +80,19 @@ def sync_aggregator_board(
             source=source,
             careers_url=careers_fallback or jobs[0]["url"],
         )
+        counted = jobs if not relevant_only else [
+            job for job in jobs if job_is_default_match(job)
+        ]
+        if not counted:
+            continue
         employers += 1
-        job_total += len(jobs)
+        job_total += len(counted)
+        matched.extend(counted)
     log_event(
         f"aggregator sync employers={employers} jobs={job_total}",
         company=source_company.get("name") or "",
     )
-    return employers, job_total
+    return employers, job_total, matched
 
 
 def aggregator_success_line(prefix: str, employers: int, jobs: int) -> str:

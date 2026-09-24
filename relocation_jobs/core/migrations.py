@@ -6,6 +6,7 @@ import os
 from collections.abc import Callable
 from pathlib import Path
 
+from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.core.db import _normalize_url, _utc_now, db_transaction
 
 
@@ -133,6 +134,8 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_editors_v1", _team_docs_editors_v1)
     run_migration_once(conn, "team_docs_kuchup_ownership_v1", _seed_kuchup_ownership_doc)
     run_migration_once(conn, "team_docs_us_citizenship_v1", _seed_us_citizenship_doc)
+    run_migration_once(conn, "role_filter_tags_v1", _role_filter_tags_v1)
+    run_migration_once(conn, "team_docs_role_filter_v1", _seed_role_filter_docs)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -186,6 +189,113 @@ def _seed_us_citizenship_doc(conn) -> None:
         slug="job-eligibility-us-citizenship",
         title="Job eligibility tags: US Citizenship Required",
         path=_US_CITIZENSHIP_DOC,
+    )
+
+
+_ROLE_FILTER_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "role-filter-tags.md"
+)
+_ROLE_PROPAGATOR_BACKLOG_ITEM = (
+    "Role propagator: support per-user role keyword preferences "
+    "(assign + cap unhidden roles, optionally fetch JDs for them on demand)"
+)
+
+
+def _role_filter_tags_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS role_filter_tags (
+            id SERIAL PRIMARY KEY,
+            keyword TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('include', 'exclude')),
+            UNIQUE (kind, keyword)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_role_tag_prefs (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            tag_id INTEGER NOT NULL REFERENCES role_filter_tags(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, tag_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        ALTER TABLE matching_jobs
+        ADD COLUMN IF NOT EXISTS matches_default_filter INTEGER NOT NULL DEFAULT 1
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_jobs_default_open
+        ON matching_jobs (company_id)
+        WHERE matches_default_filter = 1
+        """
+    )
+    for kind, words in (("include", INCLUDE_KEYWORDS), ("exclude", EXCLUDE_KEYWORDS)):
+        for word in words:
+            conn.execute(
+                """
+                INSERT INTO role_filter_tags (keyword, kind)
+                VALUES (%s, %s)
+                ON CONFLICT (kind, keyword) DO NOTHING
+                """,
+                (word, kind),
+            )
+
+
+def _insert_team_doc(conn, slug: str, title: str, body: str) -> None:
+    existing = conn.execute(
+        "SELECT id FROM team_docs WHERE folder = %s AND slug = %s",
+        ("tech", slug),
+    ).fetchone()
+    if existing:
+        return
+    now = _utc_now()
+    conn.execute(
+        """
+        INSERT INTO team_docs (
+            folder, slug, title, body, created_at, updated_at,
+            created_by_user_id, updated_by_user_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        ("tech", slug, title, body, now, now, None, None),
+    )
+
+
+def _seed_role_filter_docs(conn) -> None:
+    _insert_team_doc(
+        conn,
+        "role-filter-tags",
+        "Role filter tags",
+        _ROLE_FILTER_DOC.read_text(encoding="utf-8").strip() + "\n",
+    )
+    row = conn.execute(
+        """
+        SELECT id, body FROM team_docs
+        WHERE folder = 'tech'
+          AND (
+            LOWER(title) LIKE '%backlog%'
+            OR LOWER(slug) LIKE '%backlog%'
+          )
+        ORDER BY id
+        LIMIT 1
+        """
+    ).fetchone()
+    if not row:
+        return
+    body = dict(row).get("body") or ""
+    if _ROLE_PROPAGATOR_BACKLOG_ITEM in body:
+        return
+    updated = body.rstrip() + "\n\n- " + _ROLE_PROPAGATOR_BACKLOG_ITEM + "\n"
+    conn.execute(
+        "UPDATE team_docs SET body = %s, updated_at = %s WHERE id = %s",
+        (updated, _utc_now(), dict(row)["id"]),
     )
 
 

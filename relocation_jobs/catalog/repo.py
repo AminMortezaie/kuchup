@@ -22,6 +22,7 @@ from relocation_jobs.catalog.serialize import (
     parse_sources,
 )
 from relocation_jobs.core.slug import public_job_slug_base
+from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_REMOTE,
     REMOTE_COUNTRY_KEYS,
@@ -121,7 +122,9 @@ def _fill_missing_public_slugs(conn, company_id: int) -> None:
     rows = conn.execute(
         """
         SELECT id, title FROM matching_jobs
-        WHERE company_id = %s AND (public_slug IS NULL OR public_slug = '')
+        WHERE company_id = %s
+          AND (public_slug IS NULL OR public_slug = '')
+          AND matches_default_filter = 1
         ORDER BY id
         """,
         (company_id,),
@@ -145,6 +148,7 @@ def _job_row(row) -> dict:
         "public_slug": (data.get("public_slug") or "").strip(),
         "closed_at": (data.get("closed_at") or "").strip(),
         "listing_misses": _listing_misses_value(data),
+        "matches_default_filter": 1 if job_is_default_match(data) else 0,
     }
     location = (data.get("location") or "").strip()
     if location:
@@ -219,6 +223,7 @@ def _job_row_with_context(row) -> dict:
 _JOB_LOOKUP_COLUMNS = """
     j.title, j.url, j.idempotency_key, j.fetched, j.last_seen,
     j.visa_sponsorship, j.location, j.locations_json, j.description_text,
+    j.matches_default_filter,
     c.name AS company_name, c.country
 """
 
@@ -282,6 +287,7 @@ def _load_country_from_db(country_key: str) -> dict | None:
                 """
                 SELECT * FROM matching_jobs
                 WHERE company_id = ANY(%s)
+                  AND matches_default_filter = 1
                 ORDER BY company_id, fetched DESC, title
                 """,
                 (ids,),
@@ -347,6 +353,7 @@ def load_catalog_for_countries(
                 SELECT {job_columns_sql}
                 FROM matching_jobs j
                 WHERE j.company_id = ANY(%s)
+                  AND j.matches_default_filter = 1
                 ORDER BY j.company_id, j.fetched DESC, j.title
                 """,
                 (ids,),
@@ -431,7 +438,9 @@ def _catalog_company_filters(
                 OR LOWER(COALESCE(c.city, '')) LIKE %s
                 OR EXISTS (
                     SELECT 1 FROM matching_jobs mj
-                    WHERE mj.company_id = c.id AND LOWER(mj.title) LIKE %s
+                    WHERE mj.company_id = c.id
+                      AND mj.matches_default_filter = 1
+                      AND LOWER(mj.title) LIKE %s
                 )
             )"""
         )
@@ -545,6 +554,7 @@ def load_catalog_companies_page(
             SELECT {_JOB_LIST_COLUMNS}
             FROM matching_jobs
             WHERE company_id IN ({id_placeholders})
+              AND matches_default_filter = 1
             ORDER BY company_id, fetched DESC, title
             """,
             tuple(ids),
@@ -586,6 +596,7 @@ def list_sponsored_catalog_jobs(
             WHERE {country_sql}
               AND j.visa_sponsorship = 1
               AND (j.closed_at IS NULL OR j.closed_at = '')
+              AND j.matches_default_filter = 1
               {search_sql}
             ORDER BY COALESCE(NULLIF(j.last_seen, ''), j.fetched) DESC,
                      c.name, j.title
@@ -622,6 +633,7 @@ def list_sponsored_catalog_companies(
             WHERE {country_sql}
               AND j.visa_sponsorship = 1
               AND (j.closed_at IS NULL OR j.closed_at = '')
+              AND j.matches_default_filter = 1
               {search_sql}
             GROUP BY c.id, c.name, c.country, c.city, c.careers_url
             ORDER BY last_seen DESC, c.name
@@ -638,7 +650,9 @@ def list_country_company_stubs(country_key: str) -> list[dict]:
             """
             SELECT c.name, c.ats_type,
                    EXISTS (
-                       SELECT 1 FROM matching_jobs mj WHERE mj.company_id = c.id
+                       SELECT 1 FROM matching_jobs mj
+                       WHERE mj.company_id = c.id
+                         AND mj.matches_default_filter = 1
                    ) AS has_jobs
             FROM companies c
             WHERE c.country = %s
@@ -673,6 +687,7 @@ def list_companies_for_opportunity_match(country_keys: list[str]) -> list[dict]:
                 COUNT(mj.id) AS open_job_count
             FROM companies c
             LEFT JOIN matching_jobs mj ON mj.company_id = c.id
+              AND mj.matches_default_filter = 1
             WHERE c.country IN ({placeholders})
             GROUP BY c.id, c.country, c.name, c.updated
             ORDER BY newest_fetched DESC, c.name ASC
@@ -712,6 +727,7 @@ def list_jobs_for_company_keys(
             SELECT c.country, c.name AS company_name, mj.*
             FROM companies c
             JOIN matching_jobs mj ON mj.company_id = c.id
+              AND mj.matches_default_filter = 1
             WHERE {clauses}
             ORDER BY c.country, c.name, mj.fetched DESC, mj.title ASC
             """,
@@ -857,6 +873,7 @@ def _public_relocation_job_clause() -> tuple[str, tuple]:
               AND LOWER(TRIM(COALESCE(c.catalog_kind, ''))) != %s
               AND c.country NOT IN ({placeholders})
               AND LOWER(COALESCE(j.location, '')) NOT LIKE %s
+              AND j.matches_default_filter = 1
     """
     return sql, (CATALOG_KIND_REMOTE, *remote_keys, "%remote%")
 
@@ -917,6 +934,7 @@ def list_open_jobs_for_listing_check(limit: int) -> list[dict]:
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
             WHERE (j.closed_at IS NULL OR j.closed_at = '')
+              AND j.matches_default_filter = 1
               AND j.url IS NOT NULL
               AND j.url != ''
             ORDER BY
@@ -1152,8 +1170,8 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
                 visa_sponsorship, location, locations_json, description_text,
-                public_slug, closed_at, listing_misses
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                public_slug, closed_at, listing_misses, matches_default_filter
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -1173,6 +1191,7 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
                 END,
+                matches_default_filter = EXCLUDED.matches_default_filter,
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
@@ -1196,6 +1215,7 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                 _public_slug_value(job),
                 _closed_at_value(job),
                 _listing_misses_value(job),
+                1 if job_is_default_match(job) else 0,
             ),
         )
     if board_keys:
@@ -1372,6 +1392,7 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             _public_slug_value(job),
             _closed_at_value(job),
             _listing_misses_value(job),
+            1 if job_is_default_match(job) else 0,
         ))
 
     for row in job_rows:
@@ -1380,8 +1401,8 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
                 visa_sponsorship, location, locations_json, description_text,
-                public_slug, closed_at, listing_misses
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                public_slug, closed_at, listing_misses, matches_default_filter
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -1401,6 +1422,7 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
                 END,
+                matches_default_filter = EXCLUDED.matches_default_filter,
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
@@ -1471,8 +1493,8 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
             INSERT INTO matching_jobs (
                 company_id, idempotency_key, title, url, fetched, last_seen,
                 visa_sponsorship, location, locations_json, description_text,
-                public_slug, closed_at, listing_misses
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                public_slug, closed_at, listing_misses, matches_default_filter
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (company_id, idempotency_key) DO UPDATE SET
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
@@ -1491,6 +1513,7 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                     THEN EXCLUDED.description_text
                     ELSE matching_jobs.description_text
                 END,
+                matches_default_filter = EXCLUDED.matches_default_filter,
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
@@ -1514,6 +1537,7 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                 _public_slug_value(job),
                 _closed_at_value(job),
                 _listing_misses_value(job),
+                1 if job_is_default_match(job) else 0,
             ),
         )
         touched += 1
@@ -1758,6 +1782,7 @@ def _query_job_counts_by_country(conn) -> list[dict]:
                         THEN 1 ELSE 0 END) AS visa_jobs
         FROM companies c
         LEFT JOIN matching_jobs j ON j.company_id = c.id
+          AND j.matches_default_filter = 1
         GROUP BY c.country
         """
     ).fetchall()
@@ -1771,6 +1796,7 @@ def _query_empty_company_count(conn) -> int:
             SELECT c.id
             FROM companies c
             LEFT JOIN matching_jobs j ON j.company_id = c.id
+              AND j.matches_default_filter = 1
             GROUP BY c.id
             HAVING COUNT(j.id) = 0
         ) AS empty_companies_sub
@@ -1812,6 +1838,7 @@ def _query_latest_job_fetches_by_country(conn) -> dict[str, str]:
             MAX(COALESCE(NULLIF(j.last_seen, ''), NULLIF(j.fetched, ''))) AS latest_job_fetch
         FROM companies c
         LEFT JOIN matching_jobs j ON j.company_id = c.id
+          AND j.matches_default_filter = 1
         GROUP BY c.country
         """
     ).fetchall()

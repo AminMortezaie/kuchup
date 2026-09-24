@@ -4,6 +4,19 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 
 ---
 
+## Role propagator: per-user role keyword preferences
+
+**Status:** planned  
+**Priority:** medium  
+**Context:** Board users can already unhide exclude tags (title/link/location only, no assignment or free-plan cap). Role propagator still assigns from `matches_default_filter = 1` only.
+
+### Done when
+
+- [ ] Propagator can assign (and cap) roles unhidden via user role prefs
+- [ ] Optional on-demand JD fetch for those roles
+
+---
+
 ## Homepage export must not import the DB pool (blocks deploy)
 
 **Status:** planned (partial workaround shipped 2026-09-16)  

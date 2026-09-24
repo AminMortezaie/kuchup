@@ -17,6 +17,7 @@ import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
 import { initAppShell } from "./app-shell.js";
 import { openCreditsDialog } from "./credits.js";
+import { bindRolePrefs, openRolePrefsFromHash } from "./role-prefs.js";
 import {
   loadCollapsedCompanies,
   loadShowNotForMeCompanies,
@@ -46,6 +47,7 @@ async function init() {
 
   bindEvents();
   bindDialogEvents();
+  bindRolePrefs();
   bindFilterBar();
   bindHeaderBar();
   registerFetchActions();
@@ -77,6 +79,7 @@ async function init() {
   setLoadingProgress(40);
   refreshFilterBar();
   await loadBoardWithLocations();
+  openRolePrefsFromHash();
   finishLoadingProgress();
   await resumeFetchIfRunning();
   await syncFetchStateFromServer();

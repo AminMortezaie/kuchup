@@ -7,6 +7,7 @@ from relocation_jobs.panel.flatten_rules import company_has_open_roles
 from relocation_jobs.panel.service import flatten_companies
 from relocation_jobs.panel.stats import compute_stats
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, record_touch_and_maybe_reveal
+from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.opportunities.service import resolve_board_opportunity_scope
 from relocation_jobs.web import deps
@@ -67,6 +68,11 @@ def register(app):
             opportunity_company_keys=opportunity_company_keys,
         )
         companies = apply_capacity_to_board_page(g.user_id, companies)
+        companies = mix_unhidden_roles(
+            g.user_id,
+            companies,
+            visa_only=bool(flags["visa_only"]),
+        )
         if defer_empty:
             companies = [
                 company
