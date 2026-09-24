@@ -8208,16 +8208,26 @@ body.scroll-locked {
   gap: 0.75rem;
 }
 
+.role-prefs-page {
+  max-width: 42rem;
+  padding-bottom: 2.5rem;
+}
+
+.role-prefs-lead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
 .role-prefs-list {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  max-height: 45vh;
-  overflow: auto;
+  gap: 0.85rem;
 }
 
 .role-prefs-group {
-  margin: 0.2rem 0 0;
+  margin: 0.35rem 0 0;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -8273,6 +8283,8 @@ body.scroll-locked {
   cursor: pointer;
 }
 
+.role-prefs-page .role-prefs-mine input,
+.role-prefs-page .role-prefs-mine select,
 .dialog .role-prefs-mine input,
 .dialog .role-prefs-mine select {
   width: 100%;
@@ -8282,14 +8294,21 @@ body.scroll-locked {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  margin-top: 0.35rem;
-  padding-top: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--border-subtle);
 }
 
+.role-prefs-mine h2,
 .role-prefs-mine h3 {
   margin: 0;
   font-size: 0.95rem;
+}
+
+.role-prefs-status {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .admin-role-tags {

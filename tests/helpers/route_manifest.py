@@ -7,6 +7,7 @@ PANEL_PAGE_ROUTES: dict[str, frozenset[str]] = {
     "/preview": frozenset({"GET"}),
     "/admin": frozenset({"GET"}),
     "/apply": frozenset({"GET"}),
+    "/job-preferences": frozenset({"GET"}),
     "/company/<country>/<path:company_slug>": frozenset({"GET"}),
     "/robots.txt": frozenset({"GET"}),
     "/sitemap.xml": frozenset({"GET"}),

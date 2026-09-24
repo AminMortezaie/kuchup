@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=116" />
+  <link rel="stylesheet" href="/static/styles.css?v=117" />
   <link rel="stylesheet" href="/static/app-shell.css?v=12" />
 </head>
 <body>
@@ -79,10 +79,10 @@
           <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
           <span class="app-rail-label">Remote</span>
         </a>
-        <button type="button" class="app-rail-item" id="jobPrefsBtn">
+        <a href="/job-preferences" class="app-rail-item" id="jobPrefsBtn">
           <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></svg>
           <span class="app-rail-label">Job preferences</span>
-        </button>
+        </a>
         <a href="/apply" class="app-rail-item">
           <svg class="app-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
           <span class="app-rail-label">Resumes & interview notes</span>
@@ -645,40 +645,9 @@
     </form>
   </div>
 
-  <div class="dialog-backdrop" id="jobPrefsDialog" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="jobPrefsTitle">
-      <div class="dialog-header">
-        <div class="dialog-header-text">
-          <h2 id="jobPrefsTitle">Job preferences</h2>
-          <p class="dialog-subtitle">Tap a tag to turn it on or off for your board. Add your own match or hide tags below — they only apply to you. Global tags are managed by admins.</p>
-        </div>
-        <button type="button" class="dialog-close" id="jobPrefsClose" aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <div class="dialog-body role-prefs-body">
-        <p class="role-prefs-status" id="jobPrefsStatus">Loading tags…</p>
-        <div class="role-prefs-list" id="jobPrefsList"></div>
-        <form class="role-prefs-mine" id="jobPrefsMine">
-          <h3>Add my tag</h3>
-          <label class="dialog-field-label" for="jobPrefsKeyword">Keyword</label>
-          <input type="text" id="jobPrefsKeyword" maxlength="80" required />
-          <label class="dialog-field-label" for="jobPrefsKind">Kind</label>
-          <select id="jobPrefsKind">
-            <option value="exclude">Hide titles containing this</option>
-            <option value="include">Match titles containing this</option>
-          </select>
-          <button type="submit" class="dialog-btn primary">Add to my board</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <script type="module" src="/static/js/position-card.js?v=14"></script>
   <script type="module" crossorigin src="/static/dist/board.js?v=21"></script>
-  <script type="module" src="/static/js/main.js?v=136"></script>
+  <script type="module" src="/static/js/main.js?v=137"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js"));

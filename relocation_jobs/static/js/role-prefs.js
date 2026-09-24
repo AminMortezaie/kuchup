@@ -1,18 +1,10 @@
 import { apiFetch } from "./api.js";
+import { initAppShell } from "./app-shell.js";
+import { setOnUnauthorized } from "./state.js";
 import { $, escapeAttr, escapeHtml, toast } from "./utils.js";
 
 let tags = [];
 let mine = [];
-
-function closeRolePrefs() {
-  const dialog = $("jobPrefsDialog");
-  if (!dialog) return;
-  dialog.classList.remove("open");
-  dialog.setAttribute("aria-hidden", "true");
-  if (location.hash === "#job-preferences") {
-    history.replaceState(null, "", location.pathname + location.search);
-  }
-}
 
 function chipLabel(keyword) {
   // Keep trailing boundary chars visible (java␠ / java, / java/ / java-).
@@ -55,7 +47,7 @@ function renderTags() {
     section("My hide tags", myExcludes, { removable: true }),
   ].join("");
   list.querySelectorAll("[data-tag-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => saveToggle(btn));
+    btn.addEventListener("click", () => void saveToggle(btn));
   });
   list.querySelectorAll("[data-tag-remove]").forEach((btn) => {
     btn.addEventListener("click", (event) => {
@@ -63,11 +55,6 @@ function renderTags() {
       void removeMine(btn.getAttribute("data-tag-remove"));
     });
   });
-}
-
-async function reloadBoard() {
-  const { loadJobs } = await import("./data.js");
-  await loadJobs({ noOverlay: true });
 }
 
 async function saveToggle(btn) {
@@ -85,7 +72,6 @@ async function saveToggle(btn) {
   const tag = tags.find((item) => String(item.id) === String(tagId));
   if (tag) tag.enabled = enabled;
   renderTags();
-  await reloadBoard();
 }
 
 async function removeMine(tagId) {
@@ -96,7 +82,6 @@ async function removeMine(tagId) {
   }
   mine = mine.filter((item) => String(item.id) !== String(tagId));
   renderTags();
-  await reloadBoard();
 }
 
 async function loadRolePrefs() {
@@ -105,36 +90,44 @@ async function loadRolePrefs() {
     status.hidden = false;
     status.textContent = "Loading tags…";
   }
-  const res = await apiFetch("/api/role-preferences");
+  let res;
+  try {
+    res = await apiFetch("/api/role-preferences");
+  } catch {
+    showLogin();
+    return;
+  }
   if (!res.ok) {
     if (status) status.textContent = "Could not load tags.";
     return;
   }
+  showApp();
   const data = await res.json();
   tags = data.tags || [];
   mine = data.mine || [];
   renderTags();
 }
 
-export async function openRolePrefs() {
-  const dialog = $("jobPrefsDialog");
-  if (!dialog) {
-    location.href = "/panel#job-preferences";
-    return;
+function showLogin() {
+  const content = $("jobPrefsContent");
+  if (content) content.hidden = true;
+  const panel = $("jobPrefsLoginPanel");
+  if (panel) panel.hidden = false;
+  const err = $("jobPrefsLoginError");
+  if (err) {
+    const params = new URLSearchParams(window.location.search);
+    err.textContent = params.get("error") || "";
   }
-  dialog.classList.add("open");
-  dialog.setAttribute("aria-hidden", "false");
-  await loadRolePrefs();
 }
 
-export function bindRolePrefs() {
-  $("jobPrefsBtn")?.addEventListener("click", () => {
-    void openRolePrefs();
-  });
-  $("jobPrefsClose")?.addEventListener("click", closeRolePrefs);
-  $("jobPrefsDialog")?.addEventListener("click", (event) => {
-    if (event.target === $("jobPrefsDialog")) closeRolePrefs();
-  });
+function showApp() {
+  const panel = $("jobPrefsLoginPanel");
+  if (panel) panel.hidden = true;
+  const content = $("jobPrefsContent");
+  if (content) content.hidden = false;
+}
+
+function bindForm() {
   $("jobPrefsMine")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const keyword = $("jobPrefsKeyword").value;
@@ -152,10 +145,14 @@ export function bindRolePrefs() {
     $("jobPrefsKeyword").value = "";
     toast("Added to your board filters");
     await loadRolePrefs();
-    await reloadBoard();
   });
 }
 
-export function openRolePrefsFromHash() {
-  if (location.hash === "#job-preferences") void openRolePrefs();
+async function init() {
+  setOnUnauthorized(showLogin);
+  initAppShell();
+  bindForm();
+  await loadRolePrefs();
 }
+
+init();
