@@ -8202,12 +8202,6 @@ body.scroll-locked {
   }
 }
 
-.role-prefs-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .role-prefs-page {
   max-width: 42rem;
   padding-bottom: 2.5rem;

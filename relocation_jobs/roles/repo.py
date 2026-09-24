@@ -128,30 +128,18 @@ def list_user_role_tags(user_id: int) -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def find_user_role_tag(user_id: int, kind: str, keyword: str) -> dict | None:
-    with db_read() as conn:
-        row = conn.execute(
-            """
-            SELECT id, keyword, kind
-            FROM user_role_tags
-            WHERE user_id = %s AND kind = %s AND keyword = %s
-            """,
-            (user_id, kind, keyword),
-        ).fetchone()
-    return dict(row) if row else None
-
-
-def insert_user_role_tag(user_id: int, keyword: str, kind: str) -> dict:
+def insert_user_role_tag(user_id: int, keyword: str, kind: str) -> dict | None:
     with db_transaction() as conn:
         row = conn.execute(
             """
             INSERT INTO user_role_tags (user_id, keyword, kind)
             VALUES (%s, %s, %s)
+            ON CONFLICT (user_id, kind, keyword) DO NOTHING
             RETURNING id, keyword, kind
             """,
             (user_id, keyword, kind),
         ).fetchone()
-    return dict(row)
+    return dict(row) if row else None
 
 
 def delete_user_role_tag(user_id: int, tag_id: int) -> bool:
@@ -165,19 +153,6 @@ def delete_user_role_tag(user_id: int, tag_id: int) -> bool:
             (user_id, tag_id),
         ).fetchone()
     return row is not None
-
-
-def get_user_role_tag(user_id: int, tag_id: int) -> dict | None:
-    with db_read() as conn:
-        row = conn.execute(
-            """
-            SELECT id, keyword, kind
-            FROM user_role_tags
-            WHERE user_id = %s AND id = %s
-            """,
-            (user_id, tag_id),
-        ).fetchone()
-    return dict(row) if row else None
 
 
 def list_open_nondefault_jobs(company_keys: list[tuple[str, str]]) -> list[dict]:

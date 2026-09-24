@@ -184,6 +184,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_role_filter_v1", _seed_role_filter_docs)
     run_migration_once(conn, "user_role_tags_v1", _user_role_tags_v1)
     run_migration_once(conn, "role_filter_lang_variants_v1", _role_filter_lang_variants_v1)
+    run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -318,12 +319,6 @@ def _user_role_tags_v1(conn) -> None:
         )
         """
     )
-    conn.execute(
-        """
-        CREATE INDEX IF NOT EXISTS idx_user_role_tags_user
-        ON user_role_tags (user_id)
-        """
-    )
 
 
 def _role_filter_lang_variants_v1(conn) -> None:
@@ -336,6 +331,10 @@ def _role_filter_lang_variants_v1(conn) -> None:
             """,
             (word,),
         )
+
+
+def _user_role_tags_drop_user_idx_v1(conn) -> None:
+    conn.execute("DROP INDEX IF EXISTS idx_user_role_tags_user")
 
 
 def _team_docs_editors_v1(conn) -> None:

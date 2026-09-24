@@ -45,15 +45,10 @@ def _expand_keyword_siblings(keywords: list[str], catalog: list[str]) -> list[st
     wanted = {_compact_keyword(word) for word in keywords if word and _compact_keyword(word)}
     if not wanted:
         return list(keywords)
-    out: list[str] = []
-    seen: set[str] = set()
-    for word in [*keywords, *catalog]:
-        if not word or word in seen:
-            continue
-        if word in keywords or _compact_keyword(word) in wanted:
-            out.append(word)
-            seen.add(word)
-    return out
+    return list(dict.fromkeys(
+        word for word in [*keywords, *catalog]
+        if word and _compact_keyword(word) in wanted
+    ))
 
 
 def list_preferences(user_id: int) -> dict:
@@ -132,9 +127,9 @@ def delete_tag(tag_id: int) -> None:
 
 def add_user_tag(user_id: int, keyword: str, kind: str) -> dict:
     text, role_kind = _clean_keyword(keyword, kind)
-    if repo.find_user_role_tag(user_id, role_kind, text) is not None:
-        raise ValueError("tag already exists")
     saved = repo.insert_user_role_tag(user_id, text, role_kind)
+    if saved is None:
+        raise ValueError("tag already exists")
     return {
         "id": int(saved["id"]),
         "keyword": saved["keyword"],
