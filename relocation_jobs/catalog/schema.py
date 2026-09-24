@@ -153,8 +153,8 @@ def _migrate_citizenship_required_v1(conn) -> None:
         """
         UPDATE companies
         SET citizenship_required = 'US'
-        WHERE careers_url ILIKE '%://gdit.%myworkdayjobs.com%'
-           OR ats_url ILIKE '%://gdit.%myworkdayjobs.com%'
+        WHERE careers_url ILIKE '%%://gdit.%%myworkdayjobs.com%%'
+           OR ats_url ILIKE '%%://gdit.%%myworkdayjobs.com%%'
         """
     )
 
