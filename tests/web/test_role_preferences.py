@@ -204,7 +204,14 @@ def test_admin_can_add_tag(v2_auth_client, db):
 
 
 def test_backlog_doc_mentions_propagator_followup(db):
-    with db_read() as conn:
+    from relocation_jobs.core.migrations import _seed_role_filter_docs
+
+    with db_transaction() as conn:
+        applied = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE name = %s",
+            ("team_docs_role_filter_v1",),
+        ).fetchone()
+        _seed_role_filter_docs(conn)
         rows = conn.execute(
             """
             SELECT title, body FROM team_docs
@@ -217,5 +224,6 @@ def test_backlog_doc_mentions_propagator_followup(db):
             """,
             ("%per-user role keyword preferences%",),
         ).fetchall()
+    assert applied
     assert rows
     assert any("per-user role keyword preferences" in (row["body"] or "") for row in rows)

@@ -4,9 +4,7 @@ import json
 
 from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.core.job_identity import job_idempotency_key_for_job
-from relocation_jobs.panel.tracking import job_dict
 from relocation_jobs.roles import repo
-from relocation_jobs.scrape.relevance import hidden_by_active_excludes, is_relevant
 from relocation_jobs.users.repo import load_job_tracking
 
 _cached_keywords: tuple[list[str], list[str]] | None = None
@@ -48,6 +46,8 @@ def default_keyword_lists() -> tuple[list[str], list[str]]:
 
 
 def title_matches_default(title: str) -> bool:
+    from relocation_jobs.scrape.relevance import is_relevant
+
     includes, excludes = default_keyword_lists()
     return is_relevant(title, include=includes, exclude=excludes)
 
@@ -80,6 +80,8 @@ def title_unhidden(title: str, disabled_excludes: list[str]) -> bool:
     folded = (title or "").lower()
     if not any(keyword in folded for keyword in disabled_excludes):
         return False
+    from relocation_jobs.scrape.relevance import hidden_by_active_excludes
+
     _, excludes = default_keyword_lists()
     disabled = set(disabled_excludes)
     active = [keyword for keyword in excludes if keyword not in disabled]
@@ -232,6 +234,8 @@ def _extra_job_entries(
     seen: set[str],
     tracking: dict,
 ) -> list[dict]:
+    from relocation_jobs.panel.tracking import job_dict
+
     added: list[dict] = []
     country_key = (company.get("country") or "").strip().lower()
     company_name = (company.get("name") or "").strip()
