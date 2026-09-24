@@ -3,6 +3,7 @@ from __future__ import annotations
 from relocation_jobs.catalog.repo import (
     count_catalog_companies,
     count_fetch_problems,
+    get_company,
     load_catalog_companies_page,
     load_catalog_for_countries,
     load_country_catalog,
@@ -18,6 +19,11 @@ from relocation_jobs.users.repo import (
 from relocation_jobs.mcp import repo as mcp_repo
 from relocation_jobs.opportunities.service import opportunity_company_key
 from relocation_jobs.panel.flatten import PanelContext, flatten_company, summarize_company_for_stats
+from relocation_jobs.panel.roles_page import (
+    BOARD_ROLES_PAGE_SIZE,
+    ROLE_BUCKETS,
+    slice_role_bucket,
+)
 from relocation_jobs.panel.tracking import build_tracking_alias_index
 from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.shared.board_contract import (
@@ -438,3 +444,47 @@ def _country_keys_for_filters(filters: FlattenFilters) -> list[str]:
     else:
         keys = [k for k in keys if not is_remote_country_key(k)]
     return keys
+
+
+def load_flattened_board_company(
+    filters: FlattenFilters,
+    *,
+    country_key: str,
+    company_name: str,
+) -> dict | None:
+    company = get_company(country_key, company_name)
+    if company is None:
+        return None
+    if not _company_allowed_by_opportunities(filters, country_key, company):
+        return None
+    ctx = load_context(filters.user_id, country_key)
+    return flatten_company(
+        company,
+        country_key=country_key,
+        country_label=country_label(country_key),
+        filters=filters,
+        ctx=ctx,
+    )
+
+
+def company_role_page_from_row(
+    row: dict,
+    *,
+    bucket: str,
+    offset: int,
+    limit: int = BOARD_ROLES_PAGE_SIZE,
+) -> dict:
+    bucket_key = (bucket or "jobs").strip()
+    if bucket_key not in ROLE_BUCKETS:
+        raise ValueError(f"Unknown role bucket: {bucket}")
+    items = list(row.get(bucket_key) or [])
+    chunk, total, remaining = slice_role_bucket(items, offset=offset, limit=limit)
+    return {
+        "bucket": bucket_key,
+        "jobs": chunk,
+        "offset": max(0, int(offset)),
+        "limit": max(1, int(limit)),
+        "total": total,
+        "has_more": remaining > 0,
+        "jobs_more": remaining,
+    }

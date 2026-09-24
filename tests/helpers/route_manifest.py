@@ -45,6 +45,7 @@ PANEL_API_ROUTES: dict[str, frozenset[str]] = {
     "/api/jobs/pin": frozenset({"PATCH", "POST"}),
     "/api/board": frozenset({"GET"}),
     "/api/board/stats": frozenset({"GET"}),
+    "/api/board/company-roles": frozenset({"GET"}),
     "/api/public/overview": frozenset({"GET"}),
     "/api/public/preview": frozenset({"GET"}),
     "/api/companies/<country>/<path:company_name>": frozenset({"GET"}),
@@ -116,6 +117,7 @@ V2_ONLY_ROUTES: frozenset[str] = frozenset({
     "/api/fetch/attempts",
     "/api/board",
     "/api/board/stats",
+    "/api/board/company-roles",
 })
 
 REQUIRED_ROUTES: dict[str, frozenset[str]] = {

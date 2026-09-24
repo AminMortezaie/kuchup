@@ -112,10 +112,14 @@ function ensureList(company, key) {
 }
 
 function recomputeCounts(company) {
-  company.job_count = (company.jobs || []).length;
+  const open = (company.jobs || []).length;
+  const more = Math.max(0, Number(company.jobs_more) || 0);
+  company.job_count = open + more;
   company.positions_applied = (company.jobs || []).filter((j) => j.applied).length;
-  company.positions_rejected = (company.rejected_jobs || []).length;
-  company.positions_not_for_me = (company.not_for_me_jobs || []).length;
+  company.positions_rejected = (company.rejected_jobs || []).length
+    + Math.max(0, Number(company.rejected_jobs_more) || 0);
+  company.positions_not_for_me = (company.not_for_me_jobs || []).length
+    + Math.max(0, Number(company.not_for_me_jobs_more) || 0);
   recomputeNewestJobFetched(company);
 }
 
@@ -304,5 +308,32 @@ export function patchJobOnBoard(country, companyName, url, idempotencyKey, data)
   found.list[idx] = mergeJobPatch(found.job, data);
   syncCompanyHeaderFromJobs(company, data);
   finalizeCompanyBoard(company);
+  return true;
+}
+
+const ROLE_BUCKET_MORE = {
+  jobs: "jobs_more",
+  rejected_jobs: "rejected_jobs_more",
+  not_for_me_jobs: "not_for_me_jobs_more",
+};
+
+/** Append a page of roles fetched from /board/company-roles onto the in-memory company. */
+export function appendCompanyRoles(country, companyName, bucket, jobs, jobsMore) {
+  const company = findCompany(country, companyName);
+  if (!company) return false;
+  const list = ensureList(company, bucket);
+  const seen = new Set(
+    list.map((job) => (job.idempotency_key || job.url || "").trim()).filter(Boolean),
+  );
+  for (const job of jobs || []) {
+    const key = (job.idempotency_key || job.url || "").trim();
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    list.push(job);
+  }
+  const moreKey = ROLE_BUCKET_MORE[bucket] || "jobs_more";
+  if (jobsMore != null) company[moreKey] = Math.max(0, Number(jobsMore) || 0);
+  recomputeCounts(company);
+  refreshJobBoard();
   return true;
 }

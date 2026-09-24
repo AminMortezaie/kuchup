@@ -57,6 +57,10 @@ board.js (fetch page via panelApiPrefix())
 
 Toolbar layout: **pagination → search → sort/filters → company cards**.
 
+### Roles per company (3 + load more)
+
+Board company cards return at most **3** open / rejected / not-for-me roles in the page payload (`jobs_more`, `rejected_jobs_more`, `not_for_me_jobs_more`). `job_count` stays the full open-role total. Desktop and mobile share this. Further roles load via `GET /api/board/company-roles` (and `/api/remote/board/company-roles`) in steps of 3.
+
 ---
 
 ## “Newest first” sort

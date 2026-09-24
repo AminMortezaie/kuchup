@@ -12,7 +12,10 @@ from relocation_jobs.panel.board import (
     load_catalog_board_page,
 )
 from relocation_jobs.panel.flatten_rules import company_has_open_roles
+from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, truncate_board_companies
+from relocation_jobs.panel.service import company_role_page_from_row, load_flattened_board_company
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
+from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
 from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
@@ -113,6 +116,7 @@ def register(app):
             total_visible = len(companies)
             has_more = visible_offset + page_size < total_visible
             companies = companies[visible_offset:visible_offset + page_size]
+        companies = truncate_board_companies(companies)
         capacity_meta = capacity_meta_for_user(g.user_id).as_dict()
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
@@ -138,6 +142,7 @@ def register(app):
                 "total_pages": total_pages,
                 "has_more": has_more,
                 "sort": sort,
+                "roles_page_size": BOARD_ROLES_PAGE_SIZE,
                 **board_scope_meta(opportunity_scope),
                 **capacity_meta,
             },
@@ -148,6 +153,44 @@ def register(app):
                 latest_fetch_new_jobs=latest_fetch_new_jobs,
             ),
         })
+
+    @app.get("/api/board/company-roles")
+    @login_required
+    def api_board_company_roles():
+        scope = query_flags()
+        country_key = (request.args.get("company_country") or scope["country_key"] or "").strip()
+        company_name = (request.args.get("company") or "").strip()
+        bucket = (request.args.get("bucket") or "jobs").strip() or "jobs"
+        offset = max(request.args.get("offset", 0, type=int) or 0, 0)
+        limit = request.args.get("limit", BOARD_ROLES_PAGE_SIZE, type=int) or BOARD_ROLES_PAGE_SIZE
+        limit = max(1, min(limit, BOARD_ROLES_PAGE_SIZE))
+        if not country_key or not company_name:
+            return jsonify({"error": "company_country and company are required"}), 400
+        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
+        panel_flags = _panel_flags()
+        filters = FlattenFilters.from_kwargs(
+            country_key=country_key,
+            user_id=g.user_id,
+            location=scope["location"],
+            ats_type=scope["ats_type"],
+            catalog_kind=CATALOG_KIND_RELOCATION,
+            opportunity_company_keys=(
+                None if opportunity_scope.bypass else opportunity_scope.company_keys
+            ),
+            **panel_flags,
+        )
+        row = load_flattened_board_company(
+            filters, country_key=country_key, company_name=company_name,
+        )
+        if row is None:
+            return jsonify({"error": "Company not found"}), 404
+        row = apply_capacity_to_board_page(g.user_id, [row])[0]
+        try:
+            return jsonify(company_role_page_from_row(
+                row, bucket=bucket, offset=offset, limit=limit,
+            ))
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
 
     @app.get("/api/board/stats")
     @login_required
