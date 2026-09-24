@@ -2,6 +2,7 @@ const APP_SURFACE_PATHS = [
   "/panel",
   "/remote",
   "/apply",
+  "/applications",
   "/admin",
   "/company",
 ] as const;

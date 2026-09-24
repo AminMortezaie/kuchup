@@ -115,7 +115,7 @@ Migration: `mcp_cover_letter_v1`.
 | Tool | Purpose |
 |------|---------|
 | `get_job_context` | Job + tracking + `description_text` (JD), `has_description` / `needs_fetch`, `master_resume_slug`, `has_tailored_tex` / `has_pdf`, `has_cover_letter_tex` / `has_cover_letter_pdf`, `can_save_tailored_tex` |
-| `list_application_queue` | Pinned + looking-to-apply jobs (discovery only — not required to save) |
+| `list_application_queue` | Active queue: pinned or looking-to-apply, **excluding applied** (discovery only — not required to save) |
 | `list_master_resumes` | All master variants |
 | `get_master_resume` / `save_master_resume` | Read/write master tex by slug |
 | `list_project_masters` | All project master variants (LaTeX evidence) |
@@ -198,7 +198,7 @@ Interview notes are **not** part of this setup. Write them later, after an invit
 list_application_queue(country="uk")   # optional country filter
 ```
 
-Returns pinned and looking-to-apply jobs with `country`, `company`, `url`, `title`.
+Returns active-queue jobs (pinned or looking-to-apply, not applied) with `country`, `company`, `url`, `title`. See [application-queue.md](application-queue.md).
 
 **Option B — you already know the job**
 

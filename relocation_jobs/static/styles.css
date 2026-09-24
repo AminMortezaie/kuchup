@@ -8343,3 +8343,99 @@ body.scroll-locked {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Applications queue page (/applications) */
+.applications-page {
+  max-width: 52rem;
+}
+
+.applications-lead {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted, #6b6560);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.applications-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle, #e8e2da);
+  padding-bottom: 0.35rem;
+}
+
+.applications-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted, #6b6560);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.applications-tab:hover {
+  color: var(--text, #1c1917);
+  background: rgba(28, 25, 23, 0.04);
+}
+
+.applications-tab.is-active {
+  color: var(--text, #1c1917);
+  background: rgba(28, 25, 23, 0.07);
+}
+
+.applications-tab-count {
+  display: inline-block;
+  margin-left: 0.3rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b6560);
+  font-variant-numeric: tabular-nums;
+}
+
+.applications-status {
+  margin: 0.75rem 0;
+  color: var(--text-muted, #6b6560);
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.applications-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.applications-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.75rem;
+  padding: 0 0.15rem;
+}
+
+.applications-company {
+  font-weight: 650;
+  color: inherit;
+  text-decoration: none;
+}
+
+.applications-company:hover {
+  text-decoration: underline;
+}
+
+.applications-place {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b6560);
+}
+
+.applications-card-host position-card {
+  display: block;
+}

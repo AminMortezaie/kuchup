@@ -185,6 +185,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_role_tags_v1", _user_role_tags_v1)
     run_migration_once(conn, "role_filter_lang_variants_v1", _role_filter_lang_variants_v1)
     run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
+    run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -198,6 +199,12 @@ _US_CITIZENSHIP_DOC = (
     / "team_docs"
     / "pages"
     / "job-eligibility-us-citizenship.md"
+)
+_APPLICATIONS_QUEUE_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "applications-queue.md"
 )
 
 
@@ -238,6 +245,16 @@ def _seed_us_citizenship_doc(conn) -> None:
         slug="job-eligibility-us-citizenship",
         title="Job eligibility tags: US Citizenship Required",
         path=_US_CITIZENSHIP_DOC,
+    )
+
+
+def _seed_applications_queue_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="applications-queue",
+        title="Applications queue (panel + MCP)",
+        path=_APPLICATIONS_QUEUE_DOC,
     )
 
 

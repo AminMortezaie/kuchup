@@ -4,6 +4,7 @@ from flask import Flask
 
 from relocation_jobs.web.routes import (
     admin,
+    applications,
     auth,
     board,
     catalog,
@@ -25,6 +26,7 @@ from relocation_jobs.web.routes import (
 def register_routes(app: Flask) -> None:
     for module in (
         admin,
+        applications,
         auth,
         board,
         catalog,
