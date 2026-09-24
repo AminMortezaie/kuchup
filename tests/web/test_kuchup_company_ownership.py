@@ -196,6 +196,6 @@ def test_panel_ui_gates_match_server():
     assert "isAdmin: Boolean(state.authState?.user?.is_admin)" in board_view
     assert "syncAddCompanyCatalogFields" in dialogs
     assert 'id="addCompanyUrlField"' in html
-    assert "board.js?v=21" in html
+    assert "board.js?v=22" in html
     assert "main.js?v=137" in html
     assert "data-kuchup-lock" in bundle
