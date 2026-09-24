@@ -1,11 +1,3 @@
-<timestamp>Thursday, Sep 24, 2026, 4:45 PM (UTC+4)</timestamp>
-
-fix it in a pr and create something like greenhouse for it.
-
----
-
-/ponytail-review  review it
-
----
+<timestamp>Thursday, Sep 24, 2026, 4:53 PM (UTC+4)</timestamp>
 
 apply it
