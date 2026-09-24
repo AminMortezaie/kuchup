@@ -12,7 +12,10 @@ from relocation_jobs.panel.board import (
     load_catalog_board_page,
 )
 from relocation_jobs.panel.flatten_rules import company_has_open_roles
+from relocation_jobs.panel.roles_page import truncate_board_companies
+from relocation_jobs.panel.service import load_company_open_roles_page
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
+from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
 from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
@@ -113,6 +116,7 @@ def register(app):
             total_visible = len(companies)
             has_more = visible_offset + page_size < total_visible
             companies = companies[visible_offset:visible_offset + page_size]
+        companies = truncate_board_companies(companies)
         capacity_meta = capacity_meta_for_user(g.user_id).as_dict()
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
@@ -148,6 +152,39 @@ def register(app):
                 latest_fetch_new_jobs=latest_fetch_new_jobs,
             ),
         })
+
+    @app.get("/api/board/company-roles")
+    @login_required
+    def api_board_company_roles():
+        scope = query_flags()
+        country_key = (request.args.get("company_country") or scope["country_key"] or "").strip()
+        company_name = (request.args.get("company") or "").strip()
+        offset = max(request.args.get("offset", 0, type=int) or 0, 0)
+        if not country_key or not company_name:
+            return jsonify({"error": "company_country and company are required"}), 400
+        opportunity_scope = resolve_board_opportunity_scope(g.user_id)
+        panel_flags = _panel_flags()
+        filters = FlattenFilters.from_kwargs(
+            country_key=country_key,
+            user_id=g.user_id,
+            location=scope["location"],
+            ats_type=scope["ats_type"],
+            catalog_kind=CATALOG_KIND_RELOCATION,
+            opportunity_company_keys=(
+                None if opportunity_scope.bypass else opportunity_scope.company_keys
+            ),
+            **panel_flags,
+        )
+        page = load_company_open_roles_page(
+            filters,
+            country_key=country_key,
+            company_name=company_name,
+            offset=offset,
+            capacity_fn=apply_capacity_to_board_page,
+        )
+        if page is None:
+            return jsonify({"error": "Company not found"}), 404
+        return jsonify(page)
 
     @app.get("/api/board/stats")
     @login_required

@@ -583,6 +583,24 @@ export async function fetchBoardUserStats() {
   return data;
 }
 
+export async function fetchCompanyRoles({ country, company, offset = 0 } = {}) {
+  const params = boardQueryParams({ page: 1, pageSize: 25 });
+  params.set("company_country", country);
+  params.set("company", company);
+  params.set("offset", String(offset));
+  const prefix = panelApiPrefix();
+  const res = await apiFetch(`${prefix}/board/company-roles?${params.toString()}`, {
+    cache: "no-store",
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) {
+    const msg = data.error || "Could not load more roles";
+    toast(msg);
+    throw new Error(msg);
+  }
+  return data;
+}
+
 export function jobsQueryParams() {
   const country = document.getElementById("country").value;
   const atsEl = document.getElementById("ats");

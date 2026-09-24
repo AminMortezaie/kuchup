@@ -1,70 +1,13 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useState } from "react";
 import { companyWorkspacePath } from "./companyWorkspace";
 import { companyActivityTs, formatActivityBadge } from "./format";
 import { sortJobsForDisplay } from "./sort";
 import JobCard from "./JobCard";
 
-const MOBILE_BOARD_MQ = "(max-width: 720px)";
 const ROLE_PREVIEW_LIMIT = 3;
 
 function companyKey(company) {
   return `${company.country}:${company.name}`;
-}
-
-function useMobileBoard() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(MOBILE_BOARD_MQ).matches : false,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_BOARD_MQ);
-    const sync = () => setIsMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  return isMobile;
-}
-
-function prefersReducedMotion() {
-  return typeof window !== "undefined"
-    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-/** Slice a job list for mobile preview; returns visible jobs + hidden count. */
-function previewJobs(jobs, { isMobile, expanded }) {
-  if (!isMobile || expanded || jobs.length <= ROLE_PREVIEW_LIMIT) {
-    return { visible: jobs, hiddenCount: 0 };
-  }
-  return {
-    visible: jobs.slice(0, ROLE_PREVIEW_LIMIT),
-    hiddenCount: jobs.length - ROLE_PREVIEW_LIMIT,
-  };
-}
-
-function ExpandRolesBtn({ hiddenCount, expanded, onExpand, onCollapse }) {
-  if (expanded) {
-    return (
-      <button
-        type="button"
-        className="expand-roles-btn"
-        onClick={onCollapse}
-        title="Show fewer roles"
-      >
-        Show less
-      </button>
-    );
-  }
-  if (hiddenCount <= 0) return null;
-  return (
-    <button
-      type="button"
-      className="expand-roles-btn"
-      onClick={onExpand}
-      title={`Show ${hiddenCount} more role${hiddenCount === 1 ? "" : "s"}`}
-    >
-      {`Show ${hiddenCount} more role${hiddenCount === 1 ? "" : "s"}`}
-    </button>
-  );
 }
 
 const CITY_SEP = " · ";
@@ -156,10 +99,8 @@ function emptyMessage(company, ui) {
 }
 
 function CompanyCard({ company, ui }) {
-  const cardRef = useRef(null);
   const [citiesExpanded, setCitiesExpanded] = useState(false);
-  const [rolesExpanded, setRolesExpanded] = useState(false);
-  const isMobile = useMobileBoard();
+  const [loadingMore, setLoadingMore] = useState(false);
   const keyStr = companyKey(company);
   const collapsedSet = new Set(ui.collapsed || []);
   const showNotForMeSet = new Set(ui.showNotForMe || []);
@@ -196,35 +137,38 @@ function CompanyCard({ company, ui }) {
     .filter(Boolean)
     .sort()[0];
   const sortedNotForMe = sortJobsForDisplay(notForMeJobs);
-  const openPreview = previewJobs(openJobs, { isMobile, expanded: rolesExpanded });
-  const rejectedPreview = previewJobs(rejectedJobs, { isMobile, expanded: rolesExpanded });
-  const notForMePreview = previewJobs(sortedNotForMe, { isMobile, expanded: rolesExpanded });
-  const rolesTruncatable = isMobile && (
-    openJobs.length > ROLE_PREVIEW_LIMIT
-    || (showingRejected && rejectedJobs.length > ROLE_PREVIEW_LIMIT)
-    || (showingNotForMe && sortedNotForMe.length > ROLE_PREVIEW_LIMIT)
-  );
-  const rolesHiddenCount = openPreview.hiddenCount
-    + (showingRejected ? rejectedPreview.hiddenCount : 0)
-    + (showingNotForMe ? notForMePreview.hiddenCount : 0);
+  const moreCount = Math.max(0, Number(company.jobs_more) || 0);
+  const moreStep = Math.min(ROLE_PREVIEW_LIMIT, moreCount);
   const workspaceHref = companyWorkspacePath(company.country, company.name);
   const tailoredCount = openJobs.filter(
     (job) => job.has_pdf || job.has_tailored_tex || job.has_cover_letter_pdf || job.has_cover_letter_tex,
   ).length;
 
-  const collapseRolesPreview = () => {
-    setRolesExpanded(false);
-    const el = cardRef.current;
-    if (!el) return;
-    el.scrollIntoView({
-      block: "nearest",
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
-    });
+  const loadMoreRoles = async () => {
+    const api = window.relocationJobs;
+    if (!api?.fetchCompanyRoles || !api?.appendCompanyRoles || moreCount <= 0) return;
+    setLoadingMore(true);
+    try {
+      const data = await api.fetchCompanyRoles({
+        country: company.country,
+        company: company.name,
+        offset: openJobs.length,
+      });
+      api.appendCompanyRoles(
+        company.country,
+        company.name,
+        data.jobs || [],
+        data.jobs_more,
+      );
+    } catch {
+      /* toast already shown by fetchCompanyRoles */
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   return (
     <article
-      ref={cardRef}
       className={`company-card${companyCls}${isCollapsed ? " collapsed" : ""}`}
       data-country={company.country}
       data-company={company.name}
@@ -417,7 +361,7 @@ function CompanyCard({ company, ui }) {
       </div>
       <div className="positions">
         {!isCollapsed && openJobs.length ? (
-          openPreview.visible.map((job) => (
+          openJobs.map((job) => (
             <JobCard
               key={job.idempotency_key || job.url}
               job={job}
@@ -433,7 +377,7 @@ function CompanyCard({ company, ui }) {
         {!isCollapsed && showingRejected && rejectedCount > 0 ? (
           <>
             <div className="rejected-jobs-heading">Rejected jobs</div>
-            {rejectedPreview.visible.map((job) => (
+            {rejectedJobs.map((job) => (
               <JobCard
                 key={`r-${job.idempotency_key || job.url}`}
                 job={job}
@@ -446,7 +390,7 @@ function CompanyCard({ company, ui }) {
         {!isCollapsed && showingNotForMe && notForMeCount > 0 ? (
           <>
             <div className="not-for-me-jobs-heading">Not for me jobs</div>
-            {notForMePreview.visible.map((job) => (
+            {sortedNotForMe.map((job) => (
               <JobCard
                 key={`n-${job.idempotency_key || job.url}`}
                 job={job}
@@ -465,13 +409,18 @@ function CompanyCard({ company, ui }) {
             </p>
           </div>
         ) : null}
-        {!isCollapsed && rolesTruncatable ? (
-          <ExpandRolesBtn
-            hiddenCount={rolesHiddenCount}
-            expanded={rolesExpanded}
-            onExpand={() => setRolesExpanded(true)}
-            onCollapse={collapseRolesPreview}
-          />
+        {!isCollapsed && moreCount > 0 ? (
+          <button
+            type="button"
+            className="expand-roles-btn"
+            onClick={loadMoreRoles}
+            disabled={loadingMore}
+            title={`Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+          >
+            {loadingMore
+              ? "Loading…"
+              : `Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+          </button>
         ) : null}
       </div>
     </article>

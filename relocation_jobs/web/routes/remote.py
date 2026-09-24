@@ -14,6 +14,9 @@ from relocation_jobs.panel.board import (
     MAX_BOARD_PAGE_SIZE,
     load_catalog_board_page,
 )
+from relocation_jobs.panel.roles_page import truncate_board_companies
+from relocation_jobs.panel.service import load_company_open_roles_page
+from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.remote.countries import list_remote_ats_types, list_remote_countries
 from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
@@ -94,6 +97,7 @@ def register(app):
             companies,
             visa_only=bool(panel_flags.get("visa_only")),
         )
+        companies = truncate_board_companies(companies)
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
             user_id=g.user_id,
@@ -127,6 +131,36 @@ def register(app):
                 latest_fetch_new_jobs=latest_fetch_new_jobs,
             ),
         })
+
+    @app.get("/api/remote/board/company-roles")
+    @login_required
+    def api_remote_board_company_roles():
+        scope = query_flags()
+        country_key = (request.args.get("company_country") or scope["country_key"] or "").strip()
+        company_name = (request.args.get("company") or "").strip()
+        offset = max(request.args.get("offset", 0, type=int) or 0, 0)
+        if not country_key or not is_remote_country_key(country_key):
+            return jsonify({"error": f"Unknown remote board: {country_key}"}), 400
+        if not company_name:
+            return jsonify({"error": "company is required"}), 400
+        panel_flags = _panel_flags()
+        filters = FlattenFilters.from_kwargs(
+            country_key=country_key,
+            user_id=g.user_id,
+            location=scope["location"],
+            ats_type=scope["ats_type"],
+            catalog_kind=CATALOG_KIND_REMOTE,
+            **panel_flags,
+        )
+        page = load_company_open_roles_page(
+            filters,
+            country_key=country_key,
+            company_name=company_name,
+            offset=offset,
+        )
+        if page is None:
+            return jsonify({"error": "Company not found"}), 404
+        return jsonify(page)
 
     @app.get("/api/remote/board/stats")
     @login_required

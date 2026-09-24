@@ -17,6 +17,8 @@ import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
 import { initAppShell } from "./app-shell.js";
 import { openCreditsDialog } from "./credits.js";
+import { appendCompanyRoles } from "./job-board.js";
+import { fetchCompanyRoles } from "./api.js";
 import {
   loadCollapsedCompanies,
   loadShowNotForMeCompanies,
@@ -31,6 +33,8 @@ window.relocationJobs.saveWaitingReferral = saveWaitingReferral;
 window.relocationJobs.markJobSeen = markJobSeen;
 window.relocationJobs.closePanelPopovers = closePanelPopovers;
 window.relocationJobs.toast = toast;
+window.relocationJobs.appendCompanyRoles = appendCompanyRoles;
+window.relocationJobs.fetchCompanyRoles = fetchCompanyRoles;
 
 async function init() {
   setOnUnauthorized(() => showLogin("session"));
