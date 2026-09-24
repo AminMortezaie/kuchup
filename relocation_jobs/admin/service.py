@@ -42,6 +42,7 @@ def get_system_config(
     company_fetch = (
         scrape_enabled if company_fetch_enabled is None else company_fetch_enabled
     )
+    include_keywords, exclude_keywords = default_keyword_lists()
     return {
         "database": "postgres",
         "redis": "connected" if countries_use_redis() else ("configured" if redis_enabled() else "off"),
@@ -55,8 +56,8 @@ def get_system_config(
         "httpx_available": httpx_available,
         "default_concurrency": DEFAULT_CONCURRENCY,
         "max_concurrency": MAX_CONCURRENCY,
-        "include_keywords": default_keyword_lists()[0],
-        "exclude_keywords": default_keyword_lists()[1],
+        "include_keywords": include_keywords,
+        "exclude_keywords": exclude_keywords,
         "known_ats_count": len(KNOWN_ATS),
         "known_ats_companies": sorted(KNOWN_ATS.keys()),
         "suggested_cities": {key: len(values) for key, values in SUGGESTED_CITIES.items()},

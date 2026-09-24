@@ -164,10 +164,6 @@ def _job_row(row) -> dict:
     return job
 
 
-def job_from_row(row) -> dict:
-    return _job_row(row)
-
-
 def _job_stats_row(row) -> dict:
     data = _row(row)
     job = {

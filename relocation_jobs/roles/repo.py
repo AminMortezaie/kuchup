@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from relocation_jobs.catalog.repo import job_from_row
+from relocation_jobs.catalog.repo import _job_row
 from relocation_jobs.core.db import db_read, db_transaction
 
 
@@ -75,7 +75,7 @@ def list_disabled_tag_ids(user_id: int) -> list[int]:
             """
             SELECT tag_id
             FROM user_role_tag_prefs
-            WHERE user_id = %s AND enabled = 0
+            WHERE user_id = %s
             """,
             (user_id,),
         ).fetchall()
@@ -97,9 +97,9 @@ def upsert_disabled_tag_pref(user_id: int, tag_id: int) -> None:
     with db_transaction() as conn:
         conn.execute(
             """
-            INSERT INTO user_role_tag_prefs (user_id, tag_id, enabled)
-            VALUES (%s, %s, 0)
-            ON CONFLICT (user_id, tag_id) DO UPDATE SET enabled = 0
+            INSERT INTO user_role_tag_prefs (user_id, tag_id)
+            VALUES (%s, %s)
+            ON CONFLICT (user_id, tag_id) DO NOTHING
             """,
             (user_id, tag_id),
         )
@@ -133,7 +133,7 @@ def list_open_nondefault_jobs(company_keys: list[tuple[str, str]]) -> list[dict]
     jobs: list[dict] = []
     for row in rows:
         data = dict(row)
-        job = job_from_row(data)
+        job = _job_row(data)
         job["country"] = data.get("country") or ""
         job["company_name"] = data.get("company_name") or ""
         jobs.append(job)

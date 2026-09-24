@@ -58,7 +58,7 @@ def sync_aggregator_board(
     raw_jobs: list[dict],
     *,
     relevant_only: bool = True,
-) -> tuple[int, int]:
+) -> tuple[int, int, list[dict]]:
     ats = (source_company.get("ats_type") or "").strip().lower()
     source = _SOURCE_LABEL.get(ats, ats or "aggregator")
     includes, excludes = default_keyword_lists()
@@ -66,6 +66,7 @@ def sync_aggregator_board(
     grouped = group_jobs_by_employer(listed)
     employers = 0
     job_total = 0
+    matched: list[dict] = []
     careers_fallback = (
         (source_company.get("careers_url") or source_company.get("ats_url") or "").strip()
     )
@@ -86,11 +87,12 @@ def sync_aggregator_board(
             continue
         employers += 1
         job_total += len(counted)
+        matched.extend(counted)
     log_event(
         f"aggregator sync employers={employers} jobs={job_total}",
         company=source_company.get("name") or "",
     )
-    return employers, job_total
+    return employers, job_total, matched
 
 
 def aggregator_success_line(prefix: str, employers: int, jobs: int) -> str:

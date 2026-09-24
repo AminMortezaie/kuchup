@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.scrape.filter import filter_relevant_jobs
 from relocation_jobs.scrape.relevance import is_relevant
 
@@ -24,14 +25,23 @@ class TestIsRelevant:
         ],
     )
     def test_title_gate(self, title: str, expected: bool):
-        assert is_relevant(title) is expected
+        assert is_relevant(
+            title,
+            include=list(INCLUDE_KEYWORDS),
+            exclude=list(EXCLUDE_KEYWORDS),
+        ) is expected
 
     def test_filter_relevant_jobs_strips_non_backend(self):
         jobs = [
             {"title": "Backend Engineer", "url": "https://example.com/1"},
             {"title": "Marketing Manager", "url": "https://example.com/2"},
         ]
-        out = filter_relevant_jobs(jobs, relevant_only=True)
+        out = filter_relevant_jobs(
+            jobs,
+            relevant_only=True,
+            include=list(INCLUDE_KEYWORDS),
+            exclude=list(EXCLUDE_KEYWORDS),
+        )
         assert len(out) == 1
         assert out[0]["title"] == "Backend Engineer"
 

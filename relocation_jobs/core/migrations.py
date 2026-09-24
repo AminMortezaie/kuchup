@@ -220,7 +220,6 @@ def _role_filter_tags_v1(conn) -> None:
         CREATE TABLE IF NOT EXISTS user_role_tag_prefs (
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             tag_id INTEGER NOT NULL REFERENCES role_filter_tags(id) ON DELETE CASCADE,
-            enabled INTEGER NOT NULL,
             PRIMARY KEY (user_id, tag_id)
         )
         """

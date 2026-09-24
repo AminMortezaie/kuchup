@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from relocation_jobs.core.job_identity import job_idempotency_key
+from relocation_jobs.roles.service import default_keyword_lists
 from relocation_jobs.scrape.dom_listing import _is_listing_noise_url
 from relocation_jobs.scrape.relevance import explain_title_filter, is_relevant
 
@@ -43,6 +44,7 @@ def review_filtered_jobs(
         job_idempotency_key(j.get("url", ""))
         for j in scraped
     }
+    includes, excludes = default_keyword_lists()
     filtered: list[dict] = []
     seen: set[str] = set()
     for job in all_scraped:
@@ -53,8 +55,8 @@ def review_filtered_jobs(
         if key in included_keys or key in seen:
             continue
         title = (job.get("title") or "").strip()
-        if not is_relevant(title):
-            reason = explain_title_filter(title)
+        if not is_relevant(title, include=includes, exclude=excludes):
+            reason = explain_title_filter(title, include=includes, exclude=excludes)
         else:
             reason = "not matched"
         if not reason:

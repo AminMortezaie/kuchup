@@ -63,7 +63,11 @@ def test_seeded_tags_match_static_rules(db):
         "Chief Technology Officer",
         "Software Engineer (Internal Tools & HR Automation)",
     ):
-        assert is_relevant(title, include=includes, exclude=excludes) is is_relevant(title)
+        assert is_relevant(title, include=includes, exclude=excludes) is is_relevant(
+            title,
+            include=list(INCLUDE_KEYWORDS),
+            exclude=list(EXCLUDE_KEYWORDS),
+        )
 
 
 def test_nondefault_role_stored_without_description_or_public_page(db, seeded_catalog_v2):
@@ -215,12 +219,6 @@ def test_admin_can_add_tag(v2_auth_client, db):
                 conn.execute("DELETE FROM role_filter_tags WHERE id = %s", (tag_id,))
 
 
-_BACKLOG_ITEM = (
-    "Role propagator: support per-user role keyword preferences "
-    "(assign + cap unhidden roles, optionally fetch JDs for them on demand)"
-)
-
-
 @pytest.mark.asyncio
 async def test_nondefault_keeps_fetched_then_closes(db, seeded_catalog_v2):
     backend = {
@@ -281,36 +279,3 @@ async def test_nondefault_keeps_fetched_then_closes(db, seeded_catalog_v2):
     assert (closed_manager.get("closed_at") or "").strip()
     assert (closed_software.get("closed_at") or "").strip()
     assert closed_manager["fetched"] == fetched
-
-
-def test_backlog_doc_mentions_propagator_followup(db):
-    from relocation_jobs.core.migrations import _seed_role_filter_docs
-
-    with db_transaction() as conn:
-        conn.execute(
-            """
-            INSERT INTO team_docs (
-                folder, slug, title, body, created_at, updated_at,
-                created_by_user_id, updated_by_user_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                "tech",
-                "tech-backlog",
-                "Tech backlog",
-                "Existing notes\n",
-                "2026-01-01T00:00:00+00:00",
-                "2026-01-01T00:00:00+00:00",
-                None,
-                None,
-            ),
-        )
-        _seed_role_filter_docs(conn)
-        _seed_role_filter_docs(conn)
-        row = conn.execute(
-            "SELECT body FROM team_docs WHERE folder = %s AND slug = %s",
-            ("tech", "tech-backlog"),
-        ).fetchone()
-    body = row["body"]
-    assert body.count(_BACKLOG_ITEM) == 1
-    assert body.startswith("Existing notes")

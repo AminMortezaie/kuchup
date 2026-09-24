@@ -8,7 +8,7 @@ Title filtering is data in `role_filter_tags`, not a hardcoded list in the scrap
 
 `matching_jobs.matches_default_filter` is `1` when the title passes those tags (plus the small set of title rules that still live in code: CTO, staff except `senior/staff`, cloud engineer without backend/software, AI platform without backend/software, and the engineer-title skip for the `marketing` and `hr` exclude words). Existing rows default to `1`. The column is `NOT NULL`, so readers compare it with `= 1` or `= 0`.
 
-`user_role_tag_prefs` stores a row only when a user turns an exclude tag off (`enabled = 0`). No row means that hide tag stays on. Include tags are not a per-user setting.
+`user_role_tag_prefs` stores a row only when a user turns an exclude tag off. No row means that hide tag stays on. Include tags are not a per-user setting.
 
 ## Scrape
 

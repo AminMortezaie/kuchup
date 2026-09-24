@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
-from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.shared.predicates import any_of
 
 _ENGINEER_TITLE_EXCLUDE_SKIP = frozenset({"marketing", "hr"})
@@ -19,32 +18,18 @@ _IRRELEVANT_TITLE_RULES: tuple[Callable[[tuple[str, list[str]]], bool], ...] = (
 )
 
 
-def _include_list(include: list[str] | None) -> list[str]:
-    return list(INCLUDE_KEYWORDS if include is None else include)
-
-
-def _exclude_list(exclude: list[str] | None) -> list[str]:
-    return list(EXCLUDE_KEYWORDS if exclude is None else exclude)
-
-
-def _title_excludes(title_lower: str, exclude: list[str] | None = None) -> list[str]:
-    excludes = _exclude_list(exclude)
+def _title_excludes(title_lower: str, exclude: list[str]) -> list[str]:
     if re.search(r"\b(engineer|developer|programmer)\b", title_lower):
         return [
-            kw for kw in excludes
+            kw for kw in exclude
             if kw.strip() not in _ENGINEER_TITLE_EXCLUDE_SKIP
         ]
-    return excludes
+    return exclude
 
 
-def is_relevant(
-    title: str,
-    *,
-    include: list[str] | None = None,
-    exclude: list[str] | None = None,
-) -> bool:
+def is_relevant(title: str, *, include: list[str], exclude: list[str]) -> bool:
     t = title.lower()
-    if not any(kw in t for kw in _include_list(include)):
+    if not any(kw in t for kw in include):
         return False
     ctx = (t, _title_excludes(t, exclude))
     return not any_of(ctx, _IRRELEVANT_TITLE_RULES)
@@ -56,17 +41,11 @@ def hidden_by_active_excludes(title: str, exclude: list[str]) -> bool:
     return any_of(ctx, _IRRELEVANT_TITLE_RULES)
 
 
-def explain_title_filter(
-    title: str,
-    *,
-    include: list[str] | None = None,
-    exclude: list[str] | None = None,
-) -> str:
+def explain_title_filter(title: str, *, include: list[str], exclude: list[str]) -> str:
     t = (title or "").lower()
-    includes = _include_list(include)
     if re.search(r"\bchief technology officer\b|\bcto\b", t):
         return "Title excluded (CTO)"
-    if not any(kw in t for kw in includes):
+    if not any(kw in t for kw in include):
         return "Title not relevant (no backend/software keyword)"
     excludes = _title_excludes(t, exclude)
     for kw in excludes:
