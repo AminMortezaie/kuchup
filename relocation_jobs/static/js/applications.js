@@ -2,6 +2,7 @@
 
 import { $, finishLoadingProgress, setLoadingProgress, toast } from "./utils.js";
 import { initAppShell } from "./app-shell.js";
+import { companyWorkspacePath } from "./company-workspace.js";
 
 let activeTab = "queue";
 let queueJobs = [];
@@ -47,19 +48,6 @@ async function api(path) {
   return data;
 }
 
-function jobKey(job) {
-  return [
-    (job.country || "").toLowerCase(),
-    job.company || "",
-    job.idempotency_key || job.url || "",
-  ].join("|");
-}
-
-function isActiveQueueJob(job) {
-  if (!job || job.applied) return false;
-  return Boolean(job.pinned || job.looking_to_apply);
-}
-
 function positionCardVariant(job) {
   if (job.not_for_me) return "not_for_me";
   if (job.rejected) return "rejected";
@@ -84,14 +72,12 @@ function renderList() {
   for (const job of jobs) {
     const row = document.createElement("article");
     row.className = "applications-row";
-    row.dataset.jobKey = jobKey(job);
 
     const meta = document.createElement("div");
     meta.className = "applications-row-meta";
     const company = document.createElement("a");
     company.className = "applications-company";
-    company.href = job.workspace_path
-      || `/company/${encodeURIComponent(job.country || "")}/${encodeURIComponent(String(job.company || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))}`;
+    company.href = job.workspace_path || companyWorkspacePath(job.country, job.company);
     company.textContent = job.company || "Company";
     const place = document.createElement("span");
     place.className = "applications-place";
@@ -164,16 +150,7 @@ function onPositionStateChanged(event) {
     showError(detail.message);
     return;
   }
-  if (detail.type !== "mutated") return;
-
-  const job = detail.job || {};
-  const key = jobKey(job);
-  queueJobs = queueJobs.filter((item) => jobKey(item) !== key);
-  appliedJobs = appliedJobs.filter((item) => jobKey(item) !== key);
-  if (isActiveQueueJob(job)) queueJobs.unshift(job);
-  if (job.applied) appliedJobs.unshift(job);
-  syncTabUi();
-  renderList();
+  if (detail.type === "mutated") void refreshAll({ quiet: true });
 }
 
 function bindTabs() {

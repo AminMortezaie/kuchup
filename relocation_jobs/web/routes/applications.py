@@ -15,11 +15,11 @@ def register(app):
     def api_applications_queue():
         country = (request.args.get("country") or "").strip().lower() or None
         jobs = list_application_queue_positions(g.user_id, country=country)
-        return jsonify({"jobs": jobs, "count": len(jobs)})
+        return jsonify({"jobs": jobs})
 
     @app.get("/api/applications/applied")
     @login_required
     def api_applications_applied():
         country = (request.args.get("country") or "").strip().lower() or None
         jobs = list_applied_positions(g.user_id, country=country)
-        return jsonify({"jobs": jobs, "count": len(jobs)})
+        return jsonify({"jobs": jobs})

@@ -115,4 +115,4 @@ def test_applications_page_route(v2_auth_client):
     body = resp.get_data(as_text=True)
     assert "Applications" in body
     assert "position-card" in body
-    assert "/api/applications/queue" not in body or True
+    assert "applications.js" in body

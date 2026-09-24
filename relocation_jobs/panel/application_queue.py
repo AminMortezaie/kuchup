@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from relocation_jobs.catalog.repo import get_company, get_job_by_url
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.panel.service import load_context
@@ -33,7 +35,7 @@ def _hydrate_tracked_job(
     job_url: str,
     row: dict,
     ctx,
-) -> dict | None:
+) -> dict:
     company = get_company(country_key, company_name) or {"name": company_name}
     label = country_label(country_key)
     job = get_job_by_url(
@@ -68,28 +70,44 @@ def _hydrate_tracked_job(
     )
 
 
-def list_application_queue_positions(
+def _list_positions(
     user_id: int,
     *,
-    country: str | None = None,
+    country: str | None,
+    include_row: Callable[[dict], bool],
+    sort_key: Callable[[dict], tuple],
+    reverse: bool = False,
 ) -> list[dict]:
     scope = (country or "").strip().lower() or None
     ctx = load_context(user_id, country_key=scope)
     jobs: list[dict] = []
     for (country_key, company_name, job_url), row in (ctx.job_tracking or {}).items():
-        if not is_active_application_queue_row(row):
+        if not include_row(row):
             continue
-        item = _hydrate_tracked_job(
-            country_key=country_key,
-            company_name=company_name,
-            job_url=job_url,
-            row=row,
-            ctx=ctx,
+        jobs.append(
+            _hydrate_tracked_job(
+                country_key=country_key,
+                company_name=company_name,
+                job_url=job_url,
+                row=row,
+                ctx=ctx,
+            )
         )
-        if item:
-            jobs.append(item)
-    jobs.sort(key=_queue_sort_key)
+    jobs.sort(key=sort_key, reverse=reverse)
     return jobs
+
+
+def list_application_queue_positions(
+    user_id: int,
+    *,
+    country: str | None = None,
+) -> list[dict]:
+    return _list_positions(
+        user_id,
+        country=country,
+        include_row=is_active_application_queue_row,
+        sort_key=_queue_sort_key,
+    )
 
 
 def list_applied_positions(
@@ -97,22 +115,10 @@ def list_applied_positions(
     *,
     country: str | None = None,
 ) -> list[dict]:
-    scope = (country or "").strip().lower() or None
-    ctx = load_context(user_id, country_key=scope)
-    jobs: list[dict] = []
-    for (country_key, company_name, job_url), row in (ctx.job_tracking or {}).items():
-        if not bool(row.get("applied")):
-            continue
-        if as_bool(row.get("not_for_me")):
-            continue
-        item = _hydrate_tracked_job(
-            country_key=country_key,
-            company_name=company_name,
-            job_url=job_url,
-            row=row,
-            ctx=ctx,
-        )
-        if item:
-            jobs.append(item)
-    jobs.sort(key=_applied_sort_key, reverse=True)
-    return jobs
+    return _list_positions(
+        user_id,
+        country=country,
+        include_row=lambda row: bool(row.get("applied")) and not as_bool(row.get("not_for_me")),
+        sort_key=_applied_sort_key,
+        reverse=True,
+    )
