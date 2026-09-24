@@ -1,57 +1,13 @@
-<timestamp>Thursday, Sep 24, 2026, 2:54 PM (UTC+4)</timestamp>
+<timestamp>Thursday, Sep 24, 2026, 3:24 PM (UTC+4)</timestamp>
 
-[ec2-app] Role propagator logs (last 20 lines):
-2026/09/24 10:53:27 user 1: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 11: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 12: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 13: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 14: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 15: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 16: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 19: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 20: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 21: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 22: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 23: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 24: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 25: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 26: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 user 27: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
-2026/09/24 10:53:27 poll received=1 errors=0
-2026/09/24 10:53:28 poll received=1 errors=0
-2026/09/24 10:53:39 poll received=0 errors=0
+create a PR for it.
 
 ---
 
-<timestamp>Thursday, Sep 24, 2026, 2:55 PM (UTC+4)</timestamp>
+<timestamp>Thursday, Sep 24, 2026, 3:26 PM (UTC+4)</timestamp>
 
-your merge confilct was wrong and did not push the right migration into code.
+also you can see that there is a problem with mobile version and it's not showing correctly the menu.
 
----
-
-this what we got.
-run on localhost and we will fix till make this completely working.
-
----
-
-wtf is this UX on this.
-you should show them small taggs and should not be editable for everyone to change them on our db.
-only admins on admin panel can edit it.
-
-everyone can choose between include and exclude keywords.
-
-
-and if they want on their job board can add tagges base on their user
-
----
-
-this should be showed and all the possiblities for a language name should be show if it's included.
-
----
-
-i don't know what's the usage of ats constants when we made them dynamically and user should choose between them so what is the dynamic options instead of this.
-
----
-
-so if it's seeding they should be put on migration to when the app is running up for the first time just read from it and start the app with these data.
-not somewhere like this.
+two options here.
+- remove the popup and open up it on a new page to easily scroll over it.
+- make this pop up correct and something that is not buggy.
