@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ebb70a3141b1",
+  "session_id": "6d281426-8f87-4075-81cc-d45ce66d0c65",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-24T12:46:35.216279Z",
+  "branch": "fix/ashby-url-detection",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/ats_detection.py",
+    "tests/core/test_ats_detection.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "875325548a2b",
+  "compact_transcript_start": 0,
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-24T12:46:35.209996Z",
+    "agent_lines": 47,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 47,
+    "total_lines_changed": 50,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

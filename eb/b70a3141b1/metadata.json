@@ -1,0 +1,20 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ebb70a3141b1",
+  "strategy": "manual-commit",
+  "branch": "fix/ashby-url-detection",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/ats_detection.py",
+    "tests/core/test_ats_detection.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/eb/b70a3141b1/0/metadata.json",
+      "transcript": "/eb/b70a3141b1/0/full.jsonl",
+      "compact_transcript": "/eb/b70a3141b1/0/transcript.jsonl",
+      "content_hash": "/eb/b70a3141b1/0/content_hash.txt",
+      "prompt": "/eb/b70a3141b1/0/prompt.txt"
+    }
+  ]
+}
