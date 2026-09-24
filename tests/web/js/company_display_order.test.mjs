@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  boardLoadOrderAction,
   buildFrozenOrderMap,
-  companyHasOpenRoles,
   companySortKey,
   recomputeNewestJobFetched,
   sortCompaniesNewest,
@@ -113,14 +113,14 @@ test("multiple position interactions keep company in place while open roles rema
   recomputeNewestJobFetched(b);
   b.jobs.shift();
   recomputeNewestJobFetched(b);
-  assert.equal(companyHasOpenRoles(b), true);
+  assert.equal(b.jobs.length, 1);
   assert.equal(b.newest_job_fetched, "2026-01-01");
 
   const visible = sortCompaniesNewest(catalog, { frozenOrder: frozen });
   assert.deepEqual(names(visible), ["A", "B", "C"]);
 });
 
-test("exhausted company may leave visible ordering while others stay stable", () => {
+test("exhausted loaded jobs may leave while others stay stable under freeze", () => {
   const a = company("A", "2026-01-03");
   const b = company("B", "2026-01-02", [
     { fetched: "2026-01-02", url: "https://example.com/b1" },
@@ -130,11 +130,9 @@ test("exhausted company may leave visible ordering while others stay stable", ()
   const frozen = buildFrozenOrderMap(catalog);
 
   b.jobs = [];
-  b.jobs_more = 0;
   recomputeNewestJobFetched(b);
-  assert.equal(companyHasOpenRoles(b), false);
 
-  const remaining = catalog.filter((row) => companyHasOpenRoles(row));
+  const remaining = catalog.filter((row) => (row.jobs || []).length > 0);
   const visible = sortCompaniesNewest(remaining, { frozenOrder: frozen });
   assert.deepEqual(names(visible), ["A", "C"]);
   assert.equal(remaining.some((row) => row.name === "B"), false);
@@ -167,6 +165,32 @@ test("releasing freeze reconciles visible order to latest calculated ranking", (
 
   assert.deepEqual(names(sortCompaniesNewest(catalog, { frozenOrder: frozen })), ["A", "C", "B"]);
   assert.deepEqual(names(sortCompaniesNewest(catalog, { frozenOrder: null })), ["B", "A", "C"]);
+});
+
+test("board load order action freezes on stableOrder and releases otherwise", () => {
+  assert.equal(boardLoadOrderAction({ stableOrder: true }), "freeze");
+  assert.equal(boardLoadOrderAction({ stableOrder: false }), "release");
+  assert.equal(boardLoadOrderAction({}), "release");
+});
+
+test("soft reload keeps freeze while full reload releases then follows new rank", () => {
+  const a = company("A", "2026-01-03");
+  const b = company("B", "2026-01-01");
+  const c = company("C", "2026-01-02");
+  let frozen = null;
+  const catalog = [a, c, b];
+
+  if (boardLoadOrderAction({ stableOrder: true }) === "freeze") {
+    frozen = frozen || buildFrozenOrderMap(catalog);
+  }
+  b.jobs = [{ fetched: "2026-01-09", url: "https://example.com/b-new" }];
+  recomputeNewestJobFetched(b);
+  assert.deepEqual(names(sortCompaniesNewest(catalog, { frozenOrder: frozen })), ["A", "C", "B"]);
+
+  if (boardLoadOrderAction({}) === "release") {
+    frozen = null;
+  }
+  assert.deepEqual(names(sortCompaniesNewest(catalog, { frozenOrder: frozen })), ["B", "A", "C"]);
 });
 
 test("companySortKey is stable for freeze map lookups", () => {

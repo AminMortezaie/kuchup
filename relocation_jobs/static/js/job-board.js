@@ -203,7 +203,6 @@ export function applyPinToCatalog(country, companyName, url, idempotencyKey, dat
 }
 
 export function finalizeCompanyBoard(company) {
-  // Hold visible order while calculated newest_job_fetched updates.
   freezeCompanyOrder();
   recomputeCounts(company);
   evictCompanyIfHidden(company);

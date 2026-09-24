@@ -82,6 +82,7 @@ function includeCompany(view, flags) {
     && !view.jobs.length
     && !(flags.positionRejectedOnly && view.rejected_jobs.length)
   ) {
+    // ponytail: hideEmpty ignores jobs_more — emptied preview bucket can leave while more roles remain
     return false;
   }
   if (flags.notAppliedOnly && (view.company_applied || !view.jobs.length)) return false;

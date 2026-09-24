@@ -92,11 +92,12 @@ What freezes visible order:
 
 What still lets a company leave the active layout:
 
-- **Exhaustion** — no open roles left (`jobs` empty and `jobs_more` 0). With `hide_empty`, `evictCompanyIfHidden` / panel filters remove the company. That is intentional: there is nothing left to interact with.
+- **Exhaustion** — no open roles left in the loaded `jobs` list. With `hide_empty`, `evictCompanyIfHidden` / panel filters remove the company (same leave path as before this freeze work). That is intentional when there is nothing left on the card to interact with.
 
 Reconciliation (visible order catches up to calculated rank):
 
-- Full board reload without `stableOrder` (pagination, country/ATS/location/search, filter toggles, sort change, scrape completion reload)
+- Full board reload without `stableOrder` (pagination, country/ATS/location/search, filter toggles, sort change)
+- Scrape **settle** / non-session completion `loadJobs` (not merely `setFetchBusy(false)` — a single-company fetch session keeps the freeze until settle reload)
 - Explicit `releaseCompanyOrder()` (e.g. sort select)
 
 Invariant: while the user is working through positions on a page, a company must not jump solely because one role’s score/timestamp changed or another 3-role bucket was loaded. Ranking math is unchanged; only **when** rank is allowed to move cards changes.

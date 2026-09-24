@@ -34,7 +34,6 @@ export function maxJobFetchedTs(jobs) {
   return best;
 }
 
-/** Match server sort: max job.fetched over open-board roles only. */
 export function recomputeNewestJobFetched(company) {
   if (!company) return;
   const ts = maxJobFetchedTs(company.jobs);
@@ -50,11 +49,10 @@ export function buildFrozenOrderMap(companies) {
   return map;
 }
 
-/**
- * Newest-first visible order.
- * When frozenOrder is set, known companies keep that layout while
- * newest_job_fetched may still change on the company objects.
- */
+export function boardLoadOrderAction({ stableOrder = false } = {}) {
+  return stableOrder ? "freeze" : "release";
+}
+
 export function sortCompaniesNewest(companies, {
   frozenOrder = null,
   serverOrder = null,
@@ -85,10 +83,4 @@ export function sortCompaniesNewest(companies, {
     return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
   });
   return list;
-}
-
-export function companyHasOpenRoles(company) {
-  const open = (company?.jobs || []).length;
-  const more = Math.max(0, Number(company?.jobs_more) || 0);
-  return open + more > 0;
 }

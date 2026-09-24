@@ -117,13 +117,12 @@ export function sortCompaniesList(companies) {
   return list;
 }
 
-/** Snapshot current page order so rank updates do not reshuffle visible cards. */
 export function freezeCompanyOrder() {
   if (state.frozenCompanyOrder) return;
+  // ponytail: freeze map is catalog indices; snapshot getDisplayCompanies() if catalog/display drift appears
   state.frozenCompanyOrder = buildFrozenOrderMap(state.boardCatalog);
 }
 
-/** Release the frozen order so the board re-sorts on the next render. */
 export function releaseCompanyOrder() {
   state.frozenCompanyOrder = null;
 }
