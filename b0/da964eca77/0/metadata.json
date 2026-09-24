@@ -1,0 +1,81 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b0da964eca77",
+  "session_id": "8c1ffa7a-af19-497e-a370-713316dc1bb2",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-24T12:18:19.581012Z",
+  "branch": "board/roles-page-three",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/reference/board.md",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/panel/roles_page.py",
+    "relocation_jobs/panel/service.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/web/routes/board.py",
+    "relocation_jobs/web/routes/remote.py",
+    "tests/web/test_board_roles_page.py",
+    "tests/web/test_kuchup_company_ownership.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "79db7b347dbd",
+  "checkpoint_transcript_start": 56,
+  "transcript_lines_at_start": 56,
+  "compact_transcript_start": 2,
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-24T12:14:44.980312Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "68c1f3f7580d",
+      "timestamp": "2026-09-24T12:14:44.980312Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-24T12:18:19.541984Z",
+    "agent_lines": 98,
+    "agent_removed": 186,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 98,
+    "total_lines_changed": 284,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
