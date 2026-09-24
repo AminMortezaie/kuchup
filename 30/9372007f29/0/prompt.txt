@@ -1,0 +1,33 @@
+rebase then add the changes of new branch to resolve the CONFLICT
+
+---
+
+git pull and git push
+
+---
+
+i just merged this but i cannot find the button to choose between include and exclude keywords on my panel.
+is this placed on panel or not?
+
+---
+
+[ec2-app] Role propagator logs (last 20 lines):
+2026/09/24 10:53:27 user 1: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 11: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 12: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 13: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 14: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 15: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 16: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 19: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 20: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 21: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 22: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 23: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 24: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 25: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 26: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 user 27: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
+2026/09/24 10:53:27 poll received=1 errors=0
+2026/09/24 10:53:28 poll received=1 errors=0
+2026/09/24 10:53:39 poll received=0 errors=0
