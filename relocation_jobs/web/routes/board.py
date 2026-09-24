@@ -14,6 +14,7 @@ from relocation_jobs.panel.board import (
 from relocation_jobs.panel.flatten_rules import company_has_open_roles
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
+from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_RELOCATION,
 )
@@ -92,6 +93,11 @@ def register(app):
             opportunity_scope=opportunity_scope,
         )
         companies = apply_capacity_to_board_page(g.user_id, companies)
+        companies = mix_unhidden_roles(
+            g.user_id,
+            companies,
+            visa_only=bool(panel_flags.get("visa_only")),
+        )
         if defer_empty:
             # ponytail: full-list then slice; SQL hide_empty count if this path is slow
             rejected_only = bool(panel_flags.get("position_rejected_only"))

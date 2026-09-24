@@ -10,6 +10,7 @@ from relocation_jobs.broadcast.types import (
 )
 from relocation_jobs.async_jobs.enqueue import enqueue_replace_assignment
 from relocation_jobs.catalog.repo import get_company, list_jobs_for_company_keys
+from relocation_jobs.roles.service import job_is_default_match
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from relocation_jobs.credits.service import (
     credit_balance,
@@ -91,7 +92,10 @@ def capacity_meta_for_user(user_id: int) -> BoardCapacityMeta:
 
 def _raw_jobs(country: str, company_name: str) -> list[dict]:
     company = get_company(country, company_name) or {}
-    return list(company.get("matching_jobs") or [])
+    return [
+        job for job in (company.get("matching_jobs") or [])
+        if job_is_default_match(job)
+    ]
 
 
 def _current_catalog_assignment_keys(companies: list[dict]) -> set[tuple[str, str, str]]:
@@ -169,6 +173,7 @@ def visible_jobs_for_company(
     *,
     extra_visible_keys: set[str] | frozenset[str] | None = None,
 ) -> tuple[list[dict], int]:
+    jobs = [job for job in jobs if job_is_default_match(job)]
     if limits_for_user_id(user_id).unlimited:
         return list(jobs), 0
     extra = set(extra_visible_keys or ())
@@ -197,7 +202,10 @@ def filter_catalog_company_for_user(
     company: dict,
 ) -> dict:
     name = (company.get("name") or "").strip()
-    jobs = list(company.get("matching_jobs") or [])
+    jobs = [
+        job for job in (company.get("matching_jobs") or [])
+        if job_is_default_match(job)
+    ]
     visible, hidden = visible_jobs_for_company(user_id, country, name, jobs)
     if hidden == 0 and len(visible) == len(jobs):
         return company

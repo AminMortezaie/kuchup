@@ -65,6 +65,20 @@ def _index_existing_by_key(existing: list[dict]) -> dict[str, dict]:
     return by_key
 
 
+def _match_flag(job: dict, default: int = 1) -> int:
+    if "matches_default_filter" not in job:
+        return default
+    raw = job.get("matches_default_filter")
+    if isinstance(raw, bool):
+        return 1 if raw else 0
+    if raw is None or raw == "":
+        return default
+    try:
+        return 0 if int(raw) == 0 else 1
+    except (TypeError, ValueError):
+        return default
+
+
 def _update_from_scrape(old: dict, scraped: dict, key: str, seen_at: str) -> dict:
     out: dict = {
         "title": scraped.get("title") or old.get("title", ""),
@@ -85,6 +99,7 @@ def _update_from_scrape(old: dict, scraped: dict, key: str, seen_at: str) -> dic
         out["public_slug"] = slug
     out["closed_at"] = ""
     out["listing_misses"] = 0
+    out["matches_default_filter"] = _match_flag(scraped, _match_flag(old))
     _apply_board_location(out, scraped, old)
     return out
 
@@ -96,6 +111,7 @@ def _add_from_scrape(scraped: dict, key: str, seen_at: str) -> dict:
     out["last_seen"] = seen_at
     out["closed_at"] = ""
     out["listing_misses"] = 0
+    out["matches_default_filter"] = _match_flag(scraped)
     return out
 
 

@@ -10,11 +10,10 @@ from relocation_jobs.payments.types import ORDER_KIND_CREDITS, ORDER_KIND_FULL_A
 
 from relocation_jobs.core.ats_constants import (
     DEFAULT_CONCURRENCY,
-    EXCLUDE_KEYWORDS,
-    INCLUDE_KEYWORDS,
     KNOWN_ATS,
     MAX_CONCURRENCY,
 )
+from relocation_jobs.roles.service import default_keyword_lists
 from relocation_jobs.core.location_tags import SUGGESTED_CITIES, all_country_labels, load_custom_cities, load_custom_countries
 from relocation_jobs.core.paths import country_archive_filename, data_dir, supported_countries
 from relocation_jobs.users.repo import user_count
@@ -56,8 +55,8 @@ def get_system_config(
         "httpx_available": httpx_available,
         "default_concurrency": DEFAULT_CONCURRENCY,
         "max_concurrency": MAX_CONCURRENCY,
-        "include_keywords": INCLUDE_KEYWORDS,
-        "exclude_keywords": EXCLUDE_KEYWORDS,
+        "include_keywords": default_keyword_lists()[0],
+        "exclude_keywords": default_keyword_lists()[1],
         "known_ats_count": len(KNOWN_ATS),
         "known_ats_companies": sorted(KNOWN_ATS.keys()),
         "suggested_cities": {key: len(values) for key, values in SUGGESTED_CITIES.items()},
@@ -120,7 +119,8 @@ def count_matching_jobs_fetched_today(
         SELECT COUNT(*) AS n
         FROM matching_jobs j
         JOIN companies c ON c.id = j.company_id
-        WHERE {_FETCHED_TODAY_SQL.strip()}
+        WHERE COALESCE(j.matches_default_filter, 1) = 1
+          AND {_FETCHED_TODAY_SQL.strip()}
     """
     params: list = [start_utc, end_utc, start_date, end_date]
     if country_key and country_key != "all":
@@ -182,7 +182,8 @@ def get_recently_fetched_jobs(
                    c.name AS company_name, c.country
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
-            WHERE {_FETCHED_TODAY_SQL.strip()}
+            WHERE COALESCE(j.matches_default_filter, 1) = 1
+              AND {_FETCHED_TODAY_SQL.strip()}
             ORDER BY j.fetched DESC
             LIMIT %s
             """,

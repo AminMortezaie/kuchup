@@ -15,6 +15,7 @@ from relocation_jobs.panel.board import (
     load_catalog_board_page,
 )
 from relocation_jobs.remote.countries import list_remote_ats_types, list_remote_countries
+from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_REMOTE,
     is_remote_country_key,
@@ -73,6 +74,7 @@ def register(app):
             sort = "newest"
 
         opportunity_scope = resolve_board_opportunity_scope(g.user_id)
+        panel_flags = _panel_flags()
         companies, file_meta, fetch_problem_count, total_visible, has_more = load_catalog_board_page(
             country_key,
             ats_type=scope["ats_type"],
@@ -81,11 +83,16 @@ def register(app):
             visible_offset=visible_offset,
             limit=page_size,
             search=search,
-            panel_flags=_panel_flags(),
+            panel_flags=panel_flags,
             count_total=(page == 1),
             sort=sort,
             catalog_kind=CATALOG_KIND_REMOTE,
             opportunity_scope=opportunity_scope,
+        )
+        companies = mix_unhidden_roles(
+            g.user_id,
+            companies,
+            visa_only=bool(panel_flags.get("visa_only")),
         )
         latest_fetch_new_jobs = _latest_fetch_new_jobs(
             file_meta,
