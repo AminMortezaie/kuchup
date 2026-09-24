@@ -3,9 +3,24 @@
   "checkpoint_id": "f55e1a93a829",
   "strategy": "manual-commit",
   "branch": "ux/role-prefs-chips-personal-tags",
-  "checkpoints_count": 1,
+  "checkpoints_count": 7,
   "files_touched": [
-    "relocation_jobs/core/ats_constants.py"
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/roles/repo.py",
+    "relocation_jobs/roles/service.py",
+    "relocation_jobs/static/admin.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/admin.js",
+    "relocation_jobs/static/js/role-prefs.js",
+    "relocation_jobs/static/styles.css",
+    "relocation_jobs/team_docs/pages/role-filter-tags.md",
+    "relocation_jobs/web/routes/role_prefs.py",
+    "tests/helpers/postgres_mock.py",
+    "tests/scrape/test_aggregator_review.py",
+    "tests/scrape/test_relevance.py",
+    "tests/web/test_kuchup_company_ownership.py",
+    "tests/web/test_role_preferences.py"
   ],
   "sessions": [
     {
@@ -14,6 +29,20 @@
       "compact_transcript": "/f5/5e1a93a829/0/transcript.jsonl",
       "content_hash": "/f5/5e1a93a829/0/content_hash.txt",
       "prompt": "/f5/5e1a93a829/0/prompt.txt"
+    },
+    {
+      "metadata": "/f5/5e1a93a829/1/metadata.json",
+      "transcript": "/f5/5e1a93a829/1/full.jsonl",
+      "compact_transcript": "/f5/5e1a93a829/1/transcript.jsonl",
+      "content_hash": "/f5/5e1a93a829/1/content_hash.txt",
+      "prompt": "/f5/5e1a93a829/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 555902,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9180928,
+    "output_tokens": 51835,
+    "api_call_count": 5
+  }
 }

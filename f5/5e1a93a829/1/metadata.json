@@ -1,0 +1,145 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f55e1a93a829",
+  "session_id": "adb21976-a401-438e-aad0-f85e0c7c4238",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-24T11:24:42.256372Z",
+  "branch": "ux/role-prefs-chips-personal-tags",
+  "checkpoints_count": 6,
+  "save_step_count": 5,
+  "files_touched": [
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/roles/repo.py",
+    "relocation_jobs/roles/service.py",
+    "relocation_jobs/static/admin.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/admin.js",
+    "relocation_jobs/static/js/role-prefs.js",
+    "relocation_jobs/static/styles.css",
+    "relocation_jobs/team_docs/pages/role-filter-tags.md",
+    "relocation_jobs/web/routes/role_prefs.py",
+    "tests/helpers/postgres_mock.py",
+    "tests/scrape/test_aggregator_review.py",
+    "tests/scrape/test_relevance.py",
+    "tests/web/test_kuchup_company_ownership.py",
+    "tests/web/test_role_preferences.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "b5b382761ad4",
+  "checkpoint_transcript_start": 80,
+  "transcript_lines_at_start": 80,
+  "compact_transcript_start": 17,
+  "token_usage": {
+    "input_tokens": 555902,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9180928,
+    "output_tokens": 51835,
+    "api_call_count": 5
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-24T10:26:46.297601Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "c1c95c99a0c6",
+      "timestamp": "2026-09-24T10:26:46.297601Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 12,
+    "context_tokens": 235065,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-24T11:24:42.198706Z",
+    "agent_lines": 660,
+    "agent_removed": 201,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 660,
+    "total_lines_changed": 861,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 32,
+      "agent_lines_removed": 8,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 560,
+      "agent_lines_removed": 135,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 593,
+      "agent_lines_removed": 137,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 593,
+      "agent_lines_removed": 137,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 660,
+      "agent_lines_removed": 201,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
