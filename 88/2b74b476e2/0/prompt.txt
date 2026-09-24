@@ -1,0 +1,7 @@
+<timestamp>Thursday, Sep 24, 2026, 3:28 PM (UTC+4)</timestamp>
+
+1
+
+---
+
+final change is make this keyword input like other inputs
