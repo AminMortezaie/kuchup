@@ -12,8 +12,8 @@ from relocation_jobs.panel.board import (
     load_catalog_board_page,
 )
 from relocation_jobs.panel.flatten_rules import company_has_open_roles
-from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, truncate_board_companies
-from relocation_jobs.panel.service import company_role_page_from_row, load_flattened_board_company
+from relocation_jobs.panel.roles_page import truncate_board_companies
+from relocation_jobs.panel.service import load_company_open_roles_page
 from relocation_jobs.panel.stats import compute_user_board_stats, resolve_new_jobs_count
 from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.broadcast.service import apply_capacity_to_board_page, capacity_meta_for_user
@@ -142,7 +142,6 @@ def register(app):
                 "total_pages": total_pages,
                 "has_more": has_more,
                 "sort": sort,
-                "roles_page_size": BOARD_ROLES_PAGE_SIZE,
                 **board_scope_meta(opportunity_scope),
                 **capacity_meta,
             },
@@ -160,10 +159,7 @@ def register(app):
         scope = query_flags()
         country_key = (request.args.get("company_country") or scope["country_key"] or "").strip()
         company_name = (request.args.get("company") or "").strip()
-        bucket = (request.args.get("bucket") or "jobs").strip() or "jobs"
         offset = max(request.args.get("offset", 0, type=int) or 0, 0)
-        limit = request.args.get("limit", BOARD_ROLES_PAGE_SIZE, type=int) or BOARD_ROLES_PAGE_SIZE
-        limit = max(1, min(limit, BOARD_ROLES_PAGE_SIZE))
         if not country_key or not company_name:
             return jsonify({"error": "company_country and company are required"}), 400
         opportunity_scope = resolve_board_opportunity_scope(g.user_id)
@@ -179,18 +175,16 @@ def register(app):
             ),
             **panel_flags,
         )
-        row = load_flattened_board_company(
-            filters, country_key=country_key, company_name=company_name,
+        page = load_company_open_roles_page(
+            filters,
+            country_key=country_key,
+            company_name=company_name,
+            offset=offset,
+            capacity_fn=apply_capacity_to_board_page,
         )
-        if row is None:
+        if page is None:
             return jsonify({"error": "Company not found"}), 404
-        row = apply_capacity_to_board_page(g.user_id, [row])[0]
-        try:
-            return jsonify(company_role_page_from_row(
-                row, bucket=bucket, offset=offset, limit=limit,
-            ))
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
+        return jsonify(page)
 
     @app.get("/api/board/stats")
     @login_required

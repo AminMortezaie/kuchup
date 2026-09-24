@@ -14,8 +14,8 @@ from relocation_jobs.panel.board import (
     MAX_BOARD_PAGE_SIZE,
     load_catalog_board_page,
 )
-from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, truncate_board_companies
-from relocation_jobs.panel.service import company_role_page_from_row, load_flattened_board_company
+from relocation_jobs.panel.roles_page import truncate_board_companies
+from relocation_jobs.panel.service import load_company_open_roles_page
 from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.remote.countries import list_remote_ats_types, list_remote_countries
 from relocation_jobs.roles.service import mix_unhidden_roles
@@ -122,7 +122,6 @@ def register(app):
                 "total_pages": total_pages,
                 "has_more": has_more,
                 "sort": sort,
-                "roles_page_size": BOARD_ROLES_PAGE_SIZE,
                 **board_scope_meta(opportunity_scope),
             },
             "user_stats": compute_user_board_stats(
@@ -139,10 +138,7 @@ def register(app):
         scope = query_flags()
         country_key = (request.args.get("company_country") or scope["country_key"] or "").strip()
         company_name = (request.args.get("company") or "").strip()
-        bucket = (request.args.get("bucket") or "jobs").strip() or "jobs"
         offset = max(request.args.get("offset", 0, type=int) or 0, 0)
-        limit = request.args.get("limit", BOARD_ROLES_PAGE_SIZE, type=int) or BOARD_ROLES_PAGE_SIZE
-        limit = max(1, min(limit, BOARD_ROLES_PAGE_SIZE))
         if not country_key or not is_remote_country_key(country_key):
             return jsonify({"error": f"Unknown remote board: {country_key}"}), 400
         if not company_name:
@@ -156,17 +152,15 @@ def register(app):
             catalog_kind=CATALOG_KIND_REMOTE,
             **panel_flags,
         )
-        row = load_flattened_board_company(
-            filters, country_key=country_key, company_name=company_name,
+        page = load_company_open_roles_page(
+            filters,
+            country_key=country_key,
+            company_name=company_name,
+            offset=offset,
         )
-        if row is None:
+        if page is None:
             return jsonify({"error": "Company not found"}), 404
-        try:
-            return jsonify(company_role_page_from_row(
-                row, bucket=bucket, offset=offset, limit=limit,
-            ))
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
+        return jsonify(page)
 
     @app.get("/api/remote/board/stats")
     @login_required

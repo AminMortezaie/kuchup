@@ -28,7 +28,6 @@ def test_board_returns_first_three_roles_per_company(v2_auth_client, seeded_cata
     assert acme["job_count"] == 8
     assert len(acme["jobs"]) == BOARD_ROLES_PAGE_SIZE
     assert acme["jobs_more"] == 8 - BOARD_ROLES_PAGE_SIZE
-    assert payload["meta"]["roles_page_size"] == BOARD_ROLES_PAGE_SIZE
 
 
 def test_board_company_roles_loads_next_page(v2_auth_client, seeded_catalog_v2):
@@ -39,12 +38,11 @@ def test_board_company_roles_loads_next_page(v2_auth_client, seeded_catalog_v2):
     first_keys = {(j.get("idempotency_key") or j["url"]) for j in acme["jobs"]}
     page = v2_auth_client.get(
         "/api/board/company-roles"
-        "?company_country=uk&company=Acme%20Backend%20Ltd&bucket=jobs"
-        f"&offset={BOARD_ROLES_PAGE_SIZE}&limit={BOARD_ROLES_PAGE_SIZE}"
+        "?company_country=uk&company=Acme%20Backend%20Ltd"
+        f"&offset={BOARD_ROLES_PAGE_SIZE}"
     )
     assert page.status_code == 200
     body = page.get_json()
-    assert body["bucket"] == "jobs"
     assert len(body["jobs"]) == BOARD_ROLES_PAGE_SIZE
     assert body["jobs_more"] == 8 - 2 * BOARD_ROLES_PAGE_SIZE
     second_keys = {(j.get("idempotency_key") or j["url"]) for j in body["jobs"]}

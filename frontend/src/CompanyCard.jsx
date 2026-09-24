@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from "react";
+import { memo, useState } from "react";
 import { companyWorkspacePath } from "./companyWorkspace";
 import { companyActivityTs, formatActivityBadge } from "./format";
 import { sortJobsForDisplay } from "./sort";
@@ -8,24 +8,6 @@ const ROLE_PREVIEW_LIMIT = 3;
 
 function companyKey(company) {
   return `${company.country}:${company.name}`;
-}
-
-function ExpandRolesBtn({ moreCount, loading, onLoadMore }) {
-  if (moreCount <= 0) return null;
-  const step = Math.min(ROLE_PREVIEW_LIMIT, moreCount);
-  return (
-    <button
-      type="button"
-      className="expand-roles-btn"
-      onClick={onLoadMore}
-      disabled={loading}
-      title={`Show ${step} more role${step === 1 ? "" : "s"}`}
-    >
-      {loading
-        ? "Loading…"
-        : `Show ${step} more role${step === 1 ? "" : "s"}`}
-    </button>
-  );
 }
 
 const CITY_SEP = " · ";
@@ -116,15 +98,7 @@ function emptyMessage(company, ui) {
   return "No jobs yet — click Refresh jobs.";
 }
 
-function rolesMoreCount(company, { showingRejected, showingNotForMe }) {
-  let more = Math.max(0, Number(company.jobs_more) || 0);
-  if (showingRejected) more += Math.max(0, Number(company.rejected_jobs_more) || 0);
-  if (showingNotForMe) more += Math.max(0, Number(company.not_for_me_jobs_more) || 0);
-  return more;
-}
-
 function CompanyCard({ company, ui }) {
-  const cardRef = useRef(null);
   const [citiesExpanded, setCitiesExpanded] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const keyStr = companyKey(company);
@@ -145,11 +119,9 @@ function CompanyCard({ company, ui }) {
     ? company.locations
     : cityLabels.map((city) => ({ city }));
   const notForMeJobs = company.not_for_me_jobs || company.hidden_jobs || [];
-  const notForMeCount = notForMeJobs.length
-    + Math.max(0, Number(company.not_for_me_jobs_more) || 0);
+  const notForMeCount = notForMeJobs.length;
   const rejectedJobs = sortJobsForDisplay(company.rejected_jobs || []);
-  const rejectedCount = rejectedJobs.length
-    + Math.max(0, Number(company.rejected_jobs_more) || 0);
+  const rejectedCount = rejectedJobs.length;
   const showingNotForMe = showNotForMeSet.has(keyStr);
   const showingRejected = showRejectedSet.has(keyStr) || ui.positionRejectedOnly;
   const isFetching = ui.fetchingCompanyKey === keyStr;
@@ -165,7 +137,8 @@ function CompanyCard({ company, ui }) {
     .filter(Boolean)
     .sort()[0];
   const sortedNotForMe = sortJobsForDisplay(notForMeJobs);
-  const moreCount = rolesMoreCount(company, { showingRejected, showingNotForMe });
+  const moreCount = Math.max(0, Number(company.jobs_more) || 0);
+  const moreStep = Math.min(ROLE_PREVIEW_LIMIT, moreCount);
   const workspaceHref = companyWorkspacePath(company.country, company.name);
   const tailoredCount = openJobs.filter(
     (job) => job.has_pdf || job.has_tailored_tex || job.has_cover_letter_pdf || job.has_cover_letter_tex,
@@ -173,43 +146,20 @@ function CompanyCard({ company, ui }) {
 
   const loadMoreRoles = async () => {
     const api = window.relocationJobs;
-    if (!api?.fetchCompanyRoles || !api?.appendCompanyRoles) return;
+    if (!api?.fetchCompanyRoles || !api?.appendCompanyRoles || moreCount <= 0) return;
     setLoadingMore(true);
     try {
-      const buckets = [
-        { key: "jobs", offset: openJobs.length, more: Number(company.jobs_more) || 0 },
-      ];
-      if (showingRejected) {
-        buckets.push({
-          key: "rejected_jobs",
-          offset: rejectedJobs.length,
-          more: Number(company.rejected_jobs_more) || 0,
-        });
-      }
-      if (showingNotForMe) {
-        buckets.push({
-          key: "not_for_me_jobs",
-          offset: sortedNotForMe.length,
-          more: Number(company.not_for_me_jobs_more) || 0,
-        });
-      }
-      for (const bucket of buckets) {
-        if (bucket.more <= 0) continue;
-        const data = await api.fetchCompanyRoles({
-          country: company.country,
-          company: company.name,
-          bucket: bucket.key,
-          offset: bucket.offset,
-          limit: ROLE_PREVIEW_LIMIT,
-        });
-        api.appendCompanyRoles(
-          company.country,
-          company.name,
-          bucket.key,
-          data.jobs || [],
-          data.jobs_more,
-        );
-      }
+      const data = await api.fetchCompanyRoles({
+        country: company.country,
+        company: company.name,
+        offset: openJobs.length,
+      });
+      api.appendCompanyRoles(
+        company.country,
+        company.name,
+        data.jobs || [],
+        data.jobs_more,
+      );
     } catch {
       /* toast already shown by fetchCompanyRoles */
     } finally {
@@ -219,7 +169,6 @@ function CompanyCard({ company, ui }) {
 
   return (
     <article
-      ref={cardRef}
       className={`company-card${companyCls}${isCollapsed ? " collapsed" : ""}`}
       data-country={company.country}
       data-company={company.name}
@@ -425,7 +374,7 @@ function CompanyCard({ company, ui }) {
             <p className="empty-hint text-sm text-muted">{emptyMessage(company, ui)}</p>
           </div>
         ) : null}
-        {!isCollapsed && showingRejected && rejectedJobs.length > 0 ? (
+        {!isCollapsed && showingRejected && rejectedCount > 0 ? (
           <>
             <div className="rejected-jobs-heading">Rejected jobs</div>
             {rejectedJobs.map((job) => (
@@ -438,7 +387,7 @@ function CompanyCard({ company, ui }) {
             ))}
           </>
         ) : null}
-        {!isCollapsed && showingNotForMe && sortedNotForMe.length > 0 ? (
+        {!isCollapsed && showingNotForMe && notForMeCount > 0 ? (
           <>
             <div className="not-for-me-jobs-heading">Not for me jobs</div>
             {sortedNotForMe.map((job) => (
@@ -461,11 +410,17 @@ function CompanyCard({ company, ui }) {
           </div>
         ) : null}
         {!isCollapsed && moreCount > 0 ? (
-          <ExpandRolesBtn
-            moreCount={moreCount}
-            loading={loadingMore}
-            onLoadMore={loadMoreRoles}
-          />
+          <button
+            type="button"
+            className="expand-roles-btn"
+            onClick={loadMoreRoles}
+            disabled={loadingMore}
+            title={`Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+          >
+            {loadingMore
+              ? "Loading…"
+              : `Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+          </button>
         ) : null}
       </div>
     </article>

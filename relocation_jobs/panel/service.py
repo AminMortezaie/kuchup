@@ -19,11 +19,7 @@ from relocation_jobs.users.repo import (
 from relocation_jobs.mcp import repo as mcp_repo
 from relocation_jobs.opportunities.service import opportunity_company_key
 from relocation_jobs.panel.flatten import PanelContext, flatten_company, summarize_company_for_stats
-from relocation_jobs.panel.roles_page import (
-    BOARD_ROLES_PAGE_SIZE,
-    ROLE_BUCKETS,
-    slice_role_bucket,
-)
+from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, slice_open_roles
 from relocation_jobs.panel.tracking import build_tracking_alias_index
 from relocation_jobs.panel.types import FlattenFilters
 from relocation_jobs.shared.board_contract import (
@@ -467,24 +463,24 @@ def load_flattened_board_company(
     )
 
 
-def company_role_page_from_row(
-    row: dict,
+def load_company_open_roles_page(
+    filters: FlattenFilters,
     *,
-    bucket: str,
+    country_key: str,
+    company_name: str,
     offset: int,
-    limit: int = BOARD_ROLES_PAGE_SIZE,
-) -> dict:
-    bucket_key = (bucket or "jobs").strip()
-    if bucket_key not in ROLE_BUCKETS:
-        raise ValueError(f"Unknown role bucket: {bucket}")
-    items = list(row.get(bucket_key) or [])
-    chunk, total, remaining = slice_role_bucket(items, offset=offset, limit=limit)
-    return {
-        "bucket": bucket_key,
-        "jobs": chunk,
-        "offset": max(0, int(offset)),
-        "limit": max(1, int(limit)),
-        "total": total,
-        "has_more": remaining > 0,
-        "jobs_more": remaining,
-    }
+    capacity_fn=None,
+) -> dict | None:
+    row = load_flattened_board_company(
+        filters, country_key=country_key, company_name=company_name,
+    )
+    if row is None:
+        return None
+    if capacity_fn is not None and filters.user_id is not None:
+        row = capacity_fn(filters.user_id, [row])[0]
+    chunk, remaining = slice_open_roles(
+        list(row.get("jobs") or []),
+        offset=offset,
+        limit=BOARD_ROLES_PAGE_SIZE,
+    )
+    return {"jobs": chunk, "jobs_more": remaining}
