@@ -1,5 +1,3 @@
-/** Calculated company rank vs visible Panel order. */
-
 export function companySortKey(company) {
   return `${company.country}:${company.name}`;
 }
@@ -47,10 +45,6 @@ export function buildFrozenOrderMap(companies) {
     map.set(companySortKey(company), index);
   });
   return map;
-}
-
-export function boardLoadOrderAction({ stableOrder = false } = {}) {
-  return stableOrder ? "freeze" : "release";
 }
 
 export function sortCompaniesNewest(companies, {

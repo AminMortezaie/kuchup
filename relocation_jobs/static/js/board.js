@@ -4,7 +4,6 @@ import { state } from "./state.js";
 import { $, beginTopLoadingProgress, finishLoadingProgress, setLoadingProgress } from "./utils.js";
 import { fetchBoard, fetchBoardUserStats } from "./api.js";
 import { freezeCompanyOrder, releaseCompanyOrder } from "./render.js";
-import { boardLoadOrderAction } from "./company-display-order.js";
 import { syncBoardView } from "./board-view.js";
 import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { panelStorageKey } from "./panel-mode.js";
@@ -134,7 +133,7 @@ export async function loadBoard(options = {}) {
     beginTopLoadingProgress(12);
   }
 
-  if (boardLoadOrderAction(options) === "freeze") {
+  if (options.stableOrder) {
     freezeCompanyOrder();
   } else {
     releaseCompanyOrder();

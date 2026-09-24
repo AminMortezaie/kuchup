@@ -107,10 +107,6 @@ function compareCompaniesDefault(a, b) {
   return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
 }
 
-function serverBoardOrderMap() {
-  return buildFrozenOrderMap(state.boardCatalog);
-}
-
 export function sortCompaniesList(companies) {
   const list = [...companies];
   list.sort(compareCompaniesDefault);
@@ -213,7 +209,7 @@ export function getDisplayCompanies() {
   }
   return sortCompaniesNewest(filtered, {
     frozenOrder: state.frozenCompanyOrder,
-    serverOrder: serverBoardOrderMap(),
+    serverOrder: buildFrozenOrderMap(state.boardCatalog),
     isPriority: isFetchingCompany,
   });
 }
