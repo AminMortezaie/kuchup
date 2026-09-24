@@ -149,6 +149,9 @@ async function api(path, options = {}) {
 
 function positionBadges(position) {
   const badges = [];
+  if (String(position.citizenship_required || "").toUpperCase() === "US") {
+    badges.push('<span class="company-position-badge company-position-badge--citizenship">US Citizenship Required</span>');
+  }
   if (position.rejected) {
     const when = position.rejected_date ? ` · ${position.rejected_date}` : "";
     badges.push(`<span class="company-position-badge company-position-badge--rejected">Rejected${when}</span>`);

@@ -13,6 +13,7 @@ from relocation_jobs.core.job_identity import (
 from relocation_jobs.core.location_tags import all_country_labels, country_label, sync_company_location_fields
 
 from relocation_jobs.catalog.cache import invalidate_country_cache
+from relocation_jobs.catalog.citizenship import citizenship_code_for_write
 from relocation_jobs.catalog.serialize import (
     cities_json_from_company,
     job_locations_json,
@@ -256,6 +257,7 @@ def _company_row(row: dict, jobs: list[dict]) -> dict:
         "sources": sources,
         "catalog_kind": kind,
         "owned_by_kuchup": company_owned_by_kuchup(row),
+        "citizenship_required": (row.get("citizenship_required") or "").strip().upper(),
         "matching_jobs": jobs,
     }
 
@@ -1094,8 +1096,8 @@ def _upsert_company_catalog_row(
         INSERT INTO companies (
             country, name, city, cities_json, locations_json, size, careers_url,
             ats_type, ats_url, fetch_problem, fetch_problem_date, fetch_ok, fetch_ok_date,
-            added, updated, sources_json, catalog_kind
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            added, updated, sources_json, catalog_kind, citizenship_required
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (country, name) DO UPDATE SET
             city = EXCLUDED.city,
             cities_json = EXCLUDED.cities_json,
@@ -1131,6 +1133,7 @@ def _upsert_company_catalog_row(
             company.get("updated") or updated,
             _json_column(company.get("sources")),
             kind,
+            citizenship_code_for_write(company),
         ),
     ).fetchone()
     return int(row["id"])
@@ -1312,14 +1315,15 @@ def _upsert_company_row_on_conn(
         json_sources(company),
         kind,
         1 if company_owned_by_kuchup(company) else 0,
+        citizenship_code_for_write(company),
     )
     cur = conn.execute(
         """
         INSERT INTO companies (
             country, name, city, cities_json, locations_json, size, careers_url, ats_type, ats_url,
             fetch_problem, fetch_problem_date, fetch_ok, fetch_ok_date,
-            added, updated, sources_json, catalog_kind, owned_by_kuchup
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            added, updated, sources_json, catalog_kind, owned_by_kuchup, citizenship_required
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (country, name) DO UPDATE SET
             city = EXCLUDED.city,
             cities_json = EXCLUDED.cities_json,
@@ -1633,7 +1637,7 @@ def update_company_fields(country_key: str, company_name: str, **fields) -> None
         "city", "cities_json", "locations_json",
         "fetch_problem", "fetch_problem_date",
         "fetch_ok", "fetch_ok_date",
-        "updated", "size",
+        "updated", "size", "citizenship_required",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:

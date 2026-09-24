@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse
 
+from relocation_jobs.catalog.citizenship import displayed_citizenship
 from relocation_jobs.core.job_identity import (
     job_idempotency_key,
     job_idempotency_key_for_job,
@@ -277,6 +278,7 @@ def tracked_job_dict(
         "fetched": "",
         "last_seen": "",
         "visa_sponsorship": None,
+        "citizenship_required": displayed_citizenship(company),
         "applied": applied,
         "applied_date": _display_status_date(track.get("applied_date", "") if applied else "", hist["applied"]),
         "applied_at": _latest_applied_at(hist, track, applied=applied),
@@ -339,6 +341,7 @@ def job_dict(
         "fetched": job.get("fetched", ""),
         "last_seen": job.get("last_seen", ""),
         "visa_sponsorship": job.get("visa_sponsorship"),
+        "citizenship_required": displayed_citizenship(company),
         **job_location_fields(job),
         "applied": applied,
         "applied_date": _display_status_date(track_applied_date, hist["applied"]),
