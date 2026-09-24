@@ -15,6 +15,10 @@ import requests
 from bs4 import BeautifulSoup
 
 from relocation_jobs.core.slug import slug_from_name
+from relocation_jobs.catalog.citizenship import (
+    citizenship_code_for_write,
+    normalize_citizenship_required,
+)
 from relocation_jobs.catalog.repo import get_company
 from relocation_jobs.catalog.repo import (
     delete_company,
@@ -557,6 +561,13 @@ def update_company_careers(
     if redetect_ats:
         ats_type, ats_url = detect_ats_for_company(canonical_name, careers_url)
         fields.update(ats_type=ats_type, ats_url=ats_url)
+    if not (company.get("citizenship_required") or "").strip():
+        code = citizenship_code_for_write({
+            "careers_url": careers_url,
+            "ats_url": fields.get("ats_url", company.get("ats_url") or ""),
+        })
+        if code:
+            fields["citizenship_required"] = code
 
     update_company_fields(country_key, canonical_name, **fields)
 
@@ -568,6 +579,34 @@ def update_company_careers(
         "ats_type": fields.get("ats_type", company.get("ats_type", "")),
         "ats_url": fields.get("ats_url", company.get("ats_url", "")),
         "redetect_ats": redetect_ats,
+    }
+
+
+def set_company_citizenship(
+    country_key: str,
+    company_name: str,
+    citizenship_required: str,
+) -> dict:
+    company_name = (company_name or "").strip()
+    if not company_name:
+        raise ValueError("Company name is required")
+    if country_key not in supported_countries():
+        raise ValueError(f"Unknown country: {country_key}")
+    code = normalize_citizenship_required(citizenship_required)
+    company = get_company(country_key, company_name)
+    if company is None:
+        raise LookupError(f"Company not found: {company_name}")
+    canonical_name = company["name"]
+    update_company_fields(
+        country_key,
+        canonical_name,
+        citizenship_required=code,
+        updated=today(),
+    )
+    return {
+        "country": country_key,
+        "company": canonical_name,
+        "citizenship_required": code,
     }
 
 

@@ -132,6 +132,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_v1", _team_docs_v1)
     run_migration_once(conn, "team_docs_editors_v1", _team_docs_editors_v1)
     run_migration_once(conn, "team_docs_kuchup_ownership_v1", _seed_kuchup_ownership_doc)
+    run_migration_once(conn, "team_docs_us_citizenship_v1", _seed_us_citizenship_doc)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -140,18 +141,22 @@ _KUCHUP_OWNERSHIP_DOC = (
     / "pages"
     / "kuchup-company-ownership.md"
 )
+_US_CITIZENSHIP_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "job-eligibility-us-citizenship.md"
+)
 
 
-def _seed_kuchup_ownership_doc(conn) -> None:
-    title = "Kuchup company ownership and edit permissions"
-    slug = "kuchup-company-ownership"
+def _seed_team_doc(conn, *, folder: str, slug: str, title: str, path: Path) -> None:
     existing = conn.execute(
         "SELECT id FROM team_docs WHERE folder = %s AND slug = %s",
-        ("tech", slug),
+        (folder, slug),
     ).fetchone()
     if existing:
         return
-    body = _KUCHUP_OWNERSHIP_DOC.read_text(encoding="utf-8").strip() + "\n"
+    body = path.read_text(encoding="utf-8").strip() + "\n"
     now = _utc_now()
     conn.execute(
         """
@@ -160,7 +165,27 @@ def _seed_kuchup_ownership_doc(conn) -> None:
             created_by_user_id, updated_by_user_id
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        ("tech", slug, title, body, now, now, None, None),
+        (folder, slug, title, body, now, now, None, None),
+    )
+
+
+def _seed_kuchup_ownership_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="kuchup-company-ownership",
+        title="Kuchup company ownership and edit permissions",
+        path=_KUCHUP_OWNERSHIP_DOC,
+    )
+
+
+def _seed_us_citizenship_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="job-eligibility-us-citizenship",
+        title="Job eligibility tags: US Citizenship Required",
+        path=_US_CITIZENSHIP_DOC,
     )
 
 

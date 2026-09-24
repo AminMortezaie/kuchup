@@ -514,6 +514,7 @@ def _company_position_from_job(
         has_description=bool(_job_description_fields(job)["has_description"]),
         listing_unavailable=bool(job.get("listing_unavailable")),
         closed_at=state["closed_at"],
+        citizenship_required=state.get("citizenship_required") or "",
     )
 
 
