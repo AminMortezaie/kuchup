@@ -89,10 +89,10 @@ def _extract_greenhouse_eu(url: str) -> str:
     return f"https://boards.eu.greenhouse.io/{slug}"
 
 def _extract_ashby(url: str) -> str:
-    m = re.search(r"api\.ashbyhq\.com/posting-api/job-board/([A-Za-z0-9._-]+)", url, re.I)
+    m = re.search(r"api\.ashbyhq\.com/posting-api/job-board/([a-z0-9._-]+)", url, re.I)
     if m:
         return f"https://jobs.ashbyhq.com/{m.group(1)}"
-    m2 = re.search(r"jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)", url, re.I)
+    m2 = re.search(r"jobs\.ashbyhq\.com/([a-z0-9._-]+)", url, re.I)
     return f"https://jobs.ashbyhq.com/{m2.group(1)}" if m2 else url
 
 def _extract_workable(url: str) -> str:
@@ -618,22 +618,14 @@ def _detect_greenhouse_from_url(careers_url: str) -> tuple[str | None, str | Non
 
 
 def _detect_ashby_from_url(careers_url: str) -> tuple[str | None, str | None]:
-    text = careers_url or ""
-    if "ashbyhq.com" not in text.lower():
-        return None, None
     m = re.search(
-        r"api\.ashbyhq\.com/posting-api/job-board/([A-Za-z0-9._-]+)",
-        text,
+        r"(?:api\.ashbyhq\.com/posting-api/job-board|jobs\.ashbyhq\.com)/([a-z0-9._-]+)",
+        careers_url or "",
         re.I,
     )
-    if not m:
-        m = re.search(r"jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)", text, re.I)
-    if not m:
+    if not m or m.group(1).lower() in ("embed", "jobs", "api", "www"):
         return None, None
-    slug = m.group(1)
-    if slug.lower() in ("embed", "jobs", "api", "www"):
-        return None, None
-    return "ashby", f"https://jobs.ashbyhq.com/{slug}"
+    return "ashby", f"https://jobs.ashbyhq.com/{m.group(1)}"
 
 
 def _detect_kake_from_url(careers_url: str) -> tuple[str | None, str | None]:
