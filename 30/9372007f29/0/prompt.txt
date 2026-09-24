@@ -1,15 +1,4 @@
-rebase then add the changes of new branch to resolve the CONFLICT
-
----
-
-git pull and git push
-
----
-
-i just merged this but i cannot find the button to choose between include and exclude keywords on my panel.
-is this placed on panel or not?
-
----
+<timestamp>Thursday, Sep 24, 2026, 2:54 PM (UTC+4)</timestamp>
 
 [ec2-app] Role propagator logs (last 20 lines):
 2026/09/24 10:53:27 user 1: ERROR: column mj.matches_default_filter does not exist (SQLSTATE 42703)
@@ -31,3 +20,9 @@ is this placed on panel or not?
 2026/09/24 10:53:27 poll received=1 errors=0
 2026/09/24 10:53:28 poll received=1 errors=0
 2026/09/24 10:53:39 poll received=0 errors=0
+
+---
+
+<timestamp>Thursday, Sep 24, 2026, 2:55 PM (UTC+4)</timestamp>
+
+your merge confilct was wrong and did not push the right migration into code.
