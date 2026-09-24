@@ -1,0 +1,7 @@
+<timestamp>Thursday, Sep 24, 2026, 3:38 PM (UTC+4)</timestamp>
+
+final change is make this keyword input like other inputs
+
+---
+
+i've added fullstack but to my hide list but it's again showing the positions of it on my panel.
