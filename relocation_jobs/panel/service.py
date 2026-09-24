@@ -22,6 +22,8 @@ from relocation_jobs.panel.flatten import PanelContext, flatten_company, summari
 from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, slice_open_roles
 from relocation_jobs.panel.tracking import build_tracking_alias_index
 from relocation_jobs.panel.types import FlattenFilters
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_RELOCATION,
     CATALOG_KIND_REMOTE,
@@ -463,6 +465,22 @@ def load_flattened_board_company(
     )
 
 
+def _board_eligible_open_roles(row: dict, filters: FlattenFilters) -> list[dict]:
+    defaults = [
+        job for job in (row.get("jobs") or [])
+        if job_is_default_match(job)
+    ]
+    prepared = dict(row)
+    prepared["jobs"] = defaults
+    prepared["job_count"] = len(defaults)
+    mixed = mix_unhidden_roles(
+        filters.user_id,
+        [prepared],
+        visa_only=bool(filters.visa_only),
+    )
+    return list((mixed[0] if mixed else prepared).get("jobs") or [])
+
+
 def load_company_open_roles_page(
     filters: FlattenFilters,
     *,
@@ -478,8 +496,9 @@ def load_company_open_roles_page(
         return None
     if capacity_fn is not None and filters.user_id is not None:
         row = capacity_fn(filters.user_id, [row])[0]
+    eligible = _board_eligible_open_roles(row, filters)
     chunk, remaining = slice_open_roles(
-        list(row.get("jobs") or []),
+        eligible,
         offset=offset,
         limit=BOARD_ROLES_PAGE_SIZE,
     )
