@@ -198,12 +198,6 @@ _ROLE_FILTER_DOC = (
     / "pages"
     / "role-filter-tags.md"
 )
-_ROLE_FILTER_BACKLOG_DOC = (
-    Path(__file__).resolve().parent.parent
-    / "team_docs"
-    / "pages"
-    / "backlog-role-propagator-tags.md"
-)
 _ROLE_PROPAGATOR_BACKLOG_ITEM = (
     "Role propagator: support per-user role keyword preferences "
     "(assign + cap unhidden roles, optionally fetch JDs for them on demand)"
@@ -217,7 +211,6 @@ def _role_filter_tags_v1(conn) -> None:
             id SERIAL PRIMARY KEY,
             keyword TEXT NOT NULL,
             kind TEXT NOT NULL CHECK (kind IN ('include', 'exclude')),
-            is_default INTEGER NOT NULL DEFAULT 1,
             UNIQUE (kind, keyword)
         )
         """
@@ -249,8 +242,8 @@ def _role_filter_tags_v1(conn) -> None:
         for word in words:
             conn.execute(
                 """
-                INSERT INTO role_filter_tags (keyword, kind, is_default)
-                VALUES (%s, %s, 1)
+                INSERT INTO role_filter_tags (keyword, kind)
+                VALUES (%s, %s)
                 ON CONFLICT (kind, keyword) DO NOTHING
                 """,
                 (word, kind),
@@ -295,21 +288,15 @@ def _seed_role_filter_docs(conn) -> None:
         LIMIT 1
         """
     ).fetchone()
-    if row and _ROLE_PROPAGATOR_BACKLOG_ITEM in (dict(row).get("body") or ""):
+    if not row:
         return
-    if row:
-        body = (dict(row).get("body") or "").rstrip()
-        updated = body + "\n\n- " + _ROLE_PROPAGATOR_BACKLOG_ITEM + "\n"
-        conn.execute(
-            "UPDATE team_docs SET body = %s, updated_at = %s WHERE id = %s",
-            (updated, _utc_now(), dict(row)["id"]),
-        )
+    body = dict(row).get("body") or ""
+    if _ROLE_PROPAGATOR_BACKLOG_ITEM in body:
         return
-    _insert_team_doc(
-        conn,
-        "backlog-role-propagator-per-user-tags",
-        "Backlog: role propagator per-user tags",
-        _ROLE_FILTER_BACKLOG_DOC.read_text(encoding="utf-8").strip() + "\n",
+    updated = body.rstrip() + "\n\n- " + _ROLE_PROPAGATOR_BACKLOG_ITEM + "\n"
+    conn.execute(
+        "UPDATE team_docs SET body = %s, updated_at = %s WHERE id = %s",
+        (updated, _utc_now(), dict(row)["id"]),
     )
 
 

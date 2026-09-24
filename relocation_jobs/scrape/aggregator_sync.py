@@ -4,7 +4,8 @@ from collections import defaultdict
 
 from relocation_jobs.catalog.repo import sync_aggregator_employer_jobs
 from relocation_jobs.fetch.log import log_event
-from relocation_jobs.roles.service import annotate_listings, job_is_default_match
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
 from relocation_jobs.scrape.filter import filter_relevant_jobs
 from relocation_jobs.shared.board_contract import (
     AGGREGATOR_ATS_TYPES,
@@ -60,7 +61,8 @@ def sync_aggregator_board(
 ) -> tuple[int, int]:
     ats = (source_company.get("ats_type") or "").strip().lower()
     source = _SOURCE_LABEL.get(ats, ats or "aggregator")
-    listed = annotate_listings(filter_relevant_jobs(raw_jobs, False))
+    includes, excludes = default_keyword_lists()
+    listed = annotate_listings(filter_relevant_jobs(raw_jobs, False), includes, excludes)
     grouped = group_jobs_by_employer(listed)
     employers = 0
     job_total = 0

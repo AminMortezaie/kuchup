@@ -12,7 +12,8 @@ from relocation_jobs.scrape.aggregator_sync import (
     is_aggregator_ats,
     sync_aggregator_board,
 )
-from relocation_jobs.roles.service import annotate_listings, job_is_default_match
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
 from relocation_jobs.scrape.filter import filter_relevant_jobs
 from relocation_jobs.scrape.merge import merge_matching_jobs, now_iso
 from relocation_jobs.scrape.review import build_review_payload, review_filtered_jobs
@@ -146,7 +147,8 @@ async def _filter_board_listings(
     name = company.get("name") or ""
     raw = await fetch_board(client, company)
     log_event(f"board returned {len(raw)} raw job(s)", company=name)
-    listed = annotate_listings(filter_relevant_jobs(raw, False))
+    includes, excludes = default_keyword_lists()
+    listed = annotate_listings(filter_relevant_jobs(raw, False), includes, excludes)
     matched = _default_jobs(listed)
     log_event(f"relevance filter: {len(raw)} → {len(matched)}", company=name)
     return listed, matched, raw

@@ -1,60 +1,22 @@
 from __future__ import annotations
 
-import json
-
-from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.core.job_identity import job_idempotency_key_for_job
 from relocation_jobs.roles import repo
 from relocation_jobs.users.repo import load_job_tracking
 
-_cached_keywords: tuple[list[str], list[str]] | None = None
-
-
-def clear_keyword_cache() -> None:
-    global _cached_keywords
-    _cached_keywords = None
-
-
-def job_is_default_match(job: dict) -> bool:
-    if "matches_default_filter" not in job:
-        return True
-    raw = job.get("matches_default_filter")
-    if isinstance(raw, bool):
-        return raw
-    if raw is None or raw == "":
-        return True
-    try:
-        return int(raw) != 0
-    except (TypeError, ValueError):
-        return True
-
 
 def default_keyword_lists() -> tuple[list[str], list[str]]:
-    global _cached_keywords
-    if _cached_keywords is not None:
-        return _cached_keywords
-    try:
-        tags = repo.list_role_filter_tags()
-    except Exception:
-        return list(INCLUDE_KEYWORDS), list(EXCLUDE_KEYWORDS)
-    if not tags:
-        return list(INCLUDE_KEYWORDS), list(EXCLUDE_KEYWORDS)
+    tags = repo.list_role_filter_tags()
     includes = [row["keyword"] for row in tags if row["kind"] == "include"]
     excludes = [row["keyword"] for row in tags if row["kind"] == "exclude"]
-    _cached_keywords = (includes, excludes)
-    return _cached_keywords
+    return includes, excludes
 
 
-def title_matches_default(title: str) -> bool:
+def annotate_listings(jobs: list[dict], includes: list[str], excludes: list[str]) -> list[dict]:
     from relocation_jobs.scrape.relevance import is_relevant
 
-    includes, excludes = default_keyword_lists()
-    return is_relevant(title, include=includes, exclude=excludes)
-
-
-def annotate_listings(jobs: list[dict]) -> list[dict]:
     for job in jobs:
-        matched = title_matches_default((job.get("title") or "").strip())
+        matched = is_relevant((job.get("title") or "").strip(), include=includes, exclude=excludes)
         job["matches_default_filter"] = 1 if matched else 0
         if not matched:
             job.pop("description_text", None)
@@ -93,13 +55,14 @@ def list_preferences(user_id: int) -> list[dict]:
     out: list[dict] = []
     for row in repo.list_role_filter_tags():
         tag_id = int(row["id"])
-        out.append({
+        item = {
             "id": tag_id,
             "keyword": row["keyword"],
             "kind": row["kind"],
-            "is_default": bool(int(row.get("is_default") or 0)),
-            "enabled": tag_id not in disabled,
-        })
+        }
+        if row["kind"] == "exclude":
+            item["enabled"] = tag_id not in disabled
+        out.append(item)
     return out
 
 
@@ -107,12 +70,13 @@ def set_tag_enabled(user_id: int, tag_id: int, enabled: bool) -> dict:
     tag = repo.get_role_filter_tag(tag_id)
     if tag is None:
         raise LookupError("Unknown role filter tag")
+    if tag["kind"] != "exclude":
+        raise ValueError("Only hide tags can be turned off")
     if enabled:
         repo.delete_user_tag_pref(user_id, tag_id)
     else:
         repo.upsert_disabled_tag_pref(user_id, tag_id)
-    saved = next(item for item in list_preferences(user_id) if item["id"] == tag_id)
-    return saved
+    return next(item for item in list_preferences(user_id) if item["id"] == tag_id)
 
 
 def _clean_keyword(keyword: str, kind: str) -> tuple[str, str]:
@@ -130,13 +94,10 @@ def add_tag(keyword: str, kind: str) -> dict:
     if repo.find_role_filter_tag(role_kind, text) is not None:
         raise ValueError("tag already exists")
     saved = repo.insert_role_filter_tag(text, role_kind)
-    clear_keyword_cache()
     return {
         "id": int(saved["id"]),
         "keyword": saved["keyword"],
         "kind": saved["kind"],
-        "is_default": True,
-        "enabled": True,
     }
 
 
@@ -148,29 +109,11 @@ def edit_tag(tag_id: int, keyword: str, kind: str) -> dict:
     saved = repo.update_role_filter_tag(tag_id, text, role_kind)
     if saved is None:
         raise LookupError("Unknown role filter tag")
-    clear_keyword_cache()
     return {
         "id": int(saved["id"]),
         "keyword": saved["keyword"],
         "kind": saved["kind"],
-        "is_default": bool(int(saved.get("is_default") or 0)),
     }
-
-
-def _locations_from_row(row: dict) -> dict:
-    job: dict = {}
-    location = (row.get("location") or "").strip()
-    if location:
-        job["location"] = location
-    raw = row.get("locations_json")
-    if raw and raw != "[]":
-        try:
-            locs = json.loads(raw) if isinstance(raw, str) else raw
-        except json.JSONDecodeError:
-            locs = None
-        if isinstance(locs, list) and locs:
-            job["locations"] = locs
-    return job
 
 
 def mix_unhidden_roles(
@@ -243,17 +186,15 @@ def _extra_job_entries(
         title = (row.get("title") or "").strip()
         if not title_unhidden(title, disabled):
             continue
-        job = {
-            "title": title,
-            "url": (row.get("url") or "").strip(),
-            "idempotency_key": (row.get("idempotency_key") or "").strip(),
-            "fetched": row.get("fetched") or "",
-            "last_seen": row.get("last_seen") or "",
-            "visa_sponsorship": None,
-            "closed_at": "",
-            "matches_default_filter": 0,
-            **_locations_from_row(row),
-        }
+        job = dict(row)
+        job.pop("country", None)
+        job.pop("company_name", None)
+        job["title"] = title
+        job["url"] = (job.get("url") or "").strip()
+        job["description_text"] = ""
+        job["visa_sponsorship"] = None
+        job["closed_at"] = ""
+        job["matches_default_filter"] = 0
         if not job["idempotency_key"]:
             job["idempotency_key"] = job_idempotency_key_for_job(job)
         identity = job["idempotency_key"] or job["url"]

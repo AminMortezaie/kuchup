@@ -11,11 +11,8 @@ from relocation_jobs.catalog.repo import (
 )
 from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.core.db import db_read, db_transaction
-from relocation_jobs.roles.service import (
-    clear_keyword_cache,
-    default_keyword_lists,
-    job_is_default_match,
-)
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
 from relocation_jobs.scrape.company import process_company
 from relocation_jobs.scrape.relevance import is_relevant
 from relocation_jobs.users.repo import create_user
@@ -56,7 +53,6 @@ def _board_titles(client) -> list[str]:
 
 
 def test_seeded_tags_match_static_rules(db):
-    clear_keyword_cache()
     includes, excludes = default_keyword_lists()
     assert includes == list(INCLUDE_KEYWORDS)
     assert excludes == list(EXCLUDE_KEYWORDS)
@@ -71,7 +67,18 @@ def test_seeded_tags_match_static_rules(db):
 
 
 def test_nondefault_role_stored_without_description_or_public_page(db, seeded_catalog_v2):
-    _store_engineering_manager()
+    includes, excludes = default_keyword_lists()
+    listed = annotate_listings([{
+        "title": "Engineering Manager",
+        "url": _EM_URL,
+        "location": "London",
+        "description_text": "a long job description that must not be stored",
+        "visa_sponsorship": True,
+    }], includes, excludes)
+    company = get_company("uk", "Acme Backend Ltd")
+    assert company is not None
+    company["matching_jobs"] = list(company.get("matching_jobs") or []) + listed
+    sync_company_board_to_catalog("uk", company)
     company = get_company("uk", "Acme Backend Ltd")
     stored = next(job for job in company["matching_jobs"] if job["url"] == _EM_URL)
     assert job_is_default_match(stored) is False
@@ -148,6 +155,13 @@ def test_default_user_board_hides_nondefault_until_tag_off(client, db, seeded_ca
     assert before_opps >= 1
     assert "Engineering Manager" not in _board_titles(client)
     tags = client.get("/api/role-preferences").get_json()["tags"]
+    include = next(item for item in tags if item["kind"] == "include")
+    assert "enabled" not in include
+    rejected = client.put(
+        f"/api/role-preferences/{include['id']}",
+        json={"enabled": False},
+    )
+    assert rejected.status_code == 400
     tag = next(item for item in tags if item["keyword"] == "engineering manager" and item["kind"] == "exclude")
     assert tag["enabled"] is True
     saved = client.put(
@@ -179,7 +193,6 @@ def test_non_admin_cannot_edit_tags(client, db):
 
 
 def test_admin_can_add_tag(v2_auth_client, db):
-    clear_keyword_cache()
     tag_id = None
     try:
         resp = v2_auth_client.post(
@@ -200,30 +213,104 @@ def test_admin_can_add_tag(v2_auth_client, db):
         if tag_id is not None:
             with db_transaction() as conn:
                 conn.execute("DELETE FROM role_filter_tags WHERE id = %s", (tag_id,))
-        clear_keyword_cache()
+
+
+_BACKLOG_ITEM = (
+    "Role propagator: support per-user role keyword preferences "
+    "(assign + cap unhidden roles, optionally fetch JDs for them on demand)"
+)
+
+
+@pytest.mark.asyncio
+async def test_nondefault_keeps_fetched_then_closes(db, seeded_catalog_v2):
+    backend = {
+        "title": "Backend Engineer",
+        "url": "https://boards.greenhouse.io/acmebackend/jobs/555?gh_jid=555",
+        "location": "London",
+    }
+    software = {
+        "title": "Software Engineer",
+        "url": "https://boards.greenhouse.io/acmebackend/jobs/556?gh_jid=556",
+        "location": "London",
+    }
+    manager = {
+        "title": "Engineering Manager",
+        "url": _EM_URL,
+        "location": "Berlin",
+    }
+
+    async def fetch_all(_client, _company, **kwargs):
+        return [backend, software, manager]
+
+    async def fetch_backend(_client, _company, **kwargs):
+        return [backend]
+
+    async def enrich(_client, jobs, _company, **kwargs):
+        return jobs
+
+    async def scrape(fetch_board) -> None:
+        company = get_company("uk", "Acme Backend Ltd")
+        assert company is not None
+        await process_company(
+            None,
+            company,
+            1,
+            1,
+            fetch_board=fetch_board,
+            enrich_board=enrich,
+            catalog_country="uk",
+            sync_board=lambda: sync_company_board_to_catalog("uk", company),
+        )
+
+    await scrape(fetch_all)
+    first = get_company("uk", "Acme Backend Ltd")
+    stored = next(job for job in first["matching_jobs"] if "777" in job["url"])
+    kept = next(job for job in first["matching_jobs"] if "556" in job["url"])
+    assert job_is_default_match(kept) is True
+    fetched = stored["fetched"]
+    assert fetched
+    await scrape(fetch_all)
+    second = get_company("uk", "Acme Backend Ltd")
+    again = next(job for job in second["matching_jobs"] if "777" in job["url"])
+    assert again["fetched"] == fetched
+    assert not (again.get("closed_at") or "").strip()
+    await scrape(fetch_backend)
+    third = get_company("uk", "Acme Backend Ltd")
+    closed_manager = next(job for job in third["matching_jobs"] if "777" in job["url"])
+    closed_software = next(job for job in third["matching_jobs"] if "556" in job["url"])
+    assert (closed_manager.get("closed_at") or "").strip()
+    assert (closed_software.get("closed_at") or "").strip()
+    assert closed_manager["fetched"] == fetched
 
 
 def test_backlog_doc_mentions_propagator_followup(db):
     from relocation_jobs.core.migrations import _seed_role_filter_docs
 
     with db_transaction() as conn:
-        applied = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE name = %s",
-            ("team_docs_role_filter_v1",),
-        ).fetchone()
-        _seed_role_filter_docs(conn)
-        rows = conn.execute(
+        conn.execute(
             """
-            SELECT title, body FROM team_docs
-            WHERE folder = 'tech'
-              AND (
-                LOWER(title) LIKE '%backlog%'
-                OR LOWER(slug) LIKE '%backlog%'
-                OR body LIKE %s
-              )
+            INSERT INTO team_docs (
+                folder, slug, title, body, created_at, updated_at,
+                created_by_user_id, updated_by_user_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            ("%per-user role keyword preferences%",),
-        ).fetchall()
-    assert applied
-    assert rows
-    assert any("per-user role keyword preferences" in (row["body"] or "") for row in rows)
+            (
+                "tech",
+                "tech-backlog",
+                "Tech backlog",
+                "Existing notes\n",
+                "2026-01-01T00:00:00+00:00",
+                "2026-01-01T00:00:00+00:00",
+                None,
+                None,
+            ),
+        )
+        _seed_role_filter_docs(conn)
+        _seed_role_filter_docs(conn)
+        row = conn.execute(
+            "SELECT body FROM team_docs WHERE folder = %s AND slug = %s",
+            ("tech", "tech-backlog"),
+        ).fetchone()
+    body = row["body"]
+    assert body.count(_BACKLOG_ITEM) == 1
+    assert body.startswith("Existing notes")

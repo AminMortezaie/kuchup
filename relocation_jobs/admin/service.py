@@ -119,7 +119,7 @@ def count_matching_jobs_fetched_today(
         SELECT COUNT(*) AS n
         FROM matching_jobs j
         JOIN companies c ON c.id = j.company_id
-        WHERE COALESCE(j.matches_default_filter, 1) = 1
+        WHERE j.matches_default_filter = 1
           AND {_FETCHED_TODAY_SQL.strip()}
     """
     params: list = [start_utc, end_utc, start_date, end_date]
@@ -182,7 +182,7 @@ def get_recently_fetched_jobs(
                    c.name AS company_name, c.country
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
-            WHERE COALESCE(j.matches_default_filter, 1) = 1
+            WHERE j.matches_default_filter = 1
               AND {_FETCHED_TODAY_SQL.strip()}
             ORDER BY j.fetched DESC
             LIMIT %s

@@ -22,6 +22,7 @@ from relocation_jobs.catalog.serialize import (
     parse_sources,
 )
 from relocation_jobs.core.slug import public_job_slug_base
+from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_REMOTE,
     REMOTE_COUNTRY_KEYS,
@@ -79,43 +80,6 @@ def _closed_at_value(job: dict) -> str:
     return (job.get("closed_at") or "").strip()
 
 
-def _description_for_store(job: dict) -> str:
-    if _matches_default_db(job) == 0:
-        return ""
-    return (job.get("description_text") or "").strip()
-
-
-def _visa_for_store(job: dict):
-    if _matches_default_db(job) == 0:
-        return None
-    return _visa_to_db(job.get("visa_sponsorship"))
-
-
-def _slug_for_store(job: dict):
-    if _matches_default_db(job) == 0:
-        return None
-    return _public_slug_value(job)
-
-
-def _matches_default_db(job: dict) -> int:
-    if "matches_default_filter" not in job:
-        return 1
-    raw = job.get("matches_default_filter")
-    if isinstance(raw, bool):
-        return 1 if raw else 0
-    if raw is None or raw == "":
-        return 1
-    try:
-        return 0 if int(raw) == 0 else 1
-    except (TypeError, ValueError):
-        return 1
-
-
-def _only_default_roles(alias: str = "") -> str:
-    column = f"{alias}.matches_default_filter" if alias else "matches_default_filter"
-    return f"COALESCE({column}, 1) = 1"
-
-
 def _listing_misses_value(job: dict) -> int:
     try:
         return max(0, int(job.get("listing_misses") or 0))
@@ -160,7 +124,7 @@ def _fill_missing_public_slugs(conn, company_id: int) -> None:
         SELECT id, title FROM matching_jobs
         WHERE company_id = %s
           AND (public_slug IS NULL OR public_slug = '')
-          AND COALESCE(matches_default_filter, 1) = 1
+          AND matches_default_filter = 1
         ORDER BY id
         """,
         (company_id,),
@@ -184,7 +148,7 @@ def _job_row(row) -> dict:
         "public_slug": (data.get("public_slug") or "").strip(),
         "closed_at": (data.get("closed_at") or "").strip(),
         "listing_misses": _listing_misses_value(data),
-        "matches_default_filter": _matches_default_db(data),
+        "matches_default_filter": 1 if job_is_default_match(data) else 0,
     }
     location = (data.get("location") or "").strip()
     if location:
@@ -198,6 +162,10 @@ def _job_row(row) -> dict:
         except json.JSONDecodeError:
             pass
     return job
+
+
+def job_from_row(row) -> dict:
+    return _job_row(row)
 
 
 def _job_stats_row(row) -> dict:
@@ -323,7 +291,7 @@ def _load_country_from_db(country_key: str) -> dict | None:
                 """
                 SELECT * FROM matching_jobs
                 WHERE company_id = ANY(%s)
-                  AND COALESCE(matches_default_filter, 1) = 1
+                  AND matches_default_filter = 1
                 ORDER BY company_id, fetched DESC, title
                 """,
                 (ids,),
@@ -389,7 +357,7 @@ def load_catalog_for_countries(
                 SELECT {job_columns_sql}
                 FROM matching_jobs j
                 WHERE j.company_id = ANY(%s)
-                  AND {_only_default_roles("j")}
+                  AND j.matches_default_filter = 1
                 ORDER BY j.company_id, j.fetched DESC, j.title
                 """,
                 (ids,),
@@ -475,7 +443,7 @@ def _catalog_company_filters(
                 OR EXISTS (
                     SELECT 1 FROM matching_jobs mj
                     WHERE mj.company_id = c.id
-                      AND COALESCE(mj.matches_default_filter, 1) = 1
+                      AND mj.matches_default_filter = 1
                       AND LOWER(mj.title) LIKE %s
                 )
             )"""
@@ -590,7 +558,7 @@ def load_catalog_companies_page(
             SELECT {_JOB_LIST_COLUMNS}
             FROM matching_jobs
             WHERE company_id IN ({id_placeholders})
-              AND {_only_default_roles()}
+              AND matches_default_filter = 1
             ORDER BY company_id, fetched DESC, title
             """,
             tuple(ids),
@@ -632,7 +600,7 @@ def list_sponsored_catalog_jobs(
             WHERE {country_sql}
               AND j.visa_sponsorship = 1
               AND (j.closed_at IS NULL OR j.closed_at = '')
-              AND {_only_default_roles("j")}
+              AND j.matches_default_filter = 1
               {search_sql}
             ORDER BY COALESCE(NULLIF(j.last_seen, ''), j.fetched) DESC,
                      c.name, j.title
@@ -669,7 +637,7 @@ def list_sponsored_catalog_companies(
             WHERE {country_sql}
               AND j.visa_sponsorship = 1
               AND (j.closed_at IS NULL OR j.closed_at = '')
-              AND {_only_default_roles("j")}
+              AND j.matches_default_filter = 1
               {search_sql}
             GROUP BY c.id, c.name, c.country, c.city, c.careers_url
             ORDER BY last_seen DESC, c.name
@@ -688,7 +656,7 @@ def list_country_company_stubs(country_key: str) -> list[dict]:
                    EXISTS (
                        SELECT 1 FROM matching_jobs mj
                        WHERE mj.company_id = c.id
-                         AND COALESCE(mj.matches_default_filter, 1) = 1
+                         AND mj.matches_default_filter = 1
                    ) AS has_jobs
             FROM companies c
             WHERE c.country = %s
@@ -723,7 +691,7 @@ def list_companies_for_opportunity_match(country_keys: list[str]) -> list[dict]:
                 COUNT(mj.id) AS open_job_count
             FROM companies c
             LEFT JOIN matching_jobs mj ON mj.company_id = c.id
-              AND {_only_default_roles("mj")}
+              AND mj.matches_default_filter = 1
             WHERE c.country IN ({placeholders})
             GROUP BY c.id, c.country, c.name, c.updated
             ORDER BY newest_fetched DESC, c.name ASC
@@ -763,7 +731,7 @@ def list_jobs_for_company_keys(
             SELECT c.country, c.name AS company_name, mj.*
             FROM companies c
             JOIN matching_jobs mj ON mj.company_id = c.id
-              AND {_only_default_roles("mj")}
+              AND mj.matches_default_filter = 1
             WHERE {clauses}
             ORDER BY c.country, c.name, mj.fetched DESC, mj.title ASC
             """,
@@ -909,7 +877,7 @@ def _public_relocation_job_clause() -> tuple[str, tuple]:
               AND LOWER(TRIM(COALESCE(c.catalog_kind, ''))) != %s
               AND c.country NOT IN ({placeholders})
               AND LOWER(COALESCE(j.location, '')) NOT LIKE %s
-              AND COALESCE(j.matches_default_filter, 1) = 1
+              AND j.matches_default_filter = 1
     """
     return sql, (CATALOG_KIND_REMOTE, *remote_keys, "%remote%")
 
@@ -970,7 +938,7 @@ def list_open_jobs_for_listing_check(limit: int) -> list[dict]:
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
             WHERE (j.closed_at IS NULL OR j.closed_at = '')
-              AND COALESCE(j.matches_default_filter, 1) = 1
+              AND j.matches_default_filter = 1
               AND j.url IS NOT NULL
               AND j.url != ''
             ORDER BY
@@ -1213,10 +1181,7 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                 url = EXCLUDED.url,
                 fetched = EXCLUDED.fetched,
                 last_seen = EXCLUDED.last_seen,
-                visa_sponsorship = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
-                    ELSE EXCLUDED.visa_sponsorship
-                END,
+                visa_sponsorship = EXCLUDED.visa_sponsorship,
                 location = COALESCE(NULLIF(EXCLUDED.location, ''), matching_jobs.location),
                 locations_json = CASE
                     WHEN EXCLUDED.locations_json IS NOT NULL
@@ -1225,7 +1190,6 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                     ELSE matching_jobs.locations_json
                 END,
                 description_text = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN ''
                     WHEN EXCLUDED.description_text IS NOT NULL
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
@@ -1235,7 +1199,6 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
                     WHEN matching_jobs.public_slug IS NOT NULL
                          AND matching_jobs.public_slug != ''
                     THEN matching_jobs.public_slug
@@ -1249,14 +1212,14 @@ def _replace_company_job_rows(conn, company_id: int, full_board: list[dict]) -> 
                 job.get("url") or "",
                 job.get("fetched") or "",
                 job.get("last_seen") or job.get("fetched") or "",
-                _visa_for_store(job),
+                _visa_to_db(job.get("visa_sponsorship")),
                 (job.get("location") or "").strip(),
                 _job_locations_column(job),
-                _description_for_store(job),
-                _slug_for_store(job),
+                (job.get("description_text") or "").strip(),
+                _public_slug_value(job),
                 _closed_at_value(job),
                 _listing_misses_value(job),
-                _matches_default_db(job),
+                1 if job_is_default_match(job) else 0,
             ),
         )
     if board_keys:
@@ -1426,14 +1389,14 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
             job.get("url") or "",
             job.get("fetched") or "",
             job.get("last_seen") or job.get("fetched") or "",
-            _visa_for_store(job),
+            _visa_to_db(job.get("visa_sponsorship")),
             (job.get("location") or "").strip(),
             job_locations_json(job),
-            _description_for_store(job),
-            _slug_for_store(job),
+            (job.get("description_text") or "").strip(),
+            _public_slug_value(job),
             _closed_at_value(job),
             _listing_misses_value(job),
-            _matches_default_db(job),
+            1 if job_is_default_match(job) else 0,
         ))
 
     for row in job_rows:
@@ -1449,10 +1412,7 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
                 url = EXCLUDED.url,
                 fetched = EXCLUDED.fetched,
                 last_seen = EXCLUDED.last_seen,
-                visa_sponsorship = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
-                    ELSE EXCLUDED.visa_sponsorship
-                END,
+                visa_sponsorship = EXCLUDED.visa_sponsorship,
                 location = COALESCE(NULLIF(EXCLUDED.location, ''), matching_jobs.location),
                 locations_json = CASE
                     WHEN EXCLUDED.locations_json IS NOT NULL
@@ -1461,7 +1421,6 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
                     ELSE matching_jobs.locations_json
                 END,
                 description_text = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN ''
                     WHEN EXCLUDED.description_text IS NOT NULL
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
@@ -1471,7 +1430,6 @@ def _merge_matching_jobs_on_conn(conn, company_id: int, jobs: list[dict]) -> Non
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
                     WHEN matching_jobs.public_slug IS NOT NULL
                          AND matching_jobs.public_slug != ''
                     THEN matching_jobs.public_slug
@@ -1545,10 +1503,7 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                 title = EXCLUDED.title,
                 url = EXCLUDED.url,
                 last_seen = EXCLUDED.last_seen,
-                visa_sponsorship = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
-                    ELSE EXCLUDED.visa_sponsorship
-                END,
+                visa_sponsorship = EXCLUDED.visa_sponsorship,
                 location = COALESCE(NULLIF(EXCLUDED.location, ''), matching_jobs.location),
                 locations_json = CASE
                     WHEN EXCLUDED.locations_json IS NOT NULL
@@ -1557,7 +1512,6 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                     ELSE matching_jobs.locations_json
                 END,
                 description_text = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN ''
                     WHEN EXCLUDED.description_text IS NOT NULL
                          AND EXCLUDED.description_text != ''
                     THEN EXCLUDED.description_text
@@ -1567,7 +1521,6 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                 closed_at = EXCLUDED.closed_at,
                 listing_misses = EXCLUDED.listing_misses,
                 public_slug = CASE
-                    WHEN EXCLUDED.matches_default_filter = 0 THEN NULL
                     WHEN matching_jobs.public_slug IS NOT NULL
                          AND matching_jobs.public_slug != ''
                     THEN matching_jobs.public_slug
@@ -1581,14 +1534,14 @@ def _upsert_jobs_additive_on_conn(conn, company_id: int, jobs: list[dict]) -> in
                 job.get("url") or "",
                 job.get("fetched") or _today_iso(),
                 job.get("last_seen") or job.get("fetched") or _today_iso(),
-                _visa_for_store(job),
+                _visa_to_db(job.get("visa_sponsorship")),
                 (job.get("location") or "").strip(),
                 job_locations_json(job),
-                _description_for_store(job),
-                _slug_for_store(job),
+                (job.get("description_text") or "").strip(),
+                _public_slug_value(job),
                 _closed_at_value(job),
                 _listing_misses_value(job),
-                _matches_default_db(job),
+                1 if job_is_default_match(job) else 0,
             ),
         )
         touched += 1
@@ -1833,7 +1786,7 @@ def _query_job_counts_by_country(conn) -> list[dict]:
                         THEN 1 ELSE 0 END) AS visa_jobs
         FROM companies c
         LEFT JOIN matching_jobs j ON j.company_id = c.id
-          AND COALESCE(j.matches_default_filter, 1) = 1
+          AND j.matches_default_filter = 1
         GROUP BY c.country
         """
     ).fetchall()
@@ -1847,7 +1800,7 @@ def _query_empty_company_count(conn) -> int:
             SELECT c.id
             FROM companies c
             LEFT JOIN matching_jobs j ON j.company_id = c.id
-              AND COALESCE(j.matches_default_filter, 1) = 1
+              AND j.matches_default_filter = 1
             GROUP BY c.id
             HAVING COUNT(j.id) = 0
         ) AS empty_companies_sub
@@ -1889,7 +1842,7 @@ def _query_latest_job_fetches_by_country(conn) -> dict[str, str]:
             MAX(COALESCE(NULLIF(j.last_seen, ''), NULLIF(j.fetched, ''))) AS latest_job_fetch
         FROM companies c
         LEFT JOIN matching_jobs j ON j.company_id = c.id
-          AND COALESCE(j.matches_default_filter, 1) = 1
+          AND j.matches_default_filter = 1
         GROUP BY c.country
         """
     ).fetchall()

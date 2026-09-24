@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from relocation_jobs.catalog.repo import job_from_row
 from relocation_jobs.core.db import db_read, db_transaction
 
 
@@ -7,7 +8,7 @@ def list_role_filter_tags() -> list[dict]:
     with db_read() as conn:
         rows = conn.execute(
             """
-            SELECT id, keyword, kind, is_default
+            SELECT id, keyword, kind
             FROM role_filter_tags
             ORDER BY kind, id
             """
@@ -19,7 +20,7 @@ def find_role_filter_tag(kind: str, keyword: str) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, keyword, kind, is_default
+            SELECT id, keyword, kind
             FROM role_filter_tags
             WHERE kind = %s AND keyword = %s
             """,
@@ -32,7 +33,7 @@ def get_role_filter_tag(tag_id: int) -> dict | None:
     with db_read() as conn:
         row = conn.execute(
             """
-            SELECT id, keyword, kind, is_default
+            SELECT id, keyword, kind
             FROM role_filter_tags
             WHERE id = %s
             """,
@@ -45,9 +46,9 @@ def insert_role_filter_tag(keyword: str, kind: str) -> dict:
     with db_transaction() as conn:
         row = conn.execute(
             """
-            INSERT INTO role_filter_tags (keyword, kind, is_default)
-            VALUES (%s, %s, 1)
-            RETURNING id, keyword, kind, is_default
+            INSERT INTO role_filter_tags (keyword, kind)
+            VALUES (%s, %s)
+            RETURNING id, keyword, kind
             """,
             (keyword, kind),
         ).fetchone()
@@ -61,7 +62,7 @@ def update_role_filter_tag(tag_id: int, keyword: str, kind: str) -> dict | None:
             UPDATE role_filter_tags
             SET keyword = %s, kind = %s
             WHERE id = %s
-            RETURNING id, keyword, kind, is_default
+            RETURNING id, keyword, kind
             """,
             (keyword, kind, tag_id),
         ).fetchone()
@@ -119,16 +120,21 @@ def list_open_nondefault_jobs(company_keys: list[tuple[str, str]]) -> list[dict]
     with db_read() as conn:
         rows = conn.execute(
             f"""
-            SELECT c.country, c.name AS company_name,
-                   j.title, j.url, j.idempotency_key, j.fetched, j.last_seen,
-                   j.location, j.locations_json, j.closed_at
+            SELECT c.country, c.name AS company_name, j.*
             FROM companies c
             JOIN matching_jobs j ON j.company_id = c.id
             WHERE ({clauses})
-              AND COALESCE(j.matches_default_filter, 1) = 0
+              AND j.matches_default_filter = 0
               AND (j.closed_at IS NULL OR j.closed_at = '')
             ORDER BY c.country, c.name, j.title
             """,
             params,
         ).fetchall()
-    return [dict(row) for row in rows]
+    jobs: list[dict] = []
+    for row in rows:
+        data = dict(row)
+        job = job_from_row(data)
+        job["country"] = data.get("country") or ""
+        job["company_name"] = data.get("company_name") or ""
+        jobs.append(job)
+    return jobs

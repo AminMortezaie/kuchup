@@ -156,7 +156,7 @@ func (s *Store) ListCandidates(ctx context.Context, countries []string) ([]Candi
 		       COUNT(mj.id) AS open_job_count
 		FROM companies c
 		LEFT JOIN matching_jobs mj ON mj.company_id = c.id
-			AND COALESCE(mj.matches_default_filter, 1) = 1
+			AND mj.matches_default_filter = 1
 		WHERE c.country = ANY($1)
 		GROUP BY c.id, c.country, c.name, c.updated
 		ORDER BY newest_fetched DESC, c.name ASC
@@ -247,7 +247,7 @@ func (s *Store) ListJobs(ctx context.Context, country, company string) ([]Job, e
 		SELECT COALESCE(mj.idempotency_key, ''), COALESCE(mj.url, ''), COALESCE(mj.title, '')
 		FROM companies c
 		JOIN matching_jobs mj ON mj.company_id = c.id
-			AND COALESCE(mj.matches_default_filter, 1) = 1
+			AND mj.matches_default_filter = 1
 		WHERE c.country = $1 AND lower(c.name) = lower($2)
 		ORDER BY mj.fetched DESC, mj.title ASC
 	`, strings.ToLower(strings.TrimSpace(country)), strings.TrimSpace(company))

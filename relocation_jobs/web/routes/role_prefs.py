@@ -22,6 +22,8 @@ def register(app):
             tag = role_service.set_tag_enabled(g.user_id, tag_id, bool(body.get("enabled")))
         except LookupError as exc:
             return jsonify({"error": str(exc)}), 404
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
         return jsonify({"tag": tag})
 
     @app.post("/api/admin/role-filter-tags")
