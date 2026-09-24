@@ -1,0 +1,7 @@
+apply the 3 jobs bucket for desktop version also, we have this feature on our mobile version.
+also change the mechanic to not load all the jobs for a company at first step and load more just add other 3 positions of company and then if user wants to see more again load 3 more.
+
+it makes the load on db lower and make the loading of board more faster and helps to reduce the db hit for each users.
+
+the mobile version should  follow this mechanism.
+then create a pr request for it.

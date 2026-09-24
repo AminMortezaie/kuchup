@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "564820b76121",
+  "session_id": "8c1ffa7a-af19-497e-a370-713316dc1bb2",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-24T12:11:49.839235Z",
+  "branch": "board/roles-page-three",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/reference/board.md",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/panel/roles_page.py",
+    "relocation_jobs/panel/service.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/static/js/main.js",
+    "relocation_jobs/web/routes/board.py",
+    "relocation_jobs/web/routes/remote.py",
+    "tests/helpers/route_manifest.py",
+    "tests/web/test_board_roles_page.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "10bb6a0f97cb",
+  "compact_transcript_start": 0,
+  "initial_attribution": {
+    "calculated_at": "2026-09-24T12:11:49.836019Z",
+    "agent_lines": 387,
+    "agent_removed": 96,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 387,
+    "total_lines_changed": 483,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
