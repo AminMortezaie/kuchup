@@ -198,10 +198,6 @@ _ROLE_FILTER_DOC = (
     / "pages"
     / "role-filter-tags.md"
 )
-_ROLE_PROPAGATOR_BACKLOG_ITEM = (
-    "Role propagator: support per-user role keyword preferences "
-    "(assign + cap unhidden roles, optionally fetch JDs for them on demand)"
-)
 
 
 def _role_filter_tags_v1(conn) -> None:
@@ -249,53 +245,13 @@ def _role_filter_tags_v1(conn) -> None:
             )
 
 
-def _insert_team_doc(conn, slug: str, title: str, body: str) -> None:
-    existing = conn.execute(
-        "SELECT id FROM team_docs WHERE folder = %s AND slug = %s",
-        ("tech", slug),
-    ).fetchone()
-    if existing:
-        return
-    now = _utc_now()
-    conn.execute(
-        """
-        INSERT INTO team_docs (
-            folder, slug, title, body, created_at, updated_at,
-            created_by_user_id, updated_by_user_id
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """,
-        ("tech", slug, title, body, now, now, None, None),
-    )
-
-
 def _seed_role_filter_docs(conn) -> None:
-    _insert_team_doc(
+    _seed_team_doc(
         conn,
-        "role-filter-tags",
-        "Role filter tags",
-        _ROLE_FILTER_DOC.read_text(encoding="utf-8").strip() + "\n",
-    )
-    row = conn.execute(
-        """
-        SELECT id, body FROM team_docs
-        WHERE folder = 'tech'
-          AND (
-            LOWER(title) LIKE '%backlog%'
-            OR LOWER(slug) LIKE '%backlog%'
-          )
-        ORDER BY id
-        LIMIT 1
-        """
-    ).fetchone()
-    if not row:
-        return
-    body = dict(row).get("body") or ""
-    if _ROLE_PROPAGATOR_BACKLOG_ITEM in body:
-        return
-    updated = body.rstrip() + "\n\n- " + _ROLE_PROPAGATOR_BACKLOG_ITEM + "\n"
-    conn.execute(
-        "UPDATE team_docs SET body = %s, updated_at = %s WHERE id = %s",
-        (updated, _utc_now(), dict(row)["id"]),
+        folder="tech",
+        slug="role-filter-tags",
+        title="Role filter tags",
+        path=_ROLE_FILTER_DOC,
     )
 
 
