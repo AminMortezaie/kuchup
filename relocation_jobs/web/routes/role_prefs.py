@@ -10,7 +10,7 @@ def register(app):
     @app.get("/api/role-preferences")
     @login_required
     def api_role_preferences():
-        return jsonify({"tags": role_service.list_preferences(g.user_id)})
+        return jsonify(role_service.list_preferences(g.user_id))
 
     @app.put("/api/role-preferences/<int:tag_id>")
     @login_required
@@ -25,6 +25,34 @@ def register(app):
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify({"tag": tag})
+
+    @app.post("/api/role-preferences/mine")
+    @login_required
+    def api_add_my_role_tag():
+        body = request.get_json(silent=True) or {}
+        try:
+            tag = role_service.add_user_tag(
+                g.user_id,
+                body.get("keyword") or "",
+                body.get("kind") or "",
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify({"tag": tag}), 201
+
+    @app.delete("/api/role-preferences/mine/<int:tag_id>")
+    @login_required
+    def api_delete_my_role_tag(tag_id: int):
+        try:
+            role_service.delete_user_tag(g.user_id, tag_id)
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
+        return jsonify({"ok": True})
+
+    @app.get("/api/admin/role-filter-tags")
+    @admin_required
+    def api_admin_list_role_filter_tags():
+        return jsonify({"tags": role_service.list_global_tags()})
 
     @app.post("/api/admin/role-filter-tags")
     @admin_required
@@ -51,3 +79,12 @@ def register(app):
         except LookupError as exc:
             return jsonify({"error": str(exc)}), 404
         return jsonify({"tag": tag})
+
+    @app.delete("/api/admin/role-filter-tags/<int:tag_id>")
+    @admin_required
+    def api_admin_delete_role_filter_tag(tag_id: int):
+        try:
+            role_service.delete_tag(tag_id)
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
+        return jsonify({"ok": True})

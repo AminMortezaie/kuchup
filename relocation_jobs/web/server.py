@@ -230,6 +230,14 @@ def apply_page():
     return resp
 
 
+@app.route("/job-preferences")
+def job_preferences_page():
+    resp = send_from_directory(STATIC, "job-preferences.html")
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return resp
+
+
 @app.route("/app")
 def app_page():
     return redirect("/panel", code=301)

@@ -1,90 +1,87 @@
 import { apiFetch } from "./api.js";
-import { state } from "./state.js";
+import { initAppShell } from "./app-shell.js";
+import { setOnUnauthorized } from "./state.js";
 import { $, escapeAttr, escapeHtml, toast } from "./utils.js";
 
 let tags = [];
+let mine = [];
 
-function closeRolePrefs() {
-  const dialog = $("jobPrefsDialog");
-  if (!dialog) return;
-  dialog.classList.remove("open");
-  dialog.setAttribute("aria-hidden", "true");
-  if (location.hash === "#job-preferences") {
-    history.replaceState(null, "", location.pathname + location.search);
+function chipLabel(keyword) {
+  // Keep trailing boundary chars visible (java␠ / java, / java/ / java-).
+  return String(keyword || "").replace(/ $/u, "·");
+}
+
+function chipHtml(tag, { removable = false } = {}) {
+  const on = tag.enabled !== false;
+  const label = chipLabel(tag.keyword);
+  const remove = removable
+    ? `<button type="button" class="role-prefs-chip-remove" data-tag-remove="${tag.id}" aria-label="${escapeAttr("Remove " + tag.keyword)}">×</button>`
+    : "";
+  if (removable) {
+    return `<span class="role-prefs-chip is-on" data-kind="${escapeAttr(tag.kind)}" title="${escapeAttr(tag.keyword)}">${escapeHtml(label)}${remove}</span>`;
   }
+  return `<button type="button" class="role-prefs-chip ${on ? "is-on" : "is-off"}" data-tag-toggle="${tag.id}" aria-pressed="${on ? "true" : "false"}" data-kind="${escapeAttr(tag.kind)}" title="${escapeAttr(tag.keyword)}">${escapeHtml(label)}</button>`;
+}
+
+function section(label, rows, { removable = false } = {}) {
+  if (!rows.length) {
+    return `<p class="role-prefs-group">${escapeHtml(label)}</p><p class="role-prefs-empty">None yet</p>`;
+  }
+  const body = `<div class="role-prefs-chips">${rows.map((tag) => chipHtml(tag, { removable })).join("")}</div>`;
+  return `<p class="role-prefs-group">${escapeHtml(label)}</p>${body}`;
 }
 
 function renderTags() {
   const list = $("jobPrefsList");
   const status = $("jobPrefsStatus");
   if (!list || !status) return;
-  const admin = Boolean(state.authState?.user?.is_admin);
   const excludes = tags.filter((tag) => tag.kind === "exclude");
   const includes = tags.filter((tag) => tag.kind === "include");
+  const myExcludes = mine.filter((tag) => tag.kind === "exclude");
+  const myIncludes = mine.filter((tag) => tag.kind === "include");
   status.hidden = true;
   list.innerHTML = [
-    section("Hide titles containing", excludes, admin, true),
-    section("Match titles containing", includes, admin, false),
+    section("Match titles containing", includes),
+    section("Hide titles containing", excludes),
+    section("My match tags", myIncludes, { removable: true }),
+    section("My hide tags", myExcludes, { removable: true }),
   ].join("");
-  list.querySelectorAll("[data-tag-toggle]").forEach((input) => {
-    input.addEventListener("change", () => saveToggle(input));
+  list.querySelectorAll("[data-tag-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => void saveToggle(btn));
   });
-  if (admin) {
-    list.querySelectorAll("[data-tag-edit]").forEach((input) => {
-      input.addEventListener("change", () => saveEdit(input));
+  list.querySelectorAll("[data-tag-remove]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      void removeMine(btn.getAttribute("data-tag-remove"));
     });
-  }
+  });
 }
 
-function section(label, rows, admin, togglable) {
-  const body = rows.map((tag) => rowHtml(tag, admin, togglable)).join("");
-  return `<p class="role-prefs-group">${escapeHtml(label)}</p>${body}`;
-}
-
-function rowHtml(tag, admin, togglable) {
-  const keyword = admin
-    ? `<input class="role-prefs-keyword" data-tag-edit="${tag.id}" data-kind="${escapeAttr(tag.kind)}" value="${escapeAttr(tag.keyword)}" />`
-    : `<span class="role-prefs-keyword">${escapeHtml(tag.keyword)}</span>`;
-  const toggle = togglable
-    ? `<input type="checkbox" data-tag-toggle="${tag.id}" ${tag.enabled ? "checked" : ""} aria-label="${escapeAttr("Hide " + tag.keyword)}" />`
-    : "";
-  return `<div class="role-prefs-row">${keyword}${toggle}</div>`;
-}
-
-async function saveToggle(input) {
-  const tagId = input.getAttribute("data-tag-toggle");
-  const enabled = input.checked;
+async function saveToggle(btn) {
+  const tagId = btn.getAttribute("data-tag-toggle");
+  const enabled = btn.getAttribute("aria-pressed") !== "true";
   const res = await apiFetch(`/api/role-preferences/${tagId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ enabled }),
   });
   if (!res.ok) {
-    input.checked = !enabled;
     toast("Could not save that preference");
     return;
   }
   const tag = tags.find((item) => String(item.id) === String(tagId));
   if (tag) tag.enabled = enabled;
-  const { loadJobs } = await import("./data.js");
-  await loadJobs({ noOverlay: true });
+  renderTags();
 }
 
-async function saveEdit(input) {
-  const tagId = input.getAttribute("data-tag-edit");
-  const kind = input.getAttribute("data-kind");
-  const keyword = input.value;
-  const res = await apiFetch(`/api/admin/role-filter-tags/${tagId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ keyword, kind }),
-  });
+async function removeMine(tagId) {
+  const res = await apiFetch(`/api/role-preferences/mine/${tagId}`, { method: "DELETE" });
   if (!res.ok) {
-    toast("Could not update that tag");
-    await loadRolePrefs();
+    toast("Could not remove that tag");
     return;
   }
-  toast("Tag saved. The next scrape uses it.");
+  mine = mine.filter((item) => String(item.id) !== String(tagId));
+  renderTags();
 }
 
 async function loadRolePrefs() {
@@ -93,56 +90,69 @@ async function loadRolePrefs() {
     status.hidden = false;
     status.textContent = "Loading tags…";
   }
-  const res = await apiFetch("/api/role-preferences");
+  let res;
+  try {
+    res = await apiFetch("/api/role-preferences");
+  } catch {
+    showLogin();
+    return;
+  }
   if (!res.ok) {
     if (status) status.textContent = "Could not load tags.";
     return;
   }
+  showApp();
   const data = await res.json();
   tags = data.tags || [];
-  const adminForm = $("jobPrefsAdmin");
-  if (adminForm) adminForm.hidden = !state.authState?.user?.is_admin;
+  mine = data.mine || [];
   renderTags();
 }
 
-export async function openRolePrefs() {
-  const dialog = $("jobPrefsDialog");
-  if (!dialog) {
-    location.href = "/panel#job-preferences";
-    return;
+function showLogin() {
+  const content = $("jobPrefsContent");
+  if (content) content.hidden = true;
+  const panel = $("jobPrefsLoginPanel");
+  if (panel) panel.hidden = false;
+  const err = $("jobPrefsLoginError");
+  if (err) {
+    const params = new URLSearchParams(window.location.search);
+    err.textContent = params.get("error") || "";
   }
-  dialog.classList.add("open");
-  dialog.setAttribute("aria-hidden", "false");
-  await loadRolePrefs();
 }
 
-export function bindRolePrefs() {
-  $("jobPrefsBtn")?.addEventListener("click", () => {
-    void openRolePrefs();
-  });
-  $("jobPrefsClose")?.addEventListener("click", closeRolePrefs);
-  $("jobPrefsDialog")?.addEventListener("click", (event) => {
-    if (event.target === $("jobPrefsDialog")) closeRolePrefs();
-  });
-  $("jobPrefsAdmin")?.addEventListener("submit", async (event) => {
+function showApp() {
+  const panel = $("jobPrefsLoginPanel");
+  if (panel) panel.hidden = true;
+  const content = $("jobPrefsContent");
+  if (content) content.hidden = false;
+}
+
+function bindForm() {
+  $("jobPrefsMine")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const keyword = $("jobPrefsKeyword").value;
     const kind = $("jobPrefsKind").value;
-    const res = await apiFetch("/api/admin/role-filter-tags", {
+    const res = await apiFetch("/api/role-preferences/mine", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keyword, kind }),
     });
     if (!res.ok) {
-      toast("Could not add that tag");
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || "Could not add that tag");
       return;
     }
     $("jobPrefsKeyword").value = "";
-    toast("Tag added. The next scrape uses it.");
+    toast("Added to your board filters");
     await loadRolePrefs();
   });
 }
 
-export function openRolePrefsFromHash() {
-  if (location.hash === "#job-preferences") void openRolePrefs();
+async function init() {
+  setOnUnauthorized(showLogin);
+  initAppShell();
+  bindForm();
+  await loadRolePrefs();
 }
+
+init();

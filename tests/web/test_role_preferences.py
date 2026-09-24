@@ -9,7 +9,6 @@ from relocation_jobs.catalog.repo import (
     list_jobs_for_company_keys,
     sync_company_board_to_catalog,
 )
-from relocation_jobs.core.ats_constants import EXCLUDE_KEYWORDS, INCLUDE_KEYWORDS
 from relocation_jobs.core.db import db_read, db_transaction
 from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
@@ -52,22 +51,18 @@ def _board_titles(client) -> list[str]:
     ]
 
 
-def test_seeded_tags_match_static_rules(db):
+def test_seeded_tags_drive_title_matching(db):
     includes, excludes = default_keyword_lists()
-    assert includes == list(INCLUDE_KEYWORDS)
-    assert excludes == list(EXCLUDE_KEYWORDS)
-    for title in (
-        "Senior Backend Engineer",
-        "Engineering Manager",
-        "Staff Software Engineer",
-        "Chief Technology Officer",
-        "Software Engineer (Internal Tools & HR Automation)",
+    assert "backend" in includes
+    assert "engineering manager" in excludes
+    for title, expected in (
+        ("Senior Backend Engineer", True),
+        ("Engineering Manager", False),
+        ("Staff Software Engineer", False),
+        ("Chief Technology Officer", False),
+        ("Software Engineer (Internal Tools & HR Automation)", True),
     ):
-        assert is_relevant(title, include=includes, exclude=excludes) is is_relevant(
-            title,
-            include=list(INCLUDE_KEYWORDS),
-            exclude=list(EXCLUDE_KEYWORDS),
-        )
+        assert is_relevant(title, include=includes, exclude=excludes) is expected
 
 
 def test_nondefault_role_stored_without_description_or_public_page(db, seeded_catalog_v2):
@@ -160,12 +155,13 @@ def test_default_user_board_hides_nondefault_until_tag_off(client, db, seeded_ca
     assert "Engineering Manager" not in _board_titles(client)
     tags = client.get("/api/role-preferences").get_json()["tags"]
     include = next(item for item in tags if item["kind"] == "include")
-    assert "enabled" not in include
-    rejected = client.put(
+    assert include["enabled"] is True
+    turned_off = client.put(
         f"/api/role-preferences/{include['id']}",
         json={"enabled": False},
     )
-    assert rejected.status_code == 400
+    assert turned_off.status_code == 200
+    assert turned_off.get_json()["tag"]["enabled"] is False
     tag = next(item for item in tags if item["keyword"] == "engineering manager" and item["kind"] == "exclude")
     assert tag["enabled"] is True
     saved = client.put(
@@ -184,6 +180,52 @@ def test_default_user_board_hides_nondefault_until_tag_off(client, db, seeded_ca
             (user_id,),
         ).fetchone()["n"])
     assert after_opps == before_opps
+
+
+def test_user_can_add_personal_match_tag(client, db, seeded_catalog_v2):
+    _store_engineering_manager()
+    user = create_user("rolemine", email="rolemine@example.com", google_sub="sub-role-mine")
+    user_id = int(user["id"])
+    seed_free_assignments(user_id, ["uk"])
+    _login(client, user)
+    assert "Engineering Manager" not in _board_titles(client)
+    added = client.post(
+        "/api/role-preferences/mine",
+        json={"keyword": "engineering manager", "kind": "include"},
+    )
+    assert added.status_code == 201
+    assert added.get_json()["tag"]["personal"] is True
+    assert "Engineering Manager" in _board_titles(client)
+    prefs = client.get("/api/role-preferences").get_json()
+    mine_id = prefs["mine"][0]["id"]
+    deleted = client.delete(f"/api/role-preferences/mine/{mine_id}")
+    assert deleted.status_code == 200
+    assert "Engineering Manager" not in _board_titles(client)
+
+
+def test_personal_hide_matches_separator_siblings(client, db, seeded_catalog_v2):
+    company = get_company("uk", "Acme Backend Ltd")
+    assert company is not None
+    company["matching_jobs"] = list(company.get("matching_jobs") or []) + [{
+        "title": "Full Stack Engineer",
+        "url": "https://boards.greenhouse.io/acmebackend/jobs/888?gh_jid=888",
+        "location": "London",
+        "description_text": "kept for default match",
+        "visa_sponsorship": True,
+        "matches_default_filter": 1,
+    }]
+    sync_company_board_to_catalog("uk", company)
+    user = create_user("rolehide", email="rolehide@example.com", google_sub="sub-role-hide")
+    user_id = int(user["id"])
+    seed_free_assignments(user_id, ["uk"])
+    _login(client, user)
+    assert "Full Stack Engineer" in _board_titles(client)
+    added = client.post(
+        "/api/role-preferences/mine",
+        json={"keyword": "fullstack", "kind": "exclude"},
+    )
+    assert added.status_code == 201
+    assert "Full Stack Engineer" not in _board_titles(client)
 
 
 def test_non_admin_cannot_edit_tags(client, db):
