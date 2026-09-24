@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "beb2479297ea",
+  "strategy": "manual-commit",
+  "branch": "ux/role-prefs-chips-personal-tags",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/roles/repo.py",
+    "relocation_jobs/roles/service.py",
+    "relocation_jobs/static/job-preferences.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/be/b2479297ea/0/metadata.json",
+      "transcript": "/be/b2479297ea/0/full.jsonl",
+      "compact_transcript": "/be/b2479297ea/0/transcript.jsonl",
+      "content_hash": "/be/b2479297ea/0/content_hash.txt",
+      "prompt": "/be/b2479297ea/0/prompt.txt"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "beb2479297ea",
+  "session_id": "adb21976-a401-438e-aad0-f85e0c7c4238",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-24T11:51:15.687207Z",
+  "branch": "ux/role-prefs-chips-personal-tags",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/roles/repo.py",
+    "relocation_jobs/roles/service.py",
+    "relocation_jobs/static/job-preferences.html",
+    "relocation_jobs/static/styles.css"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "a95ff491d221",
+  "checkpoint_transcript_start": 244,
+  "transcript_lines_at_start": 244,
+  "compact_transcript_start": 44,
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-24T10:26:46.297601Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "c1c95c99a0c6",
+      "timestamp": "2026-09-24T10:26:46.297601Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 17,
+    "context_tokens": 235065,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-24T11:51:15.627607Z",
+    "agent_lines": 16,
+    "agent_removed": 53,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 16,
+    "total_lines_changed": 69,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
