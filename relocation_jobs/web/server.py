@@ -41,6 +41,7 @@ PRIVATE_ROBOTS_DISALLOW = (
     "/remote",
     "/admin",
     "/apply",
+    "/applications",
     "/company",
     "/api/",
     "/_next/static/media/",
@@ -226,6 +227,13 @@ def admin_page():
 @app.route("/apply")
 def apply_page():
     resp = send_from_directory(STATIC, "apply.html")
+    resp.headers["Cache-Control"] = PRIVATE_CACHE
+    return resp
+
+
+@app.route("/applications")
+def applications_page():
+    resp = send_from_directory(STATIC, "applications.html")
     resp.headers["Cache-Control"] = PRIVATE_CACHE
     return resp
 

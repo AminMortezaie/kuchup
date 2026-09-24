@@ -70,6 +70,7 @@ from relocation_jobs.mcp.types import (
     ValidationResult,
 )
 from relocation_jobs.panel.tracking import job_dict, resolve_track
+from relocation_jobs.positions.queue import is_active_application_queue_row
 from relocation_jobs.positions.service import set_job_applied, set_job_ats_score as _set_job_ats_score
 from relocation_jobs.positions.state import position_view_from_row
 from relocation_jobs.positions.types import PositionBucket
@@ -335,7 +336,7 @@ def get_job_context(
         rejected=bool(row.get("rejected")),
         looking_to_apply=looking_to_apply,
         pinned=pinned,
-        in_application_queue=pinned or looking_to_apply,
+        in_application_queue=is_active_application_queue_row(row),
         can_save_tailored_tex=True,
         ats_score=row.get("ats_score"),
         master_resume_slug=app_state["master_slug"],
@@ -361,7 +362,7 @@ def list_application_queue(
     return _list_tracked_application_items(
         user_id=user_id,
         country=country,
-        include_row=lambda row: bool(row.get("pinned")) or bool(row.get("looking_to_apply")),
+        include_row=is_active_application_queue_row,
         sort_key=lambda item: (not item.pinned, not item.looking_to_apply, item.company.lower()),
     )
 
