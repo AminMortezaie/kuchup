@@ -24,7 +24,7 @@ Code is the source of truth. This index lists **living** pages first. History si
 | Catalog vs per-user tracking | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
 | Panel / admin statistics | [reference/stats.md](reference/stats.md) |
 | Secrets / no real IPs in public docs | [reference/rules.md](reference/rules.md#secrets-and-documentation) · `.env` / `aws-postgres.env` gitignored |
-| MCP apply assistant | [reference/mcp-application.md](reference/mcp-application.md) |
+| MCP apply assistant | [reference/mcp-application.md](reference/mcp-application.md) · [`/tailor`](reference/commands/tailor.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
 | Public job pages / LinkedIn wrapping | [reference/job-syndication.md](reference/job-syndication.md) |
 | SEO indexing | [operations/seo-indexing.md](operations/seo-indexing.md) |
