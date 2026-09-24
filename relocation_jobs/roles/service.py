@@ -24,60 +24,44 @@ def annotate_listings(jobs: list[dict], includes: list[str], excludes: list[str]
     return jobs
 
 
-def _unhide_exclude_state(user_id: int) -> tuple[list[str], list[str]] | None:
-    disabled_ids = set(repo.list_disabled_tag_ids(user_id))
-    if not disabled_ids:
-        return None
-    tags = repo.list_role_filter_tags()
-    disabled = [
-        row["keyword"]
-        for row in tags
-        if row["kind"] == "exclude" and int(row["id"]) in disabled_ids
-    ]
-    if not disabled:
-        return None
-    disabled_set = set(disabled)
-    active = [
-        row["keyword"]
-        for row in tags
-        if row["kind"] == "exclude" and row["keyword"] not in disabled_set
-    ]
-    return disabled, active
+def _clean_keyword(keyword: str, kind: str) -> tuple[str, str]:
+    text = (keyword if isinstance(keyword, str) else "").strip()
+    if text == "":
+        raise ValueError("keyword is required")
+    role_kind = (kind or "").strip().lower()
+    if role_kind not in ("include", "exclude"):
+        raise ValueError("kind must be include or exclude")
+    return text, role_kind
 
 
-def title_unhidden(title: str, disabled_excludes: list[str], active_excludes: list[str]) -> bool:
-    if not disabled_excludes:
-        return False
-    folded = (title or "").lower()
-    if not any(keyword in folded for keyword in disabled_excludes):
-        return False
-    from relocation_jobs.scrape.relevance import hidden_by_active_excludes
-
-    return not hidden_by_active_excludes(title, active_excludes)
-
-
-def list_preferences(user_id: int) -> list[dict]:
+def list_preferences(user_id: int) -> dict:
     disabled = set(repo.list_disabled_tag_ids(user_id))
-    out: list[dict] = []
+    tags = []
     for row in repo.list_role_filter_tags():
         tag_id = int(row["id"])
-        item = {
+        tags.append({
             "id": tag_id,
             "keyword": row["keyword"],
             "kind": row["kind"],
-        }
-        if row["kind"] == "exclude":
-            item["enabled"] = tag_id not in disabled
-        out.append(item)
-    return out
+            "enabled": tag_id not in disabled,
+            "personal": False,
+        })
+    mine = []
+    for row in repo.list_user_role_tags(user_id):
+        mine.append({
+            "id": int(row["id"]),
+            "keyword": row["keyword"],
+            "kind": row["kind"],
+            "enabled": True,
+            "personal": True,
+        })
+    return {"tags": tags, "mine": mine}
 
 
 def set_tag_enabled(user_id: int, tag_id: int, enabled: bool) -> dict:
     tag = repo.get_role_filter_tag(tag_id)
     if tag is None:
         raise LookupError("Unknown role filter tag")
-    if tag["kind"] != "exclude":
-        raise ValueError("Only hide tags can be turned off")
     if enabled:
         repo.delete_user_tag_pref(user_id, tag_id)
     else:
@@ -87,17 +71,15 @@ def set_tag_enabled(user_id: int, tag_id: int, enabled: bool) -> dict:
         "keyword": tag["keyword"],
         "kind": tag["kind"],
         "enabled": enabled,
+        "personal": False,
     }
 
 
-def _clean_keyword(keyword: str, kind: str) -> tuple[str, str]:
-    text = (keyword if isinstance(keyword, str) else "").strip()
-    if text == "":
-        raise ValueError("keyword is required")
-    role_kind = (kind or "").strip().lower()
-    if role_kind not in ("include", "exclude"):
-        raise ValueError("kind must be include or exclude")
-    return text, role_kind
+def list_global_tags() -> list[dict]:
+    return [
+        {"id": int(row["id"]), "keyword": row["keyword"], "kind": row["kind"]}
+        for row in repo.list_role_filter_tags()
+    ]
 
 
 def add_tag(keyword: str, kind: str) -> dict:
@@ -121,6 +103,104 @@ def edit_tag(tag_id: int, keyword: str, kind: str) -> dict:
     return saved
 
 
+def delete_tag(tag_id: int) -> None:
+    if not repo.delete_role_filter_tag(tag_id):
+        raise LookupError("Unknown role filter tag")
+
+
+def add_user_tag(user_id: int, keyword: str, kind: str) -> dict:
+    text, role_kind = _clean_keyword(keyword, kind)
+    if repo.find_user_role_tag(user_id, role_kind, text) is not None:
+        raise ValueError("tag already exists")
+    saved = repo.insert_user_role_tag(user_id, text, role_kind)
+    return {
+        "id": int(saved["id"]),
+        "keyword": saved["keyword"],
+        "kind": saved["kind"],
+        "enabled": True,
+        "personal": True,
+    }
+
+
+def delete_user_tag(user_id: int, tag_id: int) -> None:
+    if not repo.delete_user_role_tag(user_id, tag_id):
+        raise LookupError("Unknown personal tag")
+
+
+def _title_hits(title: str, keywords: list[str]) -> bool:
+    if not keywords:
+        return False
+    folded = (title or "").lower()
+    return any(keyword in folded for keyword in keywords)
+
+
+def _passes_board_filters(
+    title: str,
+    *,
+    enabled_includes: list[str],
+    disabled_includes: list[str],
+    personal_excludes: list[str],
+) -> bool:
+    if _title_hits(title, personal_excludes):
+        return False
+    if not disabled_includes:
+        return True
+    if not _title_hits(title, disabled_includes):
+        return True
+    return _title_hits(title, enabled_includes)
+
+
+def title_unhidden(
+    title: str,
+    *,
+    disabled_excludes: list[str],
+    active_excludes: list[str],
+    personal_includes: list[str],
+) -> bool:
+    from relocation_jobs.scrape.relevance import hidden_by_active_excludes
+
+    # Personal include overrides global excludes (personal excludes filtered elsewhere).
+    if _title_hits(title, personal_includes):
+        return True
+    if not disabled_excludes:
+        return False
+    if not _title_hits(title, disabled_excludes):
+        return False
+    return not hidden_by_active_excludes(title, active_excludes)
+
+
+def _user_board_state(user_id: int) -> dict:
+    disabled_ids = set(repo.list_disabled_tag_ids(user_id))
+    tags = repo.list_role_filter_tags()
+    enabled_includes = [
+        row["keyword"] for row in tags
+        if row["kind"] == "include" and int(row["id"]) not in disabled_ids
+    ]
+    disabled_includes = [
+        row["keyword"] for row in tags
+        if row["kind"] == "include" and int(row["id"]) in disabled_ids
+    ]
+    disabled_excludes = [
+        row["keyword"] for row in tags
+        if row["kind"] == "exclude" and int(row["id"]) in disabled_ids
+    ]
+    active_excludes = [
+        row["keyword"] for row in tags
+        if row["kind"] == "exclude" and int(row["id"]) not in disabled_ids
+    ]
+    mine = repo.list_user_role_tags(user_id)
+    personal_includes = [row["keyword"] for row in mine if row["kind"] == "include"]
+    personal_excludes = [row["keyword"] for row in mine if row["kind"] == "exclude"]
+    return {
+        "enabled_includes": enabled_includes,
+        "disabled_includes": disabled_includes,
+        "disabled_excludes": disabled_excludes,
+        "active_excludes": active_excludes + personal_excludes,
+        "personal_includes": personal_includes,
+        "personal_excludes": personal_excludes,
+    }
+
+
 def mix_unhidden_roles(
     user_id: int | None,
     companies: list[dict],
@@ -129,10 +209,29 @@ def mix_unhidden_roles(
 ) -> list[dict]:
     if not user_id or visa_only or not companies:
         return companies
-    state = _unhide_exclude_state(user_id)
-    if state is None:
+    state = _user_board_state(user_id)
+    needs_mix = bool(state["disabled_excludes"] or state["personal_includes"])
+    needs_filter = bool(state["disabled_includes"] or state["personal_excludes"])
+    if not needs_mix and not needs_filter:
         return companies
-    disabled, active = state
+
+    if needs_filter:
+        for company in companies:
+            jobs = [
+                job for job in (company.get("jobs") or [])
+                if _passes_board_filters(
+                    (job.get("title") or "").strip(),
+                    enabled_includes=state["enabled_includes"],
+                    disabled_includes=state["disabled_includes"],
+                    personal_excludes=state["personal_excludes"],
+                )
+            ]
+            company["jobs"] = jobs
+            company["job_count"] = len(jobs)
+
+    if not needs_mix:
+        return companies
+
     keys = [
         ((company.get("country") or "").strip().lower(), (company.get("name") or "").strip())
         for company in companies
@@ -164,8 +263,7 @@ def mix_unhidden_roles(
         added = _extra_job_entries(
             extras,
             company=company,
-            disabled=disabled,
-            active=active,
+            state=state,
             seen=seen,
             tracking=tracking,
         )
@@ -180,8 +278,7 @@ def _extra_job_entries(
     extras: list[dict],
     *,
     company: dict,
-    disabled: list[str],
-    active: list[str],
+    state: dict,
     seen: set[str],
     tracking: dict,
 ) -> list[dict]:
@@ -192,7 +289,19 @@ def _extra_job_entries(
     company_name = (company.get("name") or "").strip()
     for row in extras:
         title = (row.get("title") or "").strip()
-        if not title_unhidden(title, disabled, active):
+        if not title_unhidden(
+            title,
+            disabled_excludes=state["disabled_excludes"],
+            active_excludes=state["active_excludes"],
+            personal_includes=state["personal_includes"],
+        ):
+            continue
+        if not _passes_board_filters(
+            title,
+            enabled_includes=state["enabled_includes"],
+            disabled_includes=state["disabled_includes"],
+            personal_excludes=state["personal_excludes"],
+        ):
             continue
         job = dict(row)
         job.pop("country", None)

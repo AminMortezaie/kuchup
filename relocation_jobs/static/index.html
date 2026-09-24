@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=111" />
+  <link rel="stylesheet" href="/static/styles.css?v=116" />
   <link rel="stylesheet" href="/static/app-shell.css?v=12" />
 </head>
 <body>
@@ -650,7 +650,7 @@
       <div class="dialog-header">
         <div class="dialog-header-text">
           <h2 id="jobPrefsTitle">Job preferences</h2>
-          <p class="dialog-subtitle">Hide tags are on for everyone. Turn one off to show those titles on your board. You get the title, link, and location only.</p>
+          <p class="dialog-subtitle">Tap a tag to turn it on or off for your board. Add your own match or hide tags below — they only apply to you. Global tags are managed by admins.</p>
         </div>
         <button type="button" class="dialog-close" id="jobPrefsClose" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -661,16 +661,16 @@
       <div class="dialog-body role-prefs-body">
         <p class="role-prefs-status" id="jobPrefsStatus">Loading tags…</p>
         <div class="role-prefs-list" id="jobPrefsList"></div>
-        <form class="role-prefs-admin" id="jobPrefsAdmin" hidden>
-          <h3>Add a tag</h3>
+        <form class="role-prefs-mine" id="jobPrefsMine">
+          <h3>Add my tag</h3>
           <label class="dialog-field-label" for="jobPrefsKeyword">Keyword</label>
-          <input type="text" id="jobPrefsKeyword" maxlength="80" />
+          <input type="text" id="jobPrefsKeyword" maxlength="80" required />
           <label class="dialog-field-label" for="jobPrefsKind">Kind</label>
           <select id="jobPrefsKind">
             <option value="exclude">Hide titles containing this</option>
             <option value="include">Match titles containing this</option>
           </select>
-          <button type="submit" class="dialog-btn primary">Add tag</button>
+          <button type="submit" class="dialog-btn primary">Add to my board</button>
         </form>
       </div>
     </div>
@@ -678,7 +678,7 @@
 
   <script type="module" src="/static/js/position-card.js?v=14"></script>
   <script type="module" crossorigin src="/static/dist/board.js?v=21"></script>
-  <script type="module" src="/static/js/main.js?v=132"></script>
+  <script type="module" src="/static/js/main.js?v=136"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js"));

@@ -69,6 +69,15 @@ def update_role_filter_tag(tag_id: int, keyword: str, kind: str) -> dict | None:
     return dict(row) if row else None
 
 
+def delete_role_filter_tag(tag_id: int) -> bool:
+    with db_transaction() as conn:
+        row = conn.execute(
+            "DELETE FROM role_filter_tags WHERE id = %s RETURNING id",
+            (tag_id,),
+        ).fetchone()
+    return row is not None
+
+
 def list_disabled_tag_ids(user_id: int) -> list[int]:
     with db_read() as conn:
         rows = conn.execute(
@@ -103,6 +112,72 @@ def upsert_disabled_tag_pref(user_id: int, tag_id: int) -> None:
             """,
             (user_id, tag_id),
         )
+
+
+def list_user_role_tags(user_id: int) -> list[dict]:
+    with db_read() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, keyword, kind
+            FROM user_role_tags
+            WHERE user_id = %s
+            ORDER BY kind, id
+            """,
+            (user_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def find_user_role_tag(user_id: int, kind: str, keyword: str) -> dict | None:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT id, keyword, kind
+            FROM user_role_tags
+            WHERE user_id = %s AND kind = %s AND keyword = %s
+            """,
+            (user_id, kind, keyword),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def insert_user_role_tag(user_id: int, keyword: str, kind: str) -> dict:
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            INSERT INTO user_role_tags (user_id, keyword, kind)
+            VALUES (%s, %s, %s)
+            RETURNING id, keyword, kind
+            """,
+            (user_id, keyword, kind),
+        ).fetchone()
+    return dict(row)
+
+
+def delete_user_role_tag(user_id: int, tag_id: int) -> bool:
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            DELETE FROM user_role_tags
+            WHERE user_id = %s AND id = %s
+            RETURNING id
+            """,
+            (user_id, tag_id),
+        ).fetchone()
+    return row is not None
+
+
+def get_user_role_tag(user_id: int, tag_id: int) -> dict | None:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT id, keyword, kind
+            FROM user_role_tags
+            WHERE user_id = %s AND id = %s
+            """,
+            (user_id, tag_id),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def list_open_nondefault_jobs(company_keys: list[tuple[str, str]]) -> list[dict]:

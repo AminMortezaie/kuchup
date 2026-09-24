@@ -4,7 +4,7 @@ Title filtering is data in `role_filter_tags`, not a hardcoded list in the scrap
 
 ## Tables
 
-`role_filter_tags` stores `keyword` and `kind` (`include` or `exclude`). Migration `role_filter_tags_v1` seeds every keyword from the previous `INCLUDE_KEYWORDS` and `EXCLUDE_KEYWORDS` lists, in that order.
+`role_filter_tags` stores `keyword` and `kind` (`include` or `exclude`). On first startup, migration `role_filter_tags_v1` seeds the table from `_ROLE_FILTER_SEED_INCLUDES` / `_ROLE_FILTER_SEED_EXCLUDES` in `migrations.py`. After that, the table is the only source of truth — edit tags in Admin → Config, not in Python constants.
 
 `matching_jobs.matches_default_filter` is `1` when the title passes those tags (plus the small set of title rules that still live in code: CTO, staff except `senior/staff`, cloud engineer without backend/software, AI platform without backend/software, and the engineer-title skip for the `marketing` and `hr` exclude words). Existing rows default to `1`. The column is `NOT NULL`, so readers compare it with `= 1` or `= 0`.
 
