@@ -13,6 +13,29 @@ def test_detect_greenhouse_from_url():
     ) == ("greenhouse", "https://boards.greenhouse.io/acmebackend")
 
 
+def test_detect_ashby_from_url():
+    assert mod._detect_ashby_from_url("https://jobs.ashbyhq.com/Clera") == (
+        "ashby",
+        "https://jobs.ashbyhq.com/Clera",
+    )
+    assert mod._detect_ashby_from_url("https://jobs.ashbyhq.com/clera") == (
+        "ashby",
+        "https://jobs.ashbyhq.com/clera",
+    )
+    assert mod._detect_ashby_from_url(
+        "https://api.ashbyhq.com/posting-api/job-board/Clera"
+    ) == ("ashby", "https://jobs.ashbyhq.com/Clera")
+    assert mod._detect_ashby_from_url(
+        "https://jobs.ashbyhq.com/Clera/00000000-0000-0000-0000-000000000001"
+    ) == ("ashby", "https://jobs.ashbyhq.com/Clera")
+    assert mod._detect_ashby_from_url("https://example.com/careers") == (None, None)
+
+
+def test_scan_html_finds_mixed_case_ashby_slug():
+    html = '<meta property="og:url" content="https://jobs.ashbyhq.com/Clera" />'
+    assert mod._scan_html_for_ats(html) == ("ashby", "https://jobs.ashbyhq.com/Clera")
+
+
 def test_smartrecruiters_company_id_from_oneclick_ui_url():
     assert (
         mod._smartrecruiters_company_id(

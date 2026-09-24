@@ -89,10 +89,10 @@ def _extract_greenhouse_eu(url: str) -> str:
     return f"https://boards.eu.greenhouse.io/{slug}"
 
 def _extract_ashby(url: str) -> str:
-    m = re.search(r"api\.ashbyhq\.com/posting-api/job-board/([a-z0-9._-]+)", url)
+    m = re.search(r"api\.ashbyhq\.com/posting-api/job-board/([A-Za-z0-9._-]+)", url, re.I)
     if m:
         return f"https://jobs.ashbyhq.com/{m.group(1)}"
-    m2 = re.search(r"jobs\.ashbyhq\.com/([a-z0-9._-]+)", url)
+    m2 = re.search(r"jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)", url, re.I)
     return f"https://jobs.ashbyhq.com/{m2.group(1)}" if m2 else url
 
 def _extract_workable(url: str) -> str:
@@ -356,7 +356,7 @@ HTML_ATS_PATTERNS = [
      lambda m: f"https://{m.group(1)}.recruitee.com/"),
     (r"apply\.workable\.com/([a-z0-9-]+)/",          "workable",
      lambda m: f"https://apply.workable.com/{m.group(1)}/"),
-    (r"jobs\.ashbyhq\.com/([a-z0-9._-]+)",           "ashby",
+    (r"jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)",         "ashby",
      lambda m: f"https://jobs.ashbyhq.com/{m.group(1)}"),
     (r"careers\.smartrecruiters\.com/([A-Za-z0-9_-]+)", "smartrecruiters",
      lambda m: _smartrecruiters_api_url(m.group(1))),
@@ -617,6 +617,25 @@ def _detect_greenhouse_from_url(careers_url: str) -> tuple[str | None, str | Non
     return ("greenhouse_eu" if eu else "greenhouse"), f"https://{host}/{slug}"
 
 
+def _detect_ashby_from_url(careers_url: str) -> tuple[str | None, str | None]:
+    text = careers_url or ""
+    if "ashbyhq.com" not in text.lower():
+        return None, None
+    m = re.search(
+        r"api\.ashbyhq\.com/posting-api/job-board/([A-Za-z0-9._-]+)",
+        text,
+        re.I,
+    )
+    if not m:
+        m = re.search(r"jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)", text, re.I)
+    if not m:
+        return None, None
+    slug = m.group(1)
+    if slug.lower() in ("embed", "jobs", "api", "www"):
+        return None, None
+    return "ashby", f"https://jobs.ashbyhq.com/{slug}"
+
+
 def _detect_kake_from_url(careers_url: str) -> tuple[str | None, str | None]:
     host = (urlparse(careers_url or "").hostname or "").lower()
     if host.startswith("www."):
@@ -629,6 +648,7 @@ def _detect_kake_from_url(careers_url: str) -> tuple[str | None, str | None]:
 def _detect_ats_from_careers_url(careers_url: str) -> tuple[str | None, str | None]:
     for detector in (
         _detect_greenhouse_from_url,
+        _detect_ashby_from_url,
         _detect_smartrecruiters_from_careers_url,
         _detect_smartrecruiters_from_redcare_careers,
         _detect_workday_from_url,
@@ -747,6 +767,7 @@ def detect_ats_static(careers_url: str, *, _depth: int = 0) -> tuple[str | None,
 
 
 ATS_HINT_URL_DETECTORS = (
+    _detect_ashby_from_url,
     _detect_smartrecruiters_from_careers_url,
     _detect_smartrecruiters_from_redcare_careers,
     _detect_workday_from_url,
