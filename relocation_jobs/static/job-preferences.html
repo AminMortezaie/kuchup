@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=117" />
+  <link rel="stylesheet" href="/static/styles.css?v=118" />
   <link rel="stylesheet" href="/static/app-shell.css?v=15" />
 </head>
 <body>
@@ -99,13 +99,24 @@
           <div class="role-prefs-list" id="jobPrefsList"></div>
           <form class="role-prefs-mine" id="jobPrefsMine">
             <h2>Add my tag</h2>
-            <label class="dialog-field-label" for="jobPrefsKeyword">Keyword</label>
-            <input type="text" id="jobPrefsKeyword" maxlength="80" required />
-            <label class="dialog-field-label" for="jobPrefsKind">Kind</label>
-            <select id="jobPrefsKind">
-              <option value="exclude">Hide titles containing this</option>
-              <option value="include">Match titles containing this</option>
-            </select>
+            <div class="dialog-field">
+              <label class="dialog-field-label" for="jobPrefsKeyword">Keyword</label>
+              <div class="dialog-input-wrap">
+                <span class="dialog-input-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="12" r="2"/><circle cx="15" cy="18" r="2"/>
+                  </svg>
+                </span>
+                <input type="text" id="jobPrefsKeyword" maxlength="80" required autocomplete="off" placeholder="e.g. rust, staff engineer" />
+              </div>
+            </div>
+            <div class="dialog-field">
+              <label class="dialog-field-label" for="jobPrefsKind">Kind</label>
+              <select id="jobPrefsKind">
+                <option value="exclude">Hide titles containing this</option>
+                <option value="include">Match titles containing this</option>
+              </select>
+            </div>
             <button type="submit" class="dialog-btn primary">Add to my board</button>
           </form>
         </div>

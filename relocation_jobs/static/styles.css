@@ -8283,17 +8283,10 @@ body.scroll-locked {
   cursor: pointer;
 }
 
-.role-prefs-page .role-prefs-mine input,
-.role-prefs-page .role-prefs-mine select,
-.dialog .role-prefs-mine input,
-.dialog .role-prefs-mine select {
-  width: 100%;
-}
-
 .role-prefs-mine {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0;
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-subtle);
@@ -8301,8 +8294,13 @@ body.scroll-locked {
 
 .role-prefs-mine h2,
 .role-prefs-mine h3 {
-  margin: 0;
+  margin: 0 0 0.75rem;
   font-size: 0.95rem;
+}
+
+.role-prefs-mine .dialog-btn {
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
 
 .role-prefs-status {
