@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from relocation_jobs.core.job_identity import job_idempotency_key_for_job
 from relocation_jobs.roles import repo
 from relocation_jobs.users.repo import load_job_tracking
@@ -32,6 +34,26 @@ def _clean_keyword(keyword: str, kind: str) -> tuple[str, str]:
     if role_kind not in ("include", "exclude"):
         raise ValueError("kind must be include or exclude")
     return text, role_kind
+
+
+def _compact_keyword(keyword: str) -> str:
+    return re.sub(r"[\s\-_/,]+", "", (keyword or "").lower())
+
+
+def _expand_keyword_siblings(keywords: list[str], catalog: list[str]) -> list[str]:
+    """Match fullstack ↔ full-stack ↔ full stack (same letters, different separators)."""
+    wanted = {_compact_keyword(word) for word in keywords if word and _compact_keyword(word)}
+    if not wanted:
+        return list(keywords)
+    out: list[str] = []
+    seen: set[str] = set()
+    for word in [*keywords, *catalog]:
+        if not word or word in seen:
+            continue
+        if word in keywords or _compact_keyword(word) in wanted:
+            out.append(word)
+            seen.add(word)
+    return out
 
 
 def list_preferences(user_id: int) -> dict:
@@ -172,14 +194,18 @@ def title_unhidden(
 def _user_board_state(user_id: int) -> dict:
     disabled_ids = set(repo.list_disabled_tag_ids(user_id))
     tags = repo.list_role_filter_tags()
+    catalog = [row["keyword"] for row in tags]
     enabled_includes = [
         row["keyword"] for row in tags
         if row["kind"] == "include" and int(row["id"]) not in disabled_ids
     ]
-    disabled_includes = [
-        row["keyword"] for row in tags
-        if row["kind"] == "include" and int(row["id"]) in disabled_ids
-    ]
+    disabled_includes = _expand_keyword_siblings(
+        [
+            row["keyword"] for row in tags
+            if row["kind"] == "include" and int(row["id"]) in disabled_ids
+        ],
+        catalog,
+    )
     disabled_excludes = [
         row["keyword"] for row in tags
         if row["kind"] == "exclude" and int(row["id"]) in disabled_ids
@@ -189,8 +215,14 @@ def _user_board_state(user_id: int) -> dict:
         if row["kind"] == "exclude" and int(row["id"]) not in disabled_ids
     ]
     mine = repo.list_user_role_tags(user_id)
-    personal_includes = [row["keyword"] for row in mine if row["kind"] == "include"]
-    personal_excludes = [row["keyword"] for row in mine if row["kind"] == "exclude"]
+    personal_includes = _expand_keyword_siblings(
+        [row["keyword"] for row in mine if row["kind"] == "include"],
+        catalog,
+    )
+    personal_excludes = _expand_keyword_siblings(
+        [row["keyword"] for row in mine if row["kind"] == "exclude"],
+        catalog,
+    )
     return {
         "enabled_includes": enabled_includes,
         "disabled_includes": disabled_includes,

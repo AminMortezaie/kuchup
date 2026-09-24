@@ -203,6 +203,31 @@ def test_user_can_add_personal_match_tag(client, db, seeded_catalog_v2):
     assert "Engineering Manager" not in _board_titles(client)
 
 
+def test_personal_hide_matches_separator_siblings(client, db, seeded_catalog_v2):
+    company = get_company("uk", "Acme Backend Ltd")
+    assert company is not None
+    company["matching_jobs"] = list(company.get("matching_jobs") or []) + [{
+        "title": "Full Stack Engineer",
+        "url": "https://boards.greenhouse.io/acmebackend/jobs/888?gh_jid=888",
+        "location": "London",
+        "description_text": "kept for default match",
+        "visa_sponsorship": True,
+        "matches_default_filter": 1,
+    }]
+    sync_company_board_to_catalog("uk", company)
+    user = create_user("rolehide", email="rolehide@example.com", google_sub="sub-role-hide")
+    user_id = int(user["id"])
+    seed_free_assignments(user_id, ["uk"])
+    _login(client, user)
+    assert "Full Stack Engineer" in _board_titles(client)
+    added = client.post(
+        "/api/role-preferences/mine",
+        json={"keyword": "fullstack", "kind": "exclude"},
+    )
+    assert added.status_code == 201
+    assert "Full Stack Engineer" not in _board_titles(client)
+
+
 def test_non_admin_cannot_edit_tags(client, db):
     user = create_user("roletag", email="roletag@example.com", google_sub="sub-role-tag")
     _login(client, user)
