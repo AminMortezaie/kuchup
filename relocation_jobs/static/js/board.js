@@ -3,7 +3,7 @@
 import { state } from "./state.js";
 import { $, beginTopLoadingProgress, finishLoadingProgress, setLoadingProgress } from "./utils.js";
 import { fetchBoard, fetchBoardUserStats } from "./api.js";
-import { releaseCompanyOrder } from "./render.js";
+import { freezeCompanyOrder, releaseCompanyOrder } from "./render.js";
 import { syncBoardView } from "./board-view.js";
 import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { panelStorageKey } from "./panel-mode.js";
@@ -133,7 +133,11 @@ export async function loadBoard(options = {}) {
     beginTopLoadingProgress(12);
   }
 
-  releaseCompanyOrder();
+  if (options.stableOrder) {
+    freezeCompanyOrder();
+  } else {
+    releaseCompanyOrder();
+  }
   if (preserveContent) {
     syncBoardView({ loading: true, preserveContent: true });
   } else {

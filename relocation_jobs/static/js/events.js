@@ -627,10 +627,20 @@ function bindJobsListEvents() {
         if (detail.apiData.reveal.expanded) {
           toast("Action saved · one new role added for this company");
         }
-        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        void loadJobs({
+          preserveContent: true,
+          noOverlay: true,
+          enterAnimation: false,
+          stableOrder: true,
+        });
       } else if (detail.apiData.reveal?.reason === "credits_exhausted") {
         toast("Status saved · add credits to receive the next matched role");
-        void loadJobs({ preserveContent: true, noOverlay: true, enterAnimation: false });
+        void loadJobs({
+          preserveContent: true,
+          noOverlay: true,
+          enterAnimation: false,
+          stableOrder: true,
+        });
       }
     }
   });

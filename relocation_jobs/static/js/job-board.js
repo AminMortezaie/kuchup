@@ -2,7 +2,7 @@
 
 import { applyBoardView } from "./board.js";
 import { shouldShowCompanyOnBoard } from "./board-filter.js";
-import { recomputeNewestJobFetched } from "./render.js";
+import { freezeCompanyOrder, recomputeNewestJobFetched } from "./render.js";
 import { findCompany, findJobInCompany, state } from "./state.js";
 
 const JOB_PATCH_FIELDS = [
@@ -203,6 +203,8 @@ export function applyPinToCatalog(country, companyName, url, idempotencyKey, dat
 }
 
 export function finalizeCompanyBoard(company) {
+  // Hold visible order while calculated newest_job_fetched updates.
+  freezeCompanyOrder();
   recomputeCounts(company);
   evictCompanyIfHidden(company);
   applyBoardView();
@@ -324,6 +326,7 @@ export function appendCompanyRoles(country, companyName, jobs, jobsMore) {
     list.push(job);
   }
   if (jobsMore != null) company.jobs_more = Math.max(0, Number(jobsMore) || 0);
+  freezeCompanyOrder();
   recomputeCounts(company);
   refreshJobBoard();
   return true;

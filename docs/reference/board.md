@@ -1,8 +1,8 @@
 # Panel board — pagination, sort, and activity timestamps
 
-**Last updated:** 2026-07-21
+**Last updated:** 2026-09-24
 
-How the main company board loads, paginates, and sorts by “newest”. Read before changing `panel/`, `static/js/board*.js`, `static/js/render.js`, or `GET /api/board`.
+How the main company board loads, paginates, and sorts by “newest”. Read before changing `panel/`, `static/js/board*.js`, `static/js/render.js`, `static/js/company-display-order.js`, `static/js/job-board.js`, or `GET /api/board`.
 
 Related: [business-rules.md](business-rules.md) (job buckets), [architecture.md](architecture.md) (panel read path). Performance / read-model proposal: [board-read-model-proposal.md](../proposals/board-read-model-proposal.md).
 
@@ -70,9 +70,36 @@ Default sort is **Newest first** (`index.html` `#sortSelect`, mirrored by hidden
 | Layer | Behavior |
 |-------|----------|
 | **Server** | When `sort=newest` (default), flattens all filter-visible companies, sorts by activity timestamp, then paginates. |
-| **Client** | Sends `sort=newest|name`; for newest, re-sorts the current page by `newest_job_fetched` (frozen during an active fetch). |
+| **Client** | Sends `sort=newest|name`; for newest, re-sorts the current page by `newest_job_fetched` (frozen during active scrape fetch **and** while the user is interacting with positions on the page). |
 
 Sort key: **max `job.fetched`** per company (`newest_job_fetched`). `company.updated` is not used for sort order.
+
+### Calculated rank ≠ visible order during Panel interaction
+
+Position actions and 3-role “load more” can change a company’s **calculated** `newest_job_fetched` immediately (client `recomputeNewestJobFetched`, and again on soft board reload after a credit reveal). That update must **not** reshuffle the company list under the user’s cursor.
+
+| Concept | Where | Behavior while interacting |
+|---------|--------|----------------------------|
+| **Calculated rank** | `newest_job_fetched` on each company row | Continues to update in real time |
+| **Visible order** | `state.frozenCompanyOrder` + `sortCompaniesNewest` / `getDisplayCompanies` | Stays on the snapshot taken when interaction started |
+
+What freezes visible order:
+
+- Active per-company scrape (`setFetchBusy` → `freezeCompanyOrder`)
+- Local position mutations (`finalizeCompanyBoard` in `job-board.js`)
+- Loading the next 3-role bucket (`appendCompanyRoles`)
+- Soft board reload after a reveal / credits wall (`loadBoard({ stableOrder: true })`)
+
+What still lets a company leave the active layout:
+
+- **Exhaustion** — no open roles left (`jobs` empty and `jobs_more` 0). With `hide_empty`, `evictCompanyIfHidden` / panel filters remove the company. That is intentional: there is nothing left to interact with.
+
+Reconciliation (visible order catches up to calculated rank):
+
+- Full board reload without `stableOrder` (pagination, country/ATS/location/search, filter toggles, sort change, scrape completion reload)
+- Explicit `releaseCompanyOrder()` (e.g. sort select)
+
+Invariant: while the user is working through positions on a page, a company must not jump solely because one role’s score/timestamp changed or another 3-role bucket was loaded. Ranking math is unchanged; only **when** rank is allowed to move cards changes.
 
 During an active per-company fetch:
 
