@@ -1,12 +1,14 @@
 {
   "cli_version": "0.8.42",
   "checkpoint_id": "aadc050588f0",
+  "session_id": "b5276d1b-fdb5-4eca-99bf-b50937d975c8",
   "strategy": "manual-commit",
+  "created_at": "2026-09-25T09:19:42.434699Z",
   "branch": "main",
-  "checkpoints_count": 14,
+  "checkpoints_count": 4,
+  "save_step_count": 1,
   "files_touched": [
     "relocation_jobs/static/homepage/404.html",
-    "relocation_jobs/static/homepage/_next/static/chunks/255-dccad31b90ca49a6.js",
     "relocation_jobs/static/homepage/engineering.html",
     "relocation_jobs/static/homepage/engineering.txt",
     "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html",
@@ -38,27 +40,48 @@
     "relocation_jobs/static/homepage/relocation-jobs-uk.html",
     "relocation_jobs/static/homepage/relocation-jobs-uk.txt"
   ],
-  "sessions": [
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "7467c314dec8",
+  "compact_transcript_start": 0,
+  "skill_events_version": 1,
+  "skill_events": [
     {
-      "metadata": "/aa/dc050588f0/0/metadata.json",
-      "transcript": "/aa/dc050588f0/0/full.jsonl",
-      "compact_transcript": "/aa/dc050588f0/0/transcript.jsonl",
-      "content_hash": "/aa/dc050588f0/0/content_hash.txt",
-      "prompt": "/aa/dc050588f0/0/prompt.txt"
-    },
-    {
-      "metadata": "/aa/dc050588f0/1/metadata.json",
-      "transcript": "/aa/dc050588f0/1/full.jsonl",
-      "compact_transcript": "/aa/dc050588f0/1/transcript.jsonl",
-      "content_hash": "/aa/dc050588f0/1/content_hash.txt",
-      "prompt": "/aa/dc050588f0/1/prompt.txt"
-    },
-    {
-      "metadata": "/aa/dc050588f0/2/metadata.json",
-      "transcript": "/aa/dc050588f0/2/full.jsonl",
-      "compact_transcript": "/aa/dc050588f0/2/transcript.jsonl",
-      "content_hash": "/aa/dc050588f0/2/content_hash.txt",
-      "prompt": "/aa/dc050588f0/2/prompt.txt"
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T09:18:13.262534Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "a12b722141fe",
+      "timestamp": "2026-09-25T09:18:13.262534Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
     }
-  ]
+  ],
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-25T09:19:42.422829Z",
+    "agent_lines": 69,
+    "agent_removed": 70,
+    "human_added": 7,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 76,
+    "total_lines_changed": 153,
+    "agent_percentage": 90.84967320261438,
+    "metric_version": 2
+  }
 }
