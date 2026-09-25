@@ -8377,7 +8377,6 @@ body.scroll-locked {
 .applications-page {
   display: flex;
   flex-direction: column;
-  max-width: 52rem;
   width: 100%;
   min-height: 0;
   flex: 1;
