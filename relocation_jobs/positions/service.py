@@ -193,13 +193,11 @@ def set_job_pinned(
         job_title=job.get("title", ""),
     )
     out = _validated(_with_catalog_url(result, job.get("url", "")))
-    if pinned:
-        lta = set_job_looking_to_apply(
-            country_key, company_name, job_url, True, user_id=user_id,
-        )
-        out["looking_to_apply"] = lta.get("looking_to_apply", True)
-        if lta.get("looking_to_apply_date"):
-            out["looking_to_apply_date"] = lta["looking_to_apply_date"]
+    lta = set_job_looking_to_apply(
+        country_key, company_name, job_url, pinned, user_id=user_id,
+    )
+    out["looking_to_apply"] = lta.get("looking_to_apply", pinned)
+    out["looking_to_apply_date"] = lta.get("looking_to_apply_date") or ""
     return out
 
 

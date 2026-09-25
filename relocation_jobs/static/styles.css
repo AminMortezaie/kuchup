@@ -2306,7 +2306,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .referral-btn,
 .restore-job-btn,
 .reapply-btn,
-.looking-to-apply-btn,
 .saw-before-btn {
   display: inline-flex;
   align-items: center;
@@ -2381,31 +2380,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--pending);
 }
 
-.looking-to-apply-btn {
-  border: 1px solid color-mix(in srgb, var(--intent) 35%, transparent);
-  background: color-mix(in srgb, var(--intent) 8%, var(--color-paper));
-  color: var(--intent);
-}
-
-.looking-to-apply-btn:hover:not(:disabled):not(.active) {
-  background: color-mix(in srgb, var(--intent) 14%, var(--color-paper));
-  border-color: color-mix(in srgb, var(--intent) 50%, transparent);
-  color: var(--intent);
-}
-
-.looking-to-apply-btn.active {
-  border-color: var(--intent);
-  background: var(--intent);
-  color: var(--color-paper);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--intent) 40%, transparent);
-}
-
-.looking-to-apply-btn.active:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--intent) 88%, #000);
-  border-color: color-mix(in srgb, var(--intent) 88%, #000);
-  color: var(--color-paper);
-}
-
 .saw-before-btn {
   border: 1px solid color-mix(in srgb, var(--memory) 35%, transparent);
   background: color-mix(in srgb, var(--memory) 8%, var(--color-paper));
@@ -2468,7 +2442,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .applied-btn:disabled,
 .rejected-btn:disabled,
 .referral-btn:disabled,
-.looking-to-apply-btn:disabled,
 .saw-before-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .position-card.position-looking-to-apply {
@@ -6128,7 +6101,6 @@ body.scroll-locked {
   .referral-btn,
   .restore-job-btn,
   .reapply-btn,
-  .looking-to-apply-btn,
   .saw-before-btn,
   .hide-reason-trigger,
   .header-secondary-btn,
@@ -6764,7 +6736,6 @@ body.scroll-locked {
   .referral-btn,
   .restore-job-btn,
   .reapply-btn,
-  .looking-to-apply-btn,
   .saw-before-btn {
     min-height: var(--control-height);
     height: var(--control-height);
@@ -7865,11 +7836,6 @@ body.scroll-locked {
   .position-actions-primary .position-more-btn {
     grid-column: 3;
     grid-row: 1;
-  }
-
-  .position-actions-primary .looking-to-apply-btn {
-    grid-column: 1 / -1;
-    order: 2;
   }
 
   .position-actions-primary .hide-reason-wrap {

@@ -7,7 +7,6 @@ const API = {
   applied: "/api/jobs/applied",
   rejected: "/api/jobs/rejected",
   notForMe: "/api/jobs/not-for-me",
-  lookingToApply: "/api/jobs/looking-to-apply",
   seen: "/api/jobs/seen",
   waitingReferral: "/api/jobs/waiting-referral",
   atsScore: "/api/jobs/ats-score",
@@ -232,19 +231,6 @@ class PositionCard extends HTMLElement {
     this._apply(data);
   }
 
-  async _toggleLookingToApply() {
-    const looking = !this._job.looking_to_apply;
-    const data = await this._api(API.lookingToApply, {
-      country: this._job.country, company: this._job.company, url: this._job.url,
-      looking_to_apply: looking,
-      ...(this._job.idempotency_key ? { idempotency_key: this._job.idempotency_key } : {}),
-    });
-    if (!data) return;
-    this._apply(data);
-    this._toast(looking ? "Want to apply" : "Want to apply cleared");
-    if (looking) void this._markSeenOnOpen();
-  }
-
   async _toggleSeen() {
     const seen = !this._job.seen;
     const data = await this._api(API.seen, {
@@ -403,11 +389,6 @@ class PositionCard extends HTMLElement {
           <span class="position-application-date">${escapeHtml(label.replace(/^Applied\s*·?\s*/, ""))}</span>
         </div>`
       : "";
-    const lookingDate = j.looking_to_apply_date ? formatActivityBadge(j.looking_to_apply_date) : "";
-    const lookingControl = j.applied ? "" : (j.looking_to_apply
-      ? `<button type="button" class="looking-to-apply-btn active" data-looking="1" aria-pressed="true" title="Clear want-to-apply mark">Want to apply${lookingDate ? ` · ${escapeHtml(lookingDate)}` : ""}</button>`
-      : '<button type="button" class="looking-to-apply-btn" data-looking="0" aria-pressed="false" title="Mark this role as one you want to apply to">Want to apply</button>');
-
     return `<div class="position-card${posCls(j)}" ${this._attrRow()}>
       <div class="position-top">
         <div class="position-head">
@@ -427,7 +408,6 @@ class PositionCard extends HTMLElement {
       ${appliedStatus}
       <div class="position-actions-primary">
         ${j.applied ? "" : appliedControl}
-        ${lookingControl}
         ${j.applied ? '<button type="button" class="rejected-btn" data-rejected="0" title="Mark that you got a rejection">Mark rejected</button>' : this._hideReason()}
         <button type="button" class="position-more-btn" aria-expanded="false" aria-label="More role actions" title="More role actions">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>More</span>
@@ -599,7 +579,6 @@ class PositionCard extends HTMLElement {
     if (t.closest(".pin-job-btn")) { e.stopPropagation(); void this._togglePin(); return; }
     if (t.closest(".applied-btn")) { e.stopPropagation(); void this._toggleApplied(); return; }
     if (t.closest(".rejected-btn")) { e.stopPropagation(); void this._toggleRejected(); return; }
-    if (t.closest(".looking-to-apply-btn")) { e.stopPropagation(); void this._toggleLookingToApply(); return; }
     if (t.closest(".saw-before-btn")) { e.stopPropagation(); void this._toggleSeen(); return; }
     if (t.closest(".reapply-btn")) { e.stopPropagation(); void this._reapply(); return; }
     if (t.closest(".restore-job-btn")) { e.stopPropagation(); void this._restore(); return; }

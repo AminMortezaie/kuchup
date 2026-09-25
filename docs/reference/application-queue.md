@@ -87,8 +87,7 @@ Opening Applications must **not** load all three lists. Preferred UX (Option A):
 ```text
 Catalog position
        │
-       ├─ Want to apply  → looking_to_apply=1
-       └─ Pin            → pinned=1
+       └─ Pin  → pinned=1 AND looking_to_apply=1
               │
               ▼
      Apply tab  ←── panel /applications + MCP list_application_queue
@@ -114,7 +113,7 @@ Catalog position
      Rejected tab
 ```
 
-Pinning alone still puts a role in Apply until the user applies (or unpins with no looking-to-apply). Unpinning does **not** clear `looking_to_apply`. Applying does **not** require unpinning; applied rows are excluded from Apply even if still pinned.
+Pin toggles stick-to-top and `looking_to_apply` together: pin on sets both; unpin clears both (the board’s only in-card control for the apply queue after the Want to apply button was removed). Applying does **not** require unpinning; applied rows are excluded from Apply even if still pinned.
 
 Reject does **not** clear `applied`. A rejected row is on Rejected even when `applied` is still 0, so it cannot stay in Apply via pin or want-to-apply. Reapply clears rejection only: the row returns to Applied when `applied` is 1, or to Apply when it is still pinned or want-to-apply.
 
@@ -130,6 +129,8 @@ Reject does **not** clear `applied`. A rejected row is on Rejected even when `ap
 | `GET /api/applications/applied` | Paginated active Applied |
 | `GET /api/applications/rejected` | Paginated Rejected |
 | Job Board | Company-centric; unchanged |
+
+Apply list order: newest `looking_to_apply_date`, then newest `pinned_at`, then company/title. Applied / Rejected keep `applied_date` / `rejected_date` DESC.
 
 Client: [`static/js/applications.js`](../../relocation_jobs/static/js/applications.js) — per-tab loading, empty, error, and pagination state.
 

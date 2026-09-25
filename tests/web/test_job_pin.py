@@ -184,7 +184,7 @@ def test_pin_sets_looking_to_apply(v2_auth_client, seeded_catalog_v2):
     assert listed["looking_to_apply"] is True
 
 
-def test_unpin_does_not_clear_looking_to_apply(v2_auth_client, seeded_catalog_v2):
+def test_unpin_clears_looking_to_apply(v2_auth_client, seeded_catalog_v2):
     board = v2_auth_client.get("/api/board?country=uk").get_json()
     co = _acme(board)
     job = co["jobs"][0]
@@ -198,12 +198,14 @@ def test_unpin_does_not_clear_looking_to_apply(v2_auth_client, seeded_catalog_v2
         json={"country": "uk", "company": co["name"], "url": job["url"], "pinned": False},
     )
     assert unpin.status_code == 200
-    assert unpin.get_json().get("pinned") is False
+    payload = unpin.get_json()
+    assert payload.get("pinned") is False
+    assert payload.get("looking_to_apply") is False
 
     board2 = v2_auth_client.get("/api/board?country=uk").get_json()
     target = next(j for j in _acme(board2)["jobs"] if j["url"] == job["url"])
     assert target["pinned"] is False
-    assert target["looking_to_apply"] is True
+    assert target["looking_to_apply"] is False
 
 
 def test_looking_to_apply_does_not_pin(v2_auth_client, seeded_catalog_v2):
