@@ -1,6 +1,8 @@
 # /tailor
 
-Batch-tailor one job CV with **mcp-resume-reframe** (same flow as the SumUp application: bootstrap → phases 1–4 + anti-AI → one acceptance → save).
+Optional Cursor entry point. **Source of truth:** Kuchup MCP `get_agent_skill("tailor")` (playbook also seeded in Postgres).
+
+Batch-tailor one job CV (resolve job → phases 1–4 + anti-AI → one acceptance → save).
 
 ## Invoke
 
@@ -15,7 +17,7 @@ Optional args after `/tailor`: company name, country, title fragment, or posting
 
 ## Instructions for the agent
 
-Follow the **mcp-resume-reframe** skill in **`/tailor` batch mode** (not interactive one-phase-per-turn).
+Follow the **`get_agent_skill("tailor")`** playbook in **batch mode** (not interactive one-phase-per-turn).
 
 ### 1. Resolve the job
 

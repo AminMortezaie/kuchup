@@ -247,3 +247,14 @@ class UpdatePositionResult(BaseSchema):
     updated_fields: list[str] = Field(default_factory=list)
     posted_at: str = ""
     workspace_path: str = ""
+
+
+class AgentSkillSummary(BaseSchema):
+    slug: str
+    title: str = ""
+    summary: str = ""
+
+
+class AgentSkill(AgentSkillSummary):
+    body: str = ""
+    updated_at: str = ""
