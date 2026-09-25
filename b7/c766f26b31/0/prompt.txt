@@ -1,0 +1,4 @@
+another hot fix on the application:
+
+we have merged a branch that aimed to mark as want to apply when a position is pinned but i just checked on application and it's not working correctly.
+find the problem and fix it.
