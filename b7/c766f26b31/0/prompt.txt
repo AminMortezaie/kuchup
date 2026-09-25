@@ -1,4 +1,7 @@
-another hot fix on the application:
+<timestamp>Friday, Sep 25, 2026, 9:34 PM (UTC+4)</timestamp>
 
-we have merged a branch that aimed to mark as want to apply when a position is pinned but i just checked on application and it's not working correctly.
-find the problem and fix it.
+hotfix: when a job is going to not for me, it should be tagged why not for me and not just say not for me on position card.
+
+the second thing is when something goes to not for me with any excuses like expired or anything else it should not be in queue and should be removed and not showed on applications queue and should be pull out of queue but you should add a new backlog for data that it's for exactly for the positions that user wanted to apply but expired and couldn't apply for them (similar future postion can be fit with user), in future when we're implementing user personalization it can help use to show the user better positions.
+
+it should be documented on product admin docs completely that it's idea for future and user personalization module, which can be implemented or not.
