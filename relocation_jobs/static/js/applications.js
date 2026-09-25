@@ -1,6 +1,13 @@
 /** Position-centric application states — Apply / Applied / Rejected (paginated). */
 
-import { $, finishLoadingProgress, setLoadingProgress, toast } from "./utils.js";
+import {
+  $,
+  beginTopLoadingProgress,
+  finishLoadingProgress,
+  setLoadingProgress,
+  toast,
+} from "./utils.js";
+import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { initAppShell } from "./app-shell.js";
 import { companyWorkspacePath } from "./company-workspace.js";
 
@@ -156,7 +163,7 @@ function renderList() {
   showError(state.error || "");
 
   if (state.loading && !state.loaded) {
-    setStatus("Loading…");
+    setStatus("");
     renderPagination(state);
     return;
   }
@@ -165,7 +172,7 @@ function renderList() {
     renderPagination(state);
     return;
   }
-  setStatus(state.loading ? "Updating…" : "");
+  setStatus("");
 
   for (const job of state.jobs) {
     const row = document.createElement("article");
@@ -208,6 +215,22 @@ async function loadCounts() {
   syncTabUi();
 }
 
+function startTabLoading(state, { quiet = false } = {}) {
+  if (quiet) return "none";
+  if (!state.loaded) {
+    beginScreenLoad();
+    return "overlay";
+  }
+  beginTopLoadingProgress(18);
+  setLoadingProgress(35);
+  return "bar";
+}
+
+function finishTabLoading(mode) {
+  if (mode === "overlay") endScreenLoad();
+  else if (mode === "bar") finishLoadingProgress();
+}
+
 async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
   if (!TABS.includes(tab)) return;
   const state = tabState[tab];
@@ -219,12 +242,13 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
   state.loading = true;
   state.error = "";
   if (tab === activeTab) renderList();
-  if (!quiet && tab === activeTab) setLoadingProgress(30);
+  const loadMode = tab === activeTab ? startTabLoading(state, { quiet }) : "none";
   try {
     const params = new URLSearchParams({
       page: String(page),
       page_size: String(PAGE_SIZE),
     });
+    if (loadMode === "bar") setLoadingProgress(55);
     const data = await api(`${LIST_PATH[tab]}?${params}`);
     const meta = data.meta || {};
     state.jobs = Array.isArray(data.jobs) ? data.jobs : [];
@@ -236,18 +260,24 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
       const fallback = Math.max(1, Math.min(state.page - 1, state.totalPages));
       if (fallback !== state.page) {
         state.loading = false;
+        finishTabLoading(loadMode);
         await loadTab(tab, { page: fallback, force: true, quiet });
         return;
       }
     }
+    if (loadMode === "bar") setLoadingProgress(90);
   } catch (err) {
     if (err.message !== "Authentication required") {
       state.error = err.message || "Failed to load applications";
     }
   } finally {
     state.loading = false;
-    if (!quiet && tab === activeTab) finishLoadingProgress();
-    if (tab === activeTab) renderList();
+    finishTabLoading(loadMode);
+    if (tab === activeTab) {
+      renderList();
+      const body = document.querySelector(".applications-page-body");
+      if (body && force) body.scrollTop = 0;
+    }
   }
 }
 
@@ -257,9 +287,13 @@ async function refreshAfterMutation() {
     tabState[tab] = emptyTabState();
   }
   try {
+    beginTopLoadingProgress(12);
     await loadCounts();
+    setLoadingProgress(40);
     await loadTab(activeTab, { page: 1, force: true, quiet: true });
+    finishLoadingProgress();
   } catch (err) {
+    finishLoadingProgress();
     if (err.message !== "Authentication required") {
       showError(err.message || "Failed to refresh applications");
     }
@@ -310,22 +344,22 @@ async function init() {
   initAppShell();
   bindTabs();
   document.addEventListener("position-state-changed", onPositionStateChanged);
-  setLoadingProgress(10);
+  beginScreenLoad();
   const ok = await refreshAuth();
   if (!ok) {
-    finishLoadingProgress();
+    endScreenLoad();
     return;
   }
   syncTabUi();
   try {
     await loadCounts();
-    setLoadingProgress(40);
-    await loadTab(activeTab, { page: 1, force: true });
+    await loadTab(activeTab, { page: 1, force: true, quiet: true });
   } catch (err) {
     if (err.message !== "Authentication required") {
       showError(err.message || "Failed to load applications");
     }
-    finishLoadingProgress();
+  } finally {
+    endScreenLoad();
   }
 }
 
