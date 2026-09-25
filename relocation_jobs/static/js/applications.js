@@ -34,7 +34,6 @@ function emptyTabState() {
     page: 1,
     total: 0,
     totalPages: 1,
-    hasMore: false,
     loaded: false,
     loading: false,
     error: "",
@@ -85,12 +84,6 @@ function positionCardVariant(job) {
   if (job.not_for_me) return "not_for_me";
   if (job.rejected) return "rejected";
   return "open";
-}
-
-function countForTab(tab) {
-  if (tab === "queue") return counts.apply;
-  if (tab === "applied") return counts.applied;
-  return counts.rejected;
 }
 
 function syncTabUi() {
@@ -204,7 +197,7 @@ function renderList() {
   renderPagination(state);
 }
 
-async function loadCounts({ quiet = false } = {}) {
+async function loadCounts() {
   const data = await api("/api/applications/counts");
   counts = {
     apply: Number(data.apply) || 0,
@@ -213,7 +206,6 @@ async function loadCounts({ quiet = false } = {}) {
   };
   countsLoaded = true;
   syncTabUi();
-  if (!quiet) return;
 }
 
 async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
@@ -239,11 +231,9 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
     state.page = Number(meta.page) || page;
     state.total = Number(meta.total) || 0;
     state.totalPages = Number(meta.total_pages) || 1;
-    state.hasMore = Boolean(meta.has_more);
-    state.pageSize = Number(meta.page_size) || PAGE_SIZE;
     state.loaded = true;
-    if (state.jobs.length === 0 && state.page > 1 && state.total > 0) {
-      const fallback = Math.max(1, state.totalPages);
+    if (!state.jobs.length && state.page > 1) {
+      const fallback = Math.max(1, Math.min(state.page - 1, state.totalPages));
       if (fallback !== state.page) {
         state.loading = false;
         await loadTab(tab, { page: fallback, force: true, quiet });
@@ -267,7 +257,7 @@ async function refreshAfterMutation() {
     tabState[tab] = emptyTabState();
   }
   try {
-    await loadCounts({ quiet: true });
+    await loadCounts();
     await loadTab(activeTab, { page: 1, force: true, quiet: true });
   } catch (err) {
     if (err.message !== "Authentication required") {
@@ -340,11 +330,3 @@ async function init() {
 }
 
 void init();
-
-export const __test = {
-  PAGE_SIZE,
-  TABS,
-  LIST_PATH,
-  countForTab: () => countForTab,
-  getActiveTab: () => activeTab,
-};

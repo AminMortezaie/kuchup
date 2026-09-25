@@ -7,7 +7,6 @@ from relocation_jobs.panel.application_queue import (
     count_application_states,
     list_application_queue_positions,
     list_applied_positions,
-    list_rejected_positions,
 )
 from relocation_jobs.positions.queue import (
     is_active_application_queue_row,
