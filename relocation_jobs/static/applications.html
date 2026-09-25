@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lexend:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css?v=120" />
+  <link rel="stylesheet" href="/static/styles.css?v=121" />
   <link rel="stylesheet" href="/static/app-shell.css?v=15" />
 </head>
 <body>
@@ -108,24 +108,28 @@
         </header>
         <div class="app-page applications-page">
           <h1 class="app-page-title">Applications</h1>
-          <p class="applications-lead">Positions you pinned or marked want to apply — ready for MCP tailoring and Apply.</p>
+          <p class="applications-lead">Track positions still to apply, active applications, and rejections — each state loads independently.</p>
           <div class="applications-tabs" role="tablist" aria-label="Application views">
             <button type="button" class="applications-tab is-active" role="tab" aria-selected="true" data-applications-tab="queue" id="applicationsTabQueue">
-              To apply <span class="applications-tab-count" id="applicationsQueueCount">0</span>
+              Apply <span class="applications-tab-count" id="applicationsQueueCount">—</span>
             </button>
             <button type="button" class="applications-tab" role="tab" aria-selected="false" data-applications-tab="applied" id="applicationsTabApplied">
-              Applied <span class="applications-tab-count" id="applicationsAppliedCount">0</span>
+              Applied <span class="applications-tab-count" id="applicationsAppliedCount">—</span>
+            </button>
+            <button type="button" class="applications-tab" role="tab" aria-selected="false" data-applications-tab="rejected" id="applicationsTabRejected">
+              Rejected <span class="applications-tab-count" id="applicationsRejectedCount">—</span>
             </button>
           </div>
           <div id="applicationsError" class="admin-error" hidden></div>
           <p class="applications-status" id="applicationsStatus" hidden></p>
           <div class="applications-list" id="applicationsList" aria-live="polite"></div>
+          <div id="applicationsPagination" class="applications-pagination-root" aria-live="polite"></div>
         </div>
       </div>
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/static/js/position-card.js?v=14"></script>
-  <script type="module" src="/static/js/applications.js?v=2"></script>
+  <script type="module" src="/static/js/applications.js?v=3"></script>
 </body>
 </html>

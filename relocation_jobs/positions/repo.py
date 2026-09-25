@@ -2,7 +2,48 @@ from __future__ import annotations
 
 from relocation_jobs.core.job_identity import job_idempotency_key
 from relocation_jobs.core.db import _normalize_url, _utc_now, db_transaction, get_connection
+from relocation_jobs.positions.queue import (
+    APPLICATION_STATE_APPLY,
+    APPLICATION_STATE_APPLIED,
+    APPLICATION_STATE_REJECTED,
+    APPLICATION_STATES,
+)
 from relocation_jobs.users.history import append_status_event, status_history_for_job
+
+_JOB_TRACKING_SELECT = """
+    country, company_name, job_url, job_title, ats_score, applied, applied_date,
+    not_for_me, not_for_me_date, not_for_me_reason, rejected, rejected_date,
+    waiting_referral, waiting_referral_date, referral_linkedin_url,
+    seen, seen_date, looking_to_apply, looking_to_apply_date,
+    pinned, pinned_at, location_gate_override, updated_at
+"""
+
+_STATE_WHERE = {
+    APPLICATION_STATE_APPLY: (
+        "applied = 0 AND (pinned = 1 OR looking_to_apply = 1)"
+    ),
+    APPLICATION_STATE_APPLIED: (
+        "applied = 1 AND rejected = 0 AND COALESCE(not_for_me, 0) = 0"
+    ),
+    APPLICATION_STATE_REJECTED: (
+        "applied = 1 AND rejected = 1 AND COALESCE(not_for_me, 0) = 0"
+    ),
+}
+
+_STATE_ORDER = {
+    APPLICATION_STATE_APPLY: (
+        "pinned DESC, looking_to_apply DESC, "
+        "LOWER(company_name) ASC, LOWER(COALESCE(job_title, '')) ASC, job_url ASC"
+    ),
+    APPLICATION_STATE_APPLIED: (
+        "applied_date DESC, "
+        "LOWER(company_name) ASC, LOWER(COALESCE(job_title, '')) ASC, job_url ASC"
+    ),
+    APPLICATION_STATE_REJECTED: (
+        "rejected_date DESC, "
+        "LOWER(company_name) ASC, LOWER(COALESCE(job_title, '')) ASC, job_url ASC"
+    ),
+}
 
 
 def resolve_tracking_url(
@@ -728,3 +769,89 @@ def clear_country_tracking(country_key: str) -> dict:
         "company_tracking": len(company_rows),
         "job_status_events": len(event_rows),
     }
+
+
+def _scope_country(country: str | None) -> str | None:
+    key = (country or "").strip().lower()
+    if not key or key == "all":
+        return None
+    return key
+
+
+def count_application_states(
+    user_id: int,
+    *,
+    country: str | None = None,
+) -> dict[str, int]:
+    scope = _scope_country(country)
+    sql = f"""
+        SELECT
+            COALESCE(SUM(CASE WHEN {_STATE_WHERE[APPLICATION_STATE_APPLY]} THEN 1 ELSE 0 END), 0)
+                AS apply_count,
+            COALESCE(SUM(CASE WHEN {_STATE_WHERE[APPLICATION_STATE_APPLIED]} THEN 1 ELSE 0 END), 0)
+                AS applied_count,
+            COALESCE(SUM(CASE WHEN {_STATE_WHERE[APPLICATION_STATE_REJECTED]} THEN 1 ELSE 0 END), 0)
+                AS rejected_count
+        FROM job_tracking
+        WHERE user_id = %s
+    """
+    params: list = [user_id]
+    if scope:
+        sql += " AND country = %s"
+        params.append(scope)
+    row = get_connection().execute(sql, tuple(params)).fetchone() or {}
+    return {
+        APPLICATION_STATE_APPLY: int(row.get("apply_count") or 0),
+        APPLICATION_STATE_APPLIED: int(row.get("applied_count") or 0),
+        APPLICATION_STATE_REJECTED: int(row.get("rejected_count") or 0),
+    }
+
+
+def count_application_state(
+    user_id: int,
+    state: str,
+    *,
+    country: str | None = None,
+) -> int:
+    if state not in APPLICATION_STATES:
+        raise ValueError(f"unknown application state: {state}")
+    scope = _scope_country(country)
+    sql = f"""
+        SELECT COUNT(*) AS cnt
+        FROM job_tracking
+        WHERE user_id = %s AND {_STATE_WHERE[state]}
+    """
+    params: list = [user_id]
+    if scope:
+        sql += " AND country = %s"
+        params.append(scope)
+    row = get_connection().execute(sql, tuple(params)).fetchone() or {}
+    return int(row.get("cnt") or 0)
+
+
+def list_application_state_rows(
+    user_id: int,
+    state: str,
+    *,
+    country: str | None = None,
+    offset: int = 0,
+    limit: int = 20,
+) -> list[dict]:
+    if state not in APPLICATION_STATES:
+        raise ValueError(f"unknown application state: {state}")
+    scope = _scope_country(country)
+    offset = max(0, int(offset))
+    limit = max(0, int(limit))
+    sql = f"""
+        SELECT {_JOB_TRACKING_SELECT}
+        FROM job_tracking
+        WHERE user_id = %s AND {_STATE_WHERE[state]}
+    """
+    params: list = [user_id]
+    if scope:
+        sql += " AND country = %s"
+        params.append(scope)
+    sql += f" ORDER BY {_STATE_ORDER[state]} LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
+    rows = get_connection().execute(sql, tuple(params)).fetchall()
+    return [dict(r) for r in rows]
