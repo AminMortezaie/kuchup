@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "8a9c97727428",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/panel/tracking.py",
+    "relocation_jobs/static/dist/board.js",
+    "tests/web/test_board_roles_page.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8a/9c97727428/0/metadata.json",
+      "transcript": "/8a/9c97727428/0/full.jsonl",
+      "compact_transcript": "/8a/9c97727428/0/transcript.jsonl",
+      "content_hash": "/8a/9c97727428/0/content_hash.txt",
+      "prompt": "/8a/9c97727428/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 195918,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3143168,
+    "output_tokens": 20506,
+    "api_call_count": 4
+  }
+}
