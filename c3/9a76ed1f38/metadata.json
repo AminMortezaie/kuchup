@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "c39a76ed1f38",
+  "strategy": "manual-commit",
+  "branch": "cursor/remove-want-to-apply-cta-fde5",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "docs/reference/application-queue.md",
+    "docs/reference/business-rules.md",
+    "relocation_jobs/positions/repo.py",
+    "relocation_jobs/positions/service.py",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/applications.js",
+    "relocation_jobs/static/js/job-board.js",
+    "relocation_jobs/team_docs/pages/applications-queue.md",
+    "tests/web/test_applications_queue.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c3/9a76ed1f38/0/metadata.json",
+      "transcript": "/c3/9a76ed1f38/0/full.jsonl",
+      "compact_transcript": "/c3/9a76ed1f38/0/transcript.jsonl",
+      "content_hash": "/c3/9a76ed1f38/0/content_hash.txt",
+      "prompt": "/c3/9a76ed1f38/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 138581,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2615168,
+    "output_tokens": 10106,
+    "api_call_count": 4
+  }
+}
