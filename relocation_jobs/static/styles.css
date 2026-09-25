@@ -8347,7 +8347,20 @@ body.scroll-locked {
 
 /* Applications queue page (/applications) */
 .applications-page {
+  display: flex;
+  flex-direction: column;
   max-width: 52rem;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: 0;
+}
+
+.applications-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-md, 1rem);
 }
 
 .applications-lead {
@@ -8440,10 +8453,25 @@ body.scroll-locked {
   display: block;
 }
 
+.applications-pagination-root {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: auto;
+}
+
+.applications-pagination-root:empty {
+  display: none;
+}
+
 .applications-pagination-root:not(:empty) {
-  margin-top: 1.25rem;
-  padding-top: 0.75rem;
+  margin-top: auto;
+  padding: 0.7rem 0.15rem 0.85rem;
   border-top: 1px solid var(--border-subtle, #e8e2da);
+  background: color-mix(in srgb, var(--color-paper, #fcfaf7) 92%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -8px 20px rgba(28, 25, 23, 0.06);
 }
 
 .applications-pagination.board-pagination {

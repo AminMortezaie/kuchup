@@ -333,5 +333,10 @@ def test_applications_js_lazy_loads_per_tab():
     assert "/api/applications/rejected" in src
     assert "Promise.all([loadQueue(), loadApplied()])" not in src
     assert "loadCounts" in src
+    assert "beginScreenLoad" in src
+    assert 'setStatus("Loading' not in src
+    assert 'setStatus("Updating' not in src
     assert "PAGE_SIZE = 20" in src
     assert "loadTab(activeTab" in src
+    assert "applications-pagination-root" in Path("relocation_jobs/static/applications.html").read_text()
+    assert "applications-page-body" in Path("relocation_jobs/static/applications.html").read_text()
