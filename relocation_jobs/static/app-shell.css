@@ -760,16 +760,17 @@
 
 .app-shell .applications-page,
 .app-shell .board-page {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   height: 100%;
   flex: 1;
   padding-bottom: 0;
+  overflow: hidden;
 }
 
+.app-shell .applications-page-body,
 .app-shell .board-page-body {
-  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;

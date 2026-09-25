@@ -1668,12 +1668,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   max-width: 100%;
   overflow-x: clip;
   overscroll-behavior: none;
-  /* Footer is not a scroller — block pan so iOS doesn't chain-scroll the page. */
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 .board-pagination-root:not(:empty) {
-  margin-top: auto;
   padding: 0.65rem 0.15rem 0.75rem;
   border: 0;
   border-radius: 0;
@@ -5725,7 +5723,6 @@ body.scroll-locked {
   }
 
   .board-pagination-root:not(:empty) {
-    margin-top: auto;
     padding: 0.55rem 0.15rem 0.65rem;
     border: 0;
     border-radius: 0;
@@ -8374,8 +8371,6 @@ body.scroll-locked {
 
 /* Applications queue page (/applications) */
 .applications-page {
-  display: flex;
-  flex-direction: column;
   max-width: 52rem;
   width: 100%;
   min-height: 0;
@@ -8384,11 +8379,7 @@ body.scroll-locked {
 }
 
 .applications-page-body {
-  flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-bottom: var(--space-md, 1rem);
 }
 
 .applications-lead {
@@ -8487,7 +8478,7 @@ body.scroll-locked {
   max-width: 100%;
   overflow-x: clip;
   overscroll-behavior: none;
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 .applications-pagination-root:empty {
@@ -8496,8 +8487,6 @@ body.scroll-locked {
 
 .applications-pagination-root:not(:empty),
 .applications-pagination-root.board-pagination-root:not(:empty) {
-  margin-top: auto;
-  /* Flat separator — same as board; keep border-top (footer sits below list). */
   padding: 0.65rem 0.15rem 0.75rem;
   border: 0;
   border-top: 1px solid var(--border-subtle, #e8e2da);
