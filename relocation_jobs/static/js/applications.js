@@ -1,12 +1,44 @@
-/** Position-centric application queue — active queue + applied history. */
+/** Position-centric application states — Apply / Applied / Rejected (paginated). */
 
 import { $, finishLoadingProgress, setLoadingProgress, toast } from "./utils.js";
 import { initAppShell } from "./app-shell.js";
 import { companyWorkspacePath } from "./company-workspace.js";
 
+const PAGE_SIZE = 20;
+const TABS = ["queue", "applied", "rejected"];
+
+const EMPTY_COPY = {
+  queue: "No positions waiting for application. Pin a role or mark Want to apply on the job board.",
+  applied: "No active applications.",
+  rejected: "No rejected applications.",
+};
+
+const LIST_PATH = {
+  queue: "/api/applications/queue",
+  applied: "/api/applications/applied",
+  rejected: "/api/applications/rejected",
+};
+
 let activeTab = "queue";
-let queueJobs = [];
-let appliedJobs = [];
+const tabState = {
+  queue: emptyTabState(),
+  applied: emptyTabState(),
+  rejected: emptyTabState(),
+};
+let counts = { apply: 0, applied: 0, rejected: 0 };
+let countsLoaded = false;
+
+function emptyTabState() {
+  return {
+    jobs: [],
+    page: 1,
+    total: 0,
+    totalPages: 1,
+    loaded: false,
+    loading: false,
+    error: "",
+  };
+}
 
 function showLogin() {
   const content = $("applicationsContent");
@@ -54,22 +86,88 @@ function positionCardVariant(job) {
   return "open";
 }
 
+function syncTabUi() {
+  document.querySelectorAll("[data-applications-tab]").forEach((btn) => {
+    const selected = btn.dataset.applicationsTab === activeTab;
+    btn.classList.toggle("is-active", selected);
+    btn.setAttribute("aria-selected", selected ? "true" : "false");
+  });
+  const queueCount = $("applicationsQueueCount");
+  const appliedCount = $("applicationsAppliedCount");
+  const rejectedCount = $("applicationsRejectedCount");
+  if (queueCount) {
+    queueCount.textContent = countsLoaded ? String(counts.apply) : "—";
+  }
+  if (appliedCount) {
+    appliedCount.textContent = countsLoaded ? String(counts.applied) : "—";
+  }
+  if (rejectedCount) {
+    rejectedCount.textContent = countsLoaded ? String(counts.rejected) : "—";
+  }
+}
+
+function renderPagination(state) {
+  const root = $("applicationsPagination");
+  if (!root) return;
+  root.replaceChildren();
+  if (!state.loaded || state.totalPages <= 1) return;
+
+  const nav = document.createElement("nav");
+  nav.className = "board-pagination applications-pagination";
+  nav.setAttribute("aria-label", "Application pages");
+
+  const summary = document.createElement("p");
+  summary.className = "board-pagination-summary";
+  const start = state.total ? (state.page - 1) * PAGE_SIZE + 1 : 0;
+  const end = state.total ? Math.min(state.page * PAGE_SIZE, state.total) : 0;
+  summary.textContent = `Page ${state.page} of ${state.totalPages} · ${start}–${end} of ${state.total}`;
+
+  const controls = document.createElement("div");
+  controls.className = "board-pagination-controls";
+
+  const prev = document.createElement("button");
+  prev.type = "button";
+  prev.className = "filter-btn board-page-nav";
+  prev.textContent = "Previous";
+  prev.disabled = state.loading || state.page <= 1;
+  prev.addEventListener("click", () => {
+    void loadTab(activeTab, { page: state.page - 1, force: true });
+  });
+
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "filter-btn board-page-nav";
+  next.textContent = "Next";
+  next.disabled = state.loading || state.page >= state.totalPages;
+  next.addEventListener("click", () => {
+    void loadTab(activeTab, { page: state.page + 1, force: true });
+  });
+
+  controls.append(prev, next);
+  nav.append(summary, controls);
+  root.appendChild(nav);
+}
+
 function renderList() {
   const list = $("applicationsList");
   if (!list) return;
-  const jobs = activeTab === "applied" ? appliedJobs : queueJobs;
-  const empty = activeTab === "applied"
-    ? "No applied positions yet."
-    : "No positions in your queue. Pin a role or mark Want to apply on the job board.";
-
+  const state = tabState[activeTab];
   list.replaceChildren();
-  if (!jobs.length) {
-    setStatus(empty);
+  showError(state.error || "");
+
+  if (state.loading && !state.loaded) {
+    setStatus("Loading…");
+    renderPagination(state);
     return;
   }
-  setStatus("");
+  if (!state.jobs.length) {
+    setStatus(EMPTY_COPY[activeTab] || "Nothing here yet.");
+    renderPagination(state);
+    return;
+  }
+  setStatus(state.loading ? "Updating…" : "");
 
-  for (const job of jobs) {
+  for (const job of state.jobs) {
     const row = document.createElement("article");
     row.className = "applications-row";
 
@@ -96,43 +194,75 @@ function renderList() {
     row.append(meta, cardHost);
     list.appendChild(row);
   }
+  renderPagination(state);
 }
 
-function syncTabUi() {
-  document.querySelectorAll("[data-applications-tab]").forEach((btn) => {
-    const selected = btn.dataset.applicationsTab === activeTab;
-    btn.classList.toggle("is-active", selected);
-    btn.setAttribute("aria-selected", selected ? "true" : "false");
-  });
-  const queueCount = $("applicationsQueueCount");
-  const appliedCount = $("applicationsAppliedCount");
-  if (queueCount) queueCount.textContent = String(queueJobs.length);
-  if (appliedCount) appliedCount.textContent = String(appliedJobs.length);
+async function loadCounts() {
+  const data = await api("/api/applications/counts");
+  counts = {
+    apply: Number(data.apply) || 0,
+    applied: Number(data.applied) || 0,
+    rejected: Number(data.rejected) || 0,
+  };
+  countsLoaded = true;
+  syncTabUi();
 }
 
-async function loadQueue() {
-  const data = await api("/api/applications/queue");
-  queueJobs = Array.isArray(data.jobs) ? data.jobs : [];
-}
-
-async function loadApplied() {
-  const data = await api("/api/applications/applied");
-  appliedJobs = Array.isArray(data.jobs) ? data.jobs : [];
-}
-
-async function refreshAll({ quiet = false } = {}) {
-  showError("");
-  if (!quiet) setLoadingProgress(20);
+async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
+  if (!TABS.includes(tab)) return;
+  const state = tabState[tab];
+  if (state.loading) return;
+  if (state.loaded && !force && state.page === page) {
+    if (tab === activeTab) renderList();
+    return;
+  }
+  state.loading = true;
+  state.error = "";
+  if (tab === activeTab) renderList();
+  if (!quiet && tab === activeTab) setLoadingProgress(30);
   try {
-    await Promise.all([loadQueue(), loadApplied()]);
-    syncTabUi();
-    renderList();
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(PAGE_SIZE),
+    });
+    const data = await api(`${LIST_PATH[tab]}?${params}`);
+    const meta = data.meta || {};
+    state.jobs = Array.isArray(data.jobs) ? data.jobs : [];
+    state.page = Number(meta.page) || page;
+    state.total = Number(meta.total) || 0;
+    state.totalPages = Number(meta.total_pages) || 1;
+    state.loaded = true;
+    if (!state.jobs.length && state.page > 1) {
+      const fallback = Math.max(1, Math.min(state.page - 1, state.totalPages));
+      if (fallback !== state.page) {
+        state.loading = false;
+        await loadTab(tab, { page: fallback, force: true, quiet });
+        return;
+      }
+    }
   } catch (err) {
     if (err.message !== "Authentication required") {
-      showError(err.message || "Failed to load applications");
+      state.error = err.message || "Failed to load applications";
     }
   } finally {
-    if (!quiet) finishLoadingProgress();
+    state.loading = false;
+    if (!quiet && tab === activeTab) finishLoadingProgress();
+    if (tab === activeTab) renderList();
+  }
+}
+
+async function refreshAfterMutation() {
+  showError("");
+  for (const tab of TABS) {
+    tabState[tab] = emptyTabState();
+  }
+  try {
+    await loadCounts();
+    await loadTab(activeTab, { page: 1, force: true, quiet: true });
+  } catch (err) {
+    if (err.message !== "Authentication required") {
+      showError(err.message || "Failed to refresh applications");
+    }
   }
 }
 
@@ -150,17 +280,17 @@ function onPositionStateChanged(event) {
     showError(detail.message);
     return;
   }
-  if (detail.type === "mutated") void refreshAll({ quiet: true });
+  if (detail.type === "mutated") void refreshAfterMutation();
 }
 
 function bindTabs() {
   document.querySelectorAll("[data-applications-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const next = btn.dataset.applicationsTab;
-      if (!next || next === activeTab) return;
+      if (!next || next === activeTab || !TABS.includes(next)) return;
       activeTab = next;
       syncTabUi();
-      renderList();
+      void loadTab(activeTab, { page: tabState[activeTab].page || 1 });
     });
   });
 }
@@ -186,7 +316,17 @@ async function init() {
     finishLoadingProgress();
     return;
   }
-  await refreshAll();
+  syncTabUi();
+  try {
+    await loadCounts();
+    setLoadingProgress(40);
+    await loadTab(activeTab, { page: 1, force: true });
+  } catch (err) {
+    if (err.message !== "Authentication required") {
+      showError(err.message || "Failed to load applications");
+    }
+    finishLoadingProgress();
+  }
 }
 
 void init();

@@ -8439,3 +8439,13 @@ body.scroll-locked {
 .applications-card-host position-card {
   display: block;
 }
+
+.applications-pagination-root:not(:empty) {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle, #e8e2da);
+}
+
+.applications-pagination.board-pagination {
+  margin: 0;
+}
