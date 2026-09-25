@@ -1,6 +1,12 @@
 /** Position-centric application states — Apply / Applied / Rejected (paginated). */
 
-import { $, finishLoadingProgress, setLoadingProgress, toast } from "./utils.js";
+import {
+  $,
+  beginTopLoadingProgress,
+  finishLoadingProgress,
+  toast,
+} from "./utils.js";
+import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
 import { initAppShell } from "./app-shell.js";
 import { companyWorkspacePath } from "./company-workspace.js";
 
@@ -106,6 +112,20 @@ function syncTabUi() {
   }
 }
 
+/** Same window as frontend/src/BoardPagination.jsx — Prev + ≤5 slots + Next. */
+function pageRange(current, total) {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) return [1, 2, 3, "…", total];
+  if (current >= total - 2) return [1, "…", total - 2, total - 1, total];
+  return [1, "…", current, "…", total];
+}
+
+function goToPage(page) {
+  void loadTab(activeTab, { page, force: true });
+}
+
 function renderPagination(state) {
   const root = $("applicationsPagination");
   if (!root) return;
@@ -130,20 +150,37 @@ function renderPagination(state) {
   prev.className = "filter-btn board-page-nav";
   prev.textContent = "Previous";
   prev.disabled = state.loading || state.page <= 1;
-  prev.addEventListener("click", () => {
-    void loadTab(activeTab, { page: state.page - 1, force: true });
-  });
+  prev.addEventListener("click", () => goToPage(state.page - 1));
+
+  const pages = document.createElement("div");
+  pages.className = "board-pagination-pages";
+  for (const item of pageRange(state.page, state.totalPages)) {
+    if (typeof item === "number") {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `filter-btn board-page-num${item === state.page ? " is-active" : ""}`;
+      btn.textContent = String(item);
+      btn.disabled = state.loading || item === state.page;
+      if (item === state.page) btn.setAttribute("aria-current", "page");
+      btn.addEventListener("click", () => goToPage(item));
+      pages.appendChild(btn);
+    } else {
+      const gap = document.createElement("span");
+      gap.className = "board-page-gap";
+      gap.setAttribute("aria-hidden", "true");
+      gap.textContent = item;
+      pages.appendChild(gap);
+    }
+  }
 
   const next = document.createElement("button");
   next.type = "button";
   next.className = "filter-btn board-page-nav";
   next.textContent = "Next";
   next.disabled = state.loading || state.page >= state.totalPages;
-  next.addEventListener("click", () => {
-    void loadTab(activeTab, { page: state.page + 1, force: true });
-  });
+  next.addEventListener("click", () => goToPage(state.page + 1));
 
-  controls.append(prev, next);
+  controls.append(prev, pages, next);
   nav.append(summary, controls);
   root.appendChild(nav);
 }
@@ -156,7 +193,7 @@ function renderList() {
   showError(state.error || "");
 
   if (state.loading && !state.loaded) {
-    setStatus("Loading…");
+    setStatus("");
     renderPagination(state);
     return;
   }
@@ -165,7 +202,7 @@ function renderList() {
     renderPagination(state);
     return;
   }
-  setStatus(state.loading ? "Updating…" : "");
+  setStatus("");
 
   for (const job of state.jobs) {
     const row = document.createElement("article");
@@ -219,7 +256,27 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
   state.loading = true;
   state.error = "";
   if (tab === activeTab) renderList();
-  if (!quiet && tab === activeTab) setLoadingProgress(30);
+
+  let useOverlay = false;
+  let useBar = false;
+  if (!quiet && tab === activeTab) {
+    if (!state.loaded) {
+      beginScreenLoad();
+      useOverlay = true;
+    } else {
+      beginTopLoadingProgress();
+      useBar = true;
+    }
+  }
+
+  let finishedLoading = false;
+  const finishLoading = () => {
+    if (finishedLoading) return;
+    finishedLoading = true;
+    if (useOverlay) endScreenLoad();
+    else if (useBar) finishLoadingProgress();
+  };
+
   try {
     const params = new URLSearchParams({
       page: String(page),
@@ -236,6 +293,7 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
       const fallback = Math.max(1, Math.min(state.page - 1, state.totalPages));
       if (fallback !== state.page) {
         state.loading = false;
+        finishLoading();
         await loadTab(tab, { page: fallback, force: true, quiet });
         return;
       }
@@ -246,8 +304,12 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
     }
   } finally {
     state.loading = false;
-    if (!quiet && tab === activeTab) finishLoadingProgress();
-    if (tab === activeTab) renderList();
+    finishLoading();
+    if (tab === activeTab) {
+      renderList();
+      const body = document.querySelector(".applications-page-body");
+      if (body && force) body.scrollTop = 0;
+    }
   }
 }
 
@@ -257,9 +319,12 @@ async function refreshAfterMutation() {
     tabState[tab] = emptyTabState();
   }
   try {
+    beginTopLoadingProgress();
     await loadCounts();
     await loadTab(activeTab, { page: 1, force: true, quiet: true });
+    finishLoadingProgress();
   } catch (err) {
+    finishLoadingProgress();
     if (err.message !== "Authentication required") {
       showError(err.message || "Failed to refresh applications");
     }
@@ -310,22 +375,22 @@ async function init() {
   initAppShell();
   bindTabs();
   document.addEventListener("position-state-changed", onPositionStateChanged);
-  setLoadingProgress(10);
+  beginScreenLoad();
   const ok = await refreshAuth();
   if (!ok) {
-    finishLoadingProgress();
+    endScreenLoad();
     return;
   }
   syncTabUi();
   try {
     await loadCounts();
-    setLoadingProgress(40);
-    await loadTab(activeTab, { page: 1, force: true });
+    await loadTab(activeTab, { page: 1, force: true, quiet: true });
   } catch (err) {
     if (err.message !== "Authentication required") {
       showError(err.message || "Failed to load applications");
     }
-    finishLoadingProgress();
+  } finally {
+    endScreenLoad();
   }
 }
 
