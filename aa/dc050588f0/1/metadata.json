@@ -1,12 +1,13 @@
 {
   "cli_version": "0.8.42",
   "checkpoint_id": "aadc050588f0",
+  "session_id": "759fe09c-aa5e-4f5e-ae58-c5ef19d0148c",
   "strategy": "manual-commit",
+  "created_at": "2026-09-25T09:19:42.357692Z",
   "branch": "main",
-  "checkpoints_count": 10,
+  "checkpoints_count": 1,
   "files_touched": [
     "relocation_jobs/static/homepage/404.html",
-    "relocation_jobs/static/homepage/_next/static/chunks/255-dccad31b90ca49a6.js",
     "relocation_jobs/static/homepage/engineering.html",
     "relocation_jobs/static/homepage/engineering.txt",
     "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html",
@@ -38,20 +39,62 @@
     "relocation_jobs/static/homepage/relocation-jobs-uk.html",
     "relocation_jobs/static/homepage/relocation-jobs-uk.txt"
   ],
-  "sessions": [
+  "agent": "Cursor",
+  "model": "cursor-grok-4.6-high",
+  "turn_id": "6e449a25743f",
+  "checkpoint_transcript_start": 16,
+  "transcript_lines_at_start": 16,
+  "compact_transcript_start": 2,
+  "skill_events_version": 1,
+  "skill_events": [
     {
-      "metadata": "/aa/dc050588f0/0/metadata.json",
-      "transcript": "/aa/dc050588f0/0/full.jsonl",
-      "compact_transcript": "/aa/dc050588f0/0/transcript.jsonl",
-      "content_hash": "/aa/dc050588f0/0/content_hash.txt",
-      "prompt": "/aa/dc050588f0/0/prompt.txt"
-    },
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-17T11:54:23.12941Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "a5e9e93e7abc",
+      "timestamp": "2026-09-17T11:54:23.12941Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-25T09:19:42.347235Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 6,
+    "human_modified": 70,
+    "human_removed": 0,
+    "total_committed": 6,
+    "total_lines_changed": 83,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
     {
-      "metadata": "/aa/dc050588f0/1/metadata.json",
-      "transcript": "/aa/dc050588f0/1/full.jsonl",
-      "compact_transcript": "/aa/dc050588f0/1/transcript.jsonl",
-      "content_hash": "/aa/dc050588f0/1/content_hash.txt",
-      "prompt": "/aa/dc050588f0/1/prompt.txt"
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
     }
   ]
 }
