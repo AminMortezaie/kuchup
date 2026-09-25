@@ -178,6 +178,11 @@ def test_pin_sets_looking_to_apply(v2_auth_client, seeded_catalog_v2):
     assert target["pinned"] is True
     assert target["looking_to_apply"] is True
 
+    queued = v2_auth_client.get("/api/applications/queue").get_json()
+    listed = next(j for j in queued["jobs"] if j["url"] == job["url"])
+    assert listed["pinned"] is True
+    assert listed["looking_to_apply"] is True
+
 
 def test_unpin_does_not_clear_looking_to_apply(v2_auth_client, seeded_catalog_v2):
     board = v2_auth_client.get("/api/board?country=uk").get_json()

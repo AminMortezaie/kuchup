@@ -187,6 +187,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
     run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
     run_migration_once(conn, "fetch_http_work_results_v1", _fetch_http_work_results_v1)
+    run_migration_once(conn, "pinned_sets_looking_to_apply_v1", _backfill_pinned_looking_to_apply)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -1065,6 +1066,20 @@ def _backfill_job_status_events(conn) -> None:
                         now,
                     ),
                 )
+
+
+def _backfill_pinned_looking_to_apply(conn) -> None:
+    conn.execute(
+        """
+        UPDATE job_tracking
+        SET looking_to_apply = 1,
+            looking_to_apply_date = COALESCE(
+                NULLIF(looking_to_apply_date, ''),
+                SUBSTR(pinned_at, 1, 10)
+            )
+        WHERE pinned = 1 AND COALESCE(looking_to_apply, 0) = 0
+        """
+    )
 
 
 def _fetch_http_work_results_v1(conn) -> None:

@@ -470,17 +470,22 @@ def set_job_pinned(
                 """
                 INSERT INTO job_tracking (
                     user_id, country, company_name, job_url, job_title,
-                    pinned, pinned_at, updated_at
-                ) VALUES (%s, %s, %s, %s, %s, 1, %s, %s)
+                    pinned, pinned_at, looking_to_apply, looking_to_apply_date, updated_at
+                ) VALUES (%s, %s, %s, %s, %s, 1, %s, 1, %s, %s)
                 ON CONFLICT (user_id, country, company_name, job_url) DO UPDATE SET
                     pinned = 1,
                     pinned_at = COALESCE(job_tracking.pinned_at, EXCLUDED.pinned_at),
+                    looking_to_apply = 1,
+                    looking_to_apply_date = COALESCE(
+                        NULLIF(job_tracking.looking_to_apply_date, ''),
+                        EXCLUDED.looking_to_apply_date
+                    ),
                     job_title = COALESCE(NULLIF(EXCLUDED.job_title, ''), job_tracking.job_title),
                     updated_at = EXCLUDED.updated_at
                 """,
                 (
                     user_id, country, company_name, storage_url, (job_title or "").strip(),
-                    now, now,
+                    now, now[:10], now,
                 ),
             )
             if storage_url != canonical_url:
@@ -488,17 +493,22 @@ def set_job_pinned(
                     """
                     INSERT INTO job_tracking (
                         user_id, country, company_name, job_url, job_title,
-                        pinned, pinned_at, updated_at
-                    ) VALUES (%s, %s, %s, %s, %s, 1, %s, %s)
+                        pinned, pinned_at, looking_to_apply, looking_to_apply_date, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, 1, %s, 1, %s, %s)
                     ON CONFLICT (user_id, country, company_name, job_url) DO UPDATE SET
                         pinned = 1,
                         pinned_at = COALESCE(job_tracking.pinned_at, EXCLUDED.pinned_at),
+                        looking_to_apply = 1,
+                        looking_to_apply_date = COALESCE(
+                            NULLIF(job_tracking.looking_to_apply_date, ''),
+                            EXCLUDED.looking_to_apply_date
+                        ),
                         job_title = COALESCE(NULLIF(EXCLUDED.job_title, ''), job_tracking.job_title),
                         updated_at = EXCLUDED.updated_at
                     """,
                     (
                         user_id, country, company_name, canonical_url, (job_title or "").strip(),
-                        now, now,
+                        now, now[:10], now,
                     ),
                 )
         else:
