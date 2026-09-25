@@ -187,6 +187,64 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
     run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
     run_migration_once(conn, "fetch_http_work_results_v1", _fetch_http_work_results_v1)
+    run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
+
+
+_MCP_AGENT_SKILL_TAILOR = (
+    Path(__file__).resolve().parent.parent
+    / "mcp"
+    / "agent_skills"
+    / "tailor.md"
+)
+
+
+def _seed_mcp_agent_skill(
+    conn,
+    *,
+    slug: str,
+    title: str,
+    summary: str,
+    path: Path,
+) -> None:
+    existing = conn.execute(
+        "SELECT slug FROM mcp_agent_skills WHERE slug = %s",
+        (slug,),
+    ).fetchone()
+    if existing:
+        return
+    body = path.read_text(encoding="utf-8").strip() + "\n"
+    now = _utc_now()
+    conn.execute(
+        """
+        INSERT INTO mcp_agent_skills (slug, title, summary, body, updated_at)
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (slug, title, summary, body, now),
+    )
+
+
+def _mcp_agent_skills_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS mcp_agent_skills (
+            slug TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    _seed_mcp_agent_skill(
+        conn,
+        slug="tailor",
+        title="Tailor one CV (batch reframe)",
+        summary=(
+            "Batch playbook: resolve job via queue/context, run reframe phases 1–4 + anti-AI, "
+            "then save_tailored_tex after user acceptance."
+        ),
+        path=_MCP_AGENT_SKILL_TAILOR,
+    )
 
 
 _KUCHUP_OWNERSHIP_DOC = (

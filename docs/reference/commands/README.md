@@ -1,7 +1,3 @@
-# `/tailor` slash command
+# Cursor slash commands (optional)
 
-Copy this file to `.cursor/commands/tailor.md` (project) or `~/.cursor/commands/tailor.md` (personal) so Agent chat lists **`/tailor`**.
-
-Canonical agent instructions live in the **mcp-resume-reframe** skill (user skill store / Claude Desktop package). This command is the one-shot entry point for batching multiple tailored CVs.
-
-See also: [mcp-application.md](../mcp-application.md#tailor-batch-mode-preferred-for-many-resumes).
+Some workflows have optional copies under `.cursor/commands/` for IDE convenience. They are not indexed here; connected agents load playbooks via MCP (`list_agent_skills` / `get_agent_skill`), not from this docs tree.
