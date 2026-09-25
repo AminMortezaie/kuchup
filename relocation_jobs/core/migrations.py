@@ -186,6 +186,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "role_filter_lang_variants_v1", _role_filter_lang_variants_v1)
     run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
     run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
+    run_migration_once(conn, "fetch_http_work_results_v1", _fetch_http_work_results_v1)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -1064,3 +1065,48 @@ def _backfill_job_status_events(conn) -> None:
                         now,
                     ),
                 )
+
+
+def _fetch_http_work_results_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fetch_http_work (
+            id SERIAL PRIMARY KEY,
+            fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+            company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            country_key TEXT NOT NULL,
+            name TEXT NOT NULL,
+            ats_type TEXT NOT NULL DEFAULT '',
+            ats_url TEXT NOT NULL DEFAULT '',
+            careers_url TEXT NOT NULL DEFAULT '',
+            UNIQUE (fetch_run_id, company_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_fetch_http_work_run
+            ON fetch_http_work(fetch_run_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fetch_http_results (
+            id SERIAL PRIMARY KEY,
+            fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+            company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+            status TEXT NOT NULL,
+            error TEXT,
+            jobs_json TEXT,
+            fetched_at TEXT NOT NULL,
+            merge_processed_at TEXT,
+            UNIQUE (fetch_run_id, company_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_fetch_http_results_pending
+            ON fetch_http_results(merge_processed_at, id)
+        """
+    )

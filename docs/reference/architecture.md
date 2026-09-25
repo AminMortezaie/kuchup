@@ -140,34 +140,36 @@ Layout: **pagination → search → sort/filters → company cards**.
 ## Fetch
 
 ```
-apps/fetch-worker/run.py          (scripts/fetch_scheduler_worker.py is a Docker shim)
-apps/playwright-worker/run.py     (Dockerfile.ec2-worker-playwright; FETCH_WORKER_KIND=playwright)
-  → fetch/scheduler.main
-  → run_scheduled_pass            listing check, then countries
-  → run_fetch_cycle               when / which countries
-  → runner.run_country_fetch_blocking
-       asyncio.run(run_country_fetch) — no panel thread
-  → country_runner                asyncio.Semaphore (only concurrency knob)
-  → pipeline.fetch_and_persist_company
-       load company → scrape → sync_company_board_to_catalog → record attempt
-  → scrape/ + catalog/repo.py
+Go HTTP worker (Dockerfile.ec2-worker, CMD /fetch-scheduler)
+  → open fetch_runs row
+  → fetch_http_work (one row per HTTP company)
+  → goroutine pool (FETCH_HTTP_POOL_SIZE, max 16) + ats_scrape parsers
+  → fetch_http_results (status ok | empty | error; jobs JSON when ok/empty)
+  → finalize fetch run
+
+Python merge follower (scripts/fetch_merge_consumer.py on panel image)
+  → poll fetch_http_results where merge_processed_at IS NULL
+  → ok/empty: process_company / merge_matching_jobs / enrich (no board HTTP)
+  → error: fetch_problem only (no merge)
+
+Playwright sidecar (apps/playwright-worker/run.py)
+  → Python fetch/scheduler (browser ATS only)
 ```
 
-Package spine: `relocation_jobs.fetch` exports `bootstrap_scheduler`, `run_fetch_cycle`, `start_country_fetch` (lazy; avoid importing scheduler from `__init__`).
-
-After a country or company **run** finishes (`fetch/runner.py`), enqueue `type=country`. Scrape/pipeline/country_runner do not enqueue.
+Panel one-company fetch still uses Python `scrape/board.py` adapters. Package spine: `relocation_jobs.fetch` exports merge consumer helpers in `go_results.py` and `merge_consumer.py`.
 
 Production images:
 
 | Image | Playwright | Env |
 |-------|------------|-----|
 | Slim panel (`Dockerfile.ec2`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1` |
-| Light fetch worker (`Dockerfile.ec2-worker`) | No | `FETCH_WORKER_KIND=http`, `FETCH_SCHEDULE_ENABLED=1`, interval 6h, concurrency **2** |
+| Light fetch worker (`Dockerfile.ec2-worker`) | No | Go `/fetch-scheduler`; `FETCH_HTTP_POOL_SIZE`; no Python in image |
+| Merge follower (panel image) | No | Polls `fetch_http_results`; only writer of `matching_jobs` for scheduled HTTP runs |
 | Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `FETCH_WORKER_KIND=playwright`; `jibe` / `atlassian` / `hibob` |
 
 Playwright-only ATS boards need the sidecar or a local scrape (`PANEL_SCRAPE_ENABLED=1`). The default EC2 worker is HTTP-only and skips those ATS types so an empty board does not close jobs.
 
-- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_SCHEDULE_CONCURRENCY`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all`)
+- Config: `FETCH_SCHEDULE_ENABLED`, `FETCH_SCHEDULE_INTERVAL_HOURS`, `FETCH_HTTP_POOL_SIZE`, `FETCH_SCHEDULE_COUNTRIES`, `FETCH_WORKER_KIND` (`http` / `playwright` / `all` on Playwright worker only)
 - ATS scrape cap: `core/ats_constants.MAX_CONCURRENCY` (16)
 - Timeouts (`fetch/timeouts.py`): `FETCH_COMPANY_TIMEOUT_SECONDS=300`, `FETCH_COUNTRY_TIMEOUT_SECONDS=2700`, `PLAYWRIGHT_BOARD_TIMEOUT_SECONDS=90`
 - Memory caps: [ec2-panel.md](../operations/ec2-panel.md#worker-memory-caps)
