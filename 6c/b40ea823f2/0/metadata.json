@@ -1,0 +1,68 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "6cb40ea823f2",
+  "session_id": "1b2a0df1-3939-4626-870e-0e3f94543669",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-25T17:37:27.197605Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/README.md",
+    "docs/reference/commands/README.md",
+    "docs/reference/commands/tailor.md",
+    "docs/reference/mcp-application.md",
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/mcp/agent_skills/tailor.md",
+    "relocation_jobs/mcp/repo.py",
+    "relocation_jobs/mcp/server.py",
+    "relocation_jobs/mcp/service.py",
+    "relocation_jobs/mcp/types.py",
+    "tests/mcp/test_agent_skills.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high",
+  "turn_id": "ede13fd4aef1",
+  "checkpoint_transcript_start": 143,
+  "transcript_lines_at_start": 143,
+  "compact_transcript_start": 14,
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T16:54:23.372819Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "651575230c4e",
+      "timestamp": "2026-09-25T16:54:23.372819Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-25T17:37:27.168134Z",
+    "agent_lines": 282,
+    "agent_removed": 82,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 286,
+    "total_lines_changed": 370,
+    "agent_percentage": 98.37837837837839,
+    "metric_version": 2
+  }
+}

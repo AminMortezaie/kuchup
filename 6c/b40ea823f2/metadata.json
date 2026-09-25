@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "6cb40ea823f2",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/README.md",
+    "docs/reference/commands/README.md",
+    "docs/reference/commands/tailor.md",
+    "docs/reference/mcp-application.md",
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/mcp/agent_skills/tailor.md",
+    "relocation_jobs/mcp/repo.py",
+    "relocation_jobs/mcp/server.py",
+    "relocation_jobs/mcp/service.py",
+    "relocation_jobs/mcp/types.py",
+    "tests/mcp/test_agent_skills.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6c/b40ea823f2/0/metadata.json",
+      "transcript": "/6c/b40ea823f2/0/full.jsonl",
+      "compact_transcript": "/6c/b40ea823f2/0/transcript.jsonl",
+      "content_hash": "/6c/b40ea823f2/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
