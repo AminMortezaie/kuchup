@@ -44,7 +44,11 @@ async def enrich_one_job_async(
     board_slug: str = "",
 ) -> None:
     stored = (job.get("description_text") or "").strip()
-    if stored and not looks_like_page_chrome(stored):
+    if (
+        stored
+        and not looks_like_page_chrome(stored)
+        and job_has_listing_location(job)
+    ):
         if job.get("visa_sponsorship") is None:
             job["visa_sponsorship"] = detect_visa_relocation(stored)
         if not (job.get("fetched") or "").strip():
