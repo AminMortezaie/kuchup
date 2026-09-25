@@ -1051,3 +1051,7 @@ start again and measure
 ---
 
 measure again, it's running now.
+
+---
+
+ok commit and push, i will merge it later and then we will measure on production, image sizes and time elapsing.
