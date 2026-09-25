@@ -12,7 +12,7 @@ from relocation_jobs.mcp.ports import (
     SLUG_DOCUMENT_TABLES,
     SlugDocumentKind,
 )
-from relocation_jobs.mcp.types import ApplicationProfile, SlugDocumentSummary
+from relocation_jobs.mcp.types import AgentSkill, AgentSkillSummary, ApplicationProfile, SlugDocumentSummary
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -655,6 +655,47 @@ def touch_application_meta(
             (json.dumps(base), now, user_id, idempotency_key),
         )
     return base
+
+
+def list_agent_skills() -> list[AgentSkillSummary]:
+    with db_read() as conn:
+        rows = conn.execute(
+            """
+            SELECT slug, title, summary
+            FROM mcp_agent_skills
+            ORDER BY slug ASC
+            """
+        ).fetchall()
+    return [
+        AgentSkillSummary(
+            slug=(row["slug"] or "").strip(),
+            title=(row["title"] or "").strip(),
+            summary=(row["summary"] or "").strip(),
+        )
+        for row in rows
+    ]
+
+
+def get_agent_skill(slug: str) -> AgentSkill | None:
+    key = normalize_mcp_slug(slug, kind="agent skill slug")
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT slug, title, summary, body, updated_at
+            FROM mcp_agent_skills
+            WHERE slug = %s
+            """,
+            (key,),
+        ).fetchone()
+    if not row:
+        return None
+    return AgentSkill(
+        slug=(row["slug"] or "").strip(),
+        title=(row["title"] or "").strip(),
+        summary=(row["summary"] or "").strip(),
+        body=row["body"] or "",
+        updated_at=(row["updated_at"] or "").strip(),
+    )
 
 
 def delete_mcp_applications_for_country(country_key: str) -> int:

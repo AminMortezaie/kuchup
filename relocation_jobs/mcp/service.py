@@ -54,6 +54,8 @@ from relocation_jobs.mcp.ports import (
 from relocation_jobs.mcp.types import (
     AddCompanyResult,
     AddPositionResult,
+    AgentSkill,
+    AgentSkillSummary,
     ApplicationProfile,
     ApplicationQueueItem,
     ApplicationTexDetail,
@@ -1627,6 +1629,17 @@ def set_ats_score(
     if ats_score is not None and not 0 <= ats_score <= 100:
         raise ValueError("ats_score must be between 0 and 100")
     return _set_job_ats_score(country, company, url, ats_score, user_id=uid)
+
+
+def list_agent_skills() -> list[AgentSkillSummary]:
+    return repo.list_agent_skills()
+
+
+def get_agent_skill(slug: str) -> AgentSkill:
+    skill = repo.get_agent_skill(slug)
+    if skill is None:
+        raise LookupError(f"Unknown agent skill: {slug.strip()}")
+    return skill
 
 
 def mark_job_applied(

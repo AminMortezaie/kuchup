@@ -129,6 +129,27 @@ def save_interview_note(slug: str, content: str, label: str = "") -> str:
 
 
 @mcp.tool()
+def list_agent_skills() -> str:
+    """List agent-only MCP playbooks (slug, title, one-line summary).
+
+    Not shown in panel docs — for connected agents to discover workflows.
+    Call get_agent_skill(slug) for full instructions before running a playbook.
+    """
+    items = service.list_agent_skills()
+    return _json([item.model_dump() for item in items])
+
+
+@mcp.tool()
+def get_agent_skill(slug: str) -> str:
+    """Return the full markdown instructions for one agent playbook (e.g. slug tailor).
+
+    The calling agent executes the playbook using other MCP tools — this server
+    does not run LLM phases. Use list_agent_skills to discover slugs.
+    """
+    return _json(service.get_agent_skill(slug))
+
+
+@mcp.tool()
 def get_mcp_status() -> str:
     """Return MCP user identity and whether profile / master resumes / project masters / interview notes exist (debug user mismatch)."""
     uid = service.resolve_user_id()
