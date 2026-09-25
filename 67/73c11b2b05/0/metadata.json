@@ -1,0 +1,67 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "6773c11b2b05",
+  "session_id": "d0e21ea9-04ac-4b91-a61b-43ee4c47fec1",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-25T13:51:34.537597Z",
+  "branch": "cursor/go-http-fetch-scheduler-50bf",
+  "checkpoints_count": 33,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Cursor",
+  "model": "grok-4.7-high",
+  "turn_id": "7b6126571fc6",
+  "compact_transcript_start": 0,
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T09:50:36.928453Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "ffab768c9d8e",
+      "timestamp": "2026-09-25T09:50:36.928453Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T12:27:10.941219Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "ffc61d4a038e",
+      "timestamp": "2026-09-25T12:27:10.941219Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 33,
+    "context_tokens": 231257,
+    "context_window_size": 256000
+  }
+}
