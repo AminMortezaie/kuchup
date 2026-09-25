@@ -68,7 +68,7 @@ def test_idle_ping_threshold_removed():
 
 def test_pool_constants_match_phase0():
     assert core.POOL_MIN_SIZE == 2
-    assert core.POOL_MAX_SIZE == 8
+    assert core.POOL_MAX_SIZE == 16
 
 
 def test_init_connection_pool_uses_psycopg_pool(monkeypatch):
@@ -92,7 +92,7 @@ def test_init_connection_pool_uses_psycopg_pool(monkeypatch):
     try:
         core.init_connection_pool()
         assert created["min_size"] == 2
-        assert created["max_size"] == 8
+        assert created["max_size"] == 16
         assert created["open"] is True
         assert created["conninfo"].startswith("postgresql://")
     finally:

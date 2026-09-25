@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
@@ -119,3 +121,41 @@ async def test_merge_consumer_runs_merge_on_ok(seeded_catalog_v2, db, monkeypatc
     rows = go_results.list_pending_http_results(limit=5)
     await process_pending_row(rows[0])
     assert called["merge"] is True
+
+
+@pytest.mark.asyncio
+async def test_merge_pass_runs_companies_together(monkeypatch):
+    from relocation_jobs.fetch.merge_consumer import run_merge_pass
+
+    current = 0
+    peak = 0
+
+    async def fake_row(row, client=None, *, enrich_concurrency=4):
+        nonlocal current, peak
+        del client, enrich_concurrency
+        current += 1
+        peak = max(peak, current)
+        await asyncio.sleep(0.05)
+        current -= 1
+
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.merge_consumer.process_pending_row",
+        fake_row,
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.merge_consumer.go_results.list_pending_http_results",
+        lambda **kwargs: [
+            {"id": i, "fetch_run_id": 1, "country_key": "uk"} for i in range(8)
+        ],
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.merge_consumer.go_results.mark_http_result_processed",
+        lambda result_id: None,
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.merge_consumer.go_results.run_merge_complete",
+        lambda run_id: False,
+    )
+    processed = await run_merge_pass()
+    assert processed == 8
+    assert peak > 1

@@ -112,7 +112,11 @@ func parseAshbyJobs(payload map[string]any, atsURL string) []Job {
 		if len(labels) > 0 {
 			location = labels[0]
 		}
-		job, ok := listingJob(asString(item["title"]), rawURL, location, "", "", labels)
+		description := asString(item["descriptionPlain"])
+		if description == "" {
+			description = asString(item["descriptionHtml"])
+		}
+		job, ok := listingJob(asString(item["title"]), rawURL, location, "", description, labels)
 		if ok {
 			jobs = append(jobs, job)
 		}

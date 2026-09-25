@@ -17,16 +17,8 @@ LOGGER = logging.getLogger("relocation_jobs.fetch.scheduler_worker")
 
 def main() -> int:
     kind = (os.environ.get("FETCH_WORKER_KIND") or "").strip().lower()
-    allow = os.environ.get("FETCH_ALLOW_PYTHON_HTTP_SCHEDULER", "").lower() in (
-        "1",
-        "true",
-        "yes",
-    )
-    if kind in ("", "http") and not allow:
-        LOGGER.error(
-            "HTTP country scheduling runs in the Go worker (/fetch-scheduler). "
-            "Set FETCH_ALLOW_PYTHON_HTTP_SCHEDULER=1 only for local debugging."
-        )
+    if kind in ("", "http"):
+        LOGGER.error("HTTP country scheduling runs in the Go worker (/fetch-scheduler).")
         return 1
     from relocation_jobs.fetch.scheduler import main as scheduler_main
 

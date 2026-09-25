@@ -268,13 +268,13 @@ const (
 	resultError resultStatus = "error"
 )
 
-func (s *Store) InsertResult(ctx context.Context, runID, companyID int64, status resultStatus, errText string, jobs []Job) error {
+func (s *Store) InsertResult(ctx context.Context, runID, companyID int64, status resultStatus, errText string, jobs []Job) (int64, error) {
 	fetchedAt := time.Now().UTC().Format(time.RFC3339)
 	var jobsJSON *string
 	if status == resultOK || status == resultEmpty {
 		raw, err := json.Marshal(jobs)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		text := string(raw)
 		jobsJSON = &text
@@ -286,7 +286,8 @@ func (s *Store) InsertResult(ctx context.Context, runID, companyID int64, status
 			errPtr = &text
 		}
 	}
-	_, err := s.pool.Exec(ctx, `
+	var id int64
+	err := s.pool.QueryRow(ctx, `
 		INSERT INTO fetch_http_results (
 			fetch_run_id, company_id, status, error, jobs_json, fetched_at
 		) VALUES ($1, $2, $3, $4, $5, $6)
@@ -296,8 +297,9 @@ func (s *Store) InsertResult(ctx context.Context, runID, companyID int64, status
 			jobs_json = EXCLUDED.jobs_json,
 			fetched_at = EXCLUDED.fetched_at,
 			merge_processed_at = NULL
-	`, runID, companyID, string(status), errPtr, jobsJSON, fetchedAt)
-	return err
+		RETURNING id
+	`, runID, companyID, string(status), errPtr, jobsJSON, fetchedAt).Scan(&id)
+	return id, err
 }
 
 func (s *Store) FinalizeRun(ctx context.Context, runID int64, companiesDone, companiesTotal int) error {

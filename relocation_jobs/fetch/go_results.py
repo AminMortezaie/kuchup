@@ -5,20 +5,26 @@ import json
 from relocation_jobs.core.db import db_transaction, get_connection
 
 
-def list_pending_http_results(*, limit: int = 20) -> list[dict]:
-    limit = max(1, min(int(limit), 100))
+def list_pending_http_results(*, limit: int = 20, result_id: int | None = None) -> list[dict]:
+    limit = max(1, min(int(limit), 500))
+    where = "r.merge_processed_at IS NULL"
+    params: list = []
+    if result_id is not None:
+        where += " AND r.id = %s"
+        params.append(int(result_id))
+    params.append(limit)
     rows = get_connection().execute(
-        """
+        f"""
         SELECT r.id, r.fetch_run_id, r.company_id, r.status, r.error, r.jobs_json,
-               r.fetched_at, w.country_key, w.name
+               r.fetched_at, w.country_key, w.name, w.ats_type, w.ats_url
         FROM fetch_http_results r
         JOIN fetch_http_work w
           ON w.fetch_run_id = r.fetch_run_id AND w.company_id = r.company_id
-        WHERE r.merge_processed_at IS NULL
+        WHERE {where}
         ORDER BY r.id ASC
         LIMIT %s
         """,
-        (limit,),
+        tuple(params),
     ).fetchall()
     out: list[dict] = []
     for row in rows:
@@ -35,6 +41,11 @@ def list_pending_http_results(*, limit: int = 20) -> list[dict]:
         data["jobs"] = jobs
         out.append(data)
     return out
+
+
+def get_pending_http_result(result_id: int) -> dict | None:
+    rows = list_pending_http_results(limit=1, result_id=result_id)
+    return rows[0] if rows else None
 
 
 def mark_http_result_processed(result_id: int) -> None:

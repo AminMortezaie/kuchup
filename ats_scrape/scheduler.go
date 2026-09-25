@@ -2,7 +2,6 @@ package atsscrape
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -38,13 +37,16 @@ func RunScheduler() int {
 	}
 
 	runCycle := func() {
-		if _, err := runFetchCycle(ctx, store); err != nil {
+		if err := runFetchCycle(ctx, store); err != nil {
 			log.Printf("scheduler: cycle failed: %v", err)
 		}
 	}
 
 	if *once {
-		runCycle()
+		if err := runFetchCycle(ctx, store); err != nil {
+			log.Printf("scheduler: cycle failed: %v", err)
+			return 1
+		}
 		return 0
 	}
 
@@ -75,9 +77,6 @@ func scheduleIntervalHours() float64 {
 
 func poolSize() int {
 	raw := strings.TrimSpace(os.Getenv("FETCH_HTTP_POOL_SIZE"))
-	if raw == "" {
-		raw = strings.TrimSpace(os.Getenv("FETCH_SCHEDULE_CONCURRENCY"))
-	}
 	if raw == "" {
 		return 4
 	}
@@ -115,31 +114,40 @@ func scheduleCountries(ctx context.Context, store *Store) ([]string, error) {
 	return store.DefaultCountries(ctx)
 }
 
-type cycleResult struct {
-	Skipped   bool
-	Reason    string
-	Started   []string
-	NotStarted []string
+func attachedRun() (int64, string, bool) {
+	raw := strings.TrimSpace(os.Getenv("FETCH_RUN_ID"))
+	if raw == "" {
+		return 0, "", false
+	}
+	runID, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || runID <= 0 {
+		return 0, "", false
+	}
+	country := strings.ToLower(strings.TrimSpace(os.Getenv("FETCH_SCHEDULE_COUNTRIES")))
+	if country == "" || strings.Contains(country, ",") {
+		return 0, "", false
+	}
+	return runID, country, true
 }
 
-func runFetchCycle(ctx context.Context, store *Store) (cycleResult, error) {
-	result := cycleResult{}
+func runFetchCycle(ctx context.Context, store *Store) error {
+	if runID, country, ok := attachedRun(); ok {
+		return runAttached(ctx, store, runID, country)
+	}
 	if running, err := store.FetchIsRunning(ctx); err != nil {
-		return result, err
+		return err
 	} else if running {
-		result.Skipped = true
-		result.Reason = "fetch_busy"
 		log.Print("scheduled fetch skipped: another fetch is already running")
-		return result, nil
+		return nil
 	}
 
 	userID, err := store.ResolveSchedulerUserID(ctx)
 	if err != nil {
-		return result, err
+		return err
 	}
 	countries, err := scheduleCountries(ctx, store)
 	if err != nil {
-		return result, err
+		return err
 	}
 	workers := poolSize()
 	httpPool := NewHTTPPool(workers, 30*time.Second)
@@ -148,21 +156,18 @@ func runFetchCycle(ctx context.Context, store *Store) (cycleResult, error) {
 
 	for _, country := range countries {
 		if running, err := store.FetchIsRunning(ctx); err != nil {
-			return result, err
+			return err
 		} else if running {
-			result.NotStarted = append(result.NotStarted, countries...)
 			log.Printf("scheduled fetch stopped: fetch became busy at %s", country)
 			break
 		}
 		if err := runCountry(ctx, store, httpPool, userID, country, workers); err != nil {
 			log.Printf("scheduled fetch could not finish %s: %v", country, err)
-			result.NotStarted = append(result.NotStarted, country)
 			continue
 		}
-		result.Started = append(result.Started, country)
 		log.Printf("scheduled country fetch finished country=%s", country)
 	}
-	return result, nil
+	return nil
 }
 
 func countryTimeout() time.Duration {
@@ -177,7 +182,7 @@ func countryTimeout() time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID int64, countryKey string, workers int) (err error) {
+func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID int64, countryKey string, workers int) error {
 	companies, err := store.ListHTTPCompanies(ctx, countryKey)
 	if err != nil {
 		return err
@@ -190,6 +195,31 @@ func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID in
 	if err != nil {
 		return err
 	}
+	return fetchCompanies(ctx, store, httpPool, runID, companies)
+}
+
+func runAttached(ctx context.Context, store *Store, runID int64, countryKey string) error {
+	companies, err := store.ListHTTPCompanies(ctx, countryKey)
+	if err != nil {
+		return err
+	}
+	if ats := strings.TrimSpace(os.Getenv("FETCH_ATS_TYPE")); ats != "" {
+		matched := make([]WorkCompany, 0, len(companies))
+		for _, company := range companies {
+			if strings.EqualFold(company.ATSType, ats) {
+				matched = append(matched, company)
+			}
+		}
+		companies = matched
+	}
+	if len(companies) == 0 {
+		_ = store.FailRun(ctx, runID, "no HTTP companies for "+countryKey)
+		return fmt.Errorf("no HTTP companies for %s", countryKey)
+	}
+	return fetchCompanies(ctx, store, NewHTTPPool(poolSize(), 30*time.Second), runID, companies)
+}
+
+func fetchCompanies(ctx context.Context, store *Store, httpPool *HTTPPool, runID int64, companies []WorkCompany) (err error) {
 	runClosed := false
 	defer func() {
 		if runClosed {
@@ -248,6 +278,14 @@ func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID in
 	return nil
 }
 
+func signalCompanyReady(id int64) {
+	if id <= 0 {
+		return
+	}
+	fmt.Fprintf(os.Stdout, "FETCH_READY %d\n", id)
+	_ = os.Stdout.Sync()
+}
+
 func scrapeCompany(ctx context.Context, store *Store, httpPool *HTTPPool, runID int64, company WorkCompany) error {
 	req := Request{
 		ATSType:    company.ATSType,
@@ -255,15 +293,20 @@ func scrapeCompany(ctx context.Context, store *Store, httpPool *HTTPPool, runID 
 		CareersURL: company.CareersURL,
 		Name:       company.Name,
 	}
-	jobs, err := Scrape(ctx, httpPool, req)
+	jobs, scrapeErr := Scrape(ctx, httpPool, req)
+	var id int64
+	var err error
+	switch {
+	case scrapeErr != nil:
+		id, err = store.InsertResult(ctx, runID, company.ID, resultError, scrapeErr.Error(), nil)
+	case len(jobs) == 0:
+		id, err = store.InsertResult(ctx, runID, company.ID, resultEmpty, "", jobs)
+	default:
+		id, err = store.InsertResult(ctx, runID, company.ID, resultOK, "", jobs)
+	}
 	if err != nil {
-		if errors.Is(err, ErrUnsupported) {
-			return store.InsertResult(ctx, runID, company.ID, resultError, err.Error(), nil)
-		}
-		return store.InsertResult(ctx, runID, company.ID, resultError, err.Error(), nil)
+		return err
 	}
-	if len(jobs) == 0 {
-		return store.InsertResult(ctx, runID, company.ID, resultEmpty, "", jobs)
-	}
-	return store.InsertResult(ctx, runID, company.ID, resultOK, "", jobs)
+	signalCompanyReady(id)
+	return nil
 }

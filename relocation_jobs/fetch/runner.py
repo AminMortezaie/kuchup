@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import subprocess
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
 from relocation_jobs.core.ats_constants import MAX_CONCURRENCY
 from relocation_jobs.core.paths import country_archive_filename
 from relocation_jobs.core.scrape_cancel import FetchCancelled, clear_cancel_checker, set_cancel_checker
+from relocation_jobs.core.db import release_thread_connection
+from relocation_jobs.fetch import go_results
 from relocation_jobs.fetch import repo as fetch_repo
 from relocation_jobs.fetch import state as fetch_state
 from relocation_jobs.fetch.client import make_fetch_client
-from relocation_jobs.fetch.country_runner import run_country_fetch
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.pipeline import fetch_and_persist_company
 from relocation_jobs.fetch.timeouts import country_timeout_seconds
@@ -46,7 +51,59 @@ def _complete_run(
     )
 
 
-def _country_fetch_worker(
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def fetch_scheduler_bin() -> str:
+    explicit = (os.environ.get("ATS_SCRAPE_BIN") or "").strip()
+    if explicit:
+        return explicit
+    built = _repo_root() / "target" / "fetch-scheduler"
+    if not built.is_file():
+        built.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["go", "build", "-o", str(built), "./apps/ats-scrape"],
+            cwd=_repo_root(),
+            check=True,
+        )
+    return str(built)
+
+
+def go_country_env(
+    country_key: str,
+    run_id: int,
+    concurrency: int,
+    ats_type: str | None,
+    *,
+    timeout: float | None = None,
+) -> dict[str, str]:
+    env = os.environ.copy()
+    env["FETCH_SCHEDULE_ENABLED"] = "1"
+    env["FETCH_SCHEDULE_COUNTRIES"] = country_key
+    env["FETCH_HTTP_POOL_SIZE"] = str(max(1, min(int(concurrency), MAX_CONCURRENCY)))
+    env["FETCH_RUN_ID"] = str(run_id)
+    if ats_type:
+        env["FETCH_ATS_TYPE"] = ats_type
+    else:
+        env.pop("FETCH_ATS_TYPE", None)
+    limit = country_timeout_seconds() if timeout is None else int(timeout)
+    env["FETCH_COUNTRY_TIMEOUT_SECONDS"] = str(max(60, limit))
+    return env
+
+
+def ready_result_id(line: str) -> int | None:
+    parts = line.strip().split()
+    if len(parts) != 2 or parts[0] != "FETCH_READY":
+        return None
+    try:
+        result_id = int(parts[1])
+    except ValueError:
+        return None
+    return result_id if result_id > 0 else None
+
+
+def _go_country_fetch_worker(
     country_key: str,
     *,
     run_id: int,
@@ -54,63 +111,70 @@ def _country_fetch_worker(
     concurrency: int = 1,
     timeout: float | None = None,
 ) -> None:
-    exit_code = 1
-    cancelled = False
-    timed_out = False
-    new_jobs_total = 0
-    companies_done = 0
+    from relocation_jobs.fetch.merge_consumer import merge_ready_result, run_merge_pass
 
-    def on_progress(progress: dict) -> None:
-        fetch_state.update_progress(run_id, progress)
+    limit = country_timeout_seconds() if timeout is None else timeout
 
-    def on_company_result(company_name: str, new_count: int, jobs: list[dict]) -> None:
-        fetch_state.record_company_result(run_id, company_name, new_count, jobs)
+    def drain_merge() -> None:
+        while asyncio.run(run_merge_pass(enqueue=False)) != 0:
+            pass
 
-    def append_log(line: str) -> None:
-        fetch_state.append_log(run_id, line)
-        log_event(line)
-
-    try:
-        async def _run():
-            nonlocal new_jobs_total, companies_done, cancelled
-            async with make_fetch_client(concurrency=concurrency) as client:
-                coro = run_country_fetch(
-                    client,
-                    country_key,
-                    run_id=run_id,
-                    ats_type=ats_type,
-                    concurrency=concurrency,
-                    on_progress=on_progress,
-                    on_log=append_log,
-                    on_company_result=on_company_result,
-                )
-                if timeout is None:
-                    return await coro
-                return await asyncio.wait_for(coro, timeout=timeout)
-
-        new_jobs_total, companies_done, cancelled = asyncio.run(_run())
-        exit_code = 130 if cancelled else 0
-    except TimeoutError:
-        timed_out = True
-        limit = timeout if timeout is not None else country_timeout_seconds()
-        append_log(f"Error: timed out after {limit}s")
-        exit_code = 1
-    except Exception as exc:
-        append_log(f"Error: {exc}")
-        exit_code = 1
-    finally:
-        _complete_run(
+    def fail(message: str) -> None:
+        fetch_state.append_log(run_id, message)
+        log_event(message)
+        fetch_state.finish_run(
             run_id,
-            exit_code=exit_code,
-            cancelled=cancelled,
-            new_jobs=new_jobs_total,
-            companies_done=companies_done,
-            done_line=f"Done {companies_done} companies, {new_jobs_total} new jobs",
+            exit_code=1,
+            cancelled=False,
+            new_jobs=0,
+            companies_done=0,
+            result_line=message,
         )
+
+    proc = None
+    timed_out = False
+    try:
+        proc = subprocess.Popen(
+            [fetch_scheduler_bin(), "--once"],
+            cwd=_repo_root(),
+            env=go_country_env(
+                country_key, run_id, concurrency, ats_type, timeout=timeout,
+            ),
+            stdout=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+
+        def on_timeout() -> None:
+            nonlocal timed_out
+            timed_out = True
+            proc.kill()
+
+        timer = threading.Timer(limit, on_timeout)
+        timer.start()
+        pool = ThreadPoolExecutor(max_workers=8)
+        try:
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                result_id = ready_result_id(line)
+                if result_id is not None:
+                    pool.submit(merge_ready_result, result_id)
+            code = proc.wait()
+        finally:
+            timer.cancel()
+            pool.shutdown(wait=True)
+    except OSError as exc:
+        fail(f"Error: {exc}")
+        return
+    drain_merge()
+    release_thread_connection()
     if timed_out:
-        limit = timeout if timeout is not None else country_timeout_seconds()
-        raise TimeoutError(f"Country fetch timed out after {limit}s")
-    if exit_code == 0 and companies_done > 0:
+        fail(f"Error: timed out after {limit}s")
+        return
+    if code != 0:
+        fail(f"Go fetch exited {code}")
+        return
+    if go_results.run_merge_complete(run_id):
         enqueue_country_opportunity_refresh(country_key)
 
 
@@ -241,7 +305,7 @@ def start_country_fetch(
         concurrency=concurrency,
     )
     thread = threading.Thread(
-        target=_country_fetch_worker,
+        target=_go_country_fetch_worker,
         args=(country_key,),
         kwargs={
             "run_id": run_id,
@@ -268,7 +332,7 @@ def run_country_fetch_blocking(
         concurrency=concurrency,
     )
     limit = country_timeout_seconds() if timeout is None else timeout
-    _country_fetch_worker(
+    _go_country_fetch_worker(
         country_key,
         run_id=run_id,
         ats_type=None,

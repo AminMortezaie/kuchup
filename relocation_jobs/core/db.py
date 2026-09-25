@@ -13,7 +13,7 @@ from relocation_jobs.core.job_identity import normalize_job_url
 _PgOperationalError = psycopg.OperationalError
 
 POOL_MIN_SIZE = 2
-POOL_MAX_SIZE = 8
+POOL_MAX_SIZE = 16
 
 _pool_lock = threading.Lock()
 _pool = None
