@@ -4,7 +4,6 @@ import {
   $,
   beginTopLoadingProgress,
   finishLoadingProgress,
-  setLoadingProgress,
   toast,
 } from "./utils.js";
 import { beginScreenLoad, endScreenLoad } from "./screen-loader.js";
@@ -215,22 +214,6 @@ async function loadCounts() {
   syncTabUi();
 }
 
-function startTabLoading(state, { quiet = false } = {}) {
-  if (quiet) return "none";
-  if (!state.loaded) {
-    beginScreenLoad();
-    return "overlay";
-  }
-  beginTopLoadingProgress(18);
-  setLoadingProgress(35);
-  return "bar";
-}
-
-function finishTabLoading(mode) {
-  if (mode === "overlay") endScreenLoad();
-  else if (mode === "bar") finishLoadingProgress();
-}
-
 async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
   if (!TABS.includes(tab)) return;
   const state = tabState[tab];
@@ -242,13 +225,32 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
   state.loading = true;
   state.error = "";
   if (tab === activeTab) renderList();
-  const loadMode = tab === activeTab ? startTabLoading(state, { quiet }) : "none";
+
+  let useOverlay = false;
+  let useBar = false;
+  if (!quiet && tab === activeTab) {
+    if (!state.loaded) {
+      beginScreenLoad();
+      useOverlay = true;
+    } else {
+      beginTopLoadingProgress();
+      useBar = true;
+    }
+  }
+
+  let finishedLoading = false;
+  const finishLoading = () => {
+    if (finishedLoading) return;
+    finishedLoading = true;
+    if (useOverlay) endScreenLoad();
+    else if (useBar) finishLoadingProgress();
+  };
+
   try {
     const params = new URLSearchParams({
       page: String(page),
       page_size: String(PAGE_SIZE),
     });
-    if (loadMode === "bar") setLoadingProgress(55);
     const data = await api(`${LIST_PATH[tab]}?${params}`);
     const meta = data.meta || {};
     state.jobs = Array.isArray(data.jobs) ? data.jobs : [];
@@ -260,19 +262,18 @@ async function loadTab(tab, { page = 1, force = false, quiet = false } = {}) {
       const fallback = Math.max(1, Math.min(state.page - 1, state.totalPages));
       if (fallback !== state.page) {
         state.loading = false;
-        finishTabLoading(loadMode);
+        finishLoading();
         await loadTab(tab, { page: fallback, force: true, quiet });
         return;
       }
     }
-    if (loadMode === "bar") setLoadingProgress(90);
   } catch (err) {
     if (err.message !== "Authentication required") {
       state.error = err.message || "Failed to load applications";
     }
   } finally {
     state.loading = false;
-    finishTabLoading(loadMode);
+    finishLoading();
     if (tab === activeTab) {
       renderList();
       const body = document.querySelector(".applications-page-body");
@@ -287,9 +288,8 @@ async function refreshAfterMutation() {
     tabState[tab] = emptyTabState();
   }
   try {
-    beginTopLoadingProgress(12);
+    beginTopLoadingProgress();
     await loadCounts();
-    setLoadingProgress(40);
     await loadTab(activeTab, { page: 1, force: true, quiet: true });
     finishLoadingProgress();
   } catch (err) {
