@@ -292,18 +292,30 @@ def test_nondefault_roles_do_not_leak_into_fetch_more_without_prefs(
     del seeded_catalog_v2
     _seed_roles([
         _role("Backend Engineer A", idx=0, day=9),
-        _role("Engineering Manager Hidden", idx=1, day=8, matches_default=0),
-        _role("Backend Engineer B", idx=2, day=7),
-        _role("Backend Engineer C", idx=3, day=6),
-        _role("Backend Engineer D", idx=4, day=5),
-        _role("Backend Engineer E", idx=5, day=4),
-        _role("Backend Engineer F", idx=6, day=3),
+        _role("Backend Engineer B", idx=1, day=8),
+        _role("Backend Engineer C", idx=2, day=7),
+        _role("Backend Engineer D", idx=3, day=6),
+        _role("Backend Engineer E", idx=4, day=5),
+        _role("Backend Engineer F", idx=5, day=4),
+        _role("Engineering Manager Hidden", idx=6, day=3, matches_default=0),
     ])
 
     acme = _company_from_board(v2_auth_client)
     first = _titles(acme["jobs"])
+    assert first == [
+        "Backend Engineer A",
+        "Backend Engineer B",
+        "Backend Engineer C",
+    ]
     assert "Engineering Manager Hidden" not in first
+    assert acme["jobs_more"] == 3
+
     more = _fetch_more(v2_auth_client, offset=len(first))
-    assert "Engineering Manager Hidden" not in _titles(more["jobs"])
-    assert len(first) == BOARD_ROLES_PAGE_SIZE
-    assert len(more["jobs"]) == BOARD_ROLES_PAGE_SIZE
+    second = _titles(more["jobs"])
+    assert second == [
+        "Backend Engineer D",
+        "Backend Engineer E",
+        "Backend Engineer F",
+    ]
+    assert "Engineering Manager Hidden" not in second
+    assert more["jobs_more"] == 0

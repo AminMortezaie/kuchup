@@ -4,8 +4,6 @@ import { companyActivityTs, formatActivityBadge } from "./format";
 import { sortJobsForDisplay } from "./sort";
 import JobCard from "./JobCard";
 
-const ROLE_PREVIEW_LIMIT = 3;
-
 function companyKey(company) {
   return `${company.country}:${company.name}`;
 }
@@ -138,7 +136,6 @@ function CompanyCard({ company, ui }) {
     .sort()[0];
   const sortedNotForMe = sortJobsForDisplay(notForMeJobs);
   const moreCount = Math.max(0, Number(company.jobs_more) || 0);
-  const moreStep = Math.min(ROLE_PREVIEW_LIMIT, moreCount);
   const workspaceHref = companyWorkspacePath(company.country, company.name);
   const tailoredCount = openJobs.filter(
     (job) => job.has_pdf || job.has_tailored_tex || job.has_cover_letter_pdf || job.has_cover_letter_tex,
@@ -415,11 +412,9 @@ function CompanyCard({ company, ui }) {
             className="expand-roles-btn"
             onClick={loadMoreRoles}
             disabled={loadingMore}
-            title={`Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+            title="Show more roles"
           >
-            {loadingMore
-              ? "Loading…"
-              : `Show ${moreStep} more role${moreStep === 1 ? "" : "s"}`}
+            {loadingMore ? "Loading…" : "Show more roles"}
           </button>
         ) : null}
       </div>

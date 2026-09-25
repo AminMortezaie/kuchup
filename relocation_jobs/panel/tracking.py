@@ -365,6 +365,7 @@ def job_dict(
         "looking_to_apply": bool(track.get("looking_to_apply")) if logged_in else bool(job.get("looking_to_apply")),
         "looking_to_apply_date": (track.get("looking_to_apply_date", "") if logged_in else job.get("looking_to_apply_date", "")) or "",
         "closed_at": (job.get("closed_at") or "").strip(),
+        "matches_default_filter": job.get("matches_default_filter", 1),
         "company": company_name,
         "city": company.get("city", ""),
         "size": company.get("size", ""),
