@@ -114,7 +114,7 @@ Catalog position
      Rejected tab
 ```
 
-Pinning alone still puts a role in Apply until the user applies (or unpins with no looking-to-apply). Unpinning does **not** clear `looking_to_apply`. Applying does **not** require unpinning; applied rows are excluded from Apply even if still pinned.
+Pin toggles stick-to-top and `looking_to_apply` together: pin on sets both; unpin clears both (the board’s only in-card control for the apply queue after the Want to apply button was removed). Applying does **not** require unpinning; applied rows are excluded from Apply even if still pinned.
 
 Reject does **not** clear `applied`. A rejected row is on Rejected even when `applied` is still 0, so it cannot stay in Apply via pin or want-to-apply. Reapply clears rejection only: the row returns to Applied when `applied` is 1, or to Apply when it is still pinned or want-to-apply.
 
