@@ -112,6 +112,20 @@ function syncTabUi() {
   }
 }
 
+/** Same window as frontend/src/BoardPagination.jsx — Prev + ≤5 slots + Next. */
+function pageRange(current, total) {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) return [1, 2, 3, "…", total];
+  if (current >= total - 2) return [1, "…", total - 2, total - 1, total];
+  return [1, "…", current, "…", total];
+}
+
+function goToPage(page) {
+  void loadTab(activeTab, { page, force: true });
+}
+
 function renderPagination(state) {
   const root = $("applicationsPagination");
   if (!root) return;
@@ -136,20 +150,37 @@ function renderPagination(state) {
   prev.className = "filter-btn board-page-nav";
   prev.textContent = "Previous";
   prev.disabled = state.loading || state.page <= 1;
-  prev.addEventListener("click", () => {
-    void loadTab(activeTab, { page: state.page - 1, force: true });
-  });
+  prev.addEventListener("click", () => goToPage(state.page - 1));
+
+  const pages = document.createElement("div");
+  pages.className = "board-pagination-pages";
+  for (const item of pageRange(state.page, state.totalPages)) {
+    if (typeof item === "number") {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `filter-btn board-page-num${item === state.page ? " is-active" : ""}`;
+      btn.textContent = String(item);
+      btn.disabled = state.loading || item === state.page;
+      if (item === state.page) btn.setAttribute("aria-current", "page");
+      btn.addEventListener("click", () => goToPage(item));
+      pages.appendChild(btn);
+    } else {
+      const gap = document.createElement("span");
+      gap.className = "board-page-gap";
+      gap.setAttribute("aria-hidden", "true");
+      gap.textContent = item;
+      pages.appendChild(gap);
+    }
+  }
 
   const next = document.createElement("button");
   next.type = "button";
   next.className = "filter-btn board-page-nav";
   next.textContent = "Next";
   next.disabled = state.loading || state.page >= state.totalPages;
-  next.addEventListener("click", () => {
-    void loadTab(activeTab, { page: state.page + 1, force: true });
-  });
+  next.addEventListener("click", () => goToPage(state.page + 1));
 
-  controls.append(prev, next);
+  controls.append(prev, pages, next);
   nav.append(summary, controls);
   root.appendChild(nav);
 }

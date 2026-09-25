@@ -218,12 +218,6 @@
   max-width: 16rem;
 }
 
-.app-page-toolbar .board-pagination-root:not(:empty) {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
 .app-page-toolbar .filter-bar,
 .app-page-toolbar .board-search-bar {
   margin: 0;
@@ -747,15 +741,29 @@
   margin: 0;
 }
 
-.app-main:has(.applications-page) {
+.app-main:has(.applications-page),
+.app-main:has(.board-page) {
   min-height: 0;
   height: 100%;
   max-height: 100dvh;
   overflow: hidden;
 }
 
-.app-shell .applications-page {
+.app-shell .applications-page,
+.app-shell .board-page {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   height: 100%;
+  flex: 1;
+  padding-bottom: 0;
+}
+
+.app-shell .board-page-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-md, 1rem);
 }
 
