@@ -6,9 +6,9 @@ Each user has three **application states** derived from `job_tracking` (no separ
 
 | Tab | Meaning | Rule |
 |-----|---------|------|
-| **Apply** | Still needs application | `(pinned OR looking_to_apply) AND NOT applied` |
+| **Apply** | Still needs application | `(pinned OR looking_to_apply) AND NOT applied AND NOT rejected AND NOT not_for_me` |
 | **Applied** | Submitted, awaiting response | `applied AND NOT rejected AND NOT not_for_me` |
-| **Rejected** | Submitted and rejected | `applied AND rejected AND NOT not_for_me` |
+| **Rejected** | Marked rejected | `rejected AND NOT not_for_me` |
 
 ## Where operators see it
 
@@ -31,7 +31,8 @@ Each user has three **application states** derived from `job_tracking` (no separ
 ## Transitions
 
 - **Apply → Applied:** Mark Applied (panel or MCP `mark_applied`) sets `applied=1` and clears `looking_to_apply`
-- **Applied → Rejected:** Reject sets `rejected=1` (keeps `applied`); Reapply clears rejection only
+- **Any tab → out of Applications:** Not for me (any reason: not for me, expired, wrong location, no relocation) sets `not_for_me=1` and drops the role from Apply, Applied, and Rejected. The card keeps the reason tag (Expired, Wrong location, and so on). Restore puts it back only if it still matches a state rule.
+- **Any tab → Rejected:** Reject sets `rejected=1`. The role leaves Apply even when it was never marked applied. Reapply clears rejection only.
 
 ## MCP / Claude / Cursor
 

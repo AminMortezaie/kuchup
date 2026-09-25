@@ -21,9 +21,9 @@ There is **no separate queue table**. Membership is derived from per-user `job_t
 
 | State | Predicate | API |
 |-------|-----------|-----|
-| **Apply** | `(pinned OR looking_to_apply) AND NOT applied` | `GET /api/applications/queue` |
+| **Apply** | `(pinned OR looking_to_apply) AND NOT applied AND NOT rejected AND NOT not_for_me` | `GET /api/applications/queue` |
 | **Applied** | `applied AND NOT rejected AND NOT not_for_me` | `GET /api/applications/applied` |
-| **Rejected** | `applied AND rejected AND NOT not_for_me` | `GET /api/applications/rejected` |
+| **Rejected** | `rejected AND NOT not_for_me` | `GET /api/applications/rejected` |
 
 Active queue predicate is implemented once in [`positions/queue.py`](../../relocation_jobs/positions/queue.py) as `is_active_application_queue_row` (plus `is_active_applied_row` / `is_rejected_application_row`). MCP `list_application_queue` and the panel Apply tab share the Apply predicate. Do not invent a second queue store in the frontend or MCP.
 
@@ -53,7 +53,7 @@ Duplicate queue entries cannot exist: `job_tracking` PK is `(user_id, country, c
 | Counts | `GET /api/applications/counts` | One SQL aggregate; returns `{ apply, applied, rejected }` — **no job records** |
 | Apply list | `GET /api/applications/queue?page=&page_size=` | Only Apply rows, hydrated for that page |
 | Applied list | `GET /api/applications/applied?page=&page_size=` | Active applied only (excludes rejected) |
-| Rejected list | `GET /api/applications/rejected?page=&page_size=` | Applied + rejected |
+| Rejected list | `GET /api/applications/rejected?page=&page_size=` | Rejected, including rows never marked applied |
 
 **Why separate:** Counting must not require fetching position records. Each state is an independent query — never one giant payload filtered in the browser.
 
@@ -116,7 +116,7 @@ Catalog position
 
 Pinning alone still puts a role in Apply until the user applies (or unpins with no looking-to-apply). Unpinning does **not** clear `looking_to_apply`. Applying does **not** require unpinning; applied rows are excluded from Apply even if still pinned.
 
-Reject does **not** clear `applied`. Reapply clears rejection only and returns the row to Applied.
+Reject does **not** clear `applied`. A rejected row is on Rejected even when `applied` is still 0, so it cannot stay in Apply via pin or want-to-apply. Reapply clears rejection only: the row returns to Applied when `applied` is 1, or to Apply when it is still pinned or want-to-apply.
 
 ---
 

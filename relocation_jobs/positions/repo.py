@@ -20,13 +20,13 @@ _JOB_TRACKING_SELECT = """
 
 _STATE_WHERE = {
     APPLICATION_STATE_APPLY: (
-        "applied = 0 AND (pinned = 1 OR looking_to_apply = 1)"
+        "applied = 0 AND COALESCE(not_for_me, 0) = 0 AND COALESCE(rejected, 0) = 0 AND (pinned = 1 OR looking_to_apply = 1)"
     ),
     APPLICATION_STATE_APPLIED: (
         "applied = 1 AND rejected = 0 AND COALESCE(not_for_me, 0) = 0"
     ),
     APPLICATION_STATE_REJECTED: (
-        "applied = 1 AND rejected = 1 AND COALESCE(not_for_me, 0) = 0"
+        "rejected = 1 AND COALESCE(not_for_me, 0) = 0"
     ),
 }
 
@@ -269,20 +269,25 @@ def set_not_for_me(
             conn, user_id, country, company_name, canonical_url,
         )
         if not_for_me:
-            conn.execute(
-                """
-                INSERT INTO job_tracking (
-                    user_id, country, company_name, job_url,
-                    not_for_me, not_for_me_date, not_for_me_reason,
-                    location_gate_override, updated_at
-                ) VALUES (%s, %s, %s, %s, 1, %s, %s, 0, %s)
-                ON CONFLICT (user_id, country, company_name, job_url) DO UPDATE SET
-                    not_for_me = 1, not_for_me_date = EXCLUDED.not_for_me_date,
-                    not_for_me_reason = EXCLUDED.not_for_me_reason,
-                    location_gate_override = 0, updated_at = EXCLUDED.updated_at
-                """,
-                (user_id, country, company_name, storage_url, date_only, hide_reason, now),
+            urls = tracking_urls_for_job(
+                conn, user_id, country, company_name, canonical_url,
             )
+            urls.add(storage_url)
+            for url in urls:
+                conn.execute(
+                    """
+                    INSERT INTO job_tracking (
+                        user_id, country, company_name, job_url,
+                        not_for_me, not_for_me_date, not_for_me_reason,
+                        location_gate_override, updated_at
+                    ) VALUES (%s, %s, %s, %s, 1, %s, %s, 0, %s)
+                    ON CONFLICT (user_id, country, company_name, job_url) DO UPDATE SET
+                        not_for_me = 1, not_for_me_date = EXCLUDED.not_for_me_date,
+                        not_for_me_reason = EXCLUDED.not_for_me_reason,
+                        location_gate_override = 0, updated_at = EXCLUDED.updated_at
+                    """,
+                    (user_id, country, company_name, url, date_only, hide_reason, now),
+                )
             return _base_result(
                 company_name, storage_url, country,
                 not_for_me=True, not_for_me_date=date_only, not_for_me_reason=hide_reason,

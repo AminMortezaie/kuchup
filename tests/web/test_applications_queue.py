@@ -46,15 +46,19 @@ def test_is_active_application_queue_row_excludes_applied():
     assert not is_active_application_queue_row({"pinned": 1, "applied": 1})
     assert not is_active_application_queue_row({"looking_to_apply": 1, "applied": 1})
     assert not is_active_application_queue_row({"pinned": 0, "looking_to_apply": 0})
+    assert not is_active_application_queue_row({"pinned": 1, "looking_to_apply": 1, "not_for_me": 1})
+    assert not is_active_application_queue_row({"looking_to_apply": 1, "applied": 0, "rejected": 1})
 
 
 def test_applied_and_rejected_predicates_are_exclusive():
     active = {"applied": 1, "rejected": 0, "not_for_me": 0}
     rejected = {"applied": 1, "rejected": 1, "not_for_me": 0}
+    rejected_without_applied = {"applied": 0, "rejected": 1, "not_for_me": 0}
     hidden = {"applied": 1, "rejected": 1, "not_for_me": 1}
     assert is_active_applied_row(active)
     assert not is_rejected_application_row(active)
     assert is_rejected_application_row(rejected)
+    assert is_rejected_application_row(rejected_without_applied)
     assert not is_active_applied_row(rejected)
     assert not is_active_applied_row(hidden)
     assert not is_rejected_application_row(hidden)

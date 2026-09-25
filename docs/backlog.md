@@ -271,6 +271,29 @@ Soft delete means every hide that affects the board should have a durable `job_t
 
 ---
 
+## Expired want-to-apply as a personalization signal
+
+**Status:** idea only — not scheduled  
+**Priority:** low  
+**Context:** When a user marks **Not for me → Expired** on a role they had pinned or marked Want to apply, that role leaves the Applications queue. The hide is a product fact today (`not_for_me_reason='expired'` plus prior `looking_to_apply` or `pinned`). It is not a training set yet.
+
+### Problem / goal
+
+The user wanted that role and could not apply because the posting closed. A later, similar opening may still fit them. A future **user personalization** module could read those expired want-to-apply rows and prefer comparable roles. This item does not commit to building that module.
+
+### Approach
+
+- Do not add a new table until personalization is actually started.
+- The signal already stored is: `not_for_me=1`, `not_for_me_reason='expired'`, and the role was previously `looking_to_apply` or `pinned` (those flags are not cleared by not-for-me).
+- If personalization is built, query that combination. If it is not built, leave the rows as ordinary not-for-me history.
+
+### Done when
+
+- [ ] Decision recorded: build personalization, or leave this as history only
+- [ ] If built: rank or suggest roles using expired want-to-apply history, with a way to ignore a bad match
+
+---
+
 ## Template for new items
 
 ```markdown

@@ -16,7 +16,7 @@ APPLICATION_STATES = (
 def is_active_application_queue_row(row: dict | None) -> bool:
     if not row:
         return False
-    if as_bool(row.get("applied")):
+    if as_bool(row.get("applied")) or as_bool(row.get("not_for_me")) or as_bool(row.get("rejected")):
         return False
     return as_bool(row.get("pinned")) or as_bool(row.get("looking_to_apply"))
 
@@ -35,8 +35,6 @@ def is_active_applied_row(row: dict | None) -> bool:
 
 def is_rejected_application_row(row: dict | None) -> bool:
     if not row:
-        return False
-    if not as_bool(row.get("applied")):
         return False
     if not as_bool(row.get("rejected")):
         return False

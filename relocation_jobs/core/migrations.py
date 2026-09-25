@@ -187,6 +187,10 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
     run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
     run_migration_once(conn, "fetch_http_work_results_v1", _fetch_http_work_results_v1)
+    run_migration_once(conn, "pinned_sets_looking_to_apply_v1", _backfill_pinned_looking_to_apply)
+    run_migration_once(conn, "team_docs_not_for_me_queue_v1", _refresh_applications_queue_doc)
+    run_migration_once(conn, "team_docs_rejected_leaves_apply_v1", _refresh_applications_queue_doc)
+    run_migration_once(conn, "team_docs_expired_want_to_apply_v1", _seed_expired_want_to_apply_doc)
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
     run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
 
@@ -263,7 +267,6 @@ def _upsert_mcp_agent_skill_body(conn, *, slug: str, path: Path) -> None:
 
 def _mcp_agent_skills_tailor_body_v2(conn) -> None:
     _upsert_mcp_agent_skill_body(conn, slug="tailor", path=_MCP_AGENT_SKILL_TAILOR)
-    run_migration_once(conn, "pinned_sets_looking_to_apply_v1", _backfill_pinned_looking_to_apply)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -283,6 +286,12 @@ _APPLICATIONS_QUEUE_DOC = (
     / "team_docs"
     / "pages"
     / "applications-queue.md"
+)
+_EXPIRED_WANT_TO_APPLY_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "expired-want-to-apply-personalization.md"
 )
 
 
@@ -333,6 +342,29 @@ def _seed_applications_queue_doc(conn) -> None:
         slug="applications-queue",
         title="Applications queue (panel + MCP)",
         path=_APPLICATIONS_QUEUE_DOC,
+    )
+
+
+def _refresh_applications_queue_doc(conn) -> None:
+    body = _APPLICATIONS_QUEUE_DOC.read_text(encoding="utf-8").strip() + "\n"
+    now = _utc_now()
+    conn.execute(
+        """
+        UPDATE team_docs
+        SET body = %s, updated_at = %s
+        WHERE folder = %s AND slug = %s
+        """,
+        (body, now, "tech", "applications-queue"),
+    )
+
+
+def _seed_expired_want_to_apply_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="product",
+        slug="expired-want-to-apply-personalization",
+        title="Expired want-to-apply roles (future personalization)",
+        path=_EXPIRED_WANT_TO_APPLY_DOC,
     )
 
 
