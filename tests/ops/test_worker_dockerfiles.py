@@ -71,3 +71,18 @@ def test_playwright_worker_dockerfile_installs_chromium():
     assert "requirements-playwright.txt" in text
     assert "FETCH_WORKER_KIND=playwright" in text
     assert "apps/playwright-worker/run.py" in text
+
+
+def test_ec2_panel_image_leaves_tectonic_on_mcp():
+    text = Path("Dockerfile.ec2").read_text(encoding="utf-8")
+    instructions = _instruction_text("Dockerfile.ec2")
+    base, rest = instructions.split("from base as mcp", 1)
+    mcp, panel = rest.split("from base as panel", 1)
+    assert "tectonic" not in base
+    assert "tectonic" in mcp
+    assert "tectonic" not in panel
+    assert instructions.rstrip().endswith('cmd ["./docker-entrypoint.sh"]')
+    deploy = Path("scripts/ec2_app_deploy.sh").read_text(encoding="utf-8")
+    assert "--target panel" in deploy
+    assert "--target mcp" in deploy
+    assert "${MCP_IMAGE}" in deploy

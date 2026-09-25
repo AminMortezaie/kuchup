@@ -58,6 +58,7 @@ EC2_SSH_USER="${EC2_SSH_USER:-ec2-user}"
 EC2_SSH_KEY="${EC2_SSH_KEY:-$HOME/Downloads/relocation.pem}"
 PANEL_IMAGE=relocation-panel:ec2
 PANEL_CONTAINER=relocation-panel
+MCP_IMAGE=relocation-mcp:ec2
 MCP_CONTAINER=relocation-mcp
 WORKER_IMAGE=relocation-fetch-worker:ec2
 WORKER_CONTAINER=relocation-fetch-worker
@@ -633,7 +634,18 @@ fi
 DOCKER_BUILDKIT=1 docker build \\
   --build-arg BUILDKIT_INLINE_CACHE=1 \\
   "\${cache_args[@]}" \\
+  --target panel \\
   -f Dockerfile.ec2 -t ${PANEL_IMAGE} .
+mcp_cache_args=()
+if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then
+  mcp_cache_args=(--cache-from ${MCP_IMAGE})
+fi
+DOCKER_BUILDKIT=1 docker build \\
+  --build-arg BUILDKIT_INLINE_CACHE=1 \\
+  --cache-from ${PANEL_IMAGE} \\
+  "\${mcp_cache_args[@]}" \\
+  --target mcp \\
+  -f Dockerfile.ec2 -t ${MCP_IMAGE} .
 EOF
   fi
   remote_save_hash panel "$panel_hash"
@@ -686,7 +698,7 @@ docker run -d --name ${MCP_CONTAINER} --restart unless-stopped \\
   -e MCP_PUBLIC_BASE_URL='${MCP_PUBLIC_BASE_URL}' \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
-  ${PANEL_IMAGE}
+  ${MCP_IMAGE}
 EOF
 
   log "Starting HTTP fetch merge consumer (panel image, before Go worker)..."
@@ -912,7 +924,7 @@ EOF
 cmd_image_sizes() {
   load_state
   log "=== Docker image sizes ==="
-  ssh_cmd "docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'relocation-(panel:ec2|fetch-worker:ec2|fetch-worker:playwright|role-propagator:ec2)' || true"
+  ssh_cmd "docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'relocation-(panel:ec2|mcp:ec2|fetch-worker:ec2|fetch-worker:playwright|role-propagator:ec2)' || true"
   log "Expected: light fetch-worker is smaller than :playwright by Chromium + OS browser deps (~300–500MB)."
 }
 

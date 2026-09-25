@@ -162,7 +162,8 @@ Production images:
 
 | Image | Playwright | Env |
 |-------|------------|-----|
-| Slim panel (`Dockerfile.ec2`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1` |
+| Slim panel (`Dockerfile.ec2` target `panel`) | No | `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. No Tectonic |
+| MCP (`Dockerfile.ec2` target `mcp`) | No | Panel layers plus Tectonic for PDF render |
 | Light fetch worker (`Dockerfile.ec2-worker`) | No | Go `/fetch-scheduler`; `FETCH_HTTP_POOL_SIZE`; no Python in image |
 | Merge follower (panel image) | No | Polls `fetch_http_results`; only writer of `matching_jobs` for scheduled HTTP runs |
 | Playwright sidecar (`Dockerfile.ec2-worker-playwright`) | Yes | Opt-in (`DEPLOY_PLAYWRIGHT_WORKER=1`); `FETCH_WORKER_KIND=playwright`; `jibe` / `atlassian` / `hibob` |

@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
-# EC2 panel image (no Playwright browser — scrape stays local or enable later on larger instance).
-FROM python:3.12-slim-bookworm
+# EC2 images. Default target `panel`: no Playwright, no Tectonic.
+# `mcp` adds Tectonic on the same layers, so Debian and Python stay shared.
+FROM python:3.12-slim-bookworm AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -9,10 +10,25 @@ ENV PYTHONUNBUFFERED=1 \
     PANEL_COMPANY_FETCH_ENABLED=1 \
     PORT=10000
 
-ARG TECTONIC_VERSION=0.16.9
-
 WORKDIR /app
 
+COPY requirements.txt .
+RUN --mount=type=cache,id=relocation-panel-pip,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
+COPY . .
+RUN chmod +x docker-entrypoint.sh docker-entrypoint-mcp.sh
+
+RUN mkdir -p /tmp/panel-data
+
+EXPOSE 10000 10001
+
+FROM base AS mcp
+
+ARG TECTONIC_VERSION=0.16.9
+
+# Warm the TeX bundle so the first production PDF render does not download it.
+COPY deploy/ec2/tectonic-warm.tex /tmp/tectonic-warm/warm.tex
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -25,25 +41,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-${TECTONIC_TARGET}.tar.gz" \
          | tar -xz -C /usr/local/bin tectonic \
     && chmod +x /usr/local/bin/tectonic \
+    && tectonic --outdir /tmp/tectonic-warm /tmp/tectonic-warm/warm.tex \
+    && rm -rf /tmp/tectonic-warm \
     && apt-get purge -y curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Warm Tectonic package cache so first production render does not download over the network.
-COPY deploy/ec2/tectonic-warm.tex /tmp/tectonic-warm/warm.tex
-RUN tectonic --outdir /tmp/tectonic-warm /tmp/tectonic-warm/warm.tex \
-    && rm -rf /tmp/tectonic-warm
-
-# Panel does not scrape on EC2 — skip playwright (~130MB) and browsers.
-COPY requirements.txt .
-RUN --mount=type=cache,id=relocation-panel-pip,target=/root/.cache/pip \
-    pip install -r requirements.txt
-
-COPY . .
-RUN chmod +x docker-entrypoint.sh docker-entrypoint-mcp.sh
-
-RUN mkdir -p /tmp/panel-data
-
-EXPOSE 10000 10001
+FROM base AS panel
 
 CMD ["./docker-entrypoint.sh"]
