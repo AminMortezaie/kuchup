@@ -125,12 +125,13 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 
 | Image | Dockerfile | Role |
 |-------|------------|------|
-| `relocation-panel:ec2` | `Dockerfile.ec2` | Slim panel — no Playwright; includes **tectonic** for PDF render; `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. Same image runs `relocation-mcp` via `docker-entrypoint-mcp.sh`. |
+| `relocation-panel:ec2` | `Dockerfile.ec2` target `panel` | Slim panel — no Playwright, no Tectonic; `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. Also runs the fetch merge follower. |
+| `relocation-mcp:ec2` | `Dockerfile.ec2` target `mcp` | Panel layers plus Tectonic for PDF render. `relocation-mcp` uses `docker-entrypoint-mcp.sh`. |
 | `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Go HTTP scheduler (`CMD /fetch-scheduler`); static binary + CA certs only — no Python in the image |
 | `relocation-fetch-merge` | `relocation-panel:ec2` | Follower: `scripts/fetch_merge_consumer.py` — merge/enrich from `fetch_http_results` |
 | `relocation-fetch-worker:playwright` | `Dockerfile.ec2-worker-playwright` | **Opt-in.** Chromium worker for `jibe` / `atlassian` / `hibob`; not started unless `DEPLOY_PLAYWRIGHT_WORKER=1` |
 
-**PDF render:** the panel image installs pinned tectonic and warms its package cache at build time. After deploy, smoke with `docker exec relocation-panel tectonic --version`, then **Re-render PDF** on a master or company workspace on [kuchup.com](https://kuchup.com).
+**PDF render:** the MCP image installs pinned tectonic and warms its package cache at build time. After deploy, smoke with `docker exec relocation-mcp tectonic --version`, then **Re-render PDF** on a master or company workspace on [kuchup.com](https://kuchup.com).
 
 Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); the worker skips a cycle if another fetch is already running (`fetch_runs.status = running`). Light and Playwright workers share that lock — do not run both loops on the same 6h cadence unless you accept skipped cycles.
 
