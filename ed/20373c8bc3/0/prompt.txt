@@ -1,0 +1,1 @@
+hot fix on applications page that should be this to make it maximize on the screen it just got a part of screen and not whole screen.
