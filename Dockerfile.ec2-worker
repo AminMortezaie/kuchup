@@ -1,29 +1,20 @@
 # syntax=docker/dockerfile:1
-# Light EC2 fetch worker: HTTP ATS APIs / HTML only (Greenhouse, Lever, Ashby, …).
-# No Playwright, no Chromium. Browser boards use Dockerfile.ec2-worker-playwright.
-FROM python:3.12-slim-bookworm
+# HTTP fetch worker: Go scheduler + goroutine pool (static binary only).
+# Playwright boards use Dockerfile.ec2-worker-playwright.
+FROM golang:1.26-alpine AS build
+RUN apk add --no-cache ca-certificates
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY ats_scrape ./ats_scrape
+COPY apps/ats-scrape ./apps/ats-scrape
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/fetch-scheduler ./apps/ats-scrape
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PANEL_DATA_DIR=/tmp/panel-data \
-    PANEL_SCRAPE_ENABLED=1 \
-    FETCH_SCHEDULE_ENABLED=1 \
+FROM scratch
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /out/fetch-scheduler /fetch-scheduler
+ENV FETCH_SCHEDULE_ENABLED=1 \
     FETCH_SCHEDULE_INTERVAL_HOURS=6 \
-    FETCH_SCHEDULE_CONCURRENCY=4 \
+    FETCH_HTTP_POOL_SIZE=4 \
     FETCH_WORKER_KIND=http
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN --mount=type=cache,id=relocation-worker-pip,target=/root/.cache/pip \
-    pip install -r requirements.txt
-
-COPY . .
-
-RUN mkdir -p /tmp/panel-data
-
-CMD ["python3", "scripts/fetch_scheduler_worker.py"]
+CMD ["/fetch-scheduler"]

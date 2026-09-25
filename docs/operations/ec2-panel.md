@@ -20,7 +20,7 @@
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
 | Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The **default fetch worker is a light HTTP image** (Greenhouse / Lever / Ashby / … APIs and HTML). It needs Postgres (and SQS when opportunity refresh is enabled) and runs country scrapes every **6 hours** (sequential countries, concurrency **2**). Playwright/Chromium boards (`jibe`, `atlassian`, `hibob`) are a **separate opt-in sidecar** — not started on a normal deploy. Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The **default fetch worker is a static Go image** (`/fetch-scheduler`): it opens fetch runs, writes HTTP work rows, fetches boards on a goroutine pool, and writes raw result rows (`ok` / `empty` / `error`). A **Python merge follower** (`relocation-fetch-merge`, panel image) reads those results and is the only writer of `matching_jobs`. Playwright/Chromium boards (`jibe`, `atlassian`, `hibob`) stay on the **opt-in sidecar**. Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
 
 ---
 
@@ -126,7 +126,8 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 | Image | Dockerfile | Role |
 |-------|------------|------|
 | `relocation-panel:ec2` | `Dockerfile.ec2` | Slim panel — no Playwright; includes **tectonic** for PDF render; `PANEL_SCRAPE_ENABLED=0`, `PANEL_COMPANY_FETCH_ENABLED=1`. Same image runs `relocation-mcp` via `docker-entrypoint-mcp.sh`. |
-| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Light HTTP ATS scheduler (no Chromium); `FETCH_WORKER_KIND=http`; writes to shared Postgres (no TeX) |
+| `relocation-fetch-worker:ec2` | `Dockerfile.ec2-worker` | **Default.** Go HTTP scheduler (`CMD /fetch-scheduler`); static binary + CA certs only — no Python in the image |
+| `relocation-fetch-merge` | `relocation-panel:ec2` | Follower: `scripts/fetch_merge_consumer.py` — merge/enrich from `fetch_http_results` |
 | `relocation-fetch-worker:playwright` | `Dockerfile.ec2-worker-playwright` | **Opt-in.** Chromium worker for `jibe` / `atlassian` / `hibob`; not started unless `DEPLOY_PLAYWRIGHT_WORKER=1` |
 
 **PDF render:** the panel image installs pinned tectonic and warms its package cache at build time. After deploy, smoke with `docker exec relocation-panel tectonic --version`, then **Re-render PDF** on a master or company workspace on [kuchup.com](https://kuchup.com).
@@ -135,7 +136,24 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 **Panel company fetch:** `POST /api/companies/fetch` (board **Fetch jobs**) runs in the panel process when `PANEL_COMPANY_FETCH_ENABLED=1`. Country-wide `/api/fetch` stays off on the slim panel. Playwright-only ATS boards still need the Playwright sidecar or a local scrape with Chromium. The light worker skips those companies (no empty-board merge / `ImportError`).
 
-**Worker env (set by deploy):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_SCHEDULE_CONCURRENCY=2`, `FETCH_WORKER_KIND=http`. Optional override: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. Listing check (employer URL probe before country scrape): `FETCH_LISTING_CHECK_ENABLED=1` (default), `FETCH_LISTING_CHECK_LIMIT=200`, `FETCH_LISTING_CHECK_CONCURRENCY=2`, `FETCH_LISTING_CHECK_MISSES=2`.
+**Worker env (Go scheduler):** `FETCH_SCHEDULE_ENABLED=1`, `FETCH_SCHEDULE_INTERVAL_HOURS=6`, `FETCH_HTTP_POOL_SIZE=4` (ceiling 16), `FETCH_WORKER_KIND=http`, `DATABASE_URL`. Optional: `FETCH_SCHEDULE_COUNTRIES=uk,netherlands`. **Merge follower:** `FETCH_MERGE_POLL_SECONDS=2` on `relocation-fetch-merge`. Listing check is **not** run on the Go worker (still available on manual Python scheduler paths).
+
+```text
+Go image entry point (/fetch-scheduler)
+        │
+        ▼
+ open fetch run → write fetch_http_work → goroutine pool → fetch_http_results → close run
+        │
+        ▼
+ Python merge follower (panel image)
+        │
+        ▼
+ matching_jobs
+```
+
+Result `status`: `ok` (jobs JSON), `empty` (zero jobs, successful scrape), `error` (failed fetch — merge marks `fetch_problem`, no merge). A finished run’s `result_line` notes **merge pending** until the follower catches up.
+
+Go startup runs `EnsureSchema` for `fetch_http_work` / `fetch_http_results` (idempotent). Stale **`running`** rows older than `FETCH_COUNTRY_TIMEOUT_SECONDS` (default 2700) are marked failed on each cycle — not every `running` row on boot (panel company fetches stay safe).
 
 ### Worker memory caps
 
@@ -143,14 +161,14 @@ Manual country scrape from your laptop still works (`PANEL_SCRAPE_ENABLED=1`); t
 
 | Container | Cap | Why |
 |-----------|-----|-----|
-| `relocation-fetch-worker` | **512m** | HTTP scrape at concurrency 2. Grafana last on the old combined worker was ~416MiB; 512m leaves headroom without room for the ~837MiB Chromium spike. |
+| `relocation-fetch-worker` | **256m** | Static Go scheduler + HTTP pool (no Chromium, no CPython). |
 | `relocation-playwright-worker` | **640m** | One browser (concurrency 1). Hard ceiling under the ~837MiB max that pressured the ~2GiB host. |
 
 Postgres, Redis, panel, MCP, role propagator, Caddy, and Alloy are unchanged in this deploy path.
 
 If a worker hits its cap, the kernel OOM-kills that container (exit 137). `--restart unless-stopped` starts it again. The in-flight country cycle is lost and the next 6h pass retries. That is the tradeoff: a killed worker beats a wedged host (SSH timeout / Cloudflare 522). `./scripts/ec2_app_deploy.sh status` prints `oom=` from `State.OOMKilled`.
 
-On `t4g.micro`, keep the **light** worker concurrency at **2** (one event loop + semaphore). Do not raise it without watching worker RSS. The Playwright sidecar, when enabled, uses concurrency **1**. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
+On `t4g.micro`, tune **`FETCH_HTTP_POOL_SIZE`** (not the old Python `FETCH_SCHEDULE_CONCURRENCY=2`). The Playwright sidecar, when enabled, uses concurrency **1**. History: [fetch-thread-exhaustion-incident.md](../archive/fetch-thread-exhaustion-incident.md).
 
 ### Light vs Playwright images
 
