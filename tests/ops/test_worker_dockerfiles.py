@@ -34,12 +34,15 @@ def test_light_worker_dockerfile_has_no_chromium():
     assert "requirements-playwright" not in instructions
     assert "playwright" not in instructions
     assert "chromium" not in instructions
+    assert "python:3.12" not in instructions.lower()
+    assert "pip install" not in instructions
+    assert 'CMD ["/fetch-scheduler"]' in text
     assert "FETCH_WORKER_KIND=http" in text
 
 
 def test_only_fetch_workers_have_memory_caps():
     text = Path("scripts/ec2_app_deploy.sh").read_text(encoding="utf-8")
-    assert "FETCH_WORKER_MEMORY=512m" in text
+    assert "FETCH_WORKER_MEMORY=256m" in text
     assert "PLAYWRIGHT_WORKER_MEMORY=640m" in text
     capped = [
         block

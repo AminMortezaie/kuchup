@@ -64,7 +64,7 @@ WORKER_CONTAINER=relocation-fetch-worker
 PLAYWRIGHT_WORKER_IMAGE=relocation-fetch-worker:playwright
 PLAYWRIGHT_WORKER_CONTAINER=relocation-playwright-worker
 DEPLOY_PLAYWRIGHT_WORKER="${DEPLOY_PLAYWRIGHT_WORKER:-0}"
-FETCH_WORKER_MEMORY=512m
+FETCH_WORKER_MEMORY=256m
 PLAYWRIGHT_WORKER_MEMORY=640m
 PROPAGATOR_IMAGE=relocation-role-propagator:ec2
 PROPAGATOR_CONTAINER=relocation-role-propagator
@@ -502,12 +502,10 @@ list_paths() {
     worker)
       printf '%s\n' \
         Dockerfile.ec2-worker \
-        requirements.txt \
-        scripts/fetch_scheduler_worker.py
-      find relocation_jobs \
-        \( -path 'relocation_jobs/static' -o -path 'relocation_jobs/static/*' \
-           -o -name '__pycache__' -o -name '*.pyc' \) -prune \
-        -o -type f -print
+        go.mod \
+        go.sum \
+        apps/ats-scrape/main.go
+      find ats_scrape -type f ! -name '*_test.go' -print
       ;;
     playwright-worker)
       printf '%s\n' \
@@ -665,9 +663,6 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e NOWPAYMENTS_IPN_SECRET='${nowpayments_secret}' \\
   -e NOWPAYMENTS_SANDBOX='${nowpayments_sandbox_flag}' \\
   -e SESSION_COOKIE_SECURE=1 \\
-  -e FETCH_SCHEDULE_ENABLED=1 \\
-  -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
-  -e FETCH_SCHEDULE_CONCURRENCY=2 \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
   -e MCP_PUBLIC_BASE_URL='${MCP_PUBLIC_BASE_URL}' \\
@@ -757,13 +752,10 @@ docker rm -f ${WORKER_CONTAINER} 2>/dev/null || true
 docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   --memory=${FETCH_WORKER_MEMORY} --memory-swap=${FETCH_WORKER_MEMORY} \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
-  -e PANEL_SCRAPE_ENABLED=1 \\
   -e FETCH_SCHEDULE_ENABLED=1 \\
   -e FETCH_SCHEDULE_INTERVAL_HOURS=6 \\
-  -e FETCH_SCHEDULE_CONCURRENCY=2 \\
+  -e FETCH_HTTP_POOL_SIZE=4 \\
   -e FETCH_WORKER_KIND=http \\
-  -e FETCH_COMPANY_TIMEOUT_SECONDS=300 \\
-  -e FETCH_COUNTRY_TIMEOUT_SECONDS=2700 \\
   -e PANEL_ADMIN_USER=admin \\
   -e PANEL_ADMIN_EMAILS='${admin_emails_value}' \\
   -e DATABASE_URL='${db_url}' \\
@@ -772,6 +764,18 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e AWS_ACCESS_KEY_ID='${aws_key}' \\
   -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${WORKER_IMAGE}
+EOF
+
+  log "Starting HTTP fetch merge consumer (panel image)..."
+  ssh_cmd bash -s <<EOF
+set -euo pipefail
+docker rm -f relocation-fetch-merge 2>/dev/null || true
+docker run -d --name relocation-fetch-merge --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
+  -e DATABASE_URL='${db_url}' \\
+  -e FETCH_MERGE_POLL_SECONDS=2 \\
+  --entrypoint python3 \\
+  ${PANEL_IMAGE} scripts/fetch_merge_consumer.py
 EOF
 
   start_playwright_worker_container "${db_url}" "${admin_emails_value}" "${sqs_url}" "${aws_region}" "${aws_key}" "${aws_secret}"
