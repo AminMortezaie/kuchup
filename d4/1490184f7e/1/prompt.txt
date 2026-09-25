@@ -1,0 +1,1123 @@
+cursor/go-http-ats-scrape-7d6b
+this is a big change on system. so we need to test it before put on production.
+
+let's switch to it and QA every edge cases you can see on it.
+
+---
+
+/ponytail-review review it and if it's fine we're going on production
+
+---
+
+apply the changes
+
+---
+
+i wanted to switch go to have real concurrency and light image size on it, but i don't feel this.
+investigate is this happening on your code?
+
+---
+
+fuck it. it's not what i thought about.
+
+---
+
+based on what we talked if you want to create a new PR in to satisfy what i want what would be the task of it?
+
+---
+
+write down a task description like this task i created before:
+
+sample::
+
+
+
+# Task: Kuchup — Split Applications into Paginated Application States
+
+## Context
+
+We recently introduced the **Applications / Queue** area in the left navigation.
+
+The current Applications experience has two main sections:
+
+- **Apply** — positions the user still needs to apply to.
+- **Applied** — positions the user has already applied to.
+
+There are currently two important architectural problems.
+
+### Problem 1 — Everything is loaded together
+
+The Applications page currently loads the data for multiple tabs together instead of treating each tab as an independent data source.
+
+For example, a user may currently have:
+
+```text
+Apply:    105 positions
+Applied:   86 positions
+```
+
+The system should **not load all 191 positions when the user opens the Applications page**.
+
+The UI should not fetch the full dataset simply to render the tabs.
+
+The number of positions and the actual position records are two different concerns.
+
+### Problem 2 — Applied and Rejected are mixed
+
+The current `Applied` section also contains applications that have already received a rejection.
+
+That means the user cannot distinguish:
+
+```text
+Applied
+    ├── Waiting for response
+    └── Rejected
+```
+
+This is not a meaningful application state model.
+
+The desired state is:
+
+```text
+Apply
+    → Positions still requiring application
+
+Applied
+    → User applied
+    → No rejection received yet / application still active
+
+Rejected
+    → User applied
+    → Application received a rejection
+```
+
+These should be separate tabs/states.
+
+---
+
+# Goal
+
+Refactor the Applications area so that:
+
+1. **Each application state is independently loaded.**
+2. **Counts are independent from position-list APIs.**
+3. **No application tab loads its entire dataset.**
+4. **Every position list is paginated.**
+5. **Apply, Applied, and Rejected are separate states.**
+6. **The user only loads the actual positions for the tab they are viewing.**
+7. **Opening Applications does not trigger large queries for every tab.**
+
+The end result should be a scalable application-tracking system rather than a page that loads the user's entire application history.
+
+---
+
+# Required state model
+
+The Applications area should expose at least these three states:
+
+```text
+┌─────────────┐
+│ Apply       │
+│ 105          │
+└─────────────┘
+
+┌─────────────┐
+│ Applied     │
+│ 86           │
+└─────────────┘
+
+┌─────────────┐
+│ Rejected    │
+│ 21           │
+└─────────────┘
+```
+
+The exact UI/count presentation should follow the existing design system.
+
+The important part is that these are **distinct application states**, not different frontend filters over one giant dataset.
+
+---
+
+# Important investigation
+
+Before implementing, inspect the existing Applications implementation and determine:
+
+1. How Applications currently retrieves queued positions.
+2. How Applied positions are currently retrieved.
+3. How rejected applications are represented in the database/domain model.
+4. Whether application status already exists as a first-class field.
+5. Whether the current API returns Apply + Applied together.
+6. Whether the backend currently performs one large query.
+7. Whether counts are currently calculated by fetching full records.
+8. How pagination is currently implemented elsewhere in the application.
+9. Whether there are existing pagination primitives/components that should be reused.
+10. How the existing Panel position UI is reused by Applications.
+11. Whether Apply / Applied / Rejected can be represented by the existing application lifecycle without introducing another state model.
+
+**Do not assume a database redesign is necessary.**
+
+First understand the existing application/queue model and make the smallest architectural change that gives us independent state queries and proper pagination.
+
+---
+
+# API architecture
+
+The count and list APIs should be separate concerns.
+
+## Count API
+
+A lightweight count API should return counts without loading all positions.
+
+Conceptually:
+
+```text
+GET /applications/counts
+```
+
+Response could be conceptually:
+
+```json
+{
+  "apply": 105,
+  "applied": 86,
+  "rejected": 21
+}
+```
+
+The exact endpoint and response shape should follow the existing API conventions.
+
+The important requirement is:
+
+> **Counting applications must not require fetching the application records themselves.**
+
+The count query should be optimized as a count/query operation.
+
+---
+
+# Position list APIs
+
+The actual positions should be loaded through separate paginated APIs.
+
+Conceptually:
+
+```text
+GET /applications/apply
+GET /applications/applied
+GET /applications/rejected
+```
+
+Each endpoint must support pagination.
+
+For example:
+
+```text
+?page=1&page_size=20
+```
+
+or whatever pagination convention the existing backend uses.
+
+The exact URL structure is not prescribed.
+
+The important architectural requirement is:
+
+> **Apply, Applied, and Rejected must be independently queryable and independently paginated.**
+
+Do not create one endpoint that loads all application states and then filters them in the frontend.
+
+---
+
+# Pagination
+
+No application state should full-load its entire dataset.
+
+For example, if the user has:
+
+```text
+Apply: 105
+Applied: 86
+Rejected: 21
+```
+
+opening Applications must never cause:
+
+```text
+105 + 86 + 21 = 212 position records
+```
+
+to be retrieved.
+
+Instead:
+
+```text
+Applications opened
+        ↓
+optional lightweight counts request
+        ↓
+Show tabs
+        ↓
+User clicks Apply
+        ↓
+Fetch first 10–20 Apply positions
+        ↓
+User requests more
+        ↓
+Fetch next page
+```
+
+Use a reasonable page size consistent with the existing application.
+
+**10–20 positions per request is the intended range; do not exceed 20 without a concrete reason.**
+
+The implementation should support the existing project's preferred pagination mechanism, whether that is:
+
+- page/page_size,
+- cursor pagination,
+- offset/limit,
+- or another established mechanism.
+
+Prefer cursor pagination if the existing architecture supports it naturally and the dataset can change while the user is browsing.
+
+Do not introduce a new pagination mechanism unnecessarily.
+
+---
+
+# Lazy loading behavior
+
+There are two acceptable UX approaches.
+
+## Option A — Show counts immediately
+
+When the Applications page opens:
+
+```text
+Applications
+
+Apply       105
+Applied      86
+Rejected     21
+```
+
+Only the lightweight count operation runs.
+
+Then:
+
+```text
+User clicks Apply
+        ↓
+Apply list API called
+        ↓
+First page loaded
+```
+
+Clicking Applied:
+
+```text
+User clicks Applied
+        ↓
+Applied list API called
+        ↓
+First page loaded
+```
+
+And similarly for Rejected.
+
+This is preferred if the count query is cheap and the existing UX benefits from showing counts.
+
+---
+
+## Option B — Completely lazy
+
+Alternatively, opening Applications can show:
+
+```text
+Apply
+Applied
+Rejected
+```
+
+without counts.
+
+When the user clicks a tab:
+
+```text
+Tab clicked
+    ↓
+Count requested
+    +
+First paginated page requested
+```
+
+This is also acceptable if it significantly simplifies the implementation or avoids unnecessary requests.
+
+---
+
+## Important
+
+Regardless of which UX option is chosen:
+
+**Never fetch the full list merely to calculate the count.**
+
+And:
+
+**Never load the lists for all three tabs just because the Applications page opened.**
+
+---
+
+# Applied vs Rejected
+
+This is a core requirement.
+
+The backend/domain layer must distinguish:
+
+### Apply
+
+Position is still waiting for the user to apply.
+
+```text
+queued
+→ not yet applied
+```
+
+### Applied
+
+User has applied and there is **no rejection state**.
+
+Conceptually:
+
+```text
+applied
+→ waiting / active application
+```
+
+### Rejected
+
+User applied and the application has received a rejection.
+
+```text
+applied
+→ rejected
+```
+
+The exact underlying statuses should be determined from the existing domain model.
+
+Do not blindly add string comparisons in the frontend.
+
+The backend should provide the correct state.
+
+---
+
+# Example
+
+Suppose the user has:
+
+```text
+105 positions waiting to apply
+
+86 applications already submitted
+
+17 of those are still awaiting response
+
+69 have been rejected
+```
+
+The UI should represent the states according to the application's actual domain semantics.
+
+For example:
+
+```text
+Apply       105
+Applied      17
+Rejected     69
+```
+
+Not:
+
+```text
+Apply       105
+Applied      86
+```
+
+where the 69 rejected applications are incorrectly mixed into Applied.
+
+The numbers above are only illustrative; derive the actual counts from the database.
+
+---
+
+# Position UI
+
+Continue using the **existing position UI from the Panel/company views**.
+
+Do not create a new position card style specifically for Applications.
+
+The three tabs should reuse the same position presentation while the application-state context changes.
+
+For example:
+
+```text
+Apply
+ └── existing position component
+      └── Apply action
+
+Applied
+ └── existing position component
+      └── Application status
+
+Rejected
+ └── existing position component
+      └── Rejected status
+```
+
+The task is about **data/state architecture and loading**, not creating another visual language.
+
+---
+
+# Interaction with existing queue behavior
+
+Preserve the queue lifecycle implemented previously.
+
+When a position moves from:
+
+```text
+Apply
+```
+
+to:
+
+```text
+Applied
+```
+
+the relevant state/count should update accordingly.
+
+If the application later becomes rejected:
+
+```text
+Applied
+    ↓
+Rejected
+```
+
+the position should move to the appropriate state.
+
+Do not leave the position represented simultaneously as an active Apply item and an Applied/Rejected item unless the underlying domain explicitly requires that.
+
+---
+
+# Backend requirements
+
+Investigate query performance carefully.
+
+The new APIs should query only the relevant state.
+
+Avoid patterns such as:
+
+```text
+SELECT all applications
+        ↓
+load all positions
+        ↓
+filter in application code
+        ↓
+count
+```
+
+Prefer database-level filtering and counting:
+
+```text
+COUNT(...)
+WHERE user_id = ?
+AND state = ?
+```
+
+and:
+
+```text
+SELECT ...
+WHERE user_id = ?
+AND state = ?
+ORDER BY ...
+LIMIT ?
+```
+
+The exact query implementation should follow the existing repository/database architecture.
+
+If indexes are needed for the new state-specific queries, add them only when justified by the existing schema/query patterns.
+
+---
+
+# Frontend requirements
+
+The frontend must treat the tabs as separate data sources.
+
+Avoid:
+
+```text
+Applications page
+    ↓
+fetchEverything()
+    ↓
+splitIntoTabs()
+```
+
+Prefer:
+
+```text
+Applications page
+    ↓
+counts()
+
+User clicks Apply
+    ↓
+apply(page)
+
+User clicks Applied
+    ↓
+applied(page)
+
+User clicks Rejected
+    ↓
+rejected(page)
+```
+
+Switching tabs should not accidentally refetch unrelated tabs unless required by the existing caching/state-management strategy.
+
+Use the project's existing data-fetching/cache patterns.
+
+---
+
+# Loading and pagination UX
+
+Each tab should have its own:
+
+- Loading state.
+- Empty state.
+- Error state.
+- Pagination state.
+
+For example:
+
+```text
+Apply
+  Loading...
+```
+
+should not block:
+
+```text
+Rejected
+```
+
+from being independently loaded.
+
+Likewise, loading the next Apply page should not reload Applied.
+
+The user should be able to switch between tabs without losing already-loaded pages unless the existing cache strategy intentionally invalidates them.
+
+---
+
+# Empty states
+
+Handle each state independently.
+
+Examples:
+
+```text
+Apply
+No positions waiting for application.
+```
+
+```text
+Applied
+No active applications.
+```
+
+```text
+Rejected
+No rejected applications.
+```
+
+Use the application's existing empty-state components/style.
+
+Do not invent a new design language.
+
+---
+
+# Important edge cases
+
+### Position transitions
+
+If a position changes:
+
+```text
+Apply → Applied
+```
+
+the Apply count/list must reflect it.
+
+If:
+
+```text
+Applied → Rejected
+```
+
+the Applied and Rejected states must update correctly.
+
+### Pagination after mutation
+
+If the user applies to an item from the Apply tab:
+
+- Remove/update it from the current Apply list.
+- Update the relevant count.
+- Do not create duplicate entries.
+- The item should appear in Applied only when the application's state actually changes to Applied.
+
+### Rejection
+
+If an application becomes rejected:
+
+- It should no longer be represented as active Applied.
+- It should appear in Rejected.
+- Counts should reflect the transition.
+
+### Empty page
+
+If the last item on a page moves to another state:
+
+```text
+page 3 → now empty
+```
+
+handle pagination gracefully rather than showing stale content.
+
+### Concurrent updates
+
+If application status changes externally while the user is browsing:
+
+- Do not assume the frontend's old state is authoritative.
+- Use the existing invalidation/refetch mechanism where appropriate.
+
+---
+
+# Tests
+
+Add focused backend and frontend/integration coverage.
+
+## Count tests
+
+Verify:
+
+- Apply count is correct.
+- Applied count excludes rejected applications.
+- Rejected count contains rejected applications.
+- Count endpoints do not return full position records.
+
+## API separation
+
+Verify:
+
+```text
+Apply endpoint → only Apply positions
+
+Applied endpoint → only active Applied positions
+
+Rejected endpoint → only Rejected positions
+```
+
+No endpoint should accidentally return all states.
+
+## Pagination
+
+Test:
+
+- First page returns at most the configured page size.
+- Second page returns the next positions.
+- No duplicates between pages.
+- Total dataset is not loaded in one request.
+- Pagination works independently for all three states.
+
+## Lazy loading
+
+Verify that opening Applications does **not** trigger all three position-list APIs.
+
+For the preferred lazy behavior:
+
+```text
+Open Applications
+    ↓
+count API only
+
+Click Apply
+    ↓
+Apply list API
+
+Click Applied
+    ↓
+Applied list API
+
+Click Rejected
+    ↓
+Rejected list API
+```
+
+If Option B is chosen, verify the corresponding count/list behavior.
+
+## State transitions
+
+Test:
+
+```text
+Apply
+ ↓
+Applied
+ ↓
+Rejected
+```
+
+and verify counts and lists update appropriately.
+
+## Regression
+
+Existing Applications / Queue behavior must continue to work.
+
+Existing MCP / application-tailoring behavior must not be broken.
+
+---
+
+# Documentation
+
+After implementation, document the new Applications data architecture.
+
+Explain:
+
+```text
+                 Applications
+                      │
+             ┌────────┴────────┐
+             │                 │
+           Counts          Position Lists
+                               │
+                  ┌────────────┼────────────┐
+                  │            │            │
+                Apply       Applied      Rejected
+                  │            │            │
+               Paginated    Paginated    Paginated
+```
+
+Document:
+
+- Why counts are separate from list APIs.
+- Why each application state has an independent endpoint/query.
+- Why full loading is intentionally prohibited.
+- Pagination strategy and page size.
+- The meaning of Apply / Applied / Rejected.
+- How state transitions affect counts and lists.
+- How frontend lazy loading works.
+- Any relevant database indexes/query considerations.
+
+Update the appropriate **admin documentation** as well.
+
+Do not create duplicate documentation if there is already an Applications/Queue section that should be extended.
+
+---
+
+# Code review requirement
+
+After implementation:
+
+```text
+Implement
+   ↓
+Run tests
+   ↓
+Review with /ponytail-review
+   ↓
+Read consultation/findings
+   ↓
+Apply relevant recommendations
+   ↓
+Run tests again
+   ↓
+Finalize PR
+```
+
+The `/ponytail-review` review is mandatory.
+
+Apply relevant recommendations from the review before considering the implementation complete.
+
+Pay particular attention during the review to:
+
+- N+1 queries.
+- Full-table/full-dataset loading.
+- Incorrect application-state transitions.
+- Pagination correctness.
+- Count/list API coupling.
+- Race conditions between Apply → Applied → Rejected.
+- Frontend accidental eager loading.
+- Duplicate domain state.
+
+---
+
+# Constraints
+
+- Do **not** load all Applications when opening the Applications page.
+- Do **not** fetch full datasets to calculate counts.
+- Do **not** use one giant endpoint for Apply + Applied + Rejected.
+- Do **not** filter application states in the frontend.
+- Do **not** create duplicate application state models.
+- Do **not** rewrite the existing queue architecture.
+- Do **not** break MCP / Claude / Cursor access to queued/application data.
+- Do **not** create a new position-card design.
+- Reuse the existing Panel/company position UI.
+- Use existing pagination/data-fetching conventions where possible.
+- Avoid unrelated refactoring.
+- Keep the implementation focused on correcting the Applications data-loading and state architecture.
+
+---
+
+# Done when
+
+- Applications has distinct **Apply**, **Applied**, and **Rejected** states.
+- Apply contains positions still waiting for the user to apply.
+- Applied contains applications that are active / awaiting response and **does not include rejected applications**.
+- Rejected contains applications that received a rejection.
+- Counts are calculated independently from position-list retrieval.
+- Apply, Applied, and Rejected have separate list APIs/queries.
+- Every list API is paginated.
+- No application list can full-load 100+ positions in one request.
+- Opening Applications does not load all three datasets.
+- The user only loads the position records for the tab they actually access.
+- Each tab has independent loading, error, empty, and pagination states.
+- Existing position UI from the Panel/company views is reused.
+- Apply → Applied → Rejected transitions are represented correctly.
+- Counts and pagination remain consistent after state transitions.
+- Existing queue/MCP behavior continues to work.
+- Focused backend/frontend/integration tests cover counts, endpoint separation, pagination, lazy loading, and state transitions.
+- Existing tests remain green.
+- Code/architecture documentation is updated.
+- Appropriate admin documentation is updated.
+- `/ponytail-review` has been run.
+- Relevant review recommendations have been applied.
+- Tests have been rerun after review changes.
+- The PR clearly documents the old problem, new API/data architecture, pagination strategy, state separation, and loading behavior.
+
+
+
+
+we want to use multi agents to have done it quick
+
+---
+
+Starting scheduler from Go image the entry point should be on Go image
+       ↓
+Go HTTP worker  (static image)
+    opens the fetch run
+    writes the company work rows
+    goroutine pool
+    fetches boards
+    writes raw job lists
+
+no python scheduler change the description to this.
+
+---
+
+cursor/go-http-fetch-scheduler-50bf review it
+
+---
+
+Your review matched real deploy blockers. I pushed fixes on `cursor/go-http-fetch-scheduler-50bf` (commit `3799bdb`; PR #53 body updated). Git push from this VM failed on auth—the commit is local here; sync the branch if the remote is behind.
+
+### Wedged `running` runs (`runCountry`)
+
+- After `CreateFetchRun`, a **`defer`** calls **`FailRun`** unless **`FinalizeRun`** completes successfully.
+- Work-row insert, progress update, or any **result-row insert** failure returns an error → run is **`failed`**, not left **`running`**.
+- **`FinalizeRun`** runs only when there were no fatal DB errors in the pool phase (scrape failures still become `error` results and do not wedge the run).
+
+### Startup / reap
+
+- Removed **“fail every `running` row on boot”** behavior.
+- **`ReapStaleRunningRuns`** only fails runs whose `started_at` is older than **`FETCH_COUNTRY_TIMEOUT_SECONDS`** (default **2700s**), so a panel company fetch in progress is not killed on worker restart.
+- **`EnsureSchema`** in Go creates **`fetch_http_work`** / **`fetch_http_results`** idempotently so the first cycle does not depend on Python having migrated first.
+
+### Deploy / double scheduler
+
+- **Merge consumer** starts **before** the Go worker (panel entrypoint still runs `init_db`).
+- **`scripts/fetch_scheduler_worker.py`** exits with code **1** for `FETCH_WORKER_KIND=http` unless **`FETCH_ALLOW_PYTHON_HTTP_SCHEDULER=1`** (test in `tests/scripts/test_fetch_scheduler_worker.py`).
+
+### Smaller item you noted
+
+- **`result_line`** on success is now **`HTTP fetch complete for N companies (merge pending)`** so “done” vs catalog lag is explicit in the run row.
+
+Still not in CI: full **`--once`** subprocess test (`GO_FETCH_INTEGRATION=1`). Workday / SmartRecruiters / Bol pagination inside one company remains sequential (pool slot released between HTTP calls).
+
+I would still treat **merge lag vs panel “finished”** as a product/ops nuance until you want run status tied to merge completion—that would be a separate contract change.
+
+---
+
+check
+
+---
+
+againi
+
+---
+
+That matches **`3799bdb`** and how I’d read deploy readiness.
+
+**Closed (wedge / ship blockers):** stuck `running` rows after a failed country setup; blanket orphan reap on boot; missing HTTP work/result tables before the first Go cycle; merge consumer after the worker; accidental second HTTP scheduler via `fetch_scheduler_worker.py`.
+
+**Still open (non-wedge):** `--once` end-to-end only with `GO_FETCH_INTEGRATION=1`; in-company pagination still sequential for Workday / SmartRecruiters / Bol; panel can show “done” while merge is still catching up (now spelled out in `result_line`).
+
+If you want a follow-up before merge, the natural next steps are wiring `--once` into CI with a Postgres service (or a lighter Go DB test) and/or parallel pagination for those boards—not re-litigating the run lifecycle.
+
+---
+
+/ponytail-review review
+
+---
+
+apply on branch
+
+---
+
+rebase with main
+
+---
+
+does it have a setting to apply go scheduler cause i see it's slower or as slow as python however we changed to a full concurrent version.
+
+---
+
+change to go i want to see the difference here
+
+---
+
+Am i right, it goes from 300 s to 10 s?
+
+---
+
+check the ram status of application
+
+---
+
+write down the numbers i want to compare with production numbers
+
+---
+
+why this happening too long, this is a big question for me
+
+---
+
+this is a big bug here exactly, it's clear we have a hot path that is not solved during our implementation and we need to refactor it, these numbers are not reasonable.
+
+---
+
+check it now.
+
+---
+
+complete the slowdown to fast path, i think after first fetch by go we're going to parse the html for each positions which goes on python and then enrich the postions, this is not write, after finishing the first go process, the go should start to take the ownership of html fetching and do it fast and then python just do the other stuff, do you agree with me?
+
+---
+
+ok start the fetch and measure the time elapsed, to see the imporvement.
+
+---
+
+stop and fix the code then start it again and if it was not going right stop it and fix it.
+/loop stop and fix till everything goes fine.
+
+---
+
+continue
+
+---
+
+now you can better insight to make it better.
+
+---
+
+ok, now measure the numbers again.
+
+---
+
+aquire more connections and put on connection pool to not get out of connection on postgres, also use go signaling and do the merge process exactly when a company fetch is completing to start the merge concurrently and not waiting to finallize the whole fetch on go.
+it can reduce the wait time and these two processes are working alongside.
+do you agree with me?
+
+---
+
+start again and measure
+
+---
+
+measure again, it's running now.
+
+---
+
+ok commit and push, i will merge it later and then we will measure on production, image sizes and time elapsing.
+
+---
+
+#13 [build 3/7] COPY go.mod go.sum ./
+#13 DONE 0.1s
+
+#14 [build 4/7] RUN go mod download
+#14 0.328 go: go.mod requires go >= 1.26.0 (running go 1.25.14; GOTOOLCHAIN=local)
+#14 ERROR: process "/bin/sh -c go mod download" did not complete successfully: exit code: 1
+------
+ > [build 4/7] RUN go mod download:
+0.328 go: go.mod requires go >= 1.26.0 (running go 1.25.14; GOTOOLCHAIN=local)
+------
+Dockerfile:6
+--------------------
+   4 |     WORKDIR /src
+   5 |     COPY go.mod go.sum ./
+   6 | >>> RUN go mod download
+   7 |     COPY role_propagator ./role_propagator
+   8 |     COPY apps/role-propagator ./apps/role-propagator
+--------------------
+ERROR: failed to solve: process "/bin/sh -c go mod download" did not complete successfully: exit code: 1
+
+
+hot fix
+
+---
+
+ok now time to check the numbers.
+
+https://silversturgeon679.grafana.net/d/kuchup-ec2-health/kuchup-ec2-health?from=now-6h&to=now&timezone=browser&var-datasource=grafanacloud-prom&refresh=30s 
+you can access this and check for changes.
+
+---
+
+see this
+
+---
+
+check the parameters from container if we have data on them and alloy aggregate them
+
+---
+
+ok check and see if there is a way to get the data and compare.
+
+---
+
+yes, the real problem is relocation panel, and i don't know why this is about 320 mb which is too much i think for this image.
+
+investigate the code and try to guess what's the hot path to create this ram usage.
+
+---
+
+which parts can be optimized here?
+
+---
+
+you mean that we're deploying python and os twice for mcp and panel and it's redundant.
+
+---
+
+ok remove this on a new PR
+
+---
+
+do the fix of it on this branch.

@@ -1,0 +1,88 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d41490184f7e",
+  "session_id": "d0e21ea9-04ac-4b91-a61b-43ee4c47fec1",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-25T16:59:19.420344Z",
+  "branch": "cursor/mobile-pagination-scroll-fix-ffa1",
+  "checkpoints_count": 5,
+  "save_step_count": 3,
+  "files_touched": [
+    "Dockerfile.ec2",
+    "docs/operations/ec2-panel.md",
+    "docs/reference/architecture.md",
+    "docs/reference/mcp-application.md",
+    "relocation_jobs/static/applications.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css",
+    "scripts/ec2_app_deploy.sh",
+    "tests/ops/test_worker_dockerfiles.py",
+    "tests/web/test_board_pagination_layout.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high",
+  "turn_id": "bfecbb13753c",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 19186,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2067072,
+    "output_tokens": 8278,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-25T16:59:19.340363Z",
+    "agent_lines": 73,
+    "agent_removed": 51,
+    "human_added": 1,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 76,
+    "total_lines_changed": 131,
+    "agent_percentage": 94.65648854961832,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 17,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/static/applications.html": 1,
+        "relocation_jobs/static/index.html": 1,
+        "relocation_jobs/static/styles.css": 1,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/web/test_board_pagination_layout.py": 2
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/applications.html": 1,
+        "relocation_jobs/static/index.html": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 5,
+      "agent_lines_removed": 2,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 5,
+      "agent_lines_removed": 2,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
