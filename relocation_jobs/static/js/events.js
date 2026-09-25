@@ -12,7 +12,6 @@ import {
   saveAtsScore,
   markJobSeen,
   toggleSeen,
-  toggleLookingToApply,
 } from "./api.js";
 import { pinJob } from "./api.js";
 import { loadJobs, loadCities, ensureLocationsLoaded } from "./data.js";
@@ -706,19 +705,6 @@ function bindJobsListEvents() {
         state.showRejectedCompanies.add(companyKey(country, company));
         saveShowRejectedCompanies();
       }
-      return;
-    }
-
-    const lookingToApplyBtn = e.target.closest(".looking-to-apply-btn");
-    if (lookingToApplyBtn) {
-      const card = lookingToApplyBtn.closest(".position-card");
-      if (!card) return;
-      const { country, company, url, idempotencyKey } = card.dataset;
-      const lookingToApply = lookingToApplyBtn.dataset.looking !== "1";
-      lookingToApplyBtn.disabled = true;
-      const result = await toggleLookingToApply(country, company, url, lookingToApply, idempotencyKey);
-      lookingToApplyBtn.disabled = false;
-      if (!result) return;
       return;
     }
 
