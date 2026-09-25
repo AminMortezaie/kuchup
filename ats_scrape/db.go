@@ -30,7 +30,12 @@ func OpenStore(ctx context.Context) (*Store, error) {
 		pool.Close()
 		return nil, err
 	}
-	return &Store{pool: pool}, nil
+	store := &Store{pool: pool}
+	if err := store.EnsureSchema(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("schema: %w", err)
+	}
+	return store, nil
 }
 
 func (s *Store) Close() {
@@ -39,16 +44,57 @@ func (s *Store) Close() {
 	}
 }
 
-func (s *Store) ReapOrphanRuns(ctx context.Context) error {
+func (s *Store) EnsureSchema(ctx context.Context) error {
+	_, err := s.pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS fetch_http_work (
+			id SERIAL PRIMARY KEY,
+			fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+			company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+			country_key TEXT NOT NULL,
+			name TEXT NOT NULL,
+			ats_type TEXT NOT NULL DEFAULT '',
+			ats_url TEXT NOT NULL DEFAULT '',
+			careers_url TEXT NOT NULL DEFAULT '',
+			UNIQUE (fetch_run_id, company_id)
+		);
+		CREATE INDEX IF NOT EXISTS idx_fetch_http_work_run
+			ON fetch_http_work(fetch_run_id);
+		CREATE TABLE IF NOT EXISTS fetch_http_results (
+			id SERIAL PRIMARY KEY,
+			fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+			company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+			status TEXT NOT NULL,
+			error TEXT,
+			jobs_json TEXT,
+			fetched_at TEXT NOT NULL,
+			merge_processed_at TEXT,
+			UNIQUE (fetch_run_id, company_id)
+		);
+		CREATE INDEX IF NOT EXISTS idx_fetch_http_results_pending
+			ON fetch_http_results(merge_processed_at, id);
+	`)
+	return err
+}
+
+func (s *Store) ReapStaleRunningRuns(ctx context.Context, maxAge time.Duration) error {
+	if maxAge <= 0 {
+		return nil
+	}
+	seconds := int(maxAge.Seconds())
+	if seconds < 1 {
+		seconds = 1
+	}
 	finished := time.Now().UTC().Format(time.RFC3339)
 	_, err := s.pool.Exec(ctx, `
 		UPDATE fetch_runs
 		SET status = 'failed',
 		    finished_at = $1,
 		    exit_code = 1,
-		    result_line = COALESCE(result_line, 'Fetch interrupted (orphan reap)')
+		    result_line = COALESCE(result_line, 'Fetch timed out (stale running reap)')
 		WHERE status = 'running'
-	`, finished)
+		  AND trim(started_at) != ''
+		  AND started_at::timestamptz < (NOW() AT TIME ZONE 'UTC') - ($2 * INTERVAL '1 second')
+	`, finished, seconds)
 	return err
 }
 
@@ -256,7 +302,7 @@ func (s *Store) InsertResult(ctx context.Context, runID, companyID int64, status
 
 func (s *Store) FinalizeRun(ctx context.Context, runID int64, companiesDone, companiesTotal int) error {
 	finished := time.Now().UTC().Format(time.RFC3339)
-	resultLine := fmt.Sprintf("Done %d companies (HTTP fetch)", companiesDone)
+	resultLine := fmt.Sprintf("HTTP fetch complete for %d companies (merge pending)", companiesDone)
 	_, err := s.pool.Exec(ctx, `
 		UPDATE fetch_runs
 		SET status = 'done',
@@ -269,5 +315,24 @@ func (s *Store) FinalizeRun(ctx context.Context, runID int64, companiesDone, com
 		    cancel_requested = 0
 		WHERE id = $1 AND status = 'running'
 	`, runID, finished, companiesDone, companiesTotal, resultLine)
+	return err
+}
+
+func (s *Store) FailRun(ctx context.Context, runID int64, message string) error {
+	finished := time.Now().UTC().Format(time.RFC3339)
+	line := strings.TrimSpace(message)
+	if line == "" {
+		line = "HTTP country fetch failed"
+	}
+	_, err := s.pool.Exec(ctx, `
+		UPDATE fetch_runs
+		SET status = 'failed',
+		    finished_at = $2,
+		    exit_code = 1,
+		    cancelled = 0,
+		    result_line = $3,
+		    cancel_requested = 0
+		WHERE id = $1 AND status = 'running'
+	`, runID, finished, line)
 	return err
 }

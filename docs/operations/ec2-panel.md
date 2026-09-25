@@ -151,7 +151,9 @@ Go image entry point (/fetch-scheduler)
  matching_jobs
 ```
 
-Result `status`: `ok` (jobs JSON), `empty` (zero jobs, successful scrape), `error` (failed fetch — merge marks `fetch_problem`, no merge).
+Result `status`: `ok` (jobs JSON), `empty` (zero jobs, successful scrape), `error` (failed fetch — merge marks `fetch_problem`, no merge). A finished run’s `result_line` notes **merge pending** until the follower catches up.
+
+Go startup runs `EnsureSchema` for `fetch_http_work` / `fetch_http_results` (idempotent). Stale **`running`** rows older than `FETCH_COUNTRY_TIMEOUT_SECONDS` (default 2700) are marked failed on each cycle — not every `running` row on boot (panel company fetches stay safe).
 
 ### Worker memory caps
 
