@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "e5c9379cc3ac",
+  "strategy": "manual-commit",
+  "branch": "cursor/applications-loading-pagination-ux-0486",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/static/applications.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/js/applications.js",
+    "relocation_jobs/static/styles.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e5/c9379cc3ac/0/metadata.json",
+      "transcript": "/e5/c9379cc3ac/0/full.jsonl",
+      "compact_transcript": "/e5/c9379cc3ac/0/transcript.jsonl",
+      "content_hash": "/e5/c9379cc3ac/0/content_hash.txt",
+      "prompt": "/e5/c9379cc3ac/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 283294,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3100160,
+    "output_tokens": 25019,
+    "api_call_count": 6
+  }
+}

@@ -1,0 +1,23 @@
+cursor/applications-loading-pagination-ux-0486
+on this branch with help of UX skills make this pagination section better design.
+
+---
+
+remove the upper line and make and change the style to not curve and just a line seperating the pagination and background
+
+---
+
+apply this style on panel
+
+---
+
+and also sticky.
+
+---
+
+it's fine on bigger screens but when moving to smaller screens goes to second image, can you keep the first style on all screens?
+
+---
+
+see when there is no place for the text its going to hide it, we can hide when the text has no place to sit.
+so when screen is small just keep the pagination and other details should hide and pagintaion takes the place.
