@@ -190,6 +190,10 @@ export function applyPinToCatalog(country, companyName, url, idempotencyKey, dat
       if (!jobMatchesPinTarget(job, url, idempotencyKey, data)) continue;
       job.pinned = pinned;
       job.pinned_at = pinned ? (data.pinned_at || "") : "";
+      if (data.looking_to_apply !== undefined) job.looking_to_apply = data.looking_to_apply;
+      if (data.looking_to_apply_date !== undefined) {
+        job.looking_to_apply_date = data.looking_to_apply_date;
+      }
     }
     company[bucket] = sortPinnedJobsFirst(list);
   }

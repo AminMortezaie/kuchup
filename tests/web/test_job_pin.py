@@ -153,6 +153,79 @@ def test_pin_allows_multiple_pins_in_same_company(v2_auth_client, seeded_catalog
     assert pinned_urls == {first_job["url"], second_job["url"]}
 
 
+def test_pin_sets_looking_to_apply(v2_auth_client, seeded_catalog_v2):
+    board = v2_auth_client.get("/api/board?country=uk").get_json()
+    co = _acme(board)
+    job = co["jobs"][0]
+
+    pin = v2_auth_client.post(
+        "/api/jobs/pin",
+        json={
+            "country": "uk",
+            "company": co["name"],
+            "url": job["url"],
+            "pinned": True,
+        },
+    )
+    assert pin.status_code == 200
+    payload = pin.get_json()
+    assert payload.get("pinned") is True
+    assert payload.get("looking_to_apply") is True
+
+    board2 = v2_auth_client.get("/api/board?country=uk").get_json()
+    acme = _acme(board2)
+    target = next(j for j in acme["jobs"] if j["url"] == job["url"])
+    assert target["pinned"] is True
+    assert target["looking_to_apply"] is True
+
+
+def test_unpin_does_not_clear_looking_to_apply(v2_auth_client, seeded_catalog_v2):
+    board = v2_auth_client.get("/api/board?country=uk").get_json()
+    co = _acme(board)
+    job = co["jobs"][0]
+
+    v2_auth_client.post(
+        "/api/jobs/pin",
+        json={"country": "uk", "company": co["name"], "url": job["url"], "pinned": True},
+    )
+    unpin = v2_auth_client.patch(
+        "/api/jobs/pin",
+        json={"country": "uk", "company": co["name"], "url": job["url"], "pinned": False},
+    )
+    assert unpin.status_code == 200
+    assert unpin.get_json().get("pinned") is False
+
+    board2 = v2_auth_client.get("/api/board?country=uk").get_json()
+    target = next(j for j in _acme(board2)["jobs"] if j["url"] == job["url"])
+    assert target["pinned"] is False
+    assert target["looking_to_apply"] is True
+
+
+def test_looking_to_apply_does_not_pin(v2_auth_client, seeded_catalog_v2):
+    board = v2_auth_client.get("/api/board?country=uk").get_json()
+    co = _acme(board)
+    job = co["jobs"][0]
+
+    lta = v2_auth_client.post(
+        "/api/jobs/looking-to-apply",
+        json={
+            "country": "uk",
+            "company": co["name"],
+            "url": job["url"],
+            "looking_to_apply": True,
+        },
+    )
+    assert lta.status_code == 200
+    payload = lta.get_json()
+    assert payload.get("looking_to_apply") is True
+    assert not payload.get("pinned")
+
+    board2 = v2_auth_client.get("/api/board?country=uk").get_json()
+    target = next(j for j in _acme(board2)["jobs"] if j["url"] == job["url"])
+    assert target["looking_to_apply"] is True
+    assert not target.get("pinned")
+
+
 def test_unpin_one_job_keeps_other_pins(v2_auth_client, seeded_catalog_v2):
     board = v2_auth_client.get("/api/board?country=uk").get_json()
     co = _acme(board)
