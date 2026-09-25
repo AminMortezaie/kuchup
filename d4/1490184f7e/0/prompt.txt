@@ -1,0 +1,14 @@
+see the branch cursor/mobile-pagination-scroll-fix-ffa1
+it didn't fix what they wanted to solve find the real problem, it happens mostly on applications tab.
+
+---
+
+i will test it again now.
+
+---
+
+/ponytail-review
+
+---
+
+apply them

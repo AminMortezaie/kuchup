@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d41490184f7e",
+  "strategy": "manual-commit",
+  "branch": "cursor/mobile-pagination-scroll-fix-ffa1",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "Dockerfile.ec2",
+    "docs/operations/ec2-panel.md",
+    "docs/reference/architecture.md",
+    "docs/reference/mcp-application.md",
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/static/applications.html",
+    "relocation_jobs/static/index.html",
+    "relocation_jobs/static/styles.css",
+    "scripts/ec2_app_deploy.sh",
+    "tests/ops/test_worker_dockerfiles.py",
+    "tests/web/test_board_pagination_layout.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d4/1490184f7e/0/metadata.json",
+      "transcript": "/d4/1490184f7e/0/full.jsonl",
+      "compact_transcript": "/d4/1490184f7e/0/transcript.jsonl",
+      "content_hash": "/d4/1490184f7e/0/content_hash.txt",
+      "prompt": "/d4/1490184f7e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 458986,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5890816,
+    "output_tokens": 49221,
+    "api_call_count": 4
+  }
+}
