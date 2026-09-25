@@ -197,8 +197,7 @@ def set_job_pinned(
         country_key, company_name, job_url, pinned, user_id=user_id,
     )
     out["looking_to_apply"] = lta.get("looking_to_apply", pinned)
-    if lta.get("looking_to_apply_date") is not None:
-        out["looking_to_apply_date"] = lta.get("looking_to_apply_date") or ""
+    out["looking_to_apply_date"] = lta.get("looking_to_apply_date") or ""
     return out
 
 

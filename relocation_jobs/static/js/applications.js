@@ -14,7 +14,7 @@ const PAGE_SIZE = 20;
 const TABS = ["queue", "applied", "rejected"];
 
 const EMPTY_COPY = {
-  queue: "No positions waiting for application. Pin a role or mark Want to apply on the job board.",
+  queue: "No positions waiting for application. Pin a role on the job board.",
   applied: "No active applications.",
   rejected: "No rejected applications.",
 };

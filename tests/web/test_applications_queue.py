@@ -92,6 +92,44 @@ def test_queue_api_lists_looking_to_apply_position(
     assert "title" in item
 
 
+def test_queue_sorted_by_looking_to_apply_date_then_pinned_at(
+    v2_auth_client, seeded_catalog_v2,
+):
+    from relocation_jobs.core.db import db_transaction, _normalize_url
+
+    company, _ = _first_job(v2_auth_client)
+    older, newer = _ensure_jobs(company, 2)[:2]
+    for job in (older, newer):
+        assert v2_auth_client.post(
+            "/api/jobs/pin",
+            json={"country": "uk", "company": company, "url": job["url"], "pinned": True},
+        ).status_code == 200
+
+    older_url = _normalize_url(older["url"])
+    newer_url = _normalize_url(newer["url"])
+    with db_transaction() as conn:
+        conn.execute(
+            """
+            UPDATE job_tracking
+            SET looking_to_apply_date = %s, pinned_at = %s
+            WHERE country = %s AND company_name = %s AND job_url = %s
+            """,
+            ("2026-01-01", "2026-01-01T12:00:00+00:00", "uk", company, older_url),
+        )
+        conn.execute(
+            """
+            UPDATE job_tracking
+            SET looking_to_apply_date = %s, pinned_at = %s
+            WHERE country = %s AND company_name = %s AND job_url = %s
+            """,
+            ("2026-09-20", "2026-09-20T12:00:00+00:00", "uk", company, newer_url),
+        )
+
+    queue = v2_auth_client.get("/api/applications/queue").get_json()
+    urls = [j["url"] for j in queue["jobs"] if j["url"] in {older["url"], newer["url"]}]
+    assert urls == [newer["url"], older["url"]]
+
+
 def test_queue_api_includes_pinned_only_and_excludes_after_apply(
     v2_auth_client, seeded_catalog_v2,
 ):

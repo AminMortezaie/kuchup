@@ -32,7 +32,8 @@ _STATE_WHERE = {
 
 _STATE_ORDER = {
     APPLICATION_STATE_APPLY: (
-        "pinned DESC, looking_to_apply DESC, "
+        "looking_to_apply_date DESC NULLS LAST, "
+        "pinned_at DESC NULLS LAST, "
         "LOWER(company_name) ASC, LOWER(COALESCE(job_title, '')) ASC, job_url ASC"
     ),
     APPLICATION_STATE_APPLIED: (

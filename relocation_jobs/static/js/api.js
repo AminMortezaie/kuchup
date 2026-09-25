@@ -375,27 +375,6 @@ export async function toggleRejected(country, company, url, rejected, idempotenc
   return data;
 }
 
-export async function toggleLookingToApply(country, company, url, lookingToApply, idempotencyKey = "") {
-  const res = await apiFetch("/api/jobs/looking-to-apply", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      country,
-      company,
-      url,
-      looking_to_apply: lookingToApply,
-      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
-    }),
-  });
-  const data = await parseJsonResponse(res);
-  if (!res.ok) {
-    toast(data.error || "Could not save");
-    return null;
-  }
-  applyJobMutation(country, company, url, idempotencyKey, data, { pin: false });
-  return data;
-}
-
 export async function toggleSeen(country, company, url, seen, idempotencyKey = "", { pin = true } = {}) {
   const res = await apiFetch("/api/jobs/seen", {
     method: "POST",

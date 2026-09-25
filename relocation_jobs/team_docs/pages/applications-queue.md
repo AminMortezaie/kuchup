@@ -25,7 +25,7 @@ Each user has three **application states** derived from `job_tracking` (no separ
 
 ## How positions enter Apply
 
-- Job Board / company workspace: **Want to apply** or **Pin**
+- Job Board / company workspace: **Pin** (also sets looking-to-apply)
 - Public job save (`/jobs/<slug>/save`) sets looking-to-apply
 
 ## Transitions

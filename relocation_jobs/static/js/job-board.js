@@ -254,10 +254,6 @@ export function restoreJobToOpen(company, url, idempotencyKey) {
   finalizeCompanyBoard(company);
 }
 
-export function syncLookingToApplyVisibility(company) {
-  finalizeCompanyBoard(company);
-}
-
 export function reapplyJobLocally(company, url, idempotencyKey, patch = {}) {
   const rejected = ensureList(company, "rejected_jobs");
   const job = removeFromList(rejected, url, idempotencyKey)

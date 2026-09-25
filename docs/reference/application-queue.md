@@ -87,8 +87,7 @@ Opening Applications must **not** load all three lists. Preferred UX (Option A):
 ```text
 Catalog position
        │
-       ├─ Want to apply  → looking_to_apply=1
-       └─ Pin            → pinned=1
+       └─ Pin  → pinned=1 AND looking_to_apply=1
               │
               ▼
      Apply tab  ←── panel /applications + MCP list_application_queue
@@ -130,6 +129,8 @@ Reject does **not** clear `applied`. A rejected row is on Rejected even when `ap
 | `GET /api/applications/applied` | Paginated active Applied |
 | `GET /api/applications/rejected` | Paginated Rejected |
 | Job Board | Company-centric; unchanged |
+
+Apply list order: newest `looking_to_apply_date`, then newest `pinned_at`, then company/title. Applied / Rejected keep `applied_date` / `rejected_date` DESC.
 
 Client: [`static/js/applications.js`](../../relocation_jobs/static/js/applications.js) — per-tab loading, empty, error, and pagination state.
 
