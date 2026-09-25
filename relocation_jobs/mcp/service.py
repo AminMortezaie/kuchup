@@ -7,8 +7,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from relocation_jobs.broadcast.service import (
+    filter_catalog_company_for_user,
     record_touch_and_maybe_reveal,
-    visible_jobs_for_company,
 )
 from relocation_jobs.broadcast.types import RevealEvent
 from relocation_jobs.catalog.repo import (
@@ -30,6 +30,7 @@ from relocation_jobs.core.location_tags import (
 )
 from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.scrape.descriptions import format_job_description
+from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.scrape.job_text import fetch_job_description
 from relocation_jobs.core.db import _normalize_url
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
@@ -69,6 +70,7 @@ from relocation_jobs.mcp.types import (
     ValidationResult,
 )
 from relocation_jobs.panel.tracking import job_dict, resolve_track
+from relocation_jobs.positions.queue import is_active_application_queue_row
 from relocation_jobs.positions.service import set_job_applied, set_job_ats_score as _set_job_ats_score
 from relocation_jobs.positions.state import position_view_from_row
 from relocation_jobs.positions.types import PositionBucket
@@ -334,7 +336,7 @@ def get_job_context(
         rejected=bool(row.get("rejected")),
         looking_to_apply=looking_to_apply,
         pinned=pinned,
-        in_application_queue=pinned or looking_to_apply,
+        in_application_queue=is_active_application_queue_row(row),
         can_save_tailored_tex=True,
         ats_score=row.get("ats_score"),
         master_resume_slug=app_state["master_slug"],
@@ -360,7 +362,7 @@ def list_application_queue(
     return _list_tracked_application_items(
         user_id=user_id,
         country=country,
-        include_row=lambda row: bool(row.get("pinned")) or bool(row.get("looking_to_apply")),
+        include_row=is_active_application_queue_row,
         sort_key=lambda item: (not item.pinned, not item.looking_to_apply, item.company.lower()),
     )
 
@@ -514,6 +516,7 @@ def _company_position_from_job(
         has_description=bool(_job_description_fields(job)["has_description"]),
         listing_unavailable=bool(job.get("listing_unavailable")),
         closed_at=state["closed_at"],
+        citizenship_required=state.get("citizenship_required") or "",
     )
 
 
@@ -539,9 +542,9 @@ def list_company_applications(
         for row in app_rows
         if (row.get("idempotency_key") or "").strip()
     }
-    visible_jobs, jobs_hidden_count = visible_jobs_for_company(
-        uid, country_key, company_name, list(company_row.get("matching_jobs") or []),
-    )
+    company_row = filter_catalog_company_for_user(uid, country_key, company_row)
+    visible_jobs = list(company_row.get("matching_jobs") or [])
+    jobs_hidden_count = int(company_row.get("jobs_hidden_count") or 0)
 
     positions: list[CompanyPositionApplication] = []
     for job in visible_jobs:
@@ -586,7 +589,11 @@ def get_position_description(idempotency_key: str) -> PositionDescription:
         title=(job.get("title") or "").strip(),
         description_text=str(description["description_text"]),
         has_description=bool(description["has_description"]),
-        needs_fetch=bool(description["needs_fetch"]) and not _non_fetchable_posting_url(job_url),
+        needs_fetch=(
+            bool(description["needs_fetch"])
+            and job_is_default_match(job)
+            and not _non_fetchable_posting_url(job_url)
+        ),
         description_html=str(description.get("description_html") or ""),
     )
 
@@ -598,6 +605,8 @@ def fetch_and_store_position_description(idempotency_key: str) -> PositionDescri
     job = get_job_by_idempotency_key(key)
     if job is None:
         raise LookupError(f"Position not found: {key}")
+    if not job_is_default_match(job):
+        raise ValueError("Job descriptions are not fetched for roles outside the default title filters")
     url = (job.get("url") or "").strip()
     if not url:
         raise ValueError("Position has no job URL")

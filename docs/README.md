@@ -18,13 +18,14 @@ Code is the source of truth. This index lists **living** pages first. History si
 | Understand code layout & data flow | [reference/architecture.md](reference/architecture.md) |
 | Change Python in `relocation_jobs/` | [reference/rules.md](reference/rules.md) |
 | Change job apply / reject / hide behavior | [reference/business-rules.md](reference/business-rules.md) |
+| Application queue / Applications tab | [reference/application-queue.md](reference/application-queue.md) |
 | Work on board sort, pagination, newest | [reference/board.md](reference/board.md) |
 | Panel UI health check (React island + vanilla hybrid) | [reference/frontend-health-check.md](reference/frontend-health-check.md) |
 | Entitlements — Google auth, plans, credits, NOWPayments | [reference/entitlements-and-opportunities.md](reference/entitlements-and-opportunities.md) |
 | Catalog vs per-user tracking | [reference/catalog-pattern.md](reference/catalog-pattern.md) |
 | Panel / admin statistics | [reference/stats.md](reference/stats.md) |
 | Secrets / no real IPs in public docs | [reference/rules.md](reference/rules.md#secrets-and-documentation) · `.env` / `aws-postgres.env` gitignored |
-| MCP apply assistant | [reference/mcp-application.md](reference/mcp-application.md) |
+| MCP apply assistant | [reference/mcp-application.md](reference/mcp-application.md) · [`/tailor`](reference/commands/tailor.md) |
 | Company workspace (CV/PDF on panel) | [reference/company-workspace.md](reference/company-workspace.md) |
 | Public job pages / LinkedIn wrapping | [reference/job-syndication.md](reference/job-syndication.md) |
 | SEO indexing | [operations/seo-indexing.md](operations/seo-indexing.md) |
@@ -74,6 +75,7 @@ docs/
 | [reference/frontend-health-check.md](reference/frontend-health-check.md) | Panel UI health check — React island, vanilla JS, what to do next |
 | [reference/stats.md](reference/stats.md) | Admin/user stats definitions |
 | [reference/business-rules.md](reference/business-rules.md) | Job state contracts — read before tracking changes |
+| [reference/application-queue.md](reference/application-queue.md) | Active queue lifecycle, Applications tab, MCP parity |
 
 ### Data
 

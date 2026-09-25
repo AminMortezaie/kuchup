@@ -607,7 +607,80 @@ function renderConfig(data) {
         <dt>Concurrency</dt><dd>default ${data.default_concurrency}, max ${data.max_concurrency}</dd>
       </dl>
     </section>
+    <section class="admin-panel">
+      <h2 class="admin-panel-title">Role filter tags</h2>
+      <p class="hint">Global match/hide keywords used by scrape. Users toggle these on their board; they cannot edit this list.</p>
+      <div id="adminRoleTags" class="admin-role-tags">${skeletonRows(2)}</div>
+      <form id="adminRoleTagForm" class="admin-role-tag-form">
+        <label class="dialog-field-label">Keyword
+          <input type="text" id="adminRoleTagKeyword" maxlength="80" required />
+        </label>
+        <label class="dialog-field-label">Kind
+          <select id="adminRoleTagKind">
+            <option value="exclude">Hide</option>
+            <option value="include">Match</option>
+          </select>
+        </label>
+        <button type="submit" class="primary">Add tag</button>
+      </form>
+    </section>
   `;
+  void loadAdminRoleTags();
+  $("adminRoleTagForm")?.addEventListener("submit", onAdminRoleTagSubmit);
+}
+
+async function loadAdminRoleTags() {
+  const mount = $("adminRoleTags");
+  if (!mount) return;
+  const data = await apiGet("/api/admin/role-filter-tags");
+  const tags = data.tags || [];
+  if (!tags.length) {
+    mount.innerHTML = `<span class="hint">No tags yet</span>`;
+    return;
+  }
+  mount.innerHTML = tags.map((tag) => `
+    <span class="admin-role-tag" data-kind="${escapeAttr(tag.kind)}">
+      <span>${escapeHtml(tag.keyword)}</span>
+      <span class="hint">${escapeHtml(tag.kind)}</span>
+      <button type="button" data-role-tag-delete="${tag.id}" aria-label="${escapeAttr("Delete " + tag.keyword)}">×</button>
+    </span>
+  `).join("");
+  mount.querySelectorAll("[data-role-tag-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => void deleteAdminRoleTag(btn.getAttribute("data-role-tag-delete")));
+  });
+}
+
+async function onAdminRoleTagSubmit(event) {
+  event.preventDefault();
+  const keyword = $("adminRoleTagKeyword")?.value || "";
+  const kind = $("adminRoleTagKind")?.value || "exclude";
+  const res = await fetch("/api/admin/role-filter-tags", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ keyword, kind }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    toast(data.error || "Could not add tag");
+    return;
+  }
+  if ($("adminRoleTagKeyword")) $("adminRoleTagKeyword").value = "";
+  toast("Tag added. Next scrape uses it.");
+  await loadAdminRoleTags();
+}
+
+async function deleteAdminRoleTag(tagId) {
+  const res = await fetch(`/api/admin/role-filter-tags/${tagId}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  if (!res.ok) {
+    toast("Could not delete tag");
+    return;
+  }
+  toast("Tag deleted");
+  await loadAdminRoleTags();
 }
 
 async function loadHome() {

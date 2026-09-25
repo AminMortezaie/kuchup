@@ -16,7 +16,9 @@ Plain-language contracts extracted from the code (`catalog`, `positions`, `scrap
 
 ## Position state (writes)
 
-5. **Apply** — Marking a job applied sets DB `applied`, clears `looking_to_apply`, appends an apply event to history, and syncs company-level `company_applied` from any applied position at that company. On panel read, `company_applied_date` is the **latest** apply date at that company. `awaiting_response` is true while any applied position is not rejected. **Applied today** counts distinct apply events whose `created_at` falls in the user's local calendar day (browser timezone); touching an already-applied row (seen, ATS score, etc.) does not increment the stat.
+5. **Apply** — Marking a job applied sets DB `applied`, clears `looking_to_apply`, appends an apply event to history, and syncs company-level `company_applied` from any applied position at that company. On panel read, `company_applied_date` is the **latest** apply date at that company. `awaiting_response` is true while any applied position is not rejected. **Applied today** counts distinct apply events whose `created_at` falls in the user's local calendar day (browser timezone); touching an already-applied row (seen, ATS score, etc.) does not increment the stat. Apply does **not** clear `pinned`; the **active application queue** still excludes applied rows — see [application-queue.md](application-queue.md).
+
+5a. **Application states (panel Applications)** — **Apply** iff `(pinned OR looking_to_apply) AND NOT applied`. **Applied** iff `applied AND NOT rejected AND NOT not_for_me`. **Rejected** iff `applied AND rejected AND NOT not_for_me`. Panel `/applications` tabs and MCP `list_application_queue` / `in_application_queue` share the Apply rule. Counts use `GET /api/applications/counts`; each state list is independently paginated. Pinning and Want to apply are independent reasons for Apply membership; neither requires the other.
 
 6. **Unapply** — Clearing applied on a job updates DB and re-syncs `company_applied` (false when no positions at that company remain applied). Awaiting follows remaining applied-not-rejected positions.
 

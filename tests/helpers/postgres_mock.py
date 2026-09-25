@@ -156,6 +156,8 @@ class FakePgConnection:
         "mcp_project_masters",
         "mcp_interview_notes",
         "team_docs",
+        "user_role_tag_prefs",
+        "user_role_tags",
     )
 
     _TRACKING_TABLES = (
@@ -181,6 +183,8 @@ class FakePgConnection:
         "user_opportunities",
         "user_preferences",
         "team_docs",
+        "user_role_tag_prefs",
+        "user_role_tags",
     )
 
     def clear_data(self) -> None:
@@ -219,6 +223,7 @@ class FakePgConnection:
             flags=re.I,
         )
         out = re.sub(r"\bDROP COLUMN IF EXISTS\b", "DROP COLUMN", out, flags=re.I)
+        out = re.sub(r"\bILIKE\b", "LIKE", out, flags=re.I)
         out = re.sub(r"\bJSONB\b", "TEXT", out, flags=re.I)
         out = re.sub(r"'::(jsonb|text)", "'", out, flags=re.I)
         return out, returning

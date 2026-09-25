@@ -4,6 +4,19 @@ Living backlog of planned work. Add items as we discover them; check off when sh
 
 ---
 
+## Role propagator: per-user role keyword preferences
+
+**Status:** planned  
+**Priority:** medium  
+**Context:** Board users can already unhide exclude tags (title/link/location only, no assignment or free-plan cap). Role propagator still assigns from `matches_default_filter = 1` only.
+
+### Done when
+
+- [ ] Propagator can assign (and cap) roles unhidden via user role prefs
+- [ ] Optional on-demand JD fetch for those roles
+
+---
+
 ## Homepage export must not import the DB pool (blocks deploy)
 
 **Status:** planned (partial workaround shipped 2026-09-16)  
@@ -57,6 +70,37 @@ Do not rotate only in client JS — LinkedInBot reads the first HTML.
 - [ ] Germany (and other country pages) show a different ATS sample set each ISO week in static/SSR HTML
 - [ ] No human homepage rebuild required for that swap
 - [ ] Sample hrefs stay employer ATS URLs, not `/jobs/<slug>`
+
+---
+
+## Admin activation: last_seen_at (phase 2)
+
+**Status:** planned  
+**Priority:** low  
+**Context:** Growth wants to know whether signed-up users are actually active. PR #10 (admin Activation pane) ships funnel metrics with an honest gap on subsequent login. Follow-up after #10 adds `users.last_login_at` on successful Google OAuth (subsequent-login metric). That still under-counts users who stay signed in via long-lived cookie sessions without hitting the login route again.
+
+### Problem / goal
+
+Know "active this week" (or last activity), not only "logged in again once". Cookie sessions mean last_login alone is a weak activity signal.
+
+### Approach (Shahruz recommendation — YAGNI for now)
+
+1. **Do not build yet.** Ship and use `last_login_at` first; see whether Growth/Kio still needs weekly-active after real numbers land.
+2. **If needed later:** add `users.last_seen_at` updated from an authenticated-request middleware/hook with **throttle** (e.g. at most once per 15–60 minutes per user) so every API call does not write Postgres.
+3. Wire into admin Activation as an optional "last seen / active in window" card; keep definitions documented next to last_login.
+4. Out of scope unless product asks: full event analytics, client beacons, or a separate activity table.
+
+### Why deferred
+
+- Extra write path on the request hot path (even throttled).
+- Overlaps partially with last_login for the first activation question ("did they come back?").
+- No Growth demand proven until last_login metrics are live.
+
+### Done when
+
+- [ ] Product confirms last_login is insufficient for activation work
+- [ ] Throttled `last_seen_at` write path + admin metric + docs
+- [ ] Tests for throttle and admin count definition
 
 ---
 

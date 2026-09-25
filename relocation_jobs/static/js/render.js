@@ -10,38 +10,21 @@ import {
 } from "./storage.js";
 import { syncBoardView } from "./board-view.js";
 import { updateFetchHeaderUI } from "./fetch-render.js";
+import {
+  buildFrozenOrderMap,
+  companyActivityTs,
+  companySortKey,
+  compareDateDesc,
+  maxJobFetchedTs,
+  normalizeTsForSort,
+  recomputeNewestJobFetched,
+  sortCompaniesNewest,
+} from "./company-display-order.js";
+
+export { maxJobFetchedTs, normalizeTsForSort, recomputeNewestJobFetched };
 
 function jobActivityTs(job) {
   return (job?.fetched || job?.last_seen || "").trim();
-}
-
-export function normalizeTsForSort(ts) {
-  const value = (ts || "").trim();
-  if (!value) return "0000-00-00T00:00:00";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00:00`;
-  return value.replace(/Z$/, "+00:00");
-}
-
-function companyActivityTs(company) {
-  return (company?.newest_job_fetched || company?.latest_fetched || "").trim();
-}
-
-export function maxJobFetchedTs(jobs) {
-  let best = "";
-  for (const job of jobs || []) {
-    const ts = (job?.fetched || "").trim();
-    if (!ts) continue;
-    if (!best || compareDateDesc(ts, best) < 0) best = ts;
-  }
-  return best;
-}
-
-/** Match server sort: max job.fetched over open-board roles only. */
-export function recomputeNewestJobFetched(company) {
-  if (!company) return;
-  const ts = maxJobFetchedTs(company.jobs);
-  company.newest_job_fetched = ts;
-  company.latest_fetched = ts;
 }
 
 function fetchRunScopeLabel(run) {
@@ -98,19 +81,6 @@ function renderFetchRunsTable(runs) {
     </table>`;
 }
 
-function compareDateDesc(a, b) {
-  const av = normalizeTsForSort(a);
-  const bv = normalizeTsForSort(b);
-  if (av === bv) return 0;
-  if (av === "0000-00-00T00:00:00") return 1;
-  if (bv === "0000-00-00T00:00:00") return -1;
-  return bv.localeCompare(av);
-}
-
-function companySortKey(company) {
-  return `${company.country}:${company.name}`;
-}
-
 function isFetchingCompany(company) {
   return state.fetchBusy && state.fetchingCompanyKey === companySortKey(company);
 }
@@ -125,7 +95,7 @@ function comparePriorityCompanies(a, b) {
 function compareCompaniesDefault(a, b) {
   const priority = comparePriorityCompanies(a, b);
   if (priority !== 0) return priority;
-  if ($("sortNewestFetch").checked) {
+  if ($("sortNewestFetch")?.checked) {
     return compareDateDesc(companyActivityTs(a), companyActivityTs(b));
   }
   const byCountry = (a.country_label || a.country || "").localeCompare(
@@ -137,40 +107,18 @@ function compareCompaniesDefault(a, b) {
   return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
 }
 
-function serverBoardOrderMap() {
-  return new Map(
-    state.boardCatalog.map((company, index) => [companySortKey(company), index]),
-  );
-}
-
-function compareCompaniesNewest(a, b, serverOrder) {
-  const priority = comparePriorityCompanies(a, b);
-  if (priority !== 0) return priority;
-  const ai = serverOrder.get(companySortKey(a));
-  const bi = serverOrder.get(companySortKey(b));
-  if (ai != null && bi != null) return ai - bi;
-  if (ai != null) return -1;
-  if (bi != null) return 1;
-  return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
-}
-
 export function sortCompaniesList(companies) {
   const list = [...companies];
   list.sort(compareCompaniesDefault);
   return list;
 }
 
-/** Snapshot server page order before fetch UI reshuffles the board. */
 export function freezeCompanyOrder() {
   if (state.frozenCompanyOrder) return;
-  const map = new Map();
-  state.boardCatalog.forEach((company, index) => {
-    map.set(companySortKey(company), index);
-  });
-  state.frozenCompanyOrder = map;
+  // ponytail: freeze map is catalog indices; snapshot getDisplayCompanies() if catalog/display drift appears
+  state.frozenCompanyOrder = buildFrozenOrderMap(state.boardCatalog);
 }
 
-/** Release the frozen order so the board re-sorts on the next render. */
 export function releaseCompanyOrder() {
   state.frozenCompanyOrder = null;
 }
@@ -259,25 +207,10 @@ export function getDisplayCompanies() {
       return compareCompaniesDefault(a, b);
     });
   }
-  const serverOrder = serverBoardOrderMap();
-  const frozen = state.frozenCompanyOrder;
-  return [...filtered].sort((a, b) => {
-    const priority = comparePriorityCompanies(a, b);
-    if (priority !== 0) return priority;
-    if (frozen) {
-      const ai = frozen.get(companySortKey(a));
-      const bi = frozen.get(companySortKey(b));
-      const aKnown = ai !== undefined;
-      const bKnown = bi !== undefined;
-      if (aKnown && bKnown) return ai - bi;
-      if (aKnown !== bKnown) return aKnown ? -1 : 1;
-    }
-    const byActivity = compareDateDesc(companyActivityTs(a), companyActivityTs(b));
-    if (byActivity !== 0) return byActivity;
-    const ai = serverOrder.get(companySortKey(a));
-    const bi = serverOrder.get(companySortKey(b));
-    if (ai != null && bi != null) return ai - bi;
-    return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+  return sortCompaniesNewest(filtered, {
+    frozenOrder: state.frozenCompanyOrder,
+    serverOrder: buildFrozenOrderMap(state.boardCatalog),
+    isPriority: isFetchingCompany,
   });
 }
 

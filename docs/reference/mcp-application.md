@@ -1,6 +1,6 @@
 # MCP application assistant (v0)
 
-**Last updated:** 2026-08-22
+**Last updated:** 2026-09-24
 
 Plan and reference for the `relocation_jobs/mcp/` domain: MCP tools that prepare tailored resume PDFs for jobs on the panel. v0 does **not** submit applications automatically and does **not** use the Claude API — Claude (or Cursor) does the resume reframing in chat; this app supplies data, validation, PDF rendering, and board state updates.
 
@@ -16,7 +16,7 @@ Use the panel **Application data** page at `/apply` to edit profile, pipeline pr
 
 Related: [architecture.md](architecture.md), [business-rules.md](business-rules.md), [contributing.md](../contributing.md).
 
-**Claude skill (what Claude Desktop loads):** `dist/mcp-resume-reframe/` (gitignored package + zip). Interactive gated reframe (one phase per turn, user approval), **add** 1–2 JD-mirror bullets then enforce a **skim budget** per role, `save_tailored_tex` after final sign-off; PDF render on the panel. Project masters = reframe evidence. **Interview notes** are a later step after an invite (`list_interview_notes` / `get_interview_note` / `save_interview_note`) — prep for that conversation, not an input to tailoring.
+**Claude / Cursor skill:** `dist/mcp-resume-reframe/` (gitignored package + zip) and the user skill store. **Preferred for many CVs:** Cursor slash command **`/tailor`** (see [commands/tailor.md](commands/tailor.md)) — batch phases 1–4 + anti-AI prose gate in one turn, one **Accepted** → `save_tailored_tex`. Interactive gated reframe (one phase per turn) remains available. **Add** 1–2 JD-mirror bullets then enforce a **skim budget** per role; keep the current role (Kuchup) with real production metrics; PDF render on the panel. Project masters = reframe evidence. **Interview notes** are a later step after an invite (`list_interview_notes` / `get_interview_note` / `save_interview_note`) — prep for that conversation, not an input to tailoring.
 
 ---
 
@@ -115,7 +115,7 @@ Migration: `mcp_cover_letter_v1`.
 | Tool | Purpose |
 |------|---------|
 | `get_job_context` | Job + tracking + `description_text` (JD), `has_description` / `needs_fetch`, `master_resume_slug`, `has_tailored_tex` / `has_pdf`, `has_cover_letter_tex` / `has_cover_letter_pdf`, `can_save_tailored_tex` |
-| `list_application_queue` | Pinned + looking-to-apply jobs (discovery only — not required to save) |
+| `list_application_queue` | Active queue: pinned or looking-to-apply, **excluding applied** (discovery only — not required to save) |
 | `list_master_resumes` | All master variants |
 | `get_master_resume` / `save_master_resume` | Read/write master tex by slug |
 | `list_project_masters` | All project master variants (LaTeX evidence) |
@@ -198,7 +198,7 @@ Interview notes are **not** part of this setup. Write them later, after an invit
 list_application_queue(country="uk")   # optional country filter
 ```
 
-Returns pinned and looking-to-apply jobs with `country`, `company`, `url`, `title`.
+Returns active-queue jobs (pinned or looking-to-apply, not applied) with `country`, `company`, `url`, `title`. See [application-queue.md](application-queue.md).
 
 **Option B — you already know the job**
 
@@ -349,7 +349,17 @@ update_position(
 save_position_description(country, company, url, description_text, overwrite=true)
 ```
 
-#### Paste into Claude Desktop
+#### tailor batch mode (preferred for many resumes)
+
+Cursor: type **`/tailor`** or **`/tailor SumUp`** (command file: [commands/tailor.md](commands/tailor.md); install under `.cursor/commands/` or `~/.cursor/commands/`).
+
+```text
+/tailor [company or newest looking-to-apply]
+```
+
+Agent runs skill **batch mode**: resolve job → phases 1–4 + anti-AI gate in **one turn** → stop for **Accepted** → `save_tailored_tex` + `validate_tex`. Keep Kuchup (current role) with production metrics. Do not `render_pdf` in chat.
+
+#### Paste into Claude Desktop (interactive)
 
 ```text
 Apply using the mcp-resume-reframe skill to the first job in my UK queue:
@@ -360,6 +370,8 @@ Apply using the mcp-resume-reframe skill to the first job in my UK queue:
 5. Continue one phase per turn until I accept the full draft
 6. save_tailored_tex after final acceptance — do not render_pdf; I'll render on the panel
 ```
+
+Or batch in Claude: *“Run mcp-resume-reframe /tailor batch for [company].”*
 
 ### Workflow (short)
 

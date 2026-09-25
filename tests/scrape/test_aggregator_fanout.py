@@ -33,7 +33,7 @@ def test_sync_aggregator_board_fans_out_employers(db):
     ensure_aggregator_seeds()
     source = get_company("remote-ok", "Remote OK")
     assert source is not None
-    employers, job_total = sync_aggregator_board(
+    employers, job_total, _matched = sync_aggregator_board(
         "remote-ok",
         source,
         [

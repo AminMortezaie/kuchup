@@ -148,6 +148,7 @@ class CompanyPositionApplication(BaseSchema):
     has_description: bool = False
     listing_unavailable: bool = False
     closed_at: str = ""
+    citizenship_required: str = ""
 
 
 class CompanyApplicationsResponse(BaseSchema):

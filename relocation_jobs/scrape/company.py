@@ -4,7 +4,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
-from relocation_jobs.core.job_identity import job_idempotency_key
 from relocation_jobs.core.scrape_cancel import FetchCancelled, raise_if_cancelled
 from relocation_jobs.fetch.log import log_event
 from relocation_jobs.fetch.types import is_infra_fetch_error
@@ -13,6 +12,8 @@ from relocation_jobs.scrape.aggregator_sync import (
     is_aggregator_ats,
     sync_aggregator_board,
 )
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
 from relocation_jobs.scrape.filter import filter_relevant_jobs
 from relocation_jobs.scrape.merge import merge_matching_jobs, now_iso
 from relocation_jobs.scrape.review import build_review_payload, review_filtered_jobs
@@ -131,13 +132,15 @@ async def _filter_board_listings(
     company: dict,
     *,
     fetch_board: Callable,
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[dict], list[dict], list[dict]]:
     name = company.get("name") or ""
     raw = await fetch_board(client, company)
     log_event(f"board returned {len(raw)} raw job(s)", company=name)
-    title_matched = filter_relevant_jobs(raw, True)
-    log_event(f"relevance filter: {len(raw)} → {len(title_matched)}", company=name)
-    return title_matched, raw
+    includes, excludes = default_keyword_lists()
+    listed = annotate_listings(filter_relevant_jobs(raw, False), includes, excludes)
+    matched = [job for job in listed if job_is_default_match(job)]
+    log_event(f"relevance filter: {len(raw)} → {len(matched)}", company=name)
+    return listed, matched, raw
 
 
 async def _maybe_enrich_scraped_board(
@@ -188,7 +191,7 @@ async def scrape_company_board(
             on_company_result=on_company_result,
         )
     existing = list(company.get("matching_jobs") or [])
-    scraped, raw = await _filter_board_listings(
+    listed, matched, raw = await _filter_board_listings(
         client, company,
         fetch_board=fetch_board,
     )
@@ -197,16 +200,20 @@ async def scrape_company_board(
         review_mode=review_mode,
         on_review=on_review,
         raw=raw,
-        included=scraped,
+        included=matched,
         name=name,
     )
-    known = {job_idempotency_key(j.get("url", "")) for j in existing}
-    scraped.extend(j for j in raw if job_idempotency_key(j.get("url", "")) in known)
-    jobs, preserved, new_count, stale_kept, new_jobs = merge_matching_jobs(existing, scraped)
-    if on_company_result and new_count > 0:
-        on_company_result(name, new_count, _slim_new_jobs(new_jobs))
-    jobs = await _maybe_enrich_scraped_board(
-        client, jobs, company,
+    jobs, preserved, _new_count, stale_kept, new_jobs = merge_matching_jobs(existing, listed)
+    new_default = [job for job in new_jobs if job_is_default_match(job)]
+    if on_company_result and new_default:
+        on_company_result(name, len(new_default), _slim_new_jobs(new_default))
+    await _maybe_enrich_scraped_board(
+        client,
+        [
+            job for job in jobs
+            if job_is_default_match(job) and not (job.get("closed_at") or "").strip()
+        ],
+        company,
         enrich_board=enrich_board,
         enrich_concurrency=enrich_concurrency,
     )
@@ -214,12 +221,13 @@ async def scrape_company_board(
     company["updated"] = now_iso()
     _mark_fetch_ok(company)
     _call_sync_board(sync_board)
+    default_jobs = [job for job in jobs if job_is_default_match(job)]
     return _scrape_success_line(
-        prefix, jobs,
+        prefix, default_jobs,
         preserved=preserved,
-        new_count=new_count,
+        new_count=len(new_default),
         stale_kept=stale_kept,
-    ), new_count
+    ), len(new_default)
 
 
 async def _scrape_aggregator_board(
@@ -238,8 +246,7 @@ async def _scrape_aggregator_board(
     raw = await fetch_board(client, company)
     log_event(f"board returned {len(raw)} raw job(s)", company=name)
     raise_if_cancelled()
-    matched = filter_relevant_jobs(raw, True)
-    employers, job_total = sync_aggregator_board(
+    employers, job_total, matched = sync_aggregator_board(
         catalog_country,
         company,
         raw,

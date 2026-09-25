@@ -21,9 +21,18 @@ def test_aggregator_review_lists_filtered_with_employer():
             "employer": "SalesCo",
         },
     ]
+    from relocation_jobs.core.migrations import (
+        _ROLE_FILTER_SEED_EXCLUDES,
+        _ROLE_FILTER_SEED_INCLUDES,
+    )
     from relocation_jobs.scrape.filter import filter_relevant_jobs
 
-    matched = filter_relevant_jobs(raw, True)
+    matched = filter_relevant_jobs(
+        raw,
+        True,
+        include=list(_ROLE_FILTER_SEED_INCLUDES),
+        exclude=list(_ROLE_FILTER_SEED_EXCLUDES),
+    )
     filtered = review_filtered_jobs(raw, matched)
     payload = build_review_payload(included=matched, filtered=filtered)
     assert len(payload["included"]) >= 1

@@ -8,6 +8,53 @@ from pathlib import Path
 
 from relocation_jobs.core.db import _normalize_url, _utc_now, db_transaction
 
+# First-boot seed for role_filter_tags only. Runtime source of truth is the table;
+# admins edit tags in Admin → Config; scrapers load via default_keyword_lists().
+_ROLE_FILTER_SEED_INCLUDES = [
+    "backend", "back-end", "back end",
+    "software engineer", "software developer",
+    "platform engineer", "platform developer",
+    "infrastructure engineer",
+    "golang", "go engineer", "go developer", "go backend",
+    "go ", "go,", "go/", "go-",
+    "java ", "java,", "java/", "java-",
+    "javascript", "javascript ", "javascript,", "javascript/", "javascript-",
+    "typescript", "typescript ", "typescript,", "typescript/", "typescript-",
+    "kotlin", "kotlin ", "kotlin,", "kotlin/", "kotlin-",
+    "python engineer", "python developer", "python ai engineer",
+    "python ", "python,", "python/", "python-",
+    "spring boot",
+    "microservice", "distributed",
+    "fullstack", "full-stack", "full stack",
+    "product engineer",
+    "solutions engineer",
+    "senior engineer",
+]
+_ROLE_FILTER_SEED_EXCLUDES = [
+    "frontend", "front-end", "front end",
+    "android", "ios", "mobile",
+    "designer", " design ", "security", "security engineer",
+    "marketing", "sales", "account manager", "account executive",
+    "data scientist", "data analyst", "machine learning engineer",
+    "product manager", "product owner",
+    "recruiter", " hr ", "human resource", "talent acquisition",
+    "accounting", "legal counsel", "legal trainee",
+    "customer success", "customer support", "customer service",
+    "office manager", "executive assistant",
+    "content ", "copywriter", "seo",
+    "game designer", "game artist", "level designer",
+    "3d artist", "animator", "concept artist",
+    "vp of", "head of", "director of", "chief ",
+    "internship", "intern ",
+    "lead ", " lead",
+    "engineering manager",
+    "principal ",
+    "junior", "AI Operations", "AI Ops", "integration engineer",
+    "Data analytics", "data analytics engineer",
+    "devops", "dev ops", "unity", "value engineer",
+    "site reliability", " sre", "associate",
+    "cloud site reliability",
+]
 
 def _ensure_migrations_table(conn) -> None:
     conn.execute(
@@ -132,6 +179,13 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_v1", _team_docs_v1)
     run_migration_once(conn, "team_docs_editors_v1", _team_docs_editors_v1)
     run_migration_once(conn, "team_docs_kuchup_ownership_v1", _seed_kuchup_ownership_doc)
+    run_migration_once(conn, "team_docs_us_citizenship_v1", _seed_us_citizenship_doc)
+    run_migration_once(conn, "role_filter_tags_v1", _role_filter_tags_v1)
+    run_migration_once(conn, "team_docs_role_filter_v1", _seed_role_filter_docs)
+    run_migration_once(conn, "user_role_tags_v1", _user_role_tags_v1)
+    run_migration_once(conn, "role_filter_lang_variants_v1", _role_filter_lang_variants_v1)
+    run_migration_once(conn, "user_role_tags_drop_user_idx_v1", _user_role_tags_drop_user_idx_v1)
+    run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
@@ -140,18 +194,28 @@ _KUCHUP_OWNERSHIP_DOC = (
     / "pages"
     / "kuchup-company-ownership.md"
 )
+_US_CITIZENSHIP_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "job-eligibility-us-citizenship.md"
+)
+_APPLICATIONS_QUEUE_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "applications-queue.md"
+)
 
 
-def _seed_kuchup_ownership_doc(conn) -> None:
-    title = "Kuchup company ownership and edit permissions"
-    slug = "kuchup-company-ownership"
+def _seed_team_doc(conn, *, folder: str, slug: str, title: str, path: Path) -> None:
     existing = conn.execute(
         "SELECT id FROM team_docs WHERE folder = %s AND slug = %s",
-        ("tech", slug),
+        (folder, slug),
     ).fetchone()
     if existing:
         return
-    body = _KUCHUP_OWNERSHIP_DOC.read_text(encoding="utf-8").strip() + "\n"
+    body = path.read_text(encoding="utf-8").strip() + "\n"
     now = _utc_now()
     conn.execute(
         """
@@ -160,8 +224,134 @@ def _seed_kuchup_ownership_doc(conn) -> None:
             created_by_user_id, updated_by_user_id
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        ("tech", slug, title, body, now, now, None, None),
+        (folder, slug, title, body, now, now, None, None),
     )
+
+
+def _seed_kuchup_ownership_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="kuchup-company-ownership",
+        title="Kuchup company ownership and edit permissions",
+        path=_KUCHUP_OWNERSHIP_DOC,
+    )
+
+
+def _seed_us_citizenship_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="job-eligibility-us-citizenship",
+        title="Job eligibility tags: US Citizenship Required",
+        path=_US_CITIZENSHIP_DOC,
+    )
+
+
+def _seed_applications_queue_doc(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="applications-queue",
+        title="Applications queue (panel + MCP)",
+        path=_APPLICATIONS_QUEUE_DOC,
+    )
+
+
+_ROLE_FILTER_DOC = (
+    Path(__file__).resolve().parent.parent
+    / "team_docs"
+    / "pages"
+    / "role-filter-tags.md"
+)
+
+
+def _role_filter_tags_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS role_filter_tags (
+            id SERIAL PRIMARY KEY,
+            keyword TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('include', 'exclude')),
+            UNIQUE (kind, keyword)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_role_tag_prefs (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            tag_id INTEGER NOT NULL REFERENCES role_filter_tags(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, tag_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        ALTER TABLE matching_jobs
+        ADD COLUMN IF NOT EXISTS matches_default_filter INTEGER NOT NULL DEFAULT 1
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_jobs_default_open
+        ON matching_jobs (company_id)
+        WHERE matches_default_filter = 1
+        """
+    )
+    for kind, words in (
+        ("include", _ROLE_FILTER_SEED_INCLUDES),
+        ("exclude", _ROLE_FILTER_SEED_EXCLUDES),
+    ):
+        for word in words:
+            conn.execute(
+                """
+                INSERT INTO role_filter_tags (keyword, kind)
+                VALUES (%s, %s)
+                ON CONFLICT (kind, keyword) DO NOTHING
+                """,
+                (word, kind),
+            )
+
+
+def _seed_role_filter_docs(conn) -> None:
+    _seed_team_doc(
+        conn,
+        folder="tech",
+        slug="role-filter-tags",
+        title="Role filter tags",
+        path=_ROLE_FILTER_DOC,
+    )
+
+
+def _user_role_tags_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_role_tags (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            keyword TEXT NOT NULL,
+            kind TEXT NOT NULL CHECK (kind IN ('include', 'exclude')),
+            UNIQUE (user_id, kind, keyword)
+        )
+        """
+    )
+
+
+def _role_filter_lang_variants_v1(conn) -> None:
+    for word in _ROLE_FILTER_SEED_INCLUDES:
+        conn.execute(
+            """
+            INSERT INTO role_filter_tags (keyword, kind)
+            VALUES (%s, 'include')
+            ON CONFLICT (kind, keyword) DO NOTHING
+            """,
+            (word,),
+        )
+
+
+def _user_role_tags_drop_user_idx_v1(conn) -> None:
+    conn.execute("DROP INDEX IF EXISTS idx_user_role_tags_user")
 
 
 def _team_docs_editors_v1(conn) -> None:

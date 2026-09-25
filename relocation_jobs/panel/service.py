@@ -3,6 +3,7 @@ from __future__ import annotations
 from relocation_jobs.catalog.repo import (
     count_catalog_companies,
     count_fetch_problems,
+    get_company,
     load_catalog_companies_page,
     load_catalog_for_countries,
     load_country_catalog,
@@ -18,8 +19,11 @@ from relocation_jobs.users.repo import (
 from relocation_jobs.mcp import repo as mcp_repo
 from relocation_jobs.opportunities.service import opportunity_company_key
 from relocation_jobs.panel.flatten import PanelContext, flatten_company, summarize_company_for_stats
+from relocation_jobs.panel.roles_page import BOARD_ROLES_PAGE_SIZE, slice_open_roles
 from relocation_jobs.panel.tracking import build_tracking_alias_index
 from relocation_jobs.panel.types import FlattenFilters
+from relocation_jobs.roles.match import job_is_default_match
+from relocation_jobs.roles.service import mix_unhidden_roles
 from relocation_jobs.shared.board_contract import (
     CATALOG_KIND_RELOCATION,
     CATALOG_KIND_REMOTE,
@@ -438,3 +442,64 @@ def _country_keys_for_filters(filters: FlattenFilters) -> list[str]:
     else:
         keys = [k for k in keys if not is_remote_country_key(k)]
     return keys
+
+
+def load_flattened_board_company(
+    filters: FlattenFilters,
+    *,
+    country_key: str,
+    company_name: str,
+) -> dict | None:
+    company = get_company(country_key, company_name)
+    if company is None:
+        return None
+    if not _company_allowed_by_opportunities(filters, country_key, company):
+        return None
+    ctx = load_context(filters.user_id, country_key)
+    return flatten_company(
+        company,
+        country_key=country_key,
+        country_label=country_label(country_key),
+        filters=filters,
+        ctx=ctx,
+    )
+
+
+def _board_eligible_open_roles(row: dict, filters: FlattenFilters) -> list[dict]:
+    defaults = [
+        job for job in (row.get("jobs") or [])
+        if job_is_default_match(job)
+    ]
+    prepared = dict(row)
+    prepared["jobs"] = defaults
+    prepared["job_count"] = len(defaults)
+    mixed = mix_unhidden_roles(
+        filters.user_id,
+        [prepared],
+        visa_only=bool(filters.visa_only),
+    )
+    return list((mixed[0] if mixed else prepared).get("jobs") or [])
+
+
+def load_company_open_roles_page(
+    filters: FlattenFilters,
+    *,
+    country_key: str,
+    company_name: str,
+    offset: int,
+    capacity_fn=None,
+) -> dict | None:
+    row = load_flattened_board_company(
+        filters, country_key=country_key, company_name=company_name,
+    )
+    if row is None:
+        return None
+    if capacity_fn is not None and filters.user_id is not None:
+        row = capacity_fn(filters.user_id, [row])[0]
+    eligible = _board_eligible_open_roles(row, filters)
+    chunk, remaining = slice_open_roles(
+        eligible,
+        offset=offset,
+        limit=BOARD_ROLES_PAGE_SIZE,
+    )
+    return {"jobs": chunk, "jobs_more": remaining}

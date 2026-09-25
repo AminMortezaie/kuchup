@@ -2,7 +2,7 @@
 
 import { applyBoardView } from "./board.js";
 import { shouldShowCompanyOnBoard } from "./board-filter.js";
-import { recomputeNewestJobFetched } from "./render.js";
+import { freezeCompanyOrder, recomputeNewestJobFetched } from "./render.js";
 import { findCompany, findJobInCompany, state } from "./state.js";
 
 const JOB_PATCH_FIELDS = [
@@ -112,7 +112,9 @@ function ensureList(company, key) {
 }
 
 function recomputeCounts(company) {
-  company.job_count = (company.jobs || []).length;
+  const open = (company.jobs || []).length;
+  const more = Math.max(0, Number(company.jobs_more) || 0);
+  company.job_count = open + more;
   company.positions_applied = (company.jobs || []).filter((j) => j.applied).length;
   company.positions_rejected = (company.rejected_jobs || []).length;
   company.positions_not_for_me = (company.not_for_me_jobs || []).length;
@@ -201,6 +203,7 @@ export function applyPinToCatalog(country, companyName, url, idempotencyKey, dat
 }
 
 export function finalizeCompanyBoard(company) {
+  freezeCompanyOrder();
   recomputeCounts(company);
   evictCompanyIfHidden(company);
   applyBoardView();
@@ -304,5 +307,26 @@ export function patchJobOnBoard(country, companyName, url, idempotencyKey, data)
   found.list[idx] = mergeJobPatch(found.job, data);
   syncCompanyHeaderFromJobs(company, data);
   finalizeCompanyBoard(company);
+  return true;
+}
+
+/** Append a page of open roles fetched from /board/company-roles onto the in-memory company. */
+export function appendCompanyRoles(country, companyName, jobs, jobsMore) {
+  const company = findCompany(country, companyName);
+  if (!company) return false;
+  const list = ensureList(company, "jobs");
+  const seen = new Set(
+    list.map((job) => (job.idempotency_key || job.url || "").trim()).filter(Boolean),
+  );
+  for (const job of jobs || []) {
+    const key = (job.idempotency_key || job.url || "").trim();
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    list.push(job);
+  }
+  if (jobsMore != null) company.jobs_more = Math.max(0, Number(jobsMore) || 0);
+  freezeCompanyOrder();
+  recomputeCounts(company);
+  refreshJobBoard();
   return true;
 }

@@ -5,48 +5,6 @@ from __future__ import annotations
 DEFAULT_CONCURRENCY = 16
 MAX_CONCURRENCY = 16
 
-INCLUDE_KEYWORDS = [
-    "backend", "back-end", "back end",
-    "software engineer", "software developer",
-    "platform engineer", "platform developer",
-    "infrastructure engineer",
-    "golang", "go engineer", "go developer", "go backend",
-    "java ", "java,", "java/", "java-", "javascript", "typescript",
-    "kotlin", "spring boot",
-    "python engineer", "python developer", "python ai engineer",
-    "microservice", "distributed",
-    "fullstack", "full-stack", "full stack",
-    "product engineer",
-    "solutions engineer",
-    "senior engineer",
-]
-
-EXCLUDE_KEYWORDS = [
-    "frontend", "front-end", "front end",
-    "android", "ios", "mobile",
-    "designer", " design ", "security", "security engineer",
-    "marketing", "sales", "account manager", "account executive",
-    "data scientist", "data analyst", "machine learning engineer",
-    "product manager", "product owner",
-    "recruiter", " hr ", "human resource", "talent acquisition",
-    "accounting", "legal counsel", "legal trainee",
-    "customer success", "customer support", "customer service",
-    "office manager", "executive assistant",
-    "content ", "copywriter", "seo",
-    "game designer", "game artist", "level designer",
-    "3d artist", "animator", "concept artist",
-    "vp of", "head of", "director of", "chief ",
-    "internship", "intern ",
-    "lead ", " lead",
-    "engineering manager",
-    "principal ",
-    "junior", "AI Operations", "AI Ops", "integration engineer",
-    "Data analytics", "data analytics engineer",
-    "devops", "dev ops", "unity", "value engineer"
-    "site reliability", " sre", "associate"
-    "cloud site reliability",
-]
-
 ATS_TYPE_CHOICES: tuple[tuple[str, str], ...] = (
     ("ashby", "Ashby"),
     ("atlassian", "Atlassian"),

@@ -100,6 +100,7 @@ def init_catalog_schema() -> None:
         run_migration_once(conn, "catalog_public_job_syndication_v1", _migrate_public_job_syndication_v1)
         run_migration_once(conn, "catalog_listing_check_v1", _migrate_listing_check_v1)
         run_migration_once(conn, "catalog_owned_by_kuchup_v1", _migrate_owned_by_kuchup_v1)
+        run_migration_once(conn, "catalog_citizenship_required_v1", _migrate_citizenship_required_v1)
 
 
 def _ensure_job_description_column(conn) -> None:
@@ -138,6 +139,23 @@ def _ensure_job_columns(conn) -> None:
     )
     conn.execute(
         "ALTER TABLE matching_jobs ADD COLUMN IF NOT EXISTS description_text TEXT NOT NULL DEFAULT ''"
+    )
+
+
+def _migrate_citizenship_required_v1(conn) -> None:
+    conn.execute(
+        """
+        ALTER TABLE companies
+        ADD COLUMN IF NOT EXISTS citizenship_required TEXT NOT NULL DEFAULT ''
+        """
+    )
+    conn.execute(
+        """
+        UPDATE companies
+        SET citizenship_required = 'US'
+        WHERE careers_url ILIKE '%%://gdit.%%myworkdayjobs.com%%'
+           OR ats_url ILIKE '%%://gdit.%%myworkdayjobs.com%%'
+        """
     )
 
 

@@ -31,8 +31,12 @@ async def test_process_company_merges_and_counts_new():
     assert company.get("fetch_ok") is True
     urls = {j["url"] for j in company["matching_jobs"]}
     assert "https://example.com/j/2?gh_jid=2" in urls
-    assert "https://example.com/j/3?gh_jid=3" not in urls
+    assert "https://example.com/j/3?gh_jid=3" in urls
     assert "https://example.com/j/1?gh_jid=1" in urls
+    marketing = next(job for job in company["matching_jobs"] if "j/3" in job["url"])
+    assert marketing["matches_default_filter"] == 0
+    backend = next(job for job in company["matching_jobs"] if "j/2" in job["url"])
+    assert backend["matches_default_filter"] == 1
 
 
 @pytest.mark.asyncio

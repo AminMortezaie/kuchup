@@ -17,6 +17,7 @@ from relocation_jobs.web import deps
 
 _KUCHUP_EDIT_ERROR = "Only an admin can change a Kuchup company"
 _CAREERS_URL_ERROR = "Only an admin can set a careers or ATS URL"
+_CITIZENSHIP_ERROR = "Only an admin can set a citizenship requirement"
 
 
 def _reject_kuchup_edit(country: str, company: str):
@@ -206,6 +207,34 @@ def register(app):
             company = deps.resolve_company_name(country, company)
             result = deps.update_company_careers(
                 country, company, careers_url, redetect_ats=redetect_ats,
+            )
+            return jsonify({"ok": True, **result})
+        except LookupError as e:
+            return jsonify({"error": str(e)}), 404
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+    @app.patch("/api/companies/citizenship")
+    @app.post("/api/companies/citizenship")
+    @login_required
+    def api_companies_citizenship():
+        body = request.get_json(silent=True) or {}
+        country = (body.get("country") or "").strip().lower()
+        company = (body.get("company") or "").strip()
+        if "citizenship_required" not in body:
+            return jsonify({"error": "citizenship_required is required"}), 400
+        if not is_user_admin(g.user_id):
+            return jsonify({"error": _CITIZENSHIP_ERROR}), 403
+        if not country or country == "all":
+            return jsonify({"error": "country is required (not 'all')"}), 400
+        if country not in supported_countries():
+            return jsonify({"error": f"Unknown country: {country}"}), 400
+        if not company:
+            return jsonify({"error": "company is required"}), 400
+        try:
+            company = deps.resolve_company_name(country, company)
+            result = deps.set_company_citizenship(
+                country, company, body.get("citizenship_required"),
             )
             return jsonify({"ok": True, **result})
         except LookupError as e:

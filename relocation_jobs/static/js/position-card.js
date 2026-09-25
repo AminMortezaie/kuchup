@@ -38,6 +38,11 @@ function companyWorkspacePath(country, companyName) {
   return `/company/${encodeURIComponent(countryKey)}/${encodeURIComponent(slug)}`;
 }
 
+function citizenshipBadge(job) {
+  if (String(job?.citizenship_required || "").toUpperCase() !== "US") return "";
+  return '<span class="badge citizenship">US Citizenship Required</span>';
+}
+
 function posCls(job) {
   return [
     job.pinned ? " position-pinned" : "",
@@ -409,6 +414,7 @@ class PositionCard extends HTMLElement {
           ${this._titleRow(j)}
           <div class="position-badges">
             ${j.visa_sponsorship === true ? '<span class="badge visa">Visa / relocation</span>' : ""}
+            ${citizenshipBadge(j)}
             ${j.looking_to_apply && !j.applied ? `<span class="badge looking-to-apply">${j.looking_to_apply_date ? `Want to apply · ${escapeHtml(formatActivityBadge(j.looking_to_apply_date))}` : "Want to apply"}</span>` : ""}
             ${j.seen ? `<span class="badge seen">Seen${j.seen_date ? ` · ${escapeHtml(formatActivityBadge(j.seen_date))}` : ""}</span>` : ""}
             ${!j.applied && latest ? `<span class="badge applied" title="${escapeHtml(formatAppliedHistoryTitle(evts.length ? evts : hist))}">${escapeHtml(formatAppliedLabel({ date: latest, at: j.applied_at || "" }, { before: true }))}</span>` : ""}
@@ -454,6 +460,7 @@ class PositionCard extends HTMLElement {
             <span class="badge rejected"${rTitle ? ` title="Rejected on: ${escapeHtml(rTitle)}"` : ""}>${escapeHtml(rLabel)}</span>
             ${latestA ? `<span class="badge applied"${aTitle ? ` title="${escapeHtml(aTitle)}"` : ""}>${escapeHtml(formatAppliedLabel({ date: latestA, at: j.applied_at || "" }))}</span>` : ""}
             ${j.visa_sponsorship === true ? '<span class="badge visa">Visa / relocation</span>' : ""}
+            ${citizenshipBadge(j)}
             ${j.seen ? `<span class="badge seen">Seen${j.seen_date ? ` · ${escapeHtml(formatActivityBadge(j.seen_date))}` : ""}</span>` : ""}
             ${cvBadges(j)}
             <span class="badge date">${formatActivityBadge(jobActivityTs(j))}</span>
@@ -479,6 +486,7 @@ class PositionCard extends HTMLElement {
           <div class="position-badges">
             <span class="badge ${hBadgeCls}">${escapeHtml(hLabel)}${escapeHtml(tagged)}</span>
             ${j.visa_sponsorship === true ? '<span class="badge visa">Visa / relocation</span>' : ""}
+            ${citizenshipBadge(j)}
             <span class="badge date">${formatActivityBadge(jobActivityTs(j))}</span>
           </div>
         </div>

@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from relocation_jobs.core.ats_detection import HEADERS
+from relocation_jobs.roles.service import default_keyword_lists
 from relocation_jobs.scrape.relevance import is_relevant
 
 _GENERIC_LINK_LABELS = frozenset({
@@ -85,13 +86,13 @@ def _fetch_job_detail_title(url: str) -> str:
     return ""
 
 
-def _needs_detail_title(guess: str) -> bool:
+def _needs_detail_title(guess: str, include: list[str], exclude: list[str]) -> bool:
     t = _normalize_title(guess).lower()
     if not t or t in _GENERIC_LINK_LABELS or len(t) < 5:
         return True
     if "job family" in t and len(guess) > 80:
         return True
-    if not is_relevant(guess):
+    if not is_relevant(guess, include=include, exclude=exclude):
         return True
     return False
 
@@ -146,12 +147,13 @@ def listing_candidates_to_jobs(
     *,
     relevant_only: bool = False,
 ) -> list[dict]:
+    includes, excludes = default_keyword_lists()
     jobs: list[dict] = []
     for job_url, guess in candidates.items():
         if _is_listing_noise_url(job_url):
             continue
         title = _normalize_title(guess)
-        if _needs_detail_title(guess):
+        if _needs_detail_title(guess, includes, excludes):
             detail = _fetch_job_detail_title(job_url)
             if detail:
                 title = detail
@@ -159,7 +161,7 @@ def listing_candidates_to_jobs(
             continue
         if _JUNK_LISTING_TITLE.match(title):
             continue
-        if relevant_only and not is_relevant(title):
+        if relevant_only and not is_relevant(title, include=includes, exclude=excludes):
             continue
         jobs.append({"title": title, "url": job_url})
     return jobs
@@ -172,21 +174,7 @@ def jobs_from_listing_html(
     relevant_only: bool = False,
 ) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
-    candidates = _collect_listing_job_links(soup, page_url)
-    jobs: list[dict] = []
-    for job_url, guess in candidates.items():
-        if _is_listing_noise_url(job_url):
-            continue
-        title = _normalize_title(guess)
-        if _needs_detail_title(guess):
-            detail = _fetch_job_detail_title(job_url)
-            if detail:
-                title = detail
-        if len(title) < 5 or len(title) > 150:
-            continue
-        if _JUNK_LISTING_TITLE.match(title):
-            continue
-        if relevant_only and not is_relevant(title):
-            continue
-        jobs.append({"title": title, "url": job_url})
-    return jobs
+    return listing_candidates_to_jobs(
+        _collect_listing_job_links(soup, page_url),
+        relevant_only=relevant_only,
+    )

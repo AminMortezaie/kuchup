@@ -12,6 +12,7 @@ from relocation_jobs.core.paths import supported_countries
 from relocation_jobs.panel.tracking import resolve_track
 from relocation_jobs.positions import repo as positions_repo
 from relocation_jobs.positions.types import TrackingFlags
+from relocation_jobs.roles.service import default_keyword_lists
 from relocation_jobs.scrape.relevance import explain_title_filter, is_relevant
 from relocation_jobs.users.repo import load_job_tracking
 
@@ -22,15 +23,20 @@ def _catalog_url(job: dict) -> str:
     return (job.get("url") or "").strip()
 
 
-def _exclusion_for_job(job: dict) -> tuple[str, str] | None:
+def _exclusion_for_job(
+    job: dict,
+    include: list[str],
+    exclude: list[str],
+) -> tuple[str, str] | None:
     title = (job.get("title") or "").strip()
-    if title and not is_relevant(title):
-        return "not_for_me", explain_title_filter(title)
+    if title and not is_relevant(title, include=include, exclude=exclude):
+        return "not_for_me", explain_title_filter(title, include=include, exclude=exclude)
     return None
 
 
 def find_excludable_jobs(*, country_key: str | None = None) -> list[dict]:
     countries = [country_key] if country_key else sorted(supported_countries())
+    includes, excludes = default_keyword_lists()
     hits: list[dict] = []
     for country in countries:
         data = load_country_catalog(country)
@@ -44,7 +50,7 @@ def find_excludable_jobs(*, country_key: str | None = None) -> list[dict]:
                 url = _catalog_url(job)
                 if not url:
                     continue
-                exclusion = _exclusion_for_job(job)
+                exclusion = _exclusion_for_job(job, includes, excludes)
                 if exclusion is None:
                     continue
                 hide_reason, detail = exclusion

@@ -109,6 +109,7 @@ export async function endSessionAndSettle({ closePanel = false } = {}) {
   setFetchBusy(false, null, { syncBoard: false });
 
   if (dirty) {
+    // ponytail: frozenCompanyOrder survives setFetchBusy(false); settle loadJobs without stableOrder reconciles
     await loadJobs({ force: true, preserveContent: true, noOverlay: true, enterAnimation: false });
   } else if (wasActive) {
     // Clear fetching highlight without a network round-trip.
