@@ -1,0 +1,407 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fb5e283286a5",
+  "session_id": "d0e21ea9-04ac-4b91-a61b-43ee4c47fec1",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-25T13:50:19.4338Z",
+  "branch": "cursor/go-http-fetch-scheduler-50bf",
+  "checkpoints_count": 33,
+  "save_step_count": 24,
+  "files_touched": [
+    "apps/ats-scrape/main.go",
+    "ats_scrape/boards_api.go",
+    "ats_scrape/db.go",
+    "ats_scrape/describe.go",
+    "ats_scrape/describe_test.go",
+    "ats_scrape/scheduler.go",
+    "ats_scrape/scheduler_test.go",
+    "relocation_jobs/core/db.py",
+    "relocation_jobs/fetch/go_results.py",
+    "relocation_jobs/fetch/merge_consumer.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/scrape/enrich.py",
+    "scripts/fetch_scheduler_worker.py",
+    "tests/core/test_db_pool.py",
+    "tests/fetch/test_go_country_fetch.py",
+    "tests/fetch/test_merge_consumer.py",
+    "tests/scripts/test_fetch_scheduler_worker.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high",
+  "turn_id": "7b6126571fc6",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 1251848,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32068992,
+    "output_tokens": 144889,
+    "api_call_count": 24
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T09:50:36.928453Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "ffab768c9d8e",
+      "timestamp": "2026-09-25T09:50:36.928453Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-25T12:27:10.941219Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "ffc61d4a038e",
+      "timestamp": "2026-09-25T12:27:10.941219Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 33,
+    "context_tokens": 231257,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-25T13:50:19.363544Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 700,
+    "human_modified": 252,
+    "human_removed": 0,
+    "total_committed": 700,
+    "total_lines_changed": 952,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 6,
+      "agent_lines_removed": 27,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 6,
+      "agent_lines_removed": 27,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 6,
+      "agent_lines_removed": 27,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 6,
+      "agent_lines_removed": 27,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 10,
+      "agent_lines_removed": 39,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 10,
+      "agent_lines_removed": 39,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 10,
+      "agent_lines_removed": 39,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 175,
+      "agent_lines_removed": 95,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 175,
+      "agent_lines_removed": 95,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 12,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 175,
+      "agent_lines_removed": 95,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 13,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 175,
+      "agent_lines_removed": 95,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 14,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 175,
+      "agent_lines_removed": 95,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 15,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 277,
+      "agent_lines_removed": 119,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 16,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 277,
+      "agent_lines_removed": 119,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 17,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 403,
+      "agent_lines_removed": 120,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 18,
+      "user_lines_added": 76,
+      "user_lines_removed": 28,
+      "agent_lines_added": 403,
+      "agent_lines_removed": 120,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 53,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 19,
+      "user_lines_added": 76,
+      "user_lines_removed": 28,
+      "agent_lines_added": 403,
+      "agent_lines_removed": 120,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 53,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 20,
+      "user_lines_added": 76,
+      "user_lines_removed": 28,
+      "agent_lines_added": 402,
+      "agent_lines_removed": 119,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 53,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 21,
+      "user_lines_added": 134,
+      "user_lines_removed": 28,
+      "agent_lines_added": 460,
+      "agent_lines_removed": 120,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 111,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 22,
+      "user_lines_added": 134,
+      "user_lines_removed": 28,
+      "agent_lines_added": 460,
+      "agent_lines_removed": 120,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 111,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 23,
+      "user_lines_added": 141,
+      "user_lines_removed": 28,
+      "agent_lines_added": 582,
+      "agent_lines_removed": 137,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 111,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/fetch/test_go_country_fetch.py": 7
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 24,
+      "user_lines_added": 141,
+      "user_lines_removed": 28,
+      "agent_lines_added": 582,
+      "agent_lines_removed": 137,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 111,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/fetch/test_go_country_fetch.py": 7
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    },
+    {
+      "checkpoint_number": 25,
+      "user_lines_added": 141,
+      "user_lines_removed": 28,
+      "agent_lines_added": 582,
+      "agent_lines_removed": 137,
+      "user_added_per_file": {
+        "ats_scrape/describe.go": 111,
+        "ats_scrape/describe_test.go": 11,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/fetch/test_go_country_fetch.py": 7
+      },
+      "user_removed_per_file": {
+        "ats_scrape/describe.go": 21,
+        "ats_scrape/describe_test.go": 7
+      }
+    }
+  ]
+}

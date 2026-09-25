@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fb5e283286a5",
+  "strategy": "manual-commit",
+  "branch": "cursor/go-http-fetch-scheduler-50bf",
+  "checkpoints_count": 33,
+  "files_touched": [
+    "apps/ats-scrape/main.go",
+    "ats_scrape/boards_api.go",
+    "ats_scrape/db.go",
+    "ats_scrape/describe.go",
+    "ats_scrape/describe_test.go",
+    "ats_scrape/scheduler.go",
+    "ats_scrape/scheduler_test.go",
+    "relocation_jobs/core/db.py",
+    "relocation_jobs/fetch/go_results.py",
+    "relocation_jobs/fetch/merge_consumer.py",
+    "relocation_jobs/fetch/runner.py",
+    "relocation_jobs/scrape/enrich.py",
+    "scripts/fetch_scheduler_worker.py",
+    "tests/core/test_db_pool.py",
+    "tests/fetch/test_go_country_fetch.py",
+    "tests/fetch/test_merge_consumer.py",
+    "tests/scripts/test_fetch_scheduler_worker.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fb/5e283286a5/0/metadata.json",
+      "transcript": "/fb/5e283286a5/0/full.jsonl",
+      "compact_transcript": "/fb/5e283286a5/0/transcript.jsonl",
+      "content_hash": "/fb/5e283286a5/0/content_hash.txt",
+      "prompt": "/fb/5e283286a5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1251848,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32068992,
+    "output_tokens": 144889,
+    "api_call_count": 24
+  }
+}
