@@ -28,8 +28,8 @@ func RunScheduler() int {
 	}
 	defer store.Close()
 
-	if err := store.ReapOrphanRuns(ctx); err != nil {
-		log.Printf("scheduler: reap orphans: %v", err)
+	if err := store.ReapStaleRunningRuns(ctx, countryTimeout()); err != nil {
+		log.Printf("scheduler: stale run reap: %v", err)
 	}
 
 	if !scheduleEnabled() {
@@ -165,7 +165,19 @@ func runFetchCycle(ctx context.Context, store *Store) (cycleResult, error) {
 	return result, nil
 }
 
-func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID int64, countryKey string, workers int) error {
+func countryTimeout() time.Duration {
+	raw := strings.TrimSpace(os.Getenv("FETCH_COUNTRY_TIMEOUT_SECONDS"))
+	if raw == "" {
+		return 2700 * time.Second
+	}
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds < 60 {
+		return 2700 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID int64, countryKey string, workers int) (err error) {
 	companies, err := store.ListHTTPCompanies(ctx, countryKey)
 	if err != nil {
 		return err
@@ -178,11 +190,25 @@ func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID in
 	if err != nil {
 		return err
 	}
-	if err := store.InsertWorkRows(ctx, runID, companies); err != nil {
+	runClosed := false
+	defer func() {
+		if runClosed {
+			return
+		}
+		msg := "country fetch interrupted"
+		if err != nil {
+			msg = err.Error()
+		}
+		if failErr := store.FailRun(ctx, runID, msg); failErr != nil {
+			log.Printf("scheduler: failed to close run %d: %v", runID, failErr)
+		}
+	}()
+
+	if err = store.InsertWorkRows(ctx, runID, companies); err != nil {
 		return err
 	}
 	total := len(companies)
-	if err := store.UpdateProgress(ctx, runID, 0, total, "", "fetching"); err != nil {
+	if err = store.UpdateProgress(ctx, runID, 0, total, "", "fetching"); err != nil {
 		return err
 	}
 
@@ -195,8 +221,8 @@ func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID in
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := scrapeCompany(ctx, store, httpPool, runID, company); err != nil {
-				errCh <- err
+			if scrapeErr := scrapeCompany(ctx, store, httpPool, runID, company); scrapeErr != nil {
+				errCh <- scrapeErr
 			}
 			current := int(done.Add(1))
 			_ = store.UpdateProgress(ctx, runID, current, total, company.Name, "fetching")
@@ -204,12 +230,22 @@ func runCountry(ctx context.Context, store *Store, httpPool *HTTPPool, userID in
 	}
 	wg.Wait()
 	close(errCh)
-	for err := range errCh {
-		log.Printf("company scrape error run=%d: %v", runID, err)
+	for companyErr := range errCh {
+		log.Printf("company scrape error run=%d: %v", runID, companyErr)
+		if err == nil {
+			err = companyErr
+		}
+	}
+	if err != nil {
+		return err
 	}
 
 	finished := int(done.Load())
-	return store.FinalizeRun(ctx, runID, finished, total)
+	if failErr := store.FinalizeRun(ctx, runID, finished, total); failErr != nil {
+		return failErr
+	}
+	runClosed = true
+	return nil
 }
 
 func scrapeCompany(ctx context.Context, store *Store, httpPool *HTTPPool, runID int64, company WorkCompany) error {
@@ -221,7 +257,7 @@ func scrapeCompany(ctx context.Context, store *Store, httpPool *HTTPPool, runID 
 	}
 	jobs, err := Scrape(ctx, httpPool, req)
 	if err != nil {
-	if errors.Is(err, ErrUnsupported) {
+		if errors.Is(err, ErrUnsupported) {
 			return store.InsertResult(ctx, runID, company.ID, resultError, err.Error(), nil)
 		}
 		return store.InsertResult(ctx, runID, company.ID, resultError, err.Error(), nil)

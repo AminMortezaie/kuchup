@@ -689,6 +689,18 @@ docker run -d --name ${MCP_CONTAINER} --restart unless-stopped \\
   ${PANEL_IMAGE}
 EOF
 
+  log "Starting HTTP fetch merge consumer (panel image, before Go worker)..."
+  ssh_cmd bash -s <<EOF
+set -euo pipefail
+docker rm -f relocation-fetch-merge 2>/dev/null || true
+docker run -d --name relocation-fetch-merge --restart unless-stopped \\
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
+  -e DATABASE_URL='${db_url}' \\
+  -e FETCH_MERGE_POLL_SECONDS=2 \\
+  --entrypoint python3 \\
+  ${PANEL_IMAGE} scripts/fetch_merge_consumer.py
+EOF
+
   worker_hash="$(remote_image_hash worker)"
   if image_needs_rebuild worker "$WORKER_IMAGE" "$worker_hash"; then
     log "Building ${WORKER_IMAGE} on EC2 (light HTTP ATS)..."
@@ -764,18 +776,6 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e AWS_ACCESS_KEY_ID='${aws_key}' \\
   -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${WORKER_IMAGE}
-EOF
-
-  log "Starting HTTP fetch merge consumer (panel image)..."
-  ssh_cmd bash -s <<EOF
-set -euo pipefail
-docker rm -f relocation-fetch-merge 2>/dev/null || true
-docker run -d --name relocation-fetch-merge --restart unless-stopped \\
-  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
-  -e DATABASE_URL='${db_url}' \\
-  -e FETCH_MERGE_POLL_SECONDS=2 \\
-  --entrypoint python3 \\
-  ${PANEL_IMAGE} scripts/fetch_merge_consumer.py
 EOF
 
   start_playwright_worker_container "${db_url}" "${admin_emails_value}" "${sqs_url}" "${aws_region}" "${aws_key}" "${aws_secret}"
