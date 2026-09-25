@@ -1,0 +1,7 @@
+<timestamp>Friday, Sep 25, 2026, 1:19 PM (UTC+4)</timestamp>
+
+commit and push
+
+---
+
+if i scroll on pagination section it scrolling and make this shit, find the bug and fix it as a hotfix
