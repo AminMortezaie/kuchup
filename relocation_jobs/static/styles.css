@@ -1665,6 +1665,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .board-pagination-root {
   flex: 0 0 auto;
   z-index: 4;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior: none;
+  /* Footer is not a scroller — block pan so iOS doesn't chain-scroll the page. */
+  touch-action: none;
 }
 
 .board-pagination-root:not(:empty) {
@@ -5728,6 +5733,8 @@ body.scroll-locked {
     background: var(--color-paper, #fcfaf7);
     box-shadow: none;
     width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   /* Keep desktop pagination controls on small screens; drop summary when tight. */
@@ -5737,7 +5744,9 @@ body.scroll-locked {
     align-items: center;
     justify-content: flex-end;
     width: 100%;
+    max-width: 100%;
     gap: 0.5rem;
+    overflow-x: clip;
   }
 
   .board-pagination-summary {
@@ -8378,6 +8387,7 @@ body.scroll-locked {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-bottom: var(--space-md, 1rem);
 }
 
@@ -8474,6 +8484,10 @@ body.scroll-locked {
 .applications-pagination-root {
   flex: 0 0 auto;
   z-index: 4;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 .applications-pagination-root:empty {

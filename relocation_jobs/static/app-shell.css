@@ -741,11 +741,20 @@
   margin: 0;
 }
 
+/* Pin shell height so board/applications keep an internal scroller + docked
+   pagination instead of letting document scroll when the footer is dragged. */
+.app-shell:has(.applications-page),
+.app-shell:has(.board-page) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
 .app-main:has(.applications-page),
 .app-main:has(.board-page) {
   min-height: 0;
   height: 100%;
-  max-height: 100dvh;
+  max-height: none;
   overflow: hidden;
 }
 
@@ -764,6 +773,7 @@
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-bottom: var(--space-md, 1rem);
 }
 
