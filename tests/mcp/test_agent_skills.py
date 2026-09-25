@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from relocation_jobs.mcp import service
 from relocation_jobs.mcp.server import get_agent_skill as mcp_get_agent_skill
@@ -22,6 +23,14 @@ def test_get_agent_skill_tailor_body():
     skill = service.get_agent_skill("tailor")
     assert skill.slug == "tailor"
     assert skill.body.strip().startswith("# Agent playbook: tailor")
+    tailor_md = (
+        Path(__file__).resolve().parents[2]
+        / "relocation_jobs"
+        / "mcp"
+        / "agent_skills"
+        / "tailor.md"
+    )
+    assert skill.body == tailor_md.read_text(encoding="utf-8").strip() + "\n"
     for needle in (
         "get_job_context",
         "list_looking_to_apply_jobs",

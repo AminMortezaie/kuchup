@@ -188,6 +188,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_applications_queue_v1", _seed_applications_queue_doc)
     run_migration_once(conn, "fetch_http_work_results_v1", _fetch_http_work_results_v1)
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
+    run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
 
 
 _MCP_AGENT_SKILL_TAILOR = (
@@ -245,6 +246,23 @@ def _mcp_agent_skills_v1(conn) -> None:
         ),
         path=_MCP_AGENT_SKILL_TAILOR,
     )
+
+
+def _upsert_mcp_agent_skill_body(conn, *, slug: str, path: Path) -> None:
+    body = path.read_text(encoding="utf-8").strip() + "\n"
+    now = _utc_now()
+    conn.execute(
+        """
+        UPDATE mcp_agent_skills
+        SET body = %s, updated_at = %s
+        WHERE slug = %s
+        """,
+        (body, now, slug),
+    )
+
+
+def _mcp_agent_skills_tailor_body_v2(conn) -> None:
+    _upsert_mcp_agent_skill_body(conn, slug="tailor", path=_MCP_AGENT_SKILL_TAILOR)
 
 
 _KUCHUP_OWNERSHIP_DOC = (
