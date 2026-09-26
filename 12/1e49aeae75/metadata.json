@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "121e49aeae75",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "scripts/ec2_app_deploy.sh",
+    "tests/ops/test_worker_dockerfiles.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/12/1e49aeae75/0/metadata.json",
+      "transcript": "/12/1e49aeae75/0/full.jsonl",
+      "compact_transcript": "/12/1e49aeae75/0/transcript.jsonl",
+      "content_hash": "/12/1e49aeae75/0/content_hash.txt",
+      "prompt": "/12/1e49aeae75/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 410018,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2519936,
+    "output_tokens": 12485,
+    "api_call_count": 3
+  }
+}
