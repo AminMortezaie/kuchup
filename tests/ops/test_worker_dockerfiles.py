@@ -83,6 +83,6 @@ def test_ec2_panel_image_leaves_tectonic_on_mcp():
     assert "tectonic" not in panel
     assert instructions.rstrip().endswith('cmd ["./docker-entrypoint.sh"]')
     deploy = Path("scripts/ec2_app_deploy.sh").read_text(encoding="utf-8")
-    assert "--target panel" in deploy
-    assert "--target mcp" in deploy
+    assert 'target = "panel"' in deploy
+    assert 'target = "mcp"' in deploy
     assert "${MCP_IMAGE}" in deploy

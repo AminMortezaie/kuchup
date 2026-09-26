@@ -627,25 +627,25 @@ cmd_deploy() {
     ssh_cmd bash -s <<EOF
 set -euo pipefail
 cd ${REMOTE_DIR}
-cache_args=()
-if docker image inspect ${PANEL_IMAGE} >/dev/null 2>&1; then
-  cache_args=(--cache-from ${PANEL_IMAGE})
-fi
-DOCKER_BUILDKIT=1 docker build \\
-  --build-arg BUILDKIT_INLINE_CACHE=1 \\
-  "\${cache_args[@]}" \\
-  --target panel \\
-  -f Dockerfile.ec2 -t ${PANEL_IMAGE} .
-mcp_cache_args=()
-if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then
-  mcp_cache_args=(--cache-from ${MCP_IMAGE})
-fi
-DOCKER_BUILDKIT=1 docker build \\
-  --build-arg BUILDKIT_INLINE_CACHE=1 \\
-  --cache-from ${PANEL_IMAGE} \\
-  "\${mcp_cache_args[@]}" \\
-  --target mcp \\
-  -f Dockerfile.ec2 -t ${MCP_IMAGE} .
+refs=""
+if docker image inspect ${PANEL_IMAGE} >/dev/null 2>&1; then refs='"${PANEL_IMAGE}"'; fi
+if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then refs="\${refs:+\$refs, }\"${MCP_IMAGE}\""; fi
+docker buildx bake --progress=plain --load -f - <<BAKE
+target "panel" {
+  context = "."
+  dockerfile = "Dockerfile.ec2"
+  target = "panel"
+  tags = ["${PANEL_IMAGE}"]
+  cache-from = [\$refs]
+}
+target "mcp" {
+  context = "."
+  dockerfile = "Dockerfile.ec2"
+  target = "mcp"
+  tags = ["${MCP_IMAGE}"]
+  cache-from = [\$refs]
+}
+BAKE
 EOF
   fi
   remote_save_hash panel "$panel_hash"
