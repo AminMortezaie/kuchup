@@ -121,11 +121,14 @@ func defaultContainerNames() []string {
 	return []string{
 		"relocation-panel",
 		"relocation-fetch-worker",
+		"relocation-fetch-merge",
 		"relocation-mcp",
 		"relocation-caddy",
 		"relocation-role-propagator",
 		"relocation-playwright-worker",
+		"relocation-ops-agent",
 		"relocation-alloy",
+		"relocation-redis",
 		"pg",
 	}
 }
