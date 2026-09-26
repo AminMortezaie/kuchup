@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import hmac
 import os
 import re
 import shutil
 import subprocess
+import tempfile
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -84,6 +88,49 @@ def _build_command(cmd: str, tex_path: Path, out_dir: Path) -> list[str]:
     return [cmd, str(tex_path)]
 
 
+def _compile_via_mcp(tex_path: Path, out_dir: Path) -> CompileResult | None:
+    if (os.environ.get("MCP_HTTP_PORT") or "").strip():
+        return None
+    url = (os.environ.get("MCP_COMPILE_URL") or "").strip()
+    secret = (os.environ.get("PANEL_SECRET_KEY") or "").strip()
+    if not url or not secret:
+        return None
+    pdf_path = out_dir / tex_path.with_suffix(".pdf").name
+    request = urllib.request.Request(
+        url,
+        data=tex_path.read_bytes(),
+        headers={"X-Panel-Secret": secret},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=_COMPILE_TIMEOUT_SEC) as response:
+            pdf_path.write_bytes(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace").strip()
+        return CompileResult(ok=False, log=detail or f"MCP compile failed ({exc.code})")
+    except urllib.error.URLError as exc:
+        return CompileResult(ok=False, log=f"MCP compile unreachable: {exc.reason}")
+    if not pdf_path.is_file() or pdf_path.stat().st_size == 0:
+        return CompileResult(ok=False, log="MCP compile returned an empty PDF")
+    return CompileResult(ok=True, pdf_path=str(pdf_path), log="compiled by MCP")
+
+
+def compile_tex_bytes(body: bytes, secret_header: str) -> tuple[int, bytes]:
+    expected = (os.environ.get("PANEL_SECRET_KEY") or "").strip()
+    given = secret_header or ""
+    if not expected or len(given) != len(expected) or not hmac.compare_digest(given, expected):
+        return 404, b""
+    if not body or len(body) > 2_000_000:
+        return 400, b"tex missing or too large"
+    with tempfile.TemporaryDirectory() as tmp:
+        tex_path = Path(tmp) / "document.tex"
+        tex_path.write_bytes(body)
+        result = render_tex_to_pdf(tex_path)
+        if not result.ok:
+            return 400, (result.log or "compile failed").encode()
+        return 200, Path(result.pdf_path).read_bytes()
+
+
 def _run_compile(tex_path: Path, out_dir: Path) -> CompileResult:
     pdf_path = out_dir / tex_path.with_suffix(".pdf").name
     cmd = _resolve_latex_command()
@@ -98,6 +145,9 @@ def _run_compile(tex_path: Path, out_dir: Path) -> CompileResult:
             check=False,
         )
     except FileNotFoundError:
+        proxied = _compile_via_mcp(tex_path, out_dir)
+        if proxied is not None:
+            return proxied
         return CompileResult(
             ok=False,
             log=(

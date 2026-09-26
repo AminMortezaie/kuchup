@@ -682,6 +682,7 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
   -e AWS_ACCESS_KEY_ID='${aws_key}' \\
   -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
+  -e MCP_COMPILE_URL='http://172.17.0.1:${MCP_PORT}/internal/compile' \\
   ${PANEL_IMAGE}
 EOF
 
@@ -698,6 +699,7 @@ docker run -d --name ${MCP_CONTAINER} --restart unless-stopped \\
   -e MCP_PUBLIC_BASE_URL='${MCP_PUBLIC_BASE_URL}' \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
+  -e PANEL_SECRET_KEY='${secret}' \\
   ${MCP_IMAGE}
 EOF
 

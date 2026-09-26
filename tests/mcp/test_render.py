@@ -44,6 +44,47 @@ def test_render_tex_to_pdf_missing_compiler(monkeypatch, tmp_path):
     assert "not found" in result.log.lower()
 
 
+def test_render_tex_to_pdf_uses_mcp_when_compiler_missing(monkeypatch, tmp_path):
+    tex = tmp_path / "resume.tex"
+    tex.write_text(r"\documentclass{article}\begin{document}Hi\end{document}", encoding="utf-8")
+
+    def fake_run(argv, **kwargs):
+        raise FileNotFoundError(argv[0])
+
+    class FakeResponse:
+        def read(self):
+            return b"%PDF-1.4 from-mcp"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setenv("MCP_LATEX_CMD", "tectonic")
+    monkeypatch.setenv("MCP_COMPILE_URL", "http://mcp.internal/internal/compile")
+    monkeypatch.setenv("PANEL_SECRET_KEY", "secret")
+    monkeypatch.delenv("MCP_HTTP_PORT", raising=False)
+    monkeypatch.setattr("relocation_jobs.mcp.render.subprocess.run", fake_run)
+    monkeypatch.setattr(
+        "relocation_jobs.mcp.render.urllib.request.urlopen",
+        lambda request, timeout: FakeResponse(),
+    )
+
+    result = render_tex_to_pdf(tex)
+    assert result.ok is True
+    assert (tmp_path / "resume.pdf").read_bytes().startswith(b"%PDF")
+
+
+def test_compile_tex_bytes_rejects_bad_secret(monkeypatch):
+    from relocation_jobs.mcp.render import compile_tex_bytes
+
+    monkeypatch.setenv("PANEL_SECRET_KEY", "secret")
+    status, body = compile_tex_bytes(b"\\documentclass{article}", "nope")
+    assert status == 404
+    assert body == b""
+
+
 def test_sanitize_tex_for_tectonic_removes_fontawesome5():
     tex = r"""
 \documentclass{article}

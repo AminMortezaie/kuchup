@@ -6,7 +6,7 @@ from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, Re
 from mcp.server.fastmcp import FastMCP
 from pydantic import AnyHttpUrl
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, RedirectResponse
+from starlette.responses import HTMLResponse, RedirectResponse, Response
 
 from relocation_jobs.mcp.oauth_pages import (
     oauth_deny_get,
@@ -15,6 +15,7 @@ from relocation_jobs.mcp.oauth_pages import (
     oauth_login_post,
 )
 from relocation_jobs.mcp.oauth_provider import KuchupOAuthProvider, mcp_resource_url, public_base_url
+from relocation_jobs.mcp.render import compile_tex_bytes
 from relocation_jobs.mcp.server import mcp as stdio_mcp
 
 
@@ -39,6 +40,12 @@ def _copy_tools(source: FastMCP, dest: FastMCP) -> None:
             icons=tool.icons,
             meta=tool.meta,
         )
+
+
+async def _internal_compile(request: Request) -> Response:
+    status, body = compile_tex_bytes(await request.body(), request.headers.get("x-panel-secret") or "")
+    media = "application/pdf" if status == 200 else "text/plain"
+    return Response(body, status_code=status, media_type=media)
 
 
 def build_http_mcp() -> FastMCP:
@@ -72,6 +79,7 @@ def build_http_mcp() -> FastMCP:
     http_mcp.custom_route("/oauth/login", methods=["GET", "POST"])(_oauth_login)
     http_mcp.custom_route("/oauth/deny", methods=["GET"])(_oauth_deny)
     http_mcp.custom_route("/healthz", methods=["GET"])(oauth_health)
+    http_mcp.custom_route("/internal/compile", methods=["POST"])(_internal_compile)
     return http_mcp
 
 
