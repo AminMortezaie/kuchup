@@ -1,0 +1,20 @@
+LaTeX compiler not found: tectonic. Install tectonic, set MCP_LATEX_CMD to its full path in Claude Desktop MCP env, or use pdflatex.
+
+i got this after yesterday change.
+find the bug
+
+---
+
+ok what's your solution to fix it?
+
+---
+
+no, if we have it on mcp image we can change a little on code and transfer the pdf compilation to mcp image which has it just now.
+
+---
+
+/ponytail-review
+
+---
+
+apply it
