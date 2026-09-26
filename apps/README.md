@@ -8,6 +8,7 @@ Thin, discoverable entrypoints for the product’s runnable services. Python dom
 | **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker (HTTP ATS; default production image) |
 | **playwright-worker** | `python3 apps/playwright-worker/run.py` | Chromium boards only (`jibe`, `atlassian`, `hibob`) |
 | **role-propagator** | `python3 apps/role-propagator/run.py` | SQS assignment writer (company slots + roles) |
+| **ops-agent** | `go run ./apps/ops-agent --once` | EC2 metrics → Grafana Cloud + Postgres (see [monitoring.md](../docs/operations/monitoring.md)) |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 

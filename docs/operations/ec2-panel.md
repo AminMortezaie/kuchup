@@ -18,9 +18,10 @@
 | Playwright worker (opt-in Chromium sidecar) | `relocation-playwright-worker` | — |
 | Role propagator (SQS assignments) | `relocation-role-propagator` | — |
 | Caddy (TLS + reverse proxy) | `relocation-caddy` | 80, 443 |
-| Grafana Alloy (optional) | `relocation-alloy` | metrics → Grafana Cloud |
+| Ops metrics agent (default) | `relocation-ops-agent` | Prometheus remote_write + Postgres `ops_metric_samples` |
+| Grafana Alloy (legacy) | `relocation-alloy` | `MONITORING_AGENT=alloy` — metrics ± Loki |
 
-Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The **default fetch worker is a static Go image** (`/fetch-scheduler`): it opens fetch runs, writes HTTP work rows, fetches boards on a goroutine pool, and writes raw result rows (`ok` / `empty` / `error`). A **Python merge follower** (`relocation-fetch-merge`, panel image) reads those results and is the only writer of `matching_jobs`. Playwright/Chromium boards (`jibe`, `atlassian`, `hibob`) stay on the **opt-in sidecar**. Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. Alloy starts on deploy when `GRAFANA_CLOUD_*` is set in `.env` — see [monitoring.md](monitoring.md).
+Panel talks to Postgres/Redis via Docker bridge gateway `172.17.0.1` (localhost on the host). The **default fetch worker is a static Go image** (`/fetch-scheduler`): it opens fetch runs, writes HTTP work rows, fetches boards on a goroutine pool, and writes raw result rows (`ok` / `empty` / `error`). A **Python merge follower** (`relocation-fetch-merge`, panel image) reads those results and is the only writer of `matching_jobs`. Playwright/Chromium boards (`jibe`, `atlassian`, `hibob`) stay on the **opt-in sidecar**. Role propagator consumes `user-opportunity-refresh` and is the only writer of `user_opportunities` / `position_broadcast_assignments`. Remote MCP uses the same Postgres and `MCP_PUBLIC_BASE_URL=https://mcp.kuchup.com`. **ops-agent** starts on every deploy (Postgres samples; Grafana when `GRAFANA_CLOUD_*` is set). Set `MONITORING_AGENT=alloy` to run legacy Alloy instead — see [monitoring.md](monitoring.md).
 
 ---
 
@@ -113,7 +114,7 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 3. Prunes **dangling images only** (`docker image prune -f`) — never BuildKit cache.
 4. Hashes panel/worker inputs on EC2 (Dockerfiles, requirements, entrypoints, `relocation_jobs/` excluding bind-mounted `static/`). Skips `docker build` when the hash matches and the tagged image already exists.
 5. Recreates panel + worker containers (static files are bind-mounted into the panel, so CSS/homepage updates apply without a panel image rebuild).
-6. Recreates Caddy, starts Alloy when Grafana Cloud env is set, and runs health checks.
+6. Recreates Caddy, starts **ops-agent** (or Alloy when `MONITORING_AGENT=alloy`), and runs health checks.
 
 `deploy` does **not** call `open-sg`. After Cloudflare origin lock-down, reopening `0.0.0.0/0` on every deploy would undo the SG lockdown — run `open-sg` only when you intentionally want world-open 80/443.
 
@@ -121,7 +122,7 @@ From repo root (SSH key `~/Downloads/relocation.pem`, `aws-postgres.env` present
 
 **DB safety:** prune never runs `docker volume prune`, `docker system prune --volumes`, or anything that stops/removes container `pg`. Postgres data is in named volume `pgdata`. Each prune asserts `pg` is running and `pgdata` exists before and after; it aborts if either check fails.
 
-**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip. The Playwright sidecar splits the Chromium install into its own layer. Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default). Each build also passes `--build-arg BUILDKIT_INLINE_CACHE=1` and `--cache-from <image>:ec2` so that if the BuildKit daemon cache is cold (e.g. after a Docker restart or disk-pressure GC), cached layers can still be recovered from the local image's embedded cache metadata. **Routine deploys skip the build entirely** when the content hash of Dockerfiles + requirements + source matches the saved hash on EC2 (`.deploy-hashes`) — no cache lookup needed. The Alloy container image is pulled only when not already present locally (pinned tag `v1.8.3` never changes).
+**Build cache:** panel and worker Dockerfiles use BuildKit cache mounts for pip. The Playwright sidecar splits the Chromium install into its own layer. Expect BuildKit (`DOCKER_BUILDKIT=1`, the deploy default). Each build also passes `--build-arg BUILDKIT_INLINE_CACHE=1` and `--cache-from <image>:ec2` so that if the BuildKit daemon cache is cold (e.g. after a Docker restart or disk-pressure GC), cached layers can still be recovered from the local image's embedded cache metadata. **Routine deploys skip the build entirely** when the content hash of Dockerfiles + requirements + source matches the saved hash on EC2 (`.deploy-hashes`) — no cache lookup needed. The Alloy image is pulled only when `MONITORING_AGENT=alloy` and not already present (pinned tag `v1.8.3`).
 
 | Image | Dockerfile | Role |
 |-------|------------|------|
@@ -165,7 +166,7 @@ Go startup runs `EnsureSchema` for `fetch_http_work` / `fetch_http_results` (ide
 | `relocation-fetch-worker` | **256m** | Static Go scheduler + HTTP pool (no Chromium, no CPython). |
 | `relocation-playwright-worker` | **640m** | One browser (concurrency 1). Hard ceiling under the ~837MiB max that pressured the ~2GiB host. |
 
-Postgres, Redis, panel, MCP, role propagator, Caddy, and Alloy are unchanged in this deploy path.
+Postgres, Redis, panel, MCP, role propagator, Caddy, and ops-agent are unchanged in this deploy path.
 
 If a worker hits its cap, the kernel OOM-kills that container (exit 137). `--restart unless-stopped` starts it again. The in-flight country cycle is lost and the next 6h pass retries. That is the tradeoff: a killed worker beats a wedged host (SSH timeout / Cloudflare 522). `./scripts/ec2_app_deploy.sh status` prints `oom=` from `State.OOMKilled`.
 
@@ -318,7 +319,8 @@ Set via `ec2_app_deploy.sh` (from local `.env` / `aws-postgres.env`):
 - `PANEL_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PANEL_ADMIN_EMAILS`
 - Optional staff admin passwords: `PANEL_STAFF_LOGINS` (see [Staff admin login](#staff-admin-login))
 - Checkout: `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` (see [nowpayments.md](nowpayments.md))
-- Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (starts Alloy)
+- Optional: `GRAFANA_CLOUD_PROMETHEUS_URL`, `GRAFANA_CLOUD_PROMETHEUS_USER`, `GRAFANA_CLOUD_API_TOKEN` (Grafana remote_write from ops-agent)
+- Optional: `MONITORING_AGENT=alloy` for legacy Alloy + Loki instead of ops-agent
 - Optional logs: `GRAFANA_CLOUD_LOKI_URL`, `GRAFANA_CLOUD_LOKI_USER` (same token needs `logs:write`; see [monitoring.md](monitoring.md))
 
 Do not commit production secrets. Rotate `PANEL_SECRET_KEY` to a long random value in `.env` before deploy if still using the placeholder.
@@ -371,7 +373,7 @@ docker logs relocation-caddy --tail 50
 
 ## Related
 
-- [monitoring.md](monitoring.md) — Grafana Cloud Free, Alloy, alerts, 522 runbook
+- [monitoring.md](monitoring.md) — Grafana Cloud Free, ops-agent, Postgres samples, alerts, 522 runbook
 - [nowpayments.md](nowpayments.md) — credit packs + Full Access checkout
 - [aws-postgres.md](aws-postgres.md) — Postgres on EC2
 - `scripts/ec2_redis.sh` — Redis on EC2
