@@ -159,3 +159,28 @@ async def test_merge_pass_runs_companies_together(monkeypatch):
     processed = await run_merge_pass()
     assert processed == 8
     assert peak > 1
+
+
+def test_prefetch_skips_when_go_is_missing(monkeypatch):
+    from relocation_jobs.fetch import merge_consumer
+
+    monkeypatch.setattr(
+        merge_consumer,
+        "matched_jobs_missing_text",
+        lambda jobs: jobs,
+    )
+
+    def missing_go():
+        raise FileNotFoundError("go")
+
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.runner.fetch_scheduler_bin",
+        missing_go,
+    )
+    rows = [{
+        "status": "ok",
+        "ats_type": "greenhouse",
+        "ats_url": "https://boards.example/acme",
+        "jobs": [{"url": "https://boards.example/acme/1"}],
+    }]
+    merge_consumer.prefetch_descriptions(rows)

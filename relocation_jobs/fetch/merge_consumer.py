@@ -153,8 +153,13 @@ def prefetch_descriptions(rows: list[dict]) -> None:
         return
     from relocation_jobs.fetch.runner import fetch_scheduler_bin
 
+    try:
+        bin_path = fetch_scheduler_bin()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        LOGGER.error("describe skipped: %s", exc)
+        return
     proc = subprocess.run(
-        [fetch_scheduler_bin(), "describe"],
+        [bin_path, "describe"],
         input=json.dumps(wanted),
         text=True,
         capture_output=True,
