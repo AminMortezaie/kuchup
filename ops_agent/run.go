@@ -12,19 +12,18 @@ import (
 
 func Main() {
 	once := flag.Bool("once", false, "collect one interval and exit")
-	interval := flag.Duration("interval", envDuration("OPS_METRICS_INTERVAL", time.Minute), "scrape interval")
-	procRoot := flag.String("proc-root", envString("OPS_PROC_ROOT", "/host/proc"), "host /proc mount")
-	hostRoot := flag.String("host-root", envString("OPS_HOST_ROOT", "/host/root"), "host filesystem root for disk stats")
-	healthURL := flag.String("health-url", envString("OPS_HEALTH_URL", "http://127.0.0.1:10000/api/health"), "panel health probe URL")
-	instance := flag.String("instance", envString("OPS_INSTANCE", "kuchup-ec2"), "Prometheus instance label")
-	dockerSocket := flag.String("docker-socket", envString("OPS_DOCKER_SOCKET", "/var/run/docker.sock"), "docker unix socket")
-	containerList := flag.String("containers", envString("OPS_CONTAINER_NAMES", ""), "comma-separated docker names (default built-in list)")
 	flag.Parse()
 
+	interval := envDuration("OPS_METRICS_INTERVAL", time.Minute)
+	procRoot := envString("OPS_PROC_ROOT", "/host/proc")
+	hostRoot := envString("OPS_HOST_ROOT", "/host/root")
+	healthURL := envString("OPS_HEALTH_URL", "http://127.0.0.1:10000/api/health")
+	instance := envString("OPS_INSTANCE", "kuchup-ec2")
+	dockerSocket := envString("OPS_DOCKER_SOCKET", "/var/run/docker.sock")
 	names := defaultContainerNames()
-	if strings.TrimSpace(*containerList) != "" {
+	if raw := strings.TrimSpace(os.Getenv("OPS_CONTAINER_NAMES")); raw != "" {
 		names = nil
-		for _, part := range strings.Split(*containerList, ",") {
+		for _, part := range strings.Split(raw, ",") {
 			part = strings.TrimSpace(part)
 			if part != "" {
 				names = append(names, part)
@@ -34,7 +33,7 @@ func Main() {
 
 	ctx := context.Background()
 	var store *Store
-	if url := strings.TrimSpace(os.Getenv("DATABASE_URL")); url != "" {
+	if strings.TrimSpace(os.Getenv("DATABASE_URL")) != "" {
 		var err error
 		store, err = OpenStore(ctx)
 		if err != nil {
@@ -50,20 +49,19 @@ func Main() {
 	collect := func() {
 		now := time.Now().UTC()
 		var batch []Sample
-		host, err := hostSamples(*procRoot, *hostRoot, *instance)
+		host, err := hostSamples(procRoot, hostRoot, instance)
 		if err != nil {
 			log.Printf("host metrics: %v", err)
 		} else {
 			batch = append(batch, host...)
 		}
-		docker, err := dockerSamples(ctx, *dockerSocket, names, *instance)
+		docker, err := dockerSamples(ctx, dockerSocket, names, instance)
 		if err != nil {
 			log.Printf("docker metrics: %v", err)
 		} else {
 			batch = append(batch, docker...)
 		}
-		probe := probeSample(ctx, *healthURL, *instance)
-		batch = append(batch, probe)
+		batch = append(batch, probeSample(ctx, healthURL, instance))
 		for i := range batch {
 			batch[i].At = now
 		}
@@ -84,7 +82,7 @@ func Main() {
 	if *once {
 		return
 	}
-	ticker := time.NewTicker(*interval)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
 		collect()

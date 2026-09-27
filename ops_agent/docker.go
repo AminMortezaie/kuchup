@@ -34,14 +34,18 @@ func dockerSamples(ctx context.Context, socket string, names []string, instance 
 		},
 		Timeout: 15 * time.Second,
 	}
+	byName, err := dockerRunningIDs(ctx, client)
+	if err != nil {
+		return nil, err
+	}
 	var out []Sample
 	for _, want := range names {
 		want = strings.TrimPrefix(strings.TrimSpace(want), "/")
 		if want == "" {
 			continue
 		}
-		id, err := dockerContainerID(ctx, client, want)
-		if err != nil {
+		id, ok := byName[want]
+		if !ok {
 			continue
 		}
 		stats, err := dockerOneShotStats(ctx, client, id)
@@ -66,33 +70,31 @@ type dockerContainer struct {
 	Names []string `json:"Names"`
 }
 
-func dockerContainerID(ctx context.Context, client *http.Client, name string) (string, error) {
+func dockerRunningIDs(ctx context.Context, client *http.Client) (map[string]string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://docker/v1.44/containers/json", nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("containers/json: %s", strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("containers/json: %s", strings.TrimSpace(string(body)))
 	}
 	var list []dockerContainer
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
-		return "", err
+		return nil, err
 	}
+	out := make(map[string]string, len(list))
 	for _, c := range list {
 		for _, n := range c.Names {
-			n = strings.TrimPrefix(n, "/")
-			if n == name {
-				return c.ID, nil
-			}
+			out[strings.TrimPrefix(n, "/")] = c.ID
 		}
 	}
-	return "", fmt.Errorf("container %q not running", name)
+	return out, nil
 }
 
 func dockerOneShotStats(ctx context.Context, client *http.Client, id string) (*dockerStats, error) {
@@ -127,7 +129,6 @@ func defaultContainerNames() []string {
 		"relocation-role-propagator",
 		"relocation-playwright-worker",
 		"relocation-ops-agent",
-		"relocation-alloy",
 		"relocation-redis",
 		"pg",
 	}

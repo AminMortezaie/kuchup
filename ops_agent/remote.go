@@ -10,9 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
-	"github.com/prometheus/prometheus/prompb"
 )
 
 type RemoteConfig struct {
@@ -35,11 +33,7 @@ func RemoteWrite(ctx context.Context, cfg RemoteConfig, samples []Sample) error 
 	if len(samples) == 0 {
 		return nil
 	}
-	body, err := proto.Marshal(&prompb.WriteRequest{Timeseries: samplesToTimeSeries(samples)})
-	if err != nil {
-		return err
-	}
-	compressed := snappy.Encode(nil, body)
+	compressed := snappy.Encode(nil, samplesToWriteRequest(samples))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.URL, bytes.NewReader(compressed))
 	if err != nil {
 		return err

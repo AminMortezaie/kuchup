@@ -1,11 +1,10 @@
 # Production monitoring (Grafana Cloud Free)
 
-**Stack:** tiny **ops-agent** on EC2 (default) → Grafana Cloud Prometheus + Postgres `ops_metric_samples` → dashboards + email alerts + synthetics  
-**Legacy:** Grafana Alloy (`relocation-alloy`) — escape hatch via `MONITORING_AGENT=alloy` for a short baseline window  
+**Stack:** tiny **ops-agent** on EC2 → Grafana Cloud Prometheus + Postgres `ops_metric_samples` → dashboards + email alerts + synthetics  
 **App probe:** `GET https://kuchup.com/api/health`  
 **Ops CLI:** `./scripts/ec2_app_deploy.sh status` · `logs` (SSH live-tail)
 
-Grafana Cloud Free keeps metrics ~14 days. This repo also **persists the same gauge samples in Postgres** (`ops_metric_samples`) for before/after comparisons (memory tuning, Alloy → ops-agent cutover, etc.).
+Grafana Cloud Free keeps metrics ~14 days. This repo also **persists the same gauge samples in Postgres** (`ops_metric_samples`) for before/after comparisons (memory tuning, etc.).
 
 Do not commit API tokens — gitignored `.env` only.
 
@@ -16,37 +15,29 @@ Do not commit API tokens — gitignored `.env` only.
 | Piece | Role |
 |-------|------|
 | `GET /api/health` | Unauthenticated; probes Postgres + Redis; **200** / **503** |
-| **ops-agent** (`relocation-ops-agent`, default) | Host `/proc` + root disk, Docker stats for named containers, blackbox probe of `http://host.docker.internal:10000/api/health`; **remote_write** to Grafana Cloud; **INSERT** into `ops_metric_samples` |
-| Grafana Alloy (`relocation-alloy`, optional) | Same Prometheus metrics + optional Loki log ship when `MONITORING_AGENT=alloy` |
-| Grafana Cloud Free | Metrics (Prometheus), logs (Loki when Alloy runs), dashboards, alert rules, email contact points |
+| **ops-agent** (`relocation-ops-agent`) | Host `/proc` + root disk, Docker stats for named containers, blackbox probe of `http://host.docker.internal:10000/api/health`; **remote_write** to Grafana Cloud; **INSERT** into `ops_metric_samples` |
+| Grafana Cloud Free | Metrics (Prometheus), dashboards, alert rules, email contact points |
 | Cloud synthetics | Hit public `https://kuchup.com/api/health` (catches Cloudflare 522 when origin is dead) |
 
-**Config:** committed template [`apps/ops-agent/env.example`](../../apps/ops-agent/env.example). Deploy sets env from `.env` / `aws-postgres.env` (no gitignored `deploy/ec2/` files required). Legacy Alloy still uses gitignored `deploy/ec2/config.alloy`.
+**Config:** deploy sets env from `.env` / `aws-postgres.env` (see `.env.example` `GRAFANA_CLOUD_*`).
 
-ops-agent runs with `--pid=host`, `/proc` and `/` mounted read-only, and Docker socket read-only (same idea as Alloy/cAdvisor, without cAdvisor). Expected RSS **under ~10 MiB** with `--memory=32m` cap on the container.
+ops-agent runs with `--pid=host`, `/proc` and `/` mounted read-only, and Docker socket read-only. Expected RSS **under ~10 MiB** with `--memory=32m` cap on the container.
 
-**Logs (Loki):** not shipped by ops-agent (keeps memory small). Live tails: `./scripts/ec2_app_deploy.sh logs …`. Historical logs in Grafana Loki only while Alloy runs with Loki credentials (~14 days). After cutover, use SSH logs for live debugging and Loki only if you temporarily set `MONITORING_AGENT=alloy`.
+**Logs:** not shipped to Loki. Live tails: `./scripts/ec2_app_deploy.sh logs …`.
 
 App containers use the json-file log driver with `max-size=10m` / `max-file=3` so Docker logs cannot fill the root volume.
 
 ---
 
-## Deploy / cutover
-
-Default (ops-agent replaces Alloy on deploy):
+## Deploy
 
 ```bash
 ./scripts/ec2_app_deploy.sh deploy
 ```
 
-| Variable | Meaning |
-|----------|---------|
-| `MONITORING_AGENT=ops` | **Default.** Build/run `relocation-ops-agent`, remove Alloy |
-| `MONITORING_AGENT=alloy` | Run legacy Alloy (metrics ± Loki); remove ops-agent — use briefly to dual-compare in Grafana, not in Postgres |
+ops-agent **dual-writes** (Grafana remote_write when `GRAFANA_CLOUD_*` is set, always Postgres when `DATABASE_URL` is set). Deploy also removes any leftover `relocation-alloy` container. Postgres history starts as soon as ops-agent runs and the `ops_metric_samples_v1` migration has applied (panel/worker startup).
 
-**Cutover notes:** ops-agent **dual-writes** from the first deploy (Grafana remote_write when `GRAFANA_CLOUD_*` is set, always Postgres when `DATABASE_URL` is set). There is no separate bridge job: run `MONITORING_AGENT=alloy` for one interval if you need overlapping Grafana series, then redeploy with `ops` (default). Postgres history starts as soon as ops-agent runs and the `ops_metric_samples_v1` migration has applied (panel/worker startup).
-
-Prometheus credentials missing → ops-agent still runs and writes Postgres; remote_write is skipped (same as former “Alloy skipped” for metrics-only gap).
+Prometheus credentials missing → ops-agent still runs and writes Postgres; remote_write is skipped.
 
 ---
 
@@ -91,14 +82,14 @@ ORDER BY recorded_at DESC
 LIMIT 50;
 ```
 
-Python insert helper (optional bridges/tests): `relocation_jobs.ops.repo.insert_ops_metric_samples`.
+Writer: Go ops-agent via `DATABASE_URL` (pgx). Panel/worker apply the migration on startup.
 
 ---
 
 ## One-time Grafana Cloud setup
 
 1. Create a free stack at [grafana.com](https://grafana.com/auth/sign-up/create-user).
-2. Access policy with **metrics:write** (and **logs:write** only if you still run Alloy + Loki).
+2. Access policy with **metrics:write**.
 3. Prometheus → **Send metrics** → remote_write URL + user → `.env`:
 
 ```bash
@@ -107,14 +98,7 @@ GRAFANA_CLOUD_PROMETHEUS_USER=123456
 GRAFANA_CLOUD_API_TOKEN=glc_...
 ```
 
-4. Optional Loki (Alloy only):
-
-```bash
-GRAFANA_CLOUD_LOKI_URL=https://logs-prod-XX-XX.grafana.net/loki/api/v1/push
-GRAFANA_CLOUD_LOKI_USER=123456
-```
-
-5. Deploy; confirm Explore (Prometheus): `node_filesystem_avail_bytes`, `container_memory_usage_bytes`, `probe_success`.
+4. Deploy; confirm Explore (Prometheus): `node_filesystem_avail_bytes`, `container_memory_usage_bytes`, `probe_success`.
 
 ---
 
@@ -138,22 +122,12 @@ Alert rule recipes (email) — create in Grafana Cloud:
 
 ---
 
-## Logs (Loki, Alloy only)
-
-When `MONITORING_AGENT=alloy` and Loki env vars are set, search Explore → **Loki**:
-
-| Query | What |
-|-------|------|
-| `{name="relocation-panel"}` | Gunicorn access / error |
-| `{name="relocation-fetch-worker"}` | Scheduled country scrape |
-| `{name="relocation-caddy"}` | TLS / reverse proxy |
-| `{name="relocation-mcp"}` | Remote MCP |
-
-**Live tail** (always):
+## Logs (SSH)
 
 ```bash
 ./scripts/ec2_app_deploy.sh logs panel 100
 ./scripts/ec2_app_deploy.sh logs worker 50 -f
+./scripts/ec2_app_deploy.sh logs ops-agent 50
 ```
 
 ---

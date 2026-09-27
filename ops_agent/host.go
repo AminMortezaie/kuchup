@@ -42,14 +42,6 @@ func hostSamples(procRoot, hostRoot, instance string) ([]Sample, error) {
 	return out, nil
 }
 
-func copyLabels(in map[string]string) map[string]string {
-	out := make(map[string]string, len(in))
-	for k, v := range in {
-		out[k] = v
-	}
-	return out
-}
-
 func memAvailableBytes(procRoot string) (uint64, error) {
 	f, err := os.Open(procRoot + "/meminfo")
 	if err != nil {
