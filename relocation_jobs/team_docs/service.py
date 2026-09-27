@@ -41,6 +41,13 @@ def _clean_body(body) -> str:
     return text
 
 
+def _join_body(current: str, extra: str) -> str:
+    base = (current or "").rstrip()
+    if not base:
+        return f"{extra}\n"
+    return f"{base}\n\n{extra}\n"
+
+
 def _allocate_slug(folder: str, slug: str) -> str:
     if not repo.find_doc_in_folder(folder, slug):
         return slug
@@ -165,6 +172,29 @@ def update_document(
         slug=next_slug,
         title=next_title,
         body=next_body,
+        editor_user_id=editor_user_id,
+    )
+    if not saved:
+        raise LookupError("Document not found")
+    return _public_doc(saved)
+
+
+def append_document(doc_id: int, *, body: str, editor_user_id: int) -> dict:
+    extra = _clean_body(body).strip()
+    if not extra:
+        raise ValueError("Body is required")
+    current = repo.get_doc(doc_id)
+    if not current:
+        raise LookupError("Document not found")
+    merged = _join_body(current["body"], extra)
+    if len(merged) > _BODY_MAX:
+        raise ValueError(f"Body must be at most {_BODY_MAX} characters")
+    saved = repo.update_doc(
+        current["id"],
+        folder=current["folder"],
+        slug=current["slug"],
+        title=current["title"],
+        body=merged,
         editor_user_id=editor_user_id,
     )
     if not saved:

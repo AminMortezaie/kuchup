@@ -194,6 +194,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
     run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
     run_migration_once(conn, "ops_metric_samples_v1", _ensure_ops_metric_samples_table)
+    _sync_bundled_team_docs(conn)
 
 
 def _ensure_ops_metric_samples_table(conn) -> None:
@@ -314,6 +315,31 @@ _EXPIRED_WANT_TO_APPLY_DOC = (
     / "pages"
     / "expired-want-to-apply-personalization.md"
 )
+
+
+_BUNDLED_DOC_FOLDERS = ("product", "business", "marketing", "tech")
+_TEAM_DOC_PAGES = Path(__file__).resolve().parent.parent / "team_docs" / "pages"
+
+
+def _markdown_h1(path: Path) -> str:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            return stripped[2:].strip()
+    return ""
+
+
+def _sync_bundled_team_docs(conn) -> None:
+    # ponytail: insert-if-missing; edit the row in Admin Docs after the file has already been stored
+    for folder in _BUNDLED_DOC_FOLDERS:
+        directory = _TEAM_DOC_PAGES / folder
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.glob("*.md")):
+            title = _markdown_h1(path)
+            if not title:
+                continue
+            _seed_team_doc(conn, folder=folder, slug=path.stem, title=title, path=path)
 
 
 def _seed_team_doc(conn, *, folder: str, slug: str, title: str, path: Path) -> None:

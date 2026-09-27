@@ -73,6 +73,22 @@ def register(app):
         except LookupError as exc:
             return jsonify({"error": str(exc)}), 404
 
+    @app.post("/api/admin/team-docs/<int:doc_id>/append")
+    @admin_required
+    def api_admin_append_team_doc(doc_id: int):
+        body = request.get_json(silent=True) or {}
+        try:
+            saved = team_docs_service.append_document(
+                doc_id,
+                body=body.get("body") or "",
+                editor_user_id=g.user_id,
+            )
+            return jsonify({"ok": True, "doc": _with_html(saved)})
+        except (TypeError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 400
+        except LookupError as exc:
+            return jsonify({"error": str(exc)}), 404
+
     @app.delete("/api/admin/team-docs/<int:doc_id>")
     @admin_required
     def api_admin_delete_team_doc(doc_id: int):
