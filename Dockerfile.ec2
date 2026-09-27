@@ -1,6 +1,31 @@
 # syntax=docker/dockerfile:1
 # EC2 images. Default target `panel`: no Playwright, no Tectonic.
-# `mcp` adds Tectonic on the same layers, so Debian and Python stay shared.
+# `tectonic` does not follow app-code layers. Deploy reuses the previous
+# mcp image for this stage when the binary version matches.
+FROM python:3.12-slim-bookworm AS tectonic
+
+ARG TECTONIC_VERSION=0.16.9
+
+# Warm the TeX bundle so the first production PDF render does not download it.
+COPY deploy/ec2/tectonic-warm.tex /tmp/tectonic-warm/warm.tex
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && ARCH="$(dpkg --print-architecture)" \
+    && case "$ARCH" in \
+         amd64) TECTONIC_TARGET=x86_64-unknown-linux-gnu ;; \
+         arm64) TECTONIC_TARGET=aarch64-unknown-linux-musl ;; \
+         *) echo "unsupported arch: $ARCH" >&2; exit 1 ;; \
+       esac \
+    && curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-${TECTONIC_TARGET}.tar.gz" \
+         | tar -xz -C /usr/local/bin tectonic \
+    && chmod +x /usr/local/bin/tectonic \
+    && tectonic --outdir /tmp/tectonic-warm /tmp/tectonic-warm/warm.tex \
+    && rm -rf /tmp/tectonic-warm \
+    && apt-get purge -y curl \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
 FROM python:3.12-slim-bookworm AS base
 
 ENV PYTHONUNBUFFERED=1 \
@@ -25,27 +50,8 @@ EXPOSE 10000 10001
 
 FROM base AS mcp
 
-ARG TECTONIC_VERSION=0.16.9
-
-# Warm the TeX bundle so the first production PDF render does not download it.
-COPY deploy/ec2/tectonic-warm.tex /tmp/tectonic-warm/warm.tex
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    && ARCH="$(dpkg --print-architecture)" \
-    && case "$ARCH" in \
-         amd64) TECTONIC_TARGET=x86_64-unknown-linux-gnu ;; \
-         arm64) TECTONIC_TARGET=aarch64-unknown-linux-musl ;; \
-         *) echo "unsupported arch: $ARCH" >&2; exit 1 ;; \
-       esac \
-    && curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-${TECTONIC_TARGET}.tar.gz" \
-         | tar -xz -C /usr/local/bin tectonic \
-    && chmod +x /usr/local/bin/tectonic \
-    && tectonic --outdir /tmp/tectonic-warm /tmp/tectonic-warm/warm.tex \
-    && rm -rf /tmp/tectonic-warm \
-    && apt-get purge -y curl \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=tectonic /usr/local/bin/tectonic /usr/local/bin/tectonic
+COPY --from=tectonic /root/.cache/Tectonic /root/.cache/Tectonic
 
 FROM base AS panel
 

@@ -619,6 +619,22 @@ cd ${REMOTE_DIR}
 refs=""
 if docker image inspect ${PANEL_IMAGE} >/dev/null 2>&1; then refs='"${PANEL_IMAGE}"'; fi
 if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then refs="\${refs:+\$refs, }\"${MCP_IMAGE}\""; fi
+tectonic_ctx=""
+if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then
+  want=\$(awk -F= '/^ARG TECTONIC_VERSION=/{print \$2; exit}' Dockerfile.ec2)
+  have=\$(timeout 20 docker run --rm --entrypoint /bin/sh ${MCP_IMAGE} -c 'test -d /root/.cache/Tectonic && /usr/local/bin/tectonic --version' 2>/dev/null || true)
+  if [ -n "\$want" ]; then
+    case "\$have" in
+      *"\$want"*)
+        tectonic_ctx="contexts = { tectonic = \"docker-image://${MCP_IMAGE}\" }"
+        echo "[ec2-app] reusing tectonic \${want} from ${MCP_IMAGE}"
+        ;;
+    esac
+  fi
+fi
+if [ -z "\$tectonic_ctx" ]; then
+  echo "[ec2-app] building tectonic (no matching image cache)"
+fi
 docker buildx bake --progress=plain --load -f - <<BAKE
 group "default" {
   targets = ["panel", "mcp"]
@@ -636,6 +652,7 @@ target "mcp" {
   target = "mcp"
   tags = ["${MCP_IMAGE}"]
   cache-from = [\$refs]
+  \$tectonic_ctx
 }
 BAKE
 EOF
