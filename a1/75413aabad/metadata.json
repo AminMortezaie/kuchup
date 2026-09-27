@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a175413aabad",
+  "strategy": "manual-commit",
+  "branch": "fix/free-board-germany-netherlands",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "relocation_jobs/static/js/data.js",
+    "relocation_jobs/users/entitlements.py",
+    "relocation_jobs/web/routes/catalog.py",
+    "role_propagator/assign_test.go",
+    "role_propagator/run.go",
+    "role_propagator/store.go",
+    "tests/test_entitlements.py",
+    "tests/web/test_personalized_board.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a1/75413aabad/0/metadata.json",
+      "transcript": "/a1/75413aabad/0/full.jsonl",
+      "compact_transcript": "/a1/75413aabad/0/transcript.jsonl",
+      "content_hash": "/a1/75413aabad/0/content_hash.txt",
+      "prompt": "/a1/75413aabad/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 290086,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4969600,
+    "output_tokens": 22670,
+    "api_call_count": 3
+  }
+}

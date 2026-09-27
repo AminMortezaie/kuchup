@@ -1,0 +1,113 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a175413aabad",
+  "session_id": "47eb8b65-bc98-463e-a984-da0a64370da7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T21:21:42.813719Z",
+  "branch": "fix/free-board-germany-netherlands",
+  "checkpoints_count": 3,
+  "save_step_count": 3,
+  "files_touched": [
+    "relocation_jobs/static/js/data.js",
+    "relocation_jobs/users/entitlements.py",
+    "relocation_jobs/web/routes/catalog.py",
+    "role_propagator/assign_test.go",
+    "role_propagator/run.go",
+    "role_propagator/store.go",
+    "tests/test_entitlements.py",
+    "tests/web/test_personalized_board.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "5681afe380f6",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 290086,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4969600,
+    "output_tokens": 22670,
+    "api_call_count": 3
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-27T21:20:04.818569Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "72dac0af8fac",
+      "timestamp": "2026-09-27T21:20:04.818569Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T21:21:42.801943Z",
+    "agent_lines": 44,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 8,
+    "human_removed": 31,
+    "total_committed": 52,
+    "total_lines_changed": 86,
+    "agent_percentage": 54.65116279069767,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 5,
+      "agent_lines_removed": 5,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 85,
+      "agent_lines_removed": 6,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 85,
+      "agent_lines_removed": 6,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
