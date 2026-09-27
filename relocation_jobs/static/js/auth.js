@@ -1,13 +1,80 @@
-/** Login and session UI (Google-only). */
+/** Login and session UI (email/password + Google). */
 
 import { state } from "./state.js";
 import { $ } from "./utils.js";
 import { updateFetchHeaderUI } from "./render.js";
 import { applyPanelChrome, isRemotePanel } from "./panel-mode.js";
 
+let panelAuthMode = "signin";
+
+function panelAuthEndpoint() {
+  return panelAuthMode === "signup" ? "/api/auth/register" : "/api/auth/login";
+}
+
+function applyPanelAuthMode() {
+  const title = $("loginTitle");
+  const submit = $("panelAuthSubmit");
+  const toggle = $("panelAuthModeToggle");
+  const password = $("panelAuthPassword");
+  const modeHint = $("panelAuthModeHint");
+  const allowRegister = Boolean(state.authState?.allow_register);
+  if (panelAuthMode === "signup") {
+    if (title) title.textContent = "Create account";
+    if (submit) submit.textContent = "Sign up";
+    if (toggle) toggle.textContent = "Already have an account? Sign in";
+    if (password) password.autocomplete = "new-password";
+  } else {
+    if (title) title.textContent = "Sign in";
+    if (submit) submit.textContent = "Sign in";
+    if (toggle) toggle.textContent = "Create an account";
+    if (password) password.autocomplete = "current-password";
+  }
+  if (modeHint) modeHint.hidden = !allowRegister;
+  if (toggle && !allowRegister) {
+    panelAuthMode = "signin";
+    if (toggle) toggle.hidden = true;
+  } else if (toggle) {
+    toggle.hidden = false;
+  }
+}
+
+async function submitPanelEmailAuth(event) {
+  event.preventDefault();
+  const error = $("loginError");
+  const email = ($("panelAuthEmail")?.value || "").trim();
+  const password = $("panelAuthPassword")?.value || "";
+  if (error) error.textContent = "";
+  const res = await fetch(panelAuthEndpoint(), {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (error) error.textContent = data.error || "Sign-in failed";
+    return;
+  }
+  state.authState = data;
+  if (state.authState.authenticated) {
+    window.location.reload();
+  }
+}
+
+export function bindPanelAuth() {
+  $("panelEmailAuthForm")?.addEventListener("submit", submitPanelEmailAuth);
+  $("panelAuthModeToggle")?.addEventListener("click", () => {
+    panelAuthMode = panelAuthMode === "signin" ? "signup" : "signin";
+    applyPanelAuthMode();
+    const error = $("loginError");
+    if (error) error.textContent = "";
+  });
+}
+
 export function showLogin(message = "") {
   $("mainContent").classList.add("hidden");
   $("loginPanel").hidden = false;
+  applyPanelAuthMode();
   const params = new URLSearchParams(window.location.search);
   const error = message || params.get("error") || "";
   $("loginError").textContent = error === "session"
@@ -71,6 +138,7 @@ export async function refreshAuth() {
   state.authState = await res.json();
   const hint = $("loginRegisterHint");
   if (hint) hint.hidden = !state.authState.allow_register;
+  applyPanelAuthMode();
   if (state.authState.authenticated) {
     showApp();
     return true;

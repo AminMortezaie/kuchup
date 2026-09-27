@@ -10,7 +10,9 @@ from relocation_jobs.core.auth import (
     login_or_register_google,
     login_or_register_staff,
     login_user,
+    login_with_password,
     logout_user,
+    register_with_password,
 )
 from relocation_jobs.core.google_oauth import (
     build_authorize_url,
@@ -71,6 +73,45 @@ def register(app):
     def api_auth_logout():
         logout_user()
         return jsonify({"ok": True, "authenticated": False})
+
+    @app.post("/api/auth/register")
+    def api_auth_register():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email") or "").strip()
+        password = str(payload.get("password") or "")
+        display_name = str(payload.get("display_name") or "").strip()
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        try:
+            user = register_with_password(email, password, display_name=display_name)
+        except ValueError as exc:
+            message = str(exc)
+            lowered = message.lower()
+            if "registration is disabled" in lowered:
+                return jsonify({"error": "New sign-ups are closed right now."}), 403
+            if "already registered" in lowered:
+                return jsonify({"error": "An account with this email already exists."}), 409
+            if "password must be" in lowered:
+                return jsonify({"error": message}), 400
+            if "valid email" in lowered:
+                return jsonify({"error": message}), 400
+            return jsonify({"error": message}), 400
+        login_user(user["id"], user["username"])
+        return jsonify(auth_status()), 201
+
+    @app.post("/api/auth/login")
+    def api_auth_login():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email") or "").strip()
+        password = str(payload.get("password") or "")
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        try:
+            user = login_with_password(email, password)
+        except ValueError:
+            return jsonify({"error": "Invalid email or password"}), 401
+        login_user(user["id"], user["username"])
+        return jsonify(auth_status())
 
     @app.post("/api/auth/staff")
     def api_auth_staff():

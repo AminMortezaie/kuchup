@@ -43,6 +43,17 @@
       <h2 id="loginTitle">Sign in</h2>
       <p class="hint" id="loginHint">Track applications and relocation-friendly roles per country.</p>
       <div class="login-error" id="loginError"></div>
+      <form id="panelEmailAuthForm" class="staff-login-form">
+        <label for="panelAuthEmail">Email</label>
+        <input id="panelAuthEmail" name="email" type="email" autocomplete="username" required />
+        <label for="panelAuthPassword">Password</label>
+        <input id="panelAuthPassword" name="password" type="password" autocomplete="current-password" required minlength="8" />
+        <button type="submit" class="primary" id="panelAuthSubmit">Sign in</button>
+      </form>
+      <p class="hint" id="panelAuthModeHint">
+        <button type="button" class="link-btn" id="panelAuthModeToggle">Create an account</button>
+      </p>
+      <p class="login-divider">or</p>
       <div class="login-actions">
         <a class="primary google-signin" id="googleSignIn" href="/api/auth/google?next=/panel">
           <svg class="google-g" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -54,7 +65,7 @@
           Continue with Google
         </a>
       </div>
-      <p class="hint" id="loginRegisterHint" hidden>Self-serve signup is enabled for new Google accounts.</p>
+      <p class="hint" id="loginRegisterHint" hidden>Self-serve signup is enabled with email or Google.</p>
     </div>
 
     <div id="mainContent" class="main-content hidden app-shell">
