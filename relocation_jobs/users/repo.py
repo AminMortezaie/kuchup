@@ -8,6 +8,8 @@ from relocation_jobs.core.migrations import (
     _ensure_users_entitlements,
     _ensure_users_google_auth,
     _ensure_users_last_login_at,
+    _ensure_users_email_confirmed_at,
+    _ensure_users_password_hash,
 )
 
 
@@ -207,6 +209,61 @@ def allocate_username(base: str) -> str:
     raise ValueError("Could not allocate username")
 
 
+def create_password_user(
+    *,
+    email: str,
+    password_hash: str,
+    display_name: str = "",
+    username: str | None = None,
+    is_admin: bool = False,
+    plan: str = "free",
+) -> dict:
+    email = email.strip().lower()
+    if not email or "@" not in email:
+        raise ValueError("Invalid email")
+    hashed = (password_hash or "").strip()
+    if not hashed:
+        raise ValueError("Password hash is required")
+    username = allocate_username(username or _username_base_from_email(email))
+    google_sub = f"password-{email}"
+    now = _utc_now()
+    admin_flag = 1 if is_admin else 0
+    plan_value = (plan or "free").strip() or "free"
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            INSERT INTO users (
+                username, google_sub, email, display_name, plan, created_at, is_admin, password_hash,
+                email_confirmed_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NULL)
+            RETURNING id
+            """,
+            (
+                username,
+                google_sub,
+                email,
+                display_name.strip(),
+                plan_value,
+                now,
+                admin_flag,
+                hashed,
+            ),
+        ).fetchone()
+        user_id = int(row["id"])
+    return {
+        "id": user_id,
+        "username": username,
+        "email": email,
+        "google_sub": google_sub,
+        "display_name": display_name.strip(),
+        "plan": plan_value,
+        "created_at": now,
+        "last_login_at": None,
+        "is_admin": bool(is_admin),
+    }
+
+
 def create_google_user(
     *,
     google_sub: str,
@@ -228,12 +285,12 @@ def create_google_user(
         row = conn.execute(
             """
             INSERT INTO users (
-                username, google_sub, email, display_name, plan, created_at, is_admin
+                username, google_sub, email, display_name, plan, created_at, is_admin, email_confirmed_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (username, google_sub, email, display_name.strip(), plan_value, now, admin_flag),
+            (username, google_sub, email, display_name.strip(), plan_value, now, admin_flag, now),
         ).fetchone()
         user_id = int(row["id"])
     return {
@@ -246,6 +303,7 @@ def create_google_user(
         "created_at": now,
         "last_login_at": None,
         "is_admin": bool(is_admin),
+        "email_confirmed_at": now,
     }
 
 
@@ -326,6 +384,40 @@ def get_user_by_email(email: str) -> dict | None:
     return data
 
 
+def get_user_credentials_by_email(email: str) -> dict | None:
+    with db_read() as conn:
+        try:
+            row = conn.execute(
+                """
+                SELECT id, username, email, google_sub, display_name, plan,
+                       created_at, last_login_at, is_admin, password_hash, email_confirmed_at
+                FROM users WHERE LOWER(email) = LOWER(%s)
+                """,
+                (email.strip(),),
+            ).fetchone()
+        except Exception as exc:
+            message = str(exc).lower()
+            if "password_hash" not in message and "email_confirmed_at" not in message:
+                raise
+            with db_transaction() as migrate_conn:
+                _ensure_users_password_hash(migrate_conn)
+                _ensure_users_email_confirmed_at(migrate_conn)
+            row = conn.execute(
+                """
+                SELECT id, username, email, google_sub, display_name, plan,
+                       created_at, last_login_at, is_admin, password_hash, email_confirmed_at
+                FROM users WHERE LOWER(email) = LOWER(%s)
+                """,
+                (email.strip(),),
+            ).fetchone()
+    if not row:
+        return None
+    data = dict(row)
+    data["is_admin"] = bool(data.get("is_admin"))
+    data["plan"] = data.get("plan") or "free"
+    return data
+
+
 def set_user_admin(user_id: int, is_admin: bool) -> None:
     with db_transaction() as conn:
         conn.execute(
@@ -356,6 +448,36 @@ def update_user_mcp_quota(user_id: int, *, quota_date: str, quota_used: int) -> 
         )
 
 
+def password_user_needs_email_confirm(row: dict | None) -> bool:
+    if not row:
+        return False
+    sub = (row.get("google_sub") or "").strip()
+    if not sub.startswith("password-"):
+        return False
+    return not (row.get("email_confirmed_at") or "").strip()
+
+
+def delete_unconfirmed_password_user(user_id: int) -> bool:
+    user = get_user_by_id(user_id)
+    if not user:
+        return False
+    creds = get_user_credentials_by_email(str(user.get("email") or ""))
+    if not password_user_needs_email_confirm(creds):
+        return False
+    with db_transaction() as conn:
+        cur = conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        return cur.rowcount > 0
+
+
+def set_user_email_confirmed(user_id: int, at: str | None = None) -> None:
+    stamp = (at or "").strip() or _utc_now()
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET email_confirmed_at = %s WHERE id = %s",
+            (stamp, user_id),
+        )
+
+
 def set_user_last_login_at(user_id: int, at: str | None = None) -> None:
     stamp = (at or "").strip() or _utc_now()
     with db_transaction() as conn:
@@ -376,10 +498,11 @@ def touch_google_profile(
         conn.execute(
             """
             UPDATE users
-            SET google_sub = %s, email = %s, display_name = %s
+            SET google_sub = %s, email = %s, display_name = %s,
+                email_confirmed_at = COALESCE(email_confirmed_at, %s)
             WHERE id = %s
             """,
-            (google_sub, email.strip().lower(), display_name.strip(), user_id),
+            (google_sub, email.strip().lower(), display_name.strip(), _utc_now(), user_id),
         )
 
 

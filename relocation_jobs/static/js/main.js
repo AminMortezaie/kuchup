@@ -1,7 +1,7 @@
 /** Application entry point. */
 
 import { setOnUnauthorized, state } from "./state.js";
-import { showLogin, refreshAuth, setAdminNavVisible } from "./auth.js";
+import { bindPanelAuth, showLogin, refreshAuth, setAdminNavVisible } from "./auth.js";
 import { loadConfig, loadCountries, loadAtsTypes, loadBoardWithLocations, showJobsLoading, setLoadingProgress, finishLoadingProgress } from "./data.js";
 import { beginScreenLoad } from "./screen-loader.js";
 import { bindDialogEvents } from "./dialogs.js";
@@ -40,6 +40,7 @@ async function init() {
   setOnUnauthorized(() => showLogin("session"));
   applyPanelChrome();
   initAppShell();
+  bindPanelAuth();
 
   loadCollapsedCompanies();
   loadShowNotForMeCompanies();

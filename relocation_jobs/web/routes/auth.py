@@ -7,10 +7,15 @@ from flask import jsonify, redirect, request
 
 from relocation_jobs.core.auth import (
     auth_status,
+    confirm_email_and_login,
     login_or_register_google,
     login_or_register_staff,
     login_user,
+    login_with_password,
     logout_user,
+    register_with_password,
+    rollback_failed_registration,
+    send_password_user_confirmation,
 )
 from relocation_jobs.core.google_oauth import (
     build_authorize_url,
@@ -20,6 +25,7 @@ from relocation_jobs.core.google_oauth import (
     profile_from_authorization_code,
 )
 from relocation_jobs.mcp.oauth_provider import complete_login_redirect, public_base_url
+from relocation_jobs.payments.nowpayments import public_base_url as panel_public_base_url
 
 
 def _panel_redirect_uri() -> str:
@@ -71,6 +77,75 @@ def register(app):
     def api_auth_logout():
         logout_user()
         return jsonify({"ok": True, "authenticated": False})
+
+    @app.post("/api/auth/register")
+    def api_auth_register():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email") or "").strip()
+        password = str(payload.get("password") or "")
+        display_name = str(payload.get("display_name") or "").strip()
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        try:
+            user = register_with_password(email, password, display_name=display_name)
+            base_url = panel_public_base_url(request.url_root.rstrip("/"))
+            send_password_user_confirmation(
+                user_id=int(user["id"]),
+                email=str(user["email"]),
+                base_url=base_url,
+            )
+        except ValueError as exc:
+            message = str(exc)
+            lowered = message.lower()
+            if "registration is disabled" in lowered:
+                return jsonify({"error": "New sign-ups are closed right now."}), 403
+            if "already registered" in lowered:
+                return jsonify({"error": "An account with this email already exists."}), 409
+            if "password must be" in lowered:
+                return jsonify({"error": message}), 400
+            if "valid email" in lowered:
+                return jsonify({"error": message}), 400
+            return jsonify({"error": message}), 400
+        except RuntimeError:
+            rollback_failed_registration(user)
+            return jsonify({"error": "We could not send a confirmation email. Try again later."}), 503
+        return jsonify(
+            {
+                "ok": True,
+                "authenticated": False,
+                "confirm_email_sent": True,
+                "email": user.get("email") or email,
+                "message": "Check your email for a confirmation link before signing in.",
+                "allow_register": auth_status().get("allow_register"),
+            }
+        ), 201
+
+    @app.get("/api/auth/confirm-email")
+    def api_auth_confirm_email():
+        token = (request.args.get("token") or "").strip()
+        try:
+            user = confirm_email_and_login(token)
+        except ValueError as exc:
+            return _login_error_redirect(str(exc), next_path="/panel")
+        login_user(user["id"], user["username"])
+        return redirect("/panel")
+
+    @app.post("/api/auth/login")
+    def api_auth_login():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email") or "").strip()
+        password = str(payload.get("password") or "")
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        try:
+            user = login_with_password(email, password)
+        except ValueError as exc:
+            message = str(exc)
+            if "confirm your email" in message.lower():
+                return jsonify({"error": message}), 403
+            return jsonify({"error": "Invalid email or password"}), 401
+        login_user(user["id"], user["username"])
+        return jsonify(auth_status())
 
     @app.post("/api/auth/staff")
     def api_auth_staff():
