@@ -38,6 +38,24 @@ function applyPanelAuthMode() {
   }
 }
 
+function showCheckEmail(message) {
+  const form = $("panelEmailAuthForm");
+  const confirmHint = $("panelAuthConfirmHint");
+  const modeHint = $("panelAuthModeHint");
+  const divider = document.querySelector("#loginPanel .login-divider");
+  const googleActions = $("googleSignIn")?.closest(".login-actions");
+  if (form) form.hidden = true;
+  if (modeHint) modeHint.hidden = true;
+  if (divider) divider.hidden = true;
+  if (googleActions) googleActions.hidden = true;
+  if (confirmHint) {
+    confirmHint.hidden = false;
+    confirmHint.textContent = message || "Check your email for a confirmation link before signing in.";
+  }
+  const title = $("loginTitle");
+  if (title) title.textContent = "Confirm your email";
+}
+
 async function submitPanelEmailAuth(event) {
   event.preventDefault();
   const error = $("loginError");
@@ -53,6 +71,10 @@ async function submitPanelEmailAuth(event) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (error) error.textContent = data.error || "Sign-in failed";
+    return;
+  }
+  if (panelAuthMode === "signup" && data.confirm_email_sent) {
+    showCheckEmail(data.message);
     return;
   }
   state.authState = data;
@@ -74,6 +96,16 @@ export function bindPanelAuth() {
 export function showLogin(message = "") {
   $("mainContent").classList.add("hidden");
   $("loginPanel").hidden = false;
+  const form = $("panelEmailAuthForm");
+  const confirmHint = $("panelAuthConfirmHint");
+  const modeHint = $("panelAuthModeHint");
+  const divider = document.querySelector("#loginPanel .login-divider");
+  const googleActions = $("googleSignIn")?.closest(".login-actions");
+  if (form) form.hidden = false;
+  if (confirmHint) confirmHint.hidden = true;
+  if (modeHint) modeHint.hidden = false;
+  if (divider) divider.hidden = false;
+  if (googleActions) googleActions.hidden = false;
   applyPanelAuthMode();
   const params = new URLSearchParams(window.location.search);
   const error = message || params.get("error") || "";
