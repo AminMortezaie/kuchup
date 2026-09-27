@@ -35,7 +35,7 @@ App containers use the json-file log driver with `max-size=10m` / `max-file=3` s
 ./scripts/ec2_app_deploy.sh deploy
 ```
 
-ops-agent **dual-writes** (Grafana remote_write when `GRAFANA_CLOUD_*` is set, always Postgres when `DATABASE_URL` is set). Deploy also removes any leftover `relocation-alloy` container. Postgres history starts as soon as ops-agent runs and the `ops_metric_samples_v1` migration has applied (panel/worker startup).
+ops-agent **dual-writes** (Grafana remote_write when `GRAFANA_CLOUD_*` is set, always Postgres when `DATABASE_URL` is set). Postgres history starts as soon as ops-agent runs and the `ops_metric_samples_v1` migration has applied (panel/worker startup).
 
 Prometheus credentials missing → ops-agent still runs and writes Postgres; remote_write is skipped.
 

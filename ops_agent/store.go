@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -37,10 +36,6 @@ func (s *Store) InsertSamples(ctx context.Context, samples []Sample) error {
 	}
 	batch := &pgx.Batch{}
 	for _, sample := range samples {
-		at := sample.At
-		if at.IsZero() {
-			at = time.Now().UTC()
-		}
 		labels := sample.Labels
 		if labels == nil {
 			labels = map[string]string{}
@@ -52,7 +47,7 @@ func (s *Store) InsertSamples(ctx context.Context, samples []Sample) error {
 		batch.Queue(
 			`INSERT INTO ops_metric_samples (recorded_at, metric, labels, value)
 			 VALUES ($1, $2, $3::jsonb, $4)`,
-			at, sample.Metric, string(payload), sample.Value,
+			sample.At, sample.Metric, string(payload), sample.Value,
 		)
 	}
 	br := s.conn.SendBatch(ctx, batch)

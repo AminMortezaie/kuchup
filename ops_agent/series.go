@@ -35,11 +35,7 @@ func marshalTimeSeries(s Sample) []byte {
 	for k, v := range s.Labels {
 		msg = appendTagBytes(msg, 1, marshalLabel(k, v))
 	}
-	ts := s.At
-	if ts.IsZero() {
-		ts = time.Now().UTC()
-	}
-	msg = appendTagBytes(msg, 2, marshalSample(s.Value, ts.UnixMilli()))
+	msg = appendTagBytes(msg, 2, marshalSample(s.Value, s.At.UnixMilli()))
 	return msg
 }
 

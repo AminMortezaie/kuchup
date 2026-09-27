@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -21,15 +20,6 @@ func Main() {
 	instance := envString("OPS_INSTANCE", "kuchup-ec2")
 	dockerSocket := envString("OPS_DOCKER_SOCKET", "/var/run/docker.sock")
 	names := defaultContainerNames()
-	if raw := strings.TrimSpace(os.Getenv("OPS_CONTAINER_NAMES")); raw != "" {
-		names = nil
-		for _, part := range strings.Split(raw, ",") {
-			part = strings.TrimSpace(part)
-			if part != "" {
-				names = append(names, part)
-			}
-		}
-	}
 
 	ctx := context.Background()
 	var store *Store
@@ -104,9 +94,6 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 	}
 	if d, err := time.ParseDuration(raw); err == nil {
 		return d
-	}
-	if sec, err := strconv.Atoi(raw); err == nil && sec > 0 {
-		return time.Duration(sec) * time.Second
 	}
 	return fallback
 }

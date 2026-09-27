@@ -795,8 +795,6 @@ docker run -d --name ${CADDY_CONTAINER} --restart unless-stopped \\
   caddy:2-alpine
 EOF
 
-  # Drop leftover Alloy from older deploys; ops-agent is the only metrics agent.
-  ssh_cmd "docker rm -f relocation-alloy 2>/dev/null || true" || true
   start_ops_agent_container "${db_url}"
 
   # Dangling images only — keep BuildKit cache for the next deploy.

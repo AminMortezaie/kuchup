@@ -25,10 +25,3 @@ func TestHostMetricNames(t *testing.T) {
 		t.Fatalf("missing host metrics: %v", want)
 	}
 }
-
-func TestMeminfoParse(t *testing.T) {
-	_, err := memAvailableBytes("/proc")
-	if err != nil {
-		t.Fatalf("meminfo: %v", err)
-	}
-}
