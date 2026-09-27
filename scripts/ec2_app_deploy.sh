@@ -620,6 +620,9 @@ refs=""
 if docker image inspect ${PANEL_IMAGE} >/dev/null 2>&1; then refs='"${PANEL_IMAGE}"'; fi
 if docker image inspect ${MCP_IMAGE} >/dev/null 2>&1; then refs="\${refs:+\$refs, }\"${MCP_IMAGE}\""; fi
 docker buildx bake --progress=plain --load -f - <<BAKE
+group "default" {
+  targets = ["panel", "mcp"]
+}
 target "panel" {
   context = "."
   dockerfile = "Dockerfile.ec2"
