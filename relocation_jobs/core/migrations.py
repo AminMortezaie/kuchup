@@ -624,14 +624,7 @@ def _ensure_users_google_auth(conn) -> None:
         ON users (email) WHERE email IS NOT NULL
         """
     )
-    try:
-        conn.execute("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
-    except Exception:
-        pass
-    try:
-        conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS password_hash")
-    except Exception:
-        pass
+    conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS password_hash")
 
 
 def _ensure_users_entitlements(conn) -> None:
@@ -658,7 +651,7 @@ def _ensure_users_email_confirmed_at(conn) -> None:
         UPDATE users
         SET email_confirmed_at = COALESCE(email_confirmed_at, created_at)
         WHERE email_confirmed_at IS NULL
-          AND (google_sub IS NULL OR google_sub NOT LIKE 'password-%')
+          AND (google_sub IS NULL OR google_sub NOT LIKE 'password-%%')
         """
     )
 
