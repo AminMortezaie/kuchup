@@ -1,0 +1,88 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "063d02ab7bdd",
+  "session_id": "3c65ef10-6bf3-45c5-aabd-f002a347a488",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T16:17:40.835858Z",
+  "branch": "admin-docs-append",
+  "checkpoints_count": 27,
+  "save_step_count": 3,
+  "files_touched": [
+    "relocation_jobs/core/migrations.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "35c8f307372d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 47766,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2312576,
+    "output_tokens": 6055,
+    "api_call_count": 2
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-27T12:45:22.255249Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "a75fde9d433f",
+      "timestamp": "2026-09-27T12:45:22.255249Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 34,
+    "context_tokens": 231194,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T16:17:40.797002Z",
+    "agent_lines": 47,
+    "agent_removed": 0,
+    "human_added": 176,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 223,
+    "total_lines_changed": 223,
+    "agent_percentage": 21.076233183856502,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 53,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

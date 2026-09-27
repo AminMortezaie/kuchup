@@ -1,0 +1,148 @@
+let's review this cursor/tiny-ops-agent-replace-alloy-ee22
+/ponytail-review
+
+---
+
+apply
+
+---
+
+do it
+
+---
+
+/ponytail-review final review
+
+---
+
+apply
+
+---
+
+commit them
+
+---
+
+push
+
+---
+
+[ec2-app] Docker prune (before builds)...
+[ec2-app] disk before prune: 18G used / 30G (60%)
+Total reclaimed space: 0B
+[ec2-app] disk after prune:  18G used / 30G (60%)
+[ec2-app] db guard: pg running, volume pgdata present
+[ec2-app] panel: inputs changed — rebuilding
+[ec2-app] Building relocation-panel:ec2 on EC2 (arm64)...
+#0 building with "default" instance using docker driver
+
+#1 [internal] load local bake definitions
+#1 reading from stdin 358B done
+#1 DONE 0.0s
+ERROR: failed to find target default
+
+---
+
+see your result.
+
+---
+
+add my ip to aws whitelist, also the branch is updated and everything is deployed on last deploy.
+
+---
+
+check for it and find the issue.
+
+---
+
+hotfix on main branch and push it up
+
+---
+
+deploy on aws
+
+---
+
+i just deployed it and i see two data again.
+
+---
+
+why our ram is going down?
+
+---
+
+if we make stop everything and run them again is this any changes on our grafana?
+
+---
+
+why load average is 0.3?
+
+---
+
+are we saving the metrics on our db now?
+
+---
+
+see this, i should not be 1.3 GB
+
+---
+
+in previous merges we did make it about 740mb free ram but always is going down after some time.
+and back to less than 600 mb.
+now it's about 511 which is not accptable after these types of optimization we did.
+something is wrong.
+what do you think of it?
+
+---
+
+do it.
+push a hotfix to stop it
+
+---
+
+should i deploy now?
+
+---
+
+everything is going fine now, do you mean that fetch working is doing correctly after this change or not?
+
+---
+
+what do you mean? you turned off the imporant feature we have on our board which means that board will not update.
+
+---
+
+why packages are downloading again?
+
+---
+
+why?
+
+---
+
+pg is gone up.
+
+---
+
+i don't think so
+
+---
+
+load average is 4.2
+
+---
+
+what's happening now?
+
+---
+
+ok what was the story there?
+
+---
+
+write down this story on admin docs.
+
+---
+
+write what task should start we need to enqueue on sqs and set the url there.
+write down the task to start it then

@@ -3,7 +3,7 @@
   "checkpoint_id": "063d02ab7bdd",
   "strategy": "manual-commit",
   "branch": "admin-docs-append",
-  "checkpoints_count": 1,
+  "checkpoints_count": 28,
   "files_touched": [
     "relocation_jobs/core/migrations.py",
     "relocation_jobs/static/app-shell.css",
@@ -21,13 +21,20 @@
       "compact_transcript": "/06/3d02ab7bdd/0/transcript.jsonl",
       "content_hash": "/06/3d02ab7bdd/0/content_hash.txt",
       "prompt": "/06/3d02ab7bdd/0/prompt.txt"
+    },
+    {
+      "metadata": "/06/3d02ab7bdd/1/metadata.json",
+      "transcript": "/06/3d02ab7bdd/1/full.jsonl",
+      "compact_transcript": "/06/3d02ab7bdd/1/transcript.jsonl",
+      "content_hash": "/06/3d02ab7bdd/1/content_hash.txt",
+      "prompt": "/06/3d02ab7bdd/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 134502,
+    "input_tokens": 182268,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 5732096,
-    "output_tokens": 35153,
-    "api_call_count": 1
+    "cache_read_tokens": 8044672,
+    "output_tokens": 41208,
+    "api_call_count": 3
   }
 }
