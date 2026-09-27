@@ -1,0 +1,7 @@
+<timestamp>Sunday, Sep 27, 2026, 10:44 PM (UTC+4)</timestamp>
+
+commit and push on main branch.
+
+---
+
+one document is remaining, on internal docs folder. this is latex format please write it down in md format delete from repo and then upload on admin docs.
