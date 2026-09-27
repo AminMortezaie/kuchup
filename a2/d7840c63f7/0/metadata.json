@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "a2d7840c63f7",
+  "session_id": "11180604-473b-4620-9f7b-25580db57ba9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T16:27:39.764169Z",
+  "branch": "admin-docs-append",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "tests/core/test_db_pool.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "a4b7fb38172b",
+  "checkpoint_transcript_start": 101,
+  "transcript_lines_at_start": 101,
+  "compact_transcript_start": 10,
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T16:27:39.742439Z",
+    "agent_lines": 2,
+    "agent_removed": 7,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "total_lines_changed": 9,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
