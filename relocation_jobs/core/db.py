@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import os
 import threading
 from contextlib import contextmanager
@@ -103,6 +104,9 @@ def close_connection_pool() -> None:
         pool.close()
     except Exception:
         pass
+
+
+atexit.register(close_connection_pool)
 
 
 def init_connection_pool(*, force: bool = False) -> None:

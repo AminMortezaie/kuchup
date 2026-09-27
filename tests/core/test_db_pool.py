@@ -61,6 +61,16 @@ def _with_pool(pool, fn):
         core._pg["conn"] = saved_conn
 
 
+def test_pool_closes_on_process_exit():
+    import atexit
+
+    before = atexit._ncallbacks()
+    atexit.unregister(core.close_connection_pool)
+    after = atexit._ncallbacks()
+    atexit.register(core.close_connection_pool)
+    assert after == before - 1
+
+
 def test_idle_ping_threshold_removed():
     assert not hasattr(core, "_IDLE_PING_THRESHOLD_S")
     assert not hasattr(core, "_db_lock")
