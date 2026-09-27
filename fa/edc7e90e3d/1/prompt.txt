@@ -1,0 +1,1 @@
+transfer all technical docs we have on repo to admin docs and remove from repo.

@@ -1,9 +1,12 @@
 {
   "cli_version": "0.8.42",
   "checkpoint_id": "faedc7e90e3d",
+  "session_id": "804e0175-9cb9-4418-b1ee-0d9ca5a2160c",
   "strategy": "manual-commit",
+  "created_at": "2026-09-27T18:44:25.546715Z",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 1,
+  "save_step_count": 1,
   "files_touched": [
     ".github/workflows/deploy.yml",
     "AGENTS.md",
@@ -88,27 +91,52 @@
     "scripts/mcp_server.py",
     "tests/README.md"
   ],
-  "sessions": [
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "639038000693",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 31480,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2945536,
+    "output_tokens": 14615,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T18:44:25.515396Z",
+    "agent_lines": 54,
+    "agent_removed": 7889,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 58,
+    "total_lines_changed": 7951,
+    "agent_percentage": 99.89938372531756,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
     {
-      "metadata": "/fa/edc7e90e3d/0/metadata.json",
-      "transcript": "/fa/edc7e90e3d/0/full.jsonl",
-      "compact_transcript": "/fa/edc7e90e3d/0/transcript.jsonl",
-      "content_hash": "/fa/edc7e90e3d/0/content_hash.txt",
-      "prompt": "/fa/edc7e90e3d/0/prompt.txt"
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
     },
     {
-      "metadata": "/fa/edc7e90e3d/1/metadata.json",
-      "transcript": "/fa/edc7e90e3d/1/full.jsonl",
-      "compact_transcript": "/fa/edc7e90e3d/1/transcript.jsonl",
-      "content_hash": "/fa/edc7e90e3d/1/content_hash.txt",
-      "prompt": "/fa/edc7e90e3d/1/prompt.txt"
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 58,
+      "agent_lines_removed": 7893,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
     }
-  ],
-  "token_usage": {
-    "input_tokens": 34949,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 3298560,
-    "output_tokens": 15830,
-    "api_call_count": 2
-  }
+  ]
 }
