@@ -1,0 +1,36 @@
+in last deploy panel is DOWN find the problem with the latest merge on adding user and password for users
+
+---
+
+in last deploy panel is DOWN find the problem with the latest merge on adding user and password for users
+
+[ec2-app] Restart / OOM:
+/relocation-panel restart=9 oom=false exit=1 status=restarting
+/relocation-caddy restart=0 oom=false exit=0 status=running
+/relocation-mcp restart=9 oom=false exit=1 status=restarting
+/relocation-fetch-worker restart=0 oom=false exit=0 status=running
+
+/relocation-role-propagator restart=0 oom=false exit=0 status=running
+/relocation-ops-agent restart=0 oom=false exit=0 status=running
+/pg restart=0 oom=false exit=0 status=running
+/relocation-redis restart=0 oom=false exit=0 status=running
+[ec2-app] Panel/Caddy log tails (20):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/psycopg/connection.py", line 304, in execute
+    raise ex.with_traceback(None)
+psycopg.ProgrammingError: only '%s', '%b', '%t' are allowed as placeholders, got '%''
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/app/relocation_jobs/core/db.py", line 343, in init_db
+    _migrate_schema(conn)
+  File "/app/relocation_jobs/core/migrations.py", line 160, in _migrate_schema
+    run_migration_once(conn, "users_email_confirmed_at_v1", _ensure_users_email_confirmed_at)
+  File "/app/relocation_jobs/core/migrations.py", line 93, in run_migration_once
+    fn(conn)
+  File "/app/relocation_jobs/core/migrations.py", line 656, in _ensure_users_email_confirmed_at
+    conn.execute(
+  File "/app/relocation_jobs/core/db.py", line 34, in execute
+    return self._conn.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/psycopg/connection.py", line 304, in execute
+    raise ex.with_traceback(None)
