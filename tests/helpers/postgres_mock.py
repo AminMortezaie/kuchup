@@ -214,7 +214,10 @@ class FakePgConnection:
     def _adapt(self, sql: str) -> tuple[str, bool]:
         returning = bool(re.search(r"\bRETURNING\b", sql, re.I))
         out = sql.replace("%s", "?")
+        out = re.sub(r"::jsonb\b", "", out, flags=re.I)
+        out = re.sub(r"::text\b", "", out, flags=re.I)
         out = re.sub(r"\bSERIAL PRIMARY KEY\b", "INTEGER PRIMARY KEY AUTOINCREMENT", out, flags=re.I)
+        out = re.sub(r"\bBIGSERIAL PRIMARY KEY\b", "INTEGER PRIMARY KEY AUTOINCREMENT", out, flags=re.I)
         out = re.sub(r"\bEXCLUDED\.", "excluded.", out)
         out = re.sub(
             r"ADD COLUMN IF NOT EXISTS",
@@ -225,7 +228,11 @@ class FakePgConnection:
         out = re.sub(r"\bDROP COLUMN IF EXISTS\b", "DROP COLUMN", out, flags=re.I)
         out = re.sub(r"\bILIKE\b", "LIKE", out, flags=re.I)
         out = re.sub(r"\bJSONB\b", "TEXT", out, flags=re.I)
+        out = re.sub(r"\bTIMESTAMPTZ\b", "TEXT", out, flags=re.I)
+        out = re.sub(r"\bDOUBLE PRECISION\b", "REAL", out, flags=re.I)
+        out = re.sub(r"\bDEFAULT NOW\(\)", "DEFAULT CURRENT_TIMESTAMP", out, flags=re.I)
         out = re.sub(r"'::(jsonb|text)", "'", out, flags=re.I)
+        out = re.sub(r"\?::jsonb", "?", out, flags=re.I)
         return out, returning
 
 

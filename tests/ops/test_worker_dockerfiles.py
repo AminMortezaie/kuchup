@@ -40,20 +40,23 @@ def test_light_worker_dockerfile_has_no_chromium():
     assert "FETCH_WORKER_KIND=http" in text
 
 
-def test_only_fetch_workers_have_memory_caps():
+def test_memory_capped_containers():
+    """Fetch workers and ops-agent are memory-capped; other services are not."""
     text = Path("scripts/ec2_app_deploy.sh").read_text(encoding="utf-8")
     assert "FETCH_WORKER_MEMORY=256m" in text
     assert "PLAYWRIGHT_WORKER_MEMORY=640m" in text
+    assert "OPS_AGENT_MEMORY=32m" in text
     capped = [
         block
         for block in _docker_run_blocks(text)
         if "--memory=" in block or "--memory-swap=" in block
     ]
-    assert len(capped) == 2
+    assert len(capped) == 3
     light = next(block for block in capped if "${WORKER_CONTAINER}" in block)
     playwright = next(
         block for block in capped if "${PLAYWRIGHT_WORKER_CONTAINER}" in block
     )
+    ops_agent = next(block for block in capped if "${OPS_AGENT_CONTAINER}" in block)
     assert "--memory=${FETCH_WORKER_MEMORY}" in light
     assert "--memory-swap=${FETCH_WORKER_MEMORY}" in light
     assert "FETCH_WORKER_KIND=http" in light
@@ -62,6 +65,10 @@ def test_only_fetch_workers_have_memory_caps():
     assert "--memory-swap=${PLAYWRIGHT_WORKER_MEMORY}" in playwright
     assert "FETCH_WORKER_KIND=playwright" in playwright
     assert "--restart unless-stopped" in playwright
+    assert "--memory=${OPS_AGENT_MEMORY}" in ops_agent
+    assert "--memory-swap=${OPS_AGENT_MEMORY}" in ops_agent
+    assert "${OPS_AGENT_IMAGE}" in ops_agent
+    assert "--restart unless-stopped" in ops_agent
 
 
 def test_playwright_worker_dockerfile_installs_chromium():

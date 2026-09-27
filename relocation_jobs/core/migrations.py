@@ -193,6 +193,27 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_expired_want_to_apply_v1", _seed_expired_want_to_apply_doc)
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
     run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
+    run_migration_once(conn, "ops_metric_samples_v1", _ensure_ops_metric_samples_table)
+
+
+def _ensure_ops_metric_samples_table(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ops_metric_samples (
+            id BIGSERIAL PRIMARY KEY,
+            recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            metric TEXT NOT NULL,
+            labels JSONB NOT NULL DEFAULT '{}'::jsonb,
+            value DOUBLE PRECISION NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_ops_metric_samples_metric_recorded
+            ON ops_metric_samples (metric, recorded_at DESC)
+        """
+    )
 
 
 _MCP_AGENT_SKILL_TAILOR = (

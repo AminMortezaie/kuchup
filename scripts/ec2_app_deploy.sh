@@ -8,14 +8,13 @@
 #   ./scripts/ec2_app_deploy.sh prune             # free dangling images + trim builder cache
 #   ./scripts/ec2_app_deploy.sh open-sg           # open HTTP/HTTPS on security group (manual)
 #   ./scripts/ec2_app_deploy.sh status            # doctor: containers, disk/RAM, health, verdict
-#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|playwright-worker|propagator|alloy|all
+#   ./scripts/ec2_app_deploy.sh logs [svc] [N] [-f]  # panel|caddy|mcp|worker|playwright-worker|propagator|ops-agent|all
 #   ./scripts/ec2_app_deploy.sh worker-logs       # tail fetch scheduler logs (alias)
 #   ./scripts/ec2_app_deploy.sh image-sizes       # docker image sizes (light vs Playwright worker)
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
-# Optional Grafana Cloud (Alloy): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
-# GRAFANA_CLOUD_API_TOKEN in .env. Logs: GRAFANA_CLOUD_LOKI_URL, GRAFANA_CLOUD_LOKI_USER
-# (token needs logs:write). See docs/operations/monitoring.md
+# Optional Grafana Cloud (ops-agent): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
+# GRAFANA_CLOUD_API_TOKEN in .env — see docs/operations/monitoring.md
 # Disk: root fills from leftover panel/worker images; deploy prunes dangling
 # images only. BuildKit cache is kept across deploys so tectonic/pip (and
 # Playwright, when the opt-in sidecar is built) layers are reused — never
@@ -70,8 +69,9 @@ PLAYWRIGHT_WORKER_MEMORY=640m
 PROPAGATOR_IMAGE=relocation-role-propagator:ec2
 PROPAGATOR_CONTAINER=relocation-role-propagator
 CADDY_CONTAINER=relocation-caddy
-ALLOY_CONTAINER=relocation-alloy
-ALLOY_IMAGE="${ALLOY_IMAGE:-grafana/alloy:v1.8.3}"
+OPS_AGENT_IMAGE=relocation-ops-agent:ec2
+OPS_AGENT_CONTAINER=relocation-ops-agent
+OPS_AGENT_MEMORY=32m
 PANEL_PORT=10000
 MCP_PORT=10001
 MCP_PUBLIC_BASE_URL="${MCP_PUBLIC_BASE_URL:-https://mcp.kuchup.com}"
@@ -300,21 +300,6 @@ grafana_cloud_token() {
   printf '%s' "${GRAFANA_CLOUD_API_TOKEN:-$(_dotenv_value GRAFANA_CLOUD_API_TOKEN)}"
 }
 
-grafana_cloud_loki_url() {
-  printf '%s' "${GRAFANA_CLOUD_LOKI_URL:-$(_dotenv_value GRAFANA_CLOUD_LOKI_URL)}"
-}
-
-grafana_cloud_loki_user() {
-  printf '%s' "${GRAFANA_CLOUD_LOKI_USER:-$(_dotenv_value GRAFANA_CLOUD_LOKI_USER)}"
-}
-
-grafana_cloud_loki_configured() {
-  local url user
-  url="$(grafana_cloud_loki_url)"
-  user="$(grafana_cloud_loki_user)"
-  [[ -n "$url" && -n "$user" ]]
-}
-
 container_for_log_service() {
   case "$1" in
     panel) printf '%s' "$PANEL_CONTAINER" ;;
@@ -323,7 +308,7 @@ container_for_log_service() {
     worker) printf '%s' "$WORKER_CONTAINER" ;;
     playwright-worker|pw-worker) printf '%s' "$PLAYWRIGHT_WORKER_CONTAINER" ;;
     propagator) printf '%s' "$PROPAGATOR_CONTAINER" ;;
-    alloy) printf '%s' "$ALLOY_CONTAINER" ;;
+    ops-agent|ops) printf '%s' "$OPS_AGENT_CONTAINER" ;;
     pg) printf '%s' "pg" ;;
     redis) printf '%s' "relocation-redis" ;;
     all) printf '%s' "" ;;
@@ -522,6 +507,10 @@ list_paths() {
     propagator)
       printf '%s\n' go.mod go.sum
       find apps/role-propagator role_propagator -type f ! -name 'role-propagator' -print
+      ;;
+    ops-agent)
+      printf '%s\n' go.mod go.sum
+      find apps/ops-agent ops_agent -type f ! -name 'ops-agent' -print
       ;;
     *)
       echo "unknown hash kind: $kind" >&2
@@ -808,7 +797,7 @@ docker run -d --name ${CADDY_CONTAINER} --restart unless-stopped \\
   caddy:2-alpine
 EOF
 
-  start_alloy_container
+  start_ops_agent_container "${db_url}"
 
   # Dangling images only — keep BuildKit cache for the next deploy.
   remote_docker_prune "" "after deploy"
@@ -868,65 +857,61 @@ docker run -d --name ${PLAYWRIGHT_WORKER_CONTAINER} --restart unless-stopped \\
 EOF
 }
 
-start_alloy_container() {
-  if ! grafana_cloud_configured; then
-    log "Alloy skipped — set GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER, GRAFANA_CLOUD_API_TOKEN in .env"
-    ssh_cmd "docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true" || true
-    return 0
-  fi
-  local url user token loki_url loki_user
+start_ops_agent_container() {
+  local db_url="$1"
+  local url user token
   url="$(grafana_cloud_url)"
   user="$(grafana_cloud_user)"
   token="$(grafana_cloud_token)"
-  loki_url="$(grafana_cloud_loki_url)"
-  loki_user="$(grafana_cloud_loki_user)"
-  if grafana_cloud_loki_configured; then
-    log "Starting Grafana Alloy (metrics + logs → Grafana Cloud)..."
+  if grafana_cloud_configured; then
+    log "Starting ops metrics agent (Grafana Cloud remote_write + Postgres ops_metric_samples)..."
   else
-    log "Starting Grafana Alloy (metrics only — set GRAFANA_CLOUD_LOKI_URL and GRAFANA_CLOUD_LOKI_USER for logs)"
+    log "Starting ops metrics agent (Postgres only — set GRAFANA_CLOUD_* in .env for Grafana Cloud)"
   fi
-  # cAdvisor needs privileged + host /sys and /var/lib/docker or container
-  # name/labels stay empty and dashboard panels show No data.
+  local ops_hash
+  ops_hash="$(remote_image_hash ops-agent)"
+  if image_needs_rebuild ops-agent "$OPS_AGENT_IMAGE" "$ops_hash"; then
+    log "Building ${OPS_AGENT_IMAGE} on EC2..."
+    ssh_cmd bash -s <<EOF
+set -euo pipefail
+cd ${REMOTE_DIR}
+cache_args=()
+if docker image inspect ${OPS_AGENT_IMAGE} >/dev/null 2>&1; then
+  cache_args=(--cache-from ${OPS_AGENT_IMAGE})
+fi
+DOCKER_BUILDKIT=1 docker build \\
+  --build-arg BUILDKIT_INLINE_CACHE=1 \\
+  "\${cache_args[@]}" \\
+  -f apps/ops-agent/Dockerfile -t ${OPS_AGENT_IMAGE} .
+EOF
+  fi
+  remote_save_hash ops-agent "$ops_hash"
   ssh_cmd bash -s <<EOF
 set -euo pipefail
-# Only pull when not already present; the tag is pinned so it never changes.
-docker image inspect ${ALLOY_IMAGE} >/dev/null 2>&1 || docker pull ${ALLOY_IMAGE}
-docker rm -f ${ALLOY_CONTAINER} 2>/dev/null || true
-ALLOY_CONFIG=/tmp/alloy-config.alloy
-if [ -n '${loki_url}' ] && [ -n '${loki_user}' ]; then
-  cp ${REMOTE_DIR}/deploy/ec2/config.alloy \$ALLOY_CONFIG
-else
-  awk '\$0=="// LOKI_BEGIN"{exit} {print}' ${REMOTE_DIR}/deploy/ec2/config.alloy > \$ALLOY_CONFIG
-fi
-docker run -d --name ${ALLOY_CONTAINER} --restart unless-stopped \\
+docker rm -f ${OPS_AGENT_CONTAINER} 2>/dev/null || true
+docker run -d --name ${OPS_AGENT_CONTAINER} --restart unless-stopped \\
+  --memory=${OPS_AGENT_MEMORY} --memory-swap=${OPS_AGENT_MEMORY} \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
-  --privileged \\
   --pid=host \\
   --add-host=host.docker.internal:host-gateway \\
   -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  -v /var/run:/var/run:ro \\
-  -v /sys:/sys:ro \\
-  -v /sys:/host/sys:ro \\
   -v /proc:/host/proc:ro \\
   -v /:/host/root:ro,rslave \\
-  -v /var/lib/docker/:/var/lib/docker:ro \\
-  -v /tmp/alloy-config.alloy:/etc/alloy/config.alloy:ro \\
+  -e DATABASE_URL='${db_url}' \\
   -e GRAFANA_CLOUD_PROMETHEUS_URL='${url}' \\
   -e GRAFANA_CLOUD_PROMETHEUS_USER='${user}' \\
   -e GRAFANA_CLOUD_API_TOKEN='${token}' \\
-  -e GRAFANA_CLOUD_LOKI_URL='${loki_url}' \\
-  -e GRAFANA_CLOUD_LOKI_USER='${loki_user}' \\
-  -e HOSTNAME=kuchup-ec2 \\
-  ${ALLOY_IMAGE} run /etc/alloy/config.alloy \\
-    --storage.path=/tmp/alloy \\
-    --server.http.listen-addr=0.0.0.0:12345
+  -e OPS_HEALTH_URL=http://host.docker.internal:${PANEL_PORT}/api/health \\
+  -e OPS_INSTANCE=kuchup-ec2 \\
+  -e OPS_METRICS_INTERVAL=60s \\
+  ${OPS_AGENT_IMAGE}
 EOF
 }
 
 cmd_image_sizes() {
   load_state
   log "=== Docker image sizes ==="
-  ssh_cmd "docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'relocation-(panel:ec2|mcp:ec2|fetch-worker:ec2|fetch-worker:playwright|role-propagator:ec2)' || true"
+  ssh_cmd "docker images --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E 'relocation-(panel:ec2|mcp:ec2|fetch-worker:ec2|fetch-worker:playwright|role-propagator:ec2|ops-agent:ec2)' || true"
   log "Expected: light fetch-worker is smaller than :playwright by Chromium + OS browser deps (~300–500MB)."
 }
 
@@ -935,9 +920,9 @@ cmd_logs() {
   local follow_flag="" svc containers c
   [[ "$LOG_FOLLOW" == "1" ]] && follow_flag="-f"
   if [[ "$LOG_SERVICE" == "all" ]]; then
-    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $PLAYWRIGHT_WORKER_CONTAINER $PROPAGATOR_CONTAINER $ALLOY_CONTAINER"
+    containers="$PANEL_CONTAINER $CADDY_CONTAINER $MCP_CONTAINER $WORKER_CONTAINER $PLAYWRIGHT_WORKER_CONTAINER $PROPAGATOR_CONTAINER $OPS_AGENT_CONTAINER"
   else
-    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|playwright-worker|propagator|alloy|pg|redis|all)"
+    c="$(container_for_log_service "$LOG_SERVICE")" || die "Unknown log service: $LOG_SERVICE (panel|caddy|mcp|worker|playwright-worker|propagator|ops-agent|pg|redis|all)"
     containers="$c"
   fi
   for c in $containers; do
@@ -971,7 +956,7 @@ cmd_status() {
   ssh_cmd "docker ps -a --filter name=^pg\$ --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" || true
   log "Restart / OOM:"
   ssh_cmd bash -s <<'EOF' || true
-for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-playwright-worker relocation-role-propagator relocation-alloy pg relocation-redis; do
+for c in relocation-panel relocation-caddy relocation-mcp relocation-fetch-worker relocation-playwright-worker relocation-role-propagator relocation-ops-agent pg relocation-redis; do
   docker inspect -f '{{.Name}} restart={{.RestartCount}} oom={{.State.OOMKilled}} exit={{.State.ExitCode}} status={{.State.Status}}' "$c" 2>/dev/null || true
 done
 EOF
