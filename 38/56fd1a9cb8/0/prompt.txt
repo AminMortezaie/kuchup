@@ -9,3 +9,23 @@ open up on browser
 ---
 
 scroll this page and then click on a document you say the first bug
+
+---
+
+yes the document also on your scrolled line which is wrong.
+
+---
+
+continue
+
+---
+
+ok
+
+---
+
+ok
+
+---
+
+fine, commit as a hot fix.
