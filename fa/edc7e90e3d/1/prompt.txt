@@ -1,1 +1,3 @@
-transfer all technical docs we have on repo to admin docs and remove from repo.
+<timestamp>Sunday, Sep 27, 2026, 10:44 PM (UTC+4)</timestamp>
+
+commit and push on main branch.
