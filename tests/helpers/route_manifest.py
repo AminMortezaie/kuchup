@@ -86,6 +86,7 @@ PANEL_API_ROUTES: dict[str, frozenset[str]] = {
     "/api/admin/activation-metrics": frozenset({"GET"}),
     "/api/admin/team-docs": frozenset({"GET", "POST"}),
     "/api/admin/team-docs/<int:doc_id>": frozenset({"GET", "PATCH", "DELETE"}),
+    "/api/admin/team-docs/<int:doc_id>/append": frozenset({"POST"}),
     "/api/admin/role-filter-tags": frozenset({"GET", "POST"}),
     "/api/admin/role-filter-tags/<int:tag_id>": frozenset({"PATCH", "DELETE"}),
     "/api/role-preferences": frozenset({"GET"}),

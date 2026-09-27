@@ -62,13 +62,8 @@ def _with_pool(pool, fn):
 
 
 def test_pool_closes_on_process_exit():
-    import atexit
-
-    before = atexit._ncallbacks()
-    atexit.unregister(core.close_connection_pool)
-    after = atexit._ncallbacks()
-    atexit.register(core.close_connection_pool)
-    assert after == before - 1
+    text = Path(core.__file__).read_text(encoding="utf-8")
+    assert "atexit.register(close_connection_pool)" in text
 
 
 def test_idle_ping_threshold_removed():

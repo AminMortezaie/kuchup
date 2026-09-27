@@ -172,6 +172,18 @@ def update_document(
     return _public_doc(saved)
 
 
+def append_document(doc_id: int, *, body: str, editor_user_id: int) -> dict:
+    extra = _clean_body(body).strip()
+    if not extra:
+        raise ValueError("Body is required")
+    current = repo.get_doc(doc_id)
+    if not current:
+        raise LookupError("Document not found")
+    base = (current["body"] or "").rstrip()
+    merged = f"{base}\n\n{extra}\n" if base else f"{extra}\n"
+    return update_document(doc_id, body=merged, editor_user_id=editor_user_id)
+
+
 def delete_document(doc_id: int) -> None:
     if not repo.delete_doc(doc_id):
         raise LookupError("Document not found")

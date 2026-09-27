@@ -92,6 +92,15 @@ function articleHtml(doc) {
       <h2 class="admin-docs-title">${escapeHtml(doc.title)}</h2>
       <p class="admin-docs-byline">${docBylineHtml(doc)}</p>
       <div class="admin-docs-prose" id="adminDocsProse"></div>
+      <form class="admin-docs-form admin-docs-append" id="adminDocsAppend">
+        <label>
+          <span>Append markdown</span>
+          <textarea name="body" rows="6" required placeholder="Added at the end of this doc"></textarea>
+        </label>
+        <div class="admin-docs-actions">
+          <button type="submit" class="primary">Append</button>
+        </div>
+      </form>
     </article>`;
 }
 
@@ -183,6 +192,11 @@ function bindMount(mount) {
     if (docBtn) window.location.hash = `docs/${docBtn.dataset.docId}`;
   });
   mount.addEventListener("submit", (event) => {
+    if (event.target.id === "adminDocsAppend") {
+      event.preventDefault();
+      void appendForm(event.target);
+      return;
+    }
     if (event.target.id !== "adminDocsForm") return;
     event.preventDefault();
     void saveForm(event.target);
@@ -245,6 +259,22 @@ async function openFromHash() {
   }
   selected.docId = id;
   await loadSelected();
+}
+
+async function appendForm(form) {
+  if (!selected.docId) return;
+  try {
+    const saved = await apiJson(`/api/admin/team-docs/${selected.docId}/append`, {
+      method: "POST",
+      body: JSON.stringify({ body: form.body.value }),
+    });
+    currentDoc = saved.doc;
+    tree = await apiJson("/api/admin/team-docs");
+    render();
+    toast("Appended");
+  } catch (err) {
+    toast(err.message || "Could not append");
+  }
 }
 
 async function saveForm(form) {

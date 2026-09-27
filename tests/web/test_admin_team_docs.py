@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from relocation_jobs.core.db import db_transaction
+from relocation_jobs.core.migrations import _sync_bundled_team_docs
 from relocation_jobs.core.paths import STATIC_DIR
 from relocation_jobs.team_docs.service import FOLDERS
 
@@ -34,6 +36,8 @@ def test_admin_docs_pane_is_private_shell():
     assert 'data-folder="${escapeAttr(folder.slug)}"' in docs_js
     assert "admin-docs-prose" in docs_js
     assert 'id="adminDocsEdit"' in docs_js
+    assert 'id="adminDocsAppend"' in docs_js
+    assert "Append markdown" in docs_js
     assert "admin-docs-cancel" in docs_js
     assert "docBylineHtml" in docs_js
     assert "admin-docs-editor" in docs_js
@@ -55,6 +59,7 @@ def test_team_docs_require_auth(v2_client):
     assert v2_client.post("/api/admin/team-docs", json={"title": "Nope"}).status_code == 401
     assert v2_client.get("/api/admin/team-docs/1").status_code == 401
     assert v2_client.patch("/api/admin/team-docs/1", json={"title": "Nope"}).status_code == 401
+    assert v2_client.post("/api/admin/team-docs/1/append", json={"body": "Nope"}).status_code == 401
     assert v2_client.delete("/api/admin/team-docs/1").status_code == 401
 
 
@@ -72,6 +77,8 @@ def test_team_docs_require_admin(v2_client, test_user, db):
     )
     assert created.status_code == 403
     assert created.get_json()["error"] == "Admin access required"
+    appended = v2_client.post("/api/admin/team-docs/1/append", json={"body": "nope"})
+    assert appended.status_code == 403
 
 
 def test_team_docs_seed_root_folders(v2_auth_client, db):
@@ -310,6 +317,42 @@ def test_team_docs_auto_slug_suffix_and_validation(v2_auth_client, db):
         json={"title": "Nope"},
     )
     assert missing_folder_name.status_code == 400
+
+
+def test_team_docs_append_adds_markdown(v2_auth_client, db):
+    del db
+    created = v2_auth_client.post(
+        "/api/admin/team-docs",
+        json={"folder": "tech", "title": "Runbook", "body": "Start here."},
+    )
+    doc_id = created.get_json()["doc"]["id"]
+    appended = v2_auth_client.post(
+        f"/api/admin/team-docs/{doc_id}/append",
+        json={"body": "Then check the queue."},
+    )
+    assert appended.status_code == 200
+    doc = appended.get_json()["doc"]
+    assert doc["body"] == "Start here.\n\nThen check the queue.\n"
+    assert doc["updated_by"] == "admin"
+    assert "Then check the queue." in doc["html"]
+    empty = v2_auth_client.post(f"/api/admin/team-docs/{doc_id}/append", json={"body": "  "})
+    assert empty.status_code == 400
+    missing = v2_auth_client.post("/api/admin/team-docs/999999/append", json={"body": "Later"})
+    assert missing.status_code == 404
+
+
+def test_bundled_team_doc_sync_inserts_once(v2_auth_client, db):
+    del db
+    with db_transaction() as conn:
+        _sync_bundled_team_docs(conn)
+        _sync_bundled_team_docs(conn)
+    tree = v2_auth_client.get("/api/admin/team-docs").get_json()
+    tech = _folder_by_slug(tree, "tech")
+    matches = [doc for doc in tech["docs"] if doc["slug"] == "ops-agent-merge-ram"]
+    assert len(matches) == 1
+    assert matches[0]["title"] == "Ops-agent cutover and the merge follower"
+    fetched = v2_auth_client.get(f"/api/admin/team-docs/{matches[0]['id']}").get_json()["doc"]
+    assert "relocation-fetch-merge" in fetched["body"]
 
 
 def test_team_docs_patch_and_delete_missing(v2_auth_client, db):

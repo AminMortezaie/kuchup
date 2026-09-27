@@ -717,12 +717,20 @@
   font: inherit;
 }
 
+.admin-docs-append {
+  margin-top: var(--space-md, 1rem);
+}
+
 .admin-docs-form textarea {
   min-height: 18rem;
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
   font-size: 0.82rem;
   line-height: 1.45;
   resize: vertical;
+}
+
+.admin-docs-form.admin-docs-append textarea {
+  min-height: 8rem;
 }
 
 .admin-docs-actions {
