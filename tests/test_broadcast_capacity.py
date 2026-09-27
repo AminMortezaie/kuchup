@@ -197,6 +197,116 @@ def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch)
     assert credit_balance(uid).total == 29
 
 
+def test_retry_after_failed_enqueue_completes_with_dedup_spend(db, monkeypatch):
+    user = create_user(
+        "broadcast-retry-dedup",
+        email="retry-dedup@example.com",
+        google_sub="sub-retry-dedup",
+    )
+    uid = int(user["id"])
+    jobs = [_job(i) for i in range(1, 5)]
+    period = repo.current_period_key()
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=3, period_key=period,
+    )
+    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
+    enqueue_calls: list[int] = []
+
+    def enqueue(*args, **kwargs):
+        enqueue_calls.append(1)
+        if len(enqueue_calls) == 1:
+            raise RuntimeError("writer down")
+        return {"queued": True, "synced": False}
+
+    monkeypatch.setattr(broadcast_service, "enqueue_replace_assignment", enqueue)
+    event = RevealEvent(
+        country="germany",
+        company_name="Acme",
+        kind="seen",
+        job_url=jobs[0]["url"],
+        job_key=jobs[0]["idempotency_key"],
+        job_title=jobs[0]["title"],
+    )
+    first = broadcast_service.record_touch_and_maybe_reveal(uid, event)
+    assert first["reason"] == "replacement_assignment_failed"
+    assert first["expanded"] is False
+    assert repo.consumed_count(uid, period_key=period) == 0
+    second = broadcast_service.record_touch_and_maybe_reveal(uid, event)
+    assert second["expanded"] is True
+    assert second["credits_spent"] == 1
+    assert repo.consumed_count(uid, period_key=period) == 1
+    assert len(enqueue_calls) == 2
+
+
+def test_no_replacement_does_not_consume_assignment(db, monkeypatch):
+    user = create_user(
+        "broadcast-no-consume",
+        email="no-consume@example.com",
+        google_sub="sub-no-consume",
+    )
+    uid = int(user["id"])
+    jobs = [_job(i) for i in range(1, 4)]
+    period = repo.current_period_key()
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=3, period_key=period,
+    )
+    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs[:3])
+    result = broadcast_service.record_touch_and_maybe_reveal(
+        uid,
+        RevealEvent(
+            country="germany",
+            company_name="Acme",
+            kind="seen",
+            job_url=jobs[0]["url"],
+            job_key=jobs[0]["idempotency_key"],
+            job_title=jobs[0]["title"],
+        ),
+    )
+    assert result["reason"] == "no_replacement"
+    assert repo.consumed_count(uid, period_key=period) == 0
+
+
+def test_insufficient_credits_does_not_consume_assignment(db, monkeypatch):
+    user = create_user(
+        "broadcast-no-wallet-consume",
+        email="no-wallet-consume@example.com",
+        google_sub="sub-no-wallet-consume",
+    )
+    uid = int(user["id"])
+    jobs = [_job(i) for i in range(1, 5)]
+    period = repo.current_period_key()
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=3, period_key=period,
+    )
+    credit_balance(uid)
+    for index in range(30):
+        credits_repo.spend_credits(
+            uid,
+            cost=1,
+            operation="test",
+            idempotency_key=f"drain-consume:{index}",
+        )
+    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
+    monkeypatch.setattr(
+        broadcast_service,
+        "enqueue_replace_assignment",
+        lambda *args, **kwargs: {"queued": True, "synced": False},
+    )
+    result = broadcast_service.record_touch_and_maybe_reveal(
+        uid,
+        RevealEvent(
+            country="germany",
+            company_name="Acme",
+            kind="seen",
+            job_url=jobs[0]["url"],
+            job_key=jobs[0]["idempotency_key"],
+            job_title=jobs[0]["title"],
+        ),
+    )
+    assert result["reason"] == "credits_exhausted"
+    assert repo.consumed_count(uid, period_key=period) == 0
+
+
 def test_action_with_no_replacement_spends_no_credit(db, monkeypatch):
     user = create_user(
         "broadcast-no-replacement",
@@ -262,4 +372,4 @@ def test_empty_wallet_does_not_refill_on_board_read(db, monkeypatch):
     )
     assert result["reason"] == "credits_exhausted"
     assert len(assignments) == 3
-    assert sum(item.consumed_at is None for item in assignments) == 2
+    assert sum(item.consumed_at is None for item in assignments) == 3

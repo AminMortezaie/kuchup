@@ -114,3 +114,38 @@ def mark_assignment_consumed(
             (now, user_id, country_key, name),
         )
     return True
+
+
+def revert_assignment_consumed(
+    user_id: int,
+    *,
+    country: str,
+    company_name: str,
+    job_key: str,
+    period_key: str | None = None,
+) -> bool:
+    period = period_key or current_period_key()
+    country_key = country.strip().lower()
+    name = company_name.strip()
+    key = job_key.strip()
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT consumed_at FROM position_broadcast_assignments
+            WHERE user_id = %s AND period_key = %s AND country = %s
+              AND lower(company_name) = lower(%s) AND job_key = %s
+            """,
+            (user_id, period, country_key, name, key),
+        ).fetchone()
+        if not row or not (row.get("consumed_at") or "").strip():
+            return False
+        conn.execute(
+            """
+            UPDATE position_broadcast_assignments
+            SET consumed_at = NULL, action_kind = NULL
+            WHERE user_id = %s AND period_key = %s AND country = %s
+              AND lower(company_name) = lower(%s) AND job_key = %s
+            """,
+            (user_id, period, country_key, name, key),
+        )
+    return True

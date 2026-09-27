@@ -238,6 +238,39 @@ def register(app):
         except LookupError as e:
             return jsonify({"error": str(e)}), 404
 
+    @app.post("/api/jobs/unlock-role")
+    @login_required
+    def api_jobs_unlock_role():
+        body = request.get_json(silent=True) or {}
+        if err := job_mutation_error(body):
+            return err
+        country, company, url = job_mutation_fields(body)
+        job_key = (body.get("idempotency_key") or body.get("job_key") or "").strip()
+        reveal = _touch_reveal(
+            country,
+            company,
+            {
+                "url": url,
+                "idempotency_key": job_key,
+                "title": (body.get("title") or "").strip(),
+            },
+            "unlock",
+        )
+        reason = reveal.get("reason")
+        if reason == "credits_exhausted":
+            return jsonify({
+                "ok": False,
+                "error": "Add credits to unlock the next matched role for this company.",
+                "reveal": reveal,
+            }), 402
+        if reason == "not_assigned":
+            return jsonify({
+                "ok": False,
+                "error": "That role is not in your active matched set for this company.",
+                "reveal": reveal,
+            }), 400
+        return jsonify({"ok": True, "reveal": reveal})
+
     @app.patch("/api/jobs/pin")
     @app.post("/api/jobs/pin")
     @login_required
