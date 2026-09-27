@@ -14,7 +14,7 @@
 #
 # Requires: aws-postgres.env, SSH key at ~/Downloads/relocation.pem
 # Optional Grafana Cloud (ops-agent): GRAFANA_CLOUD_PROMETHEUS_URL, GRAFANA_CLOUD_PROMETHEUS_USER,
-# GRAFANA_CLOUD_API_TOKEN in .env — see docs/operations/monitoring.md
+# GRAFANA_CLOUD_API_TOKEN in .env — Admin Docs → Tech → Production monitoring
 # Disk: root fills from leftover panel/worker images; deploy prunes dangling
 # images only. BuildKit cache is kept across deploys so tectonic/pip (and
 # Playwright, when the opt-in sidecar is built) layers are reused — never
@@ -34,7 +34,7 @@
 #                          with DEPLOY_LOCAL=1 on a memory-constrained runner)
 #
 # Worker caps (no extra swap): OOM kills that container and restart brings
-# it back. Other containers stay uncapped. See docs/operations/ec2-panel.md.
+# it back. Other containers stay uncapped. Admin Docs → Tech → EC2 panel production.
 
 set -euo pipefail
 

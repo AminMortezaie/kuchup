@@ -22,10 +22,6 @@
   <a href="https://kuchup.com/mcp">MCP</a>
   ·
   <a href="https://kuchup.com/how-it-works">How it works</a>
-  ·
-  <a href="docs/contributing.md">Contributing</a>
-  ·
-  <a href="docs/README.md">Docs</a>
 </p>
 
 <p align="center">
@@ -90,7 +86,7 @@ relocation_jobs/      domains — catalog, positions, panel, fetch, scrape, user
 frontend/             React board widget → relocation_jobs/static/dist/
 homepage/             marketing site (Next.js; same-origin /api/public/*)
 scripts/              ops helpers + Docker entry paths
-docs/                 documentation
+docs/assets/          images used by this README
 tests/                pytest (mirrors relocation_jobs/ domains)
 ```
 
@@ -126,9 +122,6 @@ After React UI edits: `cd frontend && npm run build` →
 `relocation_jobs/static/dist/board.js`. Hard refresh (`Cmd+Shift+R`) after
 JS/CSS changes.
 
-Contributor setup, domains, and coding rules:
-[`docs/contributing.md`](docs/contributing.md).
-
 ---
 
 ## Environment
@@ -151,10 +144,8 @@ only.
 | `PANEL_PUBLIC_BASE_URL` | Panel URL used by MCP “Continue with Google” |
 | `MCP_LATEX_CMD` | LaTeX compiler for PDF (default `tectonic`) |
 
-MCP: [mcp-application.md](docs/reference/mcp-application.md) ·
-[company-workspace.md](docs/reference/company-workspace.md).
 AWS Postgres: `./scripts/aws_postgres_migrate.sh sync-sg` after your public IP
-changes — [ops index](docs/README.md).
+changes. Staff runbooks are in the admin panel under **Admin Docs → Tech**.
 
 ---
 
@@ -182,8 +173,7 @@ from an ATS stay as catalog orphans and reappear if you still have tracking.
 
 **Claude Desktop / Cursor MCP:** `python3 apps/mcp/run.py` — job context,
 application queue, masters, project masters, tailored tex/PDF, cover letters,
-`mark_applied`. After an invite: interview notes. See
-[mcp-application.md](docs/reference/mcp-application.md).
+`mark_applied`. After an invite: interview notes.
 
 ### Build company lists
 
@@ -225,10 +215,9 @@ relocate.me
 | **Redis** (`REDIS_URL`) | Optional country-label cache |
 | `data/custom_cities.json` | User-added cities (`PANEL_DATA_DIR`) |
 
-**Layer rule:** SQL only in `*/repo.py`. Details:
-[architecture.md](docs/reference/architecture.md) ·
-[rules.md](docs/reference/rules.md) ·
-[apps/README.md](apps/README.md).
+**Layer rule:** SQL only in `*/repo.py`. How to run each app:
+[apps/README.md](apps/README.md). Architecture and coding rules are in
+Admin Docs → Tech.
 
 ---
 
@@ -240,16 +229,16 @@ pytest tests/mcp -o addopts=             # MCP / application assistant
 pytest --cov --cov-report=term-missing   # coverage gate on business modules
 ```
 
-In-memory Postgres mock only — no live ATS or production DB. Contracts:
-[business-rules.md](docs/reference/business-rules.md).
+In-memory Postgres mock only — no live ATS or production DB. Job-state
+contracts are in Admin Docs → Tech → Core business rules.
 
 ---
 
 ## Production
 
 [kuchup.com](https://kuchup.com) runs on one AWS EC2 host: Postgres, Redis,
-panel, fetch worker, and Caddy, with Cloudflare in front. Guide:
-[ec2-panel.md](docs/operations/ec2-panel.md).
+panel, fetch worker, and Caddy, with Cloudflare in front. The deploy
+runbook is in Admin Docs → Tech → EC2 panel production.
 
 ```bash
 ./scripts/ec2_app_deploy.sh deploy      # frontend build, rsync, images, restart
@@ -264,11 +253,4 @@ changes: `./scripts/aws_postgres_migrate.sh sync-sg`.
 
 ## Documentation
 
-| Topic | Doc |
-|-------|-----|
-| First 15 minutes | [contributing.md](docs/contributing.md) |
-| Architecture | [architecture.md](docs/reference/architecture.md) |
-| Coding rules | [rules.md](docs/reference/rules.md) |
-| Job buckets | [business-rules.md](docs/reference/business-rules.md) |
-| MCP / apply / project masters | [mcp-application.md](docs/reference/mcp-application.md) |
-| Full doc index | [docs/README.md](docs/README.md) |
+Staff technical docs (setup, architecture, coding rules, operations) are in the admin panel: **Admin Docs → Tech**.

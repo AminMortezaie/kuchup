@@ -45,4 +45,4 @@ Each user has three **application states** derived from `job_tracking` (no separ
 - Duplicate rows cannot exist (one tracking row per user + job URL).
 - Count and list SQL filter at the database; do not hydrate full histories just to show tab badges.
 
-See engineering detail: `docs/reference/application-queue.md`.
+See engineering detail in Admin Docs → Tech → Application queue lifecycle.

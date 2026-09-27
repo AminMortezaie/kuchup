@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""stdio MCP entry point for Claude Desktop — see docs/reference/mcp-application.md."""
+"""stdio MCP entry point for Claude Desktop."""
 
 from __future__ import annotations
 

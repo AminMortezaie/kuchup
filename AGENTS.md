@@ -1,11 +1,10 @@
 # Agents & contributors
 
-**All docs:** [`docs/README.md`](docs/README.md)
+Technical docs live in the admin panel: **Admin Docs → Tech**.
 
 | I want to… | Read |
 |------------|------|
 | Install and use the panel | [README.md](README.md) |
-| Develop / contribute | [docs/contributing.md](docs/contributing.md) |
 | Run panel / workers / MCP | [`apps/README.md`](apps/README.md) |
 
 **Code:** `relocation_jobs/` (Python domains) · `role_propagator/` (Go assignments) · **Apps:** [`apps/`](apps/) · **Panel:** port **5051** · **Tests:** `pytest tests -o addopts= -q --tb=line`  
@@ -16,4 +15,4 @@
 | I want to… | Go |
 |------------|-----|
 | Change domain logic | `relocation_jobs/<domain>/` (Python) · `role_propagator/` (Go) |
-| Production ops | [`docs/operations/ec2-panel.md`](docs/operations/ec2-panel.md) |
+| Production ops | Admin Docs → Tech → EC2 panel production |

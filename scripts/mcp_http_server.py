@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Streamable HTTP MCP entry point with OAuth — see docs/reference/mcp-application.md."""
+"""Streamable HTTP MCP entry point with OAuth."""
 
 from __future__ import annotations
 

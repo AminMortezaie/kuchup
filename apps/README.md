@@ -8,7 +8,7 @@ Thin, discoverable entrypoints for the product’s runnable services. Python dom
 | **fetch-worker** | `python3 apps/fetch-worker/run.py` | Scheduled country scrape worker (HTTP ATS; default production image) |
 | **playwright-worker** | `python3 apps/playwright-worker/run.py` | Chromium boards only (`jibe`, `atlassian`, `hibob`) |
 | **role-propagator** | `python3 apps/role-propagator/run.py` | SQS assignment writer (company slots + roles) |
-| **ops-agent** | `go run ./apps/ops-agent --once` | EC2 metrics → Grafana Cloud + Postgres (see [monitoring.md](../docs/operations/monitoring.md)) |
+| **ops-agent** | `go run ./apps/ops-agent --once` | EC2 metrics → Grafana Cloud + Postgres |
 | **mcp** (stdio) | `python3 apps/mcp/run.py` | Claude Desktop MCP (stdio) |
 | **mcp** (HTTP) | `python3 apps/mcp/run_http.py` | Streamable HTTP MCP + OAuth |
 
@@ -23,7 +23,6 @@ role_propagator/       ← Go domain (sticky slots + role assignment)
 frontend/              ← React board widget → static/dist/
 homepage/              ← marketing site (Next.js; same-origin /api/public/*)
 scripts/               ← ops + legacy entry paths for Docker
-docs/                  ← documentation
 ```
 
-Stay in one repo: panel, workers, and MCP share Postgres, `core/`, and migrations. See [architecture.md](../docs/reference/architecture.md).
+Stay in one repo: panel, workers, and MCP share Postgres, `core/`, and migrations. Architecture is in Admin Docs → Tech.

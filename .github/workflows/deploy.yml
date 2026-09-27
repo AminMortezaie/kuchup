@@ -9,7 +9,7 @@
 # Manual: workflow_dispatch (skips CI gate; can force image rebuild).
 #
 # Does NOT call open-sg.  CI stays on GitHub-hosted runners.
-# See docs/operations/ec2-panel.md#self-hosted-runner for install / ops.
+# Self-hosted runner install: Admin Docs → Tech → EC2 panel production.
 
 name: Deploy
 

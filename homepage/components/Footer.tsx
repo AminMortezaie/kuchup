@@ -15,11 +15,6 @@ const META_LINKS = [
     label: "Engineering",
   },
   {
-    href: "https://github.com/AminMortezaie/relocation-jobs/blob/main/docs/contributing.md",
-    label: "Contributing",
-    external: true,
-  },
-  {
     href: "https://github.com/AminMortezaie/relocation-jobs",
     label: "Source",
     external: true,

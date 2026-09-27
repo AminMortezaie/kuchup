@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Relocation Jobs — onboarding
 
-**Read first:** [`docs/README.md`](../../docs/README.md) and [`AGENTS.md`](../../AGENTS.md)
+**Read first:** [`AGENTS.md`](../../AGENTS.md). Technical docs are in the admin panel: **Admin Docs → Tech**.
 
 - **Code exploration:** before reading or changing code, use **`codebase-memory-mcp`** first (`codebase-memory` skill) — graph queries over broad Grep/file reads
 - **Code:** `relocation_jobs/` (domain folders: `catalog/`, `web/`, `fetch/`, `scrape/`, …)

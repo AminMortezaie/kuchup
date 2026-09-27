@@ -6,8 +6,8 @@ alwaysApply: false
 
 # Coding standards
 
-**Start here for new contributors:** [`docs/contributing.md`](../../docs/contributing.md) · [`docs/README.md`](../../docs/README.md)  
-**Canonical doc:** `docs/reference/rules.md`
+**Start here for new contributors:** [`AGENTS.md`](../../AGENTS.md) · Admin Docs → Tech  
+**Canonical coding rules:** Admin Docs → Tech → Coding rules. This file is the in-repo summary.
 
 Tests: `pytest tests -o addopts=`. Do not commit unless the user asks.
 
