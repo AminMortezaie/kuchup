@@ -1,0 +1,9 @@
+I just added brevo api key on localhost we can test for email sending of it on localhost.
+
+---
+
+it works
+
+---
+
+add its api key on panel to test real new mail email confirmation
