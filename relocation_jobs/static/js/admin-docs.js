@@ -269,8 +269,6 @@ async function appendForm(form) {
       body: JSON.stringify({ body: form.body.value }),
     });
     currentDoc = saved.doc;
-    selected = { folder: saved.doc.folder, docId: saved.doc.id };
-    mode = "read";
     tree = await apiJson("/api/admin/team-docs");
     render();
     toast("Appended");

@@ -181,19 +181,7 @@ def append_document(doc_id: int, *, body: str, editor_user_id: int) -> dict:
         raise LookupError("Document not found")
     base = (current["body"] or "").rstrip()
     merged = f"{base}\n\n{extra}\n" if base else f"{extra}\n"
-    if len(merged) > _BODY_MAX:
-        raise ValueError(f"Body must be at most {_BODY_MAX} characters")
-    saved = repo.update_doc(
-        current["id"],
-        folder=current["folder"],
-        slug=current["slug"],
-        title=current["title"],
-        body=merged,
-        editor_user_id=editor_user_id,
-    )
-    if not saved:
-        raise LookupError("Document not found")
-    return _public_doc(saved)
+    return update_document(doc_id, body=merged, editor_user_id=editor_user_id)
 
 
 def delete_document(doc_id: int) -> None:
