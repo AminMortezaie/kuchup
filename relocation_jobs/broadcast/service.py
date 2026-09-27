@@ -12,6 +12,7 @@ from relocation_jobs.async_jobs.enqueue import enqueue_replace_assignment
 from relocation_jobs.catalog.repo import get_company, list_jobs_for_company_keys
 from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
+from relocation_jobs.credits.policy import operation_cost
 from relocation_jobs.credits.service import (
     credit_balance,
     mark_usage_migration_done,
@@ -263,6 +264,35 @@ def _replacement_candidate(
     )
 
 
+def _assignment_for_key(
+    assignments: list[PositionAssignment],
+    job_key: str,
+) -> PositionAssignment | None:
+    key = job_key.strip()
+    if not key:
+        return None
+    return next((row for row in assignments if row.job_key == key), None)
+
+
+def _rollback_unlock(
+    user_id: int,
+    *,
+    period: str,
+    country: str,
+    company_name: str,
+    job_key: str,
+    spend_key: str,
+) -> None:
+    refund_operation(user_id, spend_key=spend_key, reason="replacement_assignment_failed")
+    broadcast_repo.revert_assignment_consumed(
+        user_id,
+        country=country,
+        company_name=company_name,
+        job_key=job_key,
+        period_key=period,
+    )
+
+
 def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
     user = get_user_by_id(user_id)
     if not user:
@@ -274,6 +304,39 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
     if not key:
         return {"expanded": False, "reason": "missing_job_key"}
     import_month_usage(user_id, period)
+    assignments = broadcast_repo.list_assignments(user_id, period_key=period)
+    assignment = _assignment_for_key(assignments, key)
+    if assignment is None:
+        return {
+            "expanded": False,
+            "consumed": False,
+            "reason": "not_assigned",
+            "capacity": capacity_meta_for_user(user_id).as_dict(),
+        }
+    if assignment.consumed_at:
+        return {
+            "expanded": False,
+            "consumed": False,
+            "reason": "already_counted",
+            "capacity": capacity_meta_for_user(user_id).as_dict(),
+        }
+    jobs = _raw_jobs(event.country, event.company_name)
+    candidate = _replacement_candidate(jobs, assignments)
+    if candidate is None:
+        return {
+            "expanded": False,
+            "consumed": False,
+            "reason": "no_replacement",
+            "capacity": capacity_meta_for_user(user_id).as_dict(),
+        }
+    cost = operation_cost(CreditOperation.ROLE_REPLACEMENT)
+    if credit_balance(user_id).total < cost:
+        return {
+            "expanded": False,
+            "consumed": False,
+            "reason": "credits_exhausted",
+            "capacity": capacity_meta_for_user(user_id).as_dict(),
+        }
     newly_consumed = broadcast_repo.mark_assignment_consumed(
         user_id,
         country=event.country,
@@ -291,16 +354,6 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "reason": "already_counted",
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
-    before = broadcast_repo.list_assignments(user_id, period_key=period)
-    jobs = _raw_jobs(event.country, event.company_name)
-    candidate = _replacement_candidate(jobs, before)
-    if candidate is None:
-        return {
-            "expanded": False,
-            "consumed": False,
-            "reason": "no_replacement",
-            "capacity": capacity_meta_for_user(user_id).as_dict(),
-        }
     spend_key = _role_delivery_key(period, event.country, event.company_name, key)
     spent = spend_for_operation(
         user_id,
@@ -314,10 +367,21 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
         },
     )
     if not spent["spent"] or spent["deduplicated"]:
+        if spent["deduplicated"]:
+            reason = "already_counted"
+        else:
+            reason = "credits_exhausted"
+            broadcast_repo.revert_assignment_consumed(
+                user_id,
+                country=event.country,
+                company_name=event.company_name,
+                job_key=key,
+                period_key=period,
+            )
         return {
             "expanded": False,
             "consumed": False,
-            "reason": "already_counted" if spent["deduplicated"] else "credits_exhausted",
+            "reason": reason,
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
     try:
@@ -328,7 +392,14 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             source_job_key=key,
         )
     except RuntimeError:
-        refund_operation(user_id, spend_key=spend_key, reason="replacement_assignment_failed")
+        _rollback_unlock(
+            user_id,
+            period=period,
+            country=event.country,
+            company_name=event.company_name,
+            job_key=key,
+            spend_key=spend_key,
+        )
         return {
             "expanded": False,
             "consumed": False,
@@ -337,7 +408,14 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
         }
     replacement_revealed = bool(queued.get("queued") or queued.get("synced"))
     if not replacement_revealed:
-        refund_operation(user_id, spend_key=spend_key, reason="replacement_assignment_failed")
+        _rollback_unlock(
+            user_id,
+            period=period,
+            country=event.country,
+            company_name=event.company_name,
+            job_key=key,
+            spend_key=spend_key,
+        )
     return {
         "expanded": replacement_revealed,
         "consumed": replacement_revealed,
