@@ -41,6 +41,7 @@ def test_admin_docs_pane_is_private_shell():
     assert "admin-docs-cancel" in docs_js
     assert "docBylineHtml" in docs_js
     assert "admin-docs-editor" in docs_js
+    assert "window.scrollTo(0, 0)" in docs_js
 
 
 def test_team_docs_not_on_sitemap_or_homepage(v2_client):

@@ -229,6 +229,7 @@ function render() {
     mount.querySelector("#adminDocsForm input[name='title']")?.focus();
   }
   bindMount(mount);
+  window.scrollTo(0, 0);
 }
 
 async function loadSelected() {
