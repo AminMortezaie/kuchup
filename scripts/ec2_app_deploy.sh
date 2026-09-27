@@ -695,17 +695,9 @@ docker run -d --name ${MCP_CONTAINER} --restart unless-stopped \\
   ${MCP_IMAGE}
 EOF
 
-  log "Starting HTTP fetch merge consumer (panel image, before Go worker)..."
-  ssh_cmd bash -s <<EOF
-set -euo pipefail
-docker rm -f relocation-fetch-merge 2>/dev/null || true
-docker run -d --name relocation-fetch-merge --restart unless-stopped \\
-  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
-  -e DATABASE_URL='${db_url}' \\
-  -e FETCH_MERGE_POLL_SECONDS=2 \\
-  --entrypoint python3 \\
-  ${PANEL_IMAGE} -m relocation_jobs.fetch.merge_consumer
-EOF
+  # Crash-loop (~260MiB): describe shells out to `go` which is not in the panel image.
+  log "Stopping HTTP fetch merge consumer (not started on deploy)..."
+  ssh_cmd "docker rm -f relocation-fetch-merge 2>/dev/null || true" || true
 
   worker_hash="$(remote_image_hash worker)"
   if image_needs_rebuild worker "$WORKER_IMAGE" "$worker_hash"; then
