@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d9826c2d4b9e",
+  "strategy": "manual-commit",
+  "branch": "admin-docs-append",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "relocation_jobs/static/js/admin-docs.js",
+    "relocation_jobs/team_docs/service.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d9/826c2d4b9e/0/metadata.json",
+      "transcript": "/d9/826c2d4b9e/0/full.jsonl",
+      "compact_transcript": "/d9/826c2d4b9e/0/transcript.jsonl",
+      "content_hash": "/d9/826c2d4b9e/0/content_hash.txt",
+      "prompt": "/d9/826c2d4b9e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 9013,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 242176,
+    "output_tokens": 3519,
+    "api_call_count": 1
+  }
+}
