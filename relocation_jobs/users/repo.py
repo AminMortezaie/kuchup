@@ -457,6 +457,18 @@ def password_user_needs_email_confirm(row: dict | None) -> bool:
     return not (row.get("email_confirmed_at") or "").strip()
 
 
+def delete_unconfirmed_password_user(user_id: int) -> bool:
+    user = get_user_by_id(user_id)
+    if not user:
+        return False
+    creds = get_user_credentials_by_email(str(user.get("email") or ""))
+    if not password_user_needs_email_confirm(creds):
+        return False
+    with db_transaction() as conn:
+        cur = conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        return cur.rowcount > 0
+
+
 def set_user_email_confirmed(user_id: int, at: str | None = None) -> None:
     stamp = (at or "").strip() or _utc_now()
     with db_transaction() as conn:

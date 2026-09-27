@@ -15,10 +15,11 @@ from relocation_jobs.async_jobs.enqueue import enqueue_user_opportunity_refresh
 from relocation_jobs.broadcast.service import import_month_usage
 from relocation_jobs.users.entitlements import entitlement_status
 from relocation_jobs.core.email_confirm import decode_email_confirm_token, encode_email_confirm_token
-from relocation_jobs.core.outbound_mail import send_panel_email_confirm, smtp_configured
+from relocation_jobs.core.outbound_mail import brevo_configured, send_panel_email_confirm
 from relocation_jobs.users.repo import (
     create_password_user,
     create_user,
+    delete_unconfirmed_password_user,
     get_user_by_email,
     get_user_by_id,
     get_user_credentials_by_email,
@@ -208,10 +209,15 @@ def _validate_panel_password(raw: str) -> None:
 
 
 def send_password_user_confirmation(*, user_id: int, email: str, base_url: str) -> None:
-    if not smtp_configured():
+    if not brevo_configured():
         raise RuntimeError("Email delivery is not configured")
     token = encode_email_confirm_token(int(user_id))
     send_panel_email_confirm(to=email, token=token, base_url=base_url)
+
+
+def rollback_failed_registration(user: dict) -> None:
+    if user.get("created_new"):
+        delete_unconfirmed_password_user(int(user["id"]))
 
 
 def register_with_password(email: str, password: str, *, display_name: str = "") -> dict:
@@ -222,7 +228,12 @@ def register_with_password(email: str, password: str, *, display_name: str = "")
     existing = get_user_credentials_by_email(email)
     if existing is not None:
         if password_user_needs_email_confirm(existing):
-            return {"id": int(existing["id"]), "email": email, "pending_confirmation": True}
+            return {
+                "id": int(existing["id"]),
+                "email": email,
+                "pending_confirmation": True,
+                "created_new": False,
+            }
         raise ValueError("Email already registered")
     name = (display_name or "").strip() or email.split("@", 1)[0]
     user = create_password_user(
@@ -232,6 +243,7 @@ def register_with_password(email: str, password: str, *, display_name: str = "")
         is_admin=email in admin_emails(),
     )
     user["pending_confirmation"] = True
+    user["created_new"] = True
     return user
 
 

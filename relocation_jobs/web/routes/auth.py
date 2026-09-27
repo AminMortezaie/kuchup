@@ -14,6 +14,7 @@ from relocation_jobs.core.auth import (
     login_with_password,
     logout_user,
     register_with_password,
+    rollback_failed_registration,
     send_password_user_confirmation,
 )
 from relocation_jobs.core.google_oauth import (
@@ -106,6 +107,7 @@ def register(app):
                 return jsonify({"error": message}), 400
             return jsonify({"error": message}), 400
         except RuntimeError:
+            rollback_failed_registration(user)
             return jsonify({"error": "We could not send a confirmation email. Try again later."}), 503
         return jsonify(
             {

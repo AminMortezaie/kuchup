@@ -23,8 +23,8 @@ def _quiet_bootstrap(monkeypatch):
 
 
 @pytest.fixture
-def _smtp_ready(monkeypatch):
-    monkeypatch.setattr("relocation_jobs.core.auth.smtp_configured", lambda: True)
+def _brevo_ready(monkeypatch):
+    monkeypatch.setattr("relocation_jobs.core.auth.brevo_configured", lambda: True)
     sent: dict = {}
 
     def _capture(**kwargs):
@@ -34,7 +34,7 @@ def _smtp_ready(monkeypatch):
     return sent
 
 
-def test_register_sends_confirm_and_is_not_authenticated(client, db, monkeypatch, _quiet_bootstrap, _smtp_ready):
+def test_register_sends_confirm_and_is_not_authenticated(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     email = "panel-user@example.com"
     password = "secret-pass-1"
@@ -47,19 +47,19 @@ def test_register_sends_confirm_and_is_not_authenticated(client, db, monkeypatch
     assert body["authenticated"] is False
     assert body["confirm_email_sent"] is True
     assert body["email"] == email
-    assert _smtp_ready["to"] == email
-    assert _smtp_ready["token"]
+    assert _brevo_ready["to"] == email
+    assert _brevo_ready["token"]
 
     status = client.get("/api/auth/status").get_json()
     assert status["authenticated"] is False
 
 
-def test_confirm_email_logs_in(client, db, monkeypatch, _quiet_bootstrap, _smtp_ready):
+def test_confirm_email_logs_in(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     email = "confirm-me@example.com"
     password = "secret-pass-1"
     client.post("/api/auth/register", json={"email": email, "password": password})
-    token = _smtp_ready["token"]
+    token = _brevo_ready["token"]
     res = client.get(f"/api/auth/confirm-email?token={token}")
     assert res.status_code in (302, 303)
     assert "/panel" in (res.headers.get("Location") or "")
@@ -73,7 +73,7 @@ def test_confirm_email_logs_in(client, db, monkeypatch, _quiet_bootstrap, _smtp_
     assert res.get_json()["authenticated"] is True
 
 
-def test_login_before_confirm_is_blocked(client, db, monkeypatch, _quiet_bootstrap, _smtp_ready):
+def test_login_before_confirm_is_blocked(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     email = "unconfirmed@example.com"
     client.post(
@@ -101,7 +101,7 @@ def test_login_wrong_password(client, db, monkeypatch, _quiet_bootstrap):
     assert res.get_json()["error"] == "Invalid email or password"
 
 
-def test_register_duplicate_email(client, db, monkeypatch, _quiet_bootstrap, _smtp_ready):
+def test_register_duplicate_email(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
     email = "dup@example.com"
     user = create_password_user(
@@ -117,7 +117,7 @@ def test_register_duplicate_email(client, db, monkeypatch, _quiet_bootstrap, _sm
     assert "already exists" in res.get_json()["error"].lower()
 
 
-def test_register_respects_allow_register(client, db, monkeypatch, _quiet_bootstrap, _smtp_ready):
+def test_register_respects_allow_register(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
     monkeypatch.setenv("PANEL_ALLOW_REGISTER", "0")
     res = client.post(
         "/api/auth/register",
@@ -186,6 +186,22 @@ def test_google_still_works_after_password_auth(client, db, monkeypatch, _quiet_
     status = client.get("/api/auth/status").get_json()
     assert status["authenticated"] is True
     assert status["user"]["email"] == "google-still@example.com"
+
+
+def test_register_send_failure_removes_new_user(client, db, monkeypatch, _quiet_bootstrap, _brevo_ready):
+    monkeypatch.setenv("PANEL_ALLOW_REGISTER", "1")
+    email = "rollback@example.com"
+
+    def _fail(**kwargs):
+        raise RuntimeError("Brevo send failed")
+
+    monkeypatch.setattr("relocation_jobs.core.auth.send_panel_email_confirm", _fail)
+    res = client.post(
+        "/api/auth/register",
+        json={"email": email, "password": "secret-pass-1"},
+    )
+    assert res.status_code == 503
+    assert get_user_by_email(email) is None
 
 
 def test_confirm_with_direct_token(client, db, monkeypatch, _quiet_bootstrap):
