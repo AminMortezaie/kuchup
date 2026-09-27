@@ -1,0 +1,207 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ffb0372ea333",
+  "session_id": "3c65ef10-6bf3-45c5-aabd-f002a347a488",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T13:00:05.948472Z",
+  "branch": "main",
+  "checkpoints_count": 7,
+  "save_step_count": 7,
+  "files_touched": [
+    "relocation_jobs/core/db.py",
+    "tests/core/test_db_pool.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "c242bfc6d01e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 599478,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3356288,
+    "output_tokens": 31423,
+    "api_call_count": 7
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-27T12:45:22.255249Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "a75fde9d433f",
+      "timestamp": "2026-09-27T12:45:22.255249Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T13:00:05.931851Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 0,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 69,
+      "user_lines_removed": 43,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/core/db.py": 4,
+        "relocation_jobs/static/homepage/404.html": 1,
+        "relocation_jobs/static/homepage/_next/static/QJ6-Gxei748hMPcjj_beE/_buildManifest.js": 1,
+        "relocation_jobs/static/homepage/_next/static/QJ6-Gxei748hMPcjj_beE/_ssgManifest.js": 1,
+        "relocation_jobs/static/homepage/engineering.html": 1,
+        "relocation_jobs/static/homepage/engineering.txt": 1,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 1,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 1,
+        "relocation_jobs/static/homepage/engineering/cant-start-new-thread.html": 2,
+        "relocation_jobs/static/homepage/engineering/cant-start-new-thread.txt": 1,
+        "relocation_jobs/static/homepage/engineering/one-loop-not-faster.html": 1,
+        "relocation_jobs/static/homepage/engineering/one-loop-not-faster.txt": 1,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 1,
+        "relocation_jobs/static/homepage/how-it-works.html": 1,
+        "relocation_jobs/static/homepage/how-it-works.txt": 1,
+        "relocation_jobs/static/homepage/index.html": 1,
+        "relocation_jobs/static/homepage/index.txt": 2,
+        "relocation_jobs/static/homepage/mcp.html": 1,
+        "relocation_jobs/static/homepage/mcp.txt": 1,
+        "relocation_jobs/static/homepage/pricing.html": 1,
+        "relocation_jobs/static/homepage/pricing.txt": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-germany.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-germany.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-ireland.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-ireland.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-netherlands.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-netherlands.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-portugal.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-portugal.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-uk.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-uk.txt": 2,
+        "scripts/.claude/settings.local.json": 12,
+        "tests/core/test_db_pool.py": 10
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/static/homepage/404.html": 1,
+        "relocation_jobs/static/homepage/_next/static/L7NBkLb6eE7vYFGmNEGDL/_buildManifest.js": 1,
+        "relocation_jobs/static/homepage/_next/static/L7NBkLb6eE7vYFGmNEGDL/_ssgManifest.js": 1,
+        "relocation_jobs/static/homepage/engineering.html": 1,
+        "relocation_jobs/static/homepage/engineering.txt": 1,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html": 2,
+        "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt": 1,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html": 2,
+        "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt": 1,
+        "relocation_jobs/static/homepage/engineering/cant-start-new-thread.html": 2,
+        "relocation_jobs/static/homepage/engineering/cant-start-new-thread.txt": 1,
+        "relocation_jobs/static/homepage/engineering/one-loop-not-faster.html": 1,
+        "relocation_jobs/static/homepage/engineering/one-loop-not-faster.txt": 1,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html": 2,
+        "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt": 1,
+        "relocation_jobs/static/homepage/how-it-works.html": 1,
+        "relocation_jobs/static/homepage/how-it-works.txt": 1,
+        "relocation_jobs/static/homepage/index.html": 1,
+        "relocation_jobs/static/homepage/index.txt": 2,
+        "relocation_jobs/static/homepage/mcp.html": 1,
+        "relocation_jobs/static/homepage/mcp.txt": 1,
+        "relocation_jobs/static/homepage/pricing.html": 1,
+        "relocation_jobs/static/homepage/pricing.txt": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-germany.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-germany.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-ireland.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-ireland.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-netherlands.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-netherlands.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-portugal.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-portugal.txt": 2,
+        "relocation_jobs/static/homepage/relocation-jobs-uk.html": 1,
+        "relocation_jobs/static/homepage/relocation-jobs-uk.txt": 2
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 57,
+      "agent_lines_removed": 43,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

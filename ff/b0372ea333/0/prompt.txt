@@ -1,0 +1,26 @@
+let's review this cursor/tiny-ops-agent-replace-alloy-ee22
+/ponytail-review
+
+---
+
+apply
+
+---
+
+do it
+
+---
+
+/ponytail-review final review
+
+---
+
+apply
+
+---
+
+commit them
+
+---
+
+push
