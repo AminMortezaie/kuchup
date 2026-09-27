@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/amin/dev/p-projects/armenia/kuchup/.venv/lib/python3.14/site-packages/psycopg_pool/pool.py", line 126, in __del__
+  File "/Users/amin/dev/p-projects/armenia/kuchup/.venv/lib/python3.14/site-packages/psycopg_pool/_acompat.py", line 152, in gather
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1133, in join
+PythonFinalizationError: cannot join thread at interpreter shutdown
+
+---
+
+review on main and if there are fine tell me to push.
+/ponytail-review
