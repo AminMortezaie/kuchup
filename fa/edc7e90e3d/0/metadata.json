@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "faedc7e90e3d",
+  "session_id": "789610ad-cfd5-4708-9da1-b6137ebf278a",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T18:44:25.408852Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "relocation_jobs/static/homepage/404.html",
+    "relocation_jobs/static/homepage/engineering.html",
+    "relocation_jobs/static/homepage/engineering.txt",
+    "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.html",
+    "relocation_jobs/static/homepage/engineering/678-postgres-round-trips.txt",
+    "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.html",
+    "relocation_jobs/static/homepage/engineering/cache-check-in-the-hot-path.txt",
+    "relocation_jobs/static/homepage/engineering/cant-start-new-thread.html",
+    "relocation_jobs/static/homepage/engineering/cant-start-new-thread.txt",
+    "relocation_jobs/static/homepage/engineering/one-loop-not-faster.html",
+    "relocation_jobs/static/homepage/engineering/one-loop-not-faster.txt",
+    "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.html",
+    "relocation_jobs/static/homepage/engineering/playwright-hung-for-15-hours.txt",
+    "relocation_jobs/static/homepage/how-it-works.html",
+    "relocation_jobs/static/homepage/how-it-works.txt",
+    "relocation_jobs/static/homepage/index.html",
+    "relocation_jobs/static/homepage/index.txt",
+    "relocation_jobs/static/homepage/mcp.html",
+    "relocation_jobs/static/homepage/mcp.txt",
+    "relocation_jobs/static/homepage/pricing.html",
+    "relocation_jobs/static/homepage/pricing.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.html",
+    "relocation_jobs/static/homepage/relocation-jobs-germany.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.html",
+    "relocation_jobs/static/homepage/relocation-jobs-ireland.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.html",
+    "relocation_jobs/static/homepage/relocation-jobs-netherlands.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.html",
+    "relocation_jobs/static/homepage/relocation-jobs-portugal.txt",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.html",
+    "relocation_jobs/static/homepage/relocation-jobs-uk.txt",
+    "scripts/ec2_app_deploy.sh"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "30c60996eae4",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 3469,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 353024,
+    "output_tokens": 1215,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T18:44:25.404143Z",
+    "agent_lines": 0,
+    "agent_removed": 31,
+    "human_added": 17,
+    "human_modified": 65,
+    "human_removed": 0,
+    "total_committed": 65,
+    "total_lines_changed": 7661,
+    "agent_percentage": 0.4046469129356481,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
