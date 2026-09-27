@@ -704,7 +704,7 @@ docker run -d --name relocation-fetch-merge --restart unless-stopped \\
   -e DATABASE_URL='${db_url}' \\
   -e FETCH_MERGE_POLL_SECONDS=2 \\
   --entrypoint python3 \\
-  ${PANEL_IMAGE} scripts/fetch_merge_consumer.py
+  ${PANEL_IMAGE} -m relocation_jobs.fetch.merge_consumer
 EOF
 
   worker_hash="$(remote_image_hash worker)"
@@ -800,6 +800,8 @@ docker run -d --name ${CADDY_CONTAINER} --restart unless-stopped \\
   caddy:2-alpine
 EOF
 
+  # Leftover Alloy dual-writes Grafana (duplicate gauges) and wastes ~120MiB RAM.
+  ssh_cmd "docker rm -f relocation-alloy 2>/dev/null || true" || true
   start_ops_agent_container "${db_url}"
 
   # Dangling images only — keep BuildKit cache for the next deploy.
