@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7f6c2e79250f",
+  "session_id": "7dcf1786-b375-4450-98b8-fd71f36b354a",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T19:12:46.212678Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "Dockerfile.ec2",
+    "scripts/ec2_app_deploy.sh",
+    "tests/ops/test_worker_dockerfiles.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "316c0f86b3cc",
+  "checkpoint_transcript_start": 10,
+  "transcript_lines_at_start": 10,
+  "compact_transcript_start": 2,
+  "token_usage": {
+    "input_tokens": 167766,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 916992,
+    "output_tokens": 26315,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T19:12:46.19901Z",
+    "agent_lines": 52,
+    "agent_removed": 25,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 52,
+    "total_lines_changed": 77,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
