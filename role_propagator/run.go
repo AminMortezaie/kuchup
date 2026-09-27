@@ -142,6 +142,9 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	if err != nil {
 		return err
 	}
+	if !user.Unlimited() {
+		countries = filterFreeBoardCountries(countries)
+	}
 	candidates, err := store.ListCandidates(ctx, countries)
 	if err != nil {
 		return err

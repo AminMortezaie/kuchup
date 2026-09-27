@@ -4,6 +4,13 @@ import (
 	"testing"
 )
 
+func TestFilterFreeBoardCountries(t *testing.T) {
+	got := filterFreeBoardCountries([]string{"armenia", "germany", "uk", "netherlands"})
+	if len(got) != 2 || got[0] != "germany" || got[1] != "netherlands" {
+		t.Fatalf("got %#v", got)
+	}
+}
+
 func TestReconcileKeepsStickyWhenNewerCompaniesAppear(t *testing.T) {
 	cap := 2
 	rows := ReconcileSticky(

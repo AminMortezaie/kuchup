@@ -19,6 +19,15 @@ def _assert_no_country_preference_meta(meta: dict) -> None:
     assert "target_countries" not in meta
 
 
+def test_free_user_countries_only_germany_netherlands(client, db):
+    user = create_user("freecountries", email="freecountries@example.com", google_sub="sub-free-countries")
+    _login_as(client, user)
+    countries = client.get("/api/countries").get_json()
+    ids = [row["id"] for row in countries]
+    assert "all" not in ids
+    assert set(ids) == {"germany", "netherlands"}
+
+
 def test_preferences_api_removed(client, db, seeded_catalog_v2):
     user = create_user("noprefs", email="noprefs@example.com", google_sub="sub-no-prefs")
     _login_as(client, user)

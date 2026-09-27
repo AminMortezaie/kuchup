@@ -24,6 +24,10 @@ _DEFAULT_FULL_MCP_DAILY = 500
 _DEFAULT_FREE_PUBLIC_JOB_SAVES_PER_DAY = 3
 
 
+def free_board_countries() -> tuple[str, ...]:
+    return ("germany", "netherlands")
+
+
 def free_board_company_cap() -> int:
     raw = (os.environ.get("FREE_BOARD_COMPANY_CAP") or str(_DEFAULT_FREE_BOARD_CAP)).strip()
     try:

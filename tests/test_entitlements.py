@@ -11,6 +11,7 @@ def test_entitlement_status_free_defaults(db):
     status = entitlements.entitlement_status(int(user["id"]))
     assert status["plan"] == "free"
     assert status["board_company_cap"] == entitlements.free_board_company_cap()
+    assert entitlements.free_board_countries() == ("germany", "netherlands")
     assert status["mcp_daily_limit"] == entitlements.free_mcp_daily_requests()
     assert status["mcp_daily_remaining"] == status["mcp_daily_limit"]
     assert status["public_job_saves_used"] == 0
