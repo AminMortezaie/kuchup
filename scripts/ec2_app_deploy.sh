@@ -586,6 +586,7 @@ cmd_deploy() {
   local redis_pass db_url redis_url secret admin_emails_value staff_logins_value
   local google_id google_secret google_redirect panel_public allow_register
   local nowpayments_key nowpayments_secret nowpayments_sandbox_flag
+  local brevo_key brevo_from brevo_name
   local panel_hash worker_hash
   redis_pass="$(redis_password)"
   secret="$(panel_secret)"
@@ -599,6 +600,9 @@ cmd_deploy() {
   nowpayments_key="$(nowpayments_api_key)"
   nowpayments_secret="$(nowpayments_ipn_secret)"
   nowpayments_sandbox_flag="$(nowpayments_sandbox)"
+  brevo_key="${BREVO_API_KEY:-$(_dotenv_value BREVO_API_KEY)}"
+  brevo_from="${BREVO_FROM_EMAIL:-$(_dotenv_value BREVO_FROM_EMAIL)}"
+  brevo_name="${BREVO_FROM_NAME:-$(_dotenv_value BREVO_FROM_NAME)}"
   sqs_url="$(sqs_queue_url)"
   aws_key="$(aws_access_key)"
   aws_secret="$(aws_secret_key)"
@@ -683,6 +687,9 @@ docker run -d --name ${PANEL_CONTAINER} --restart unless-stopped \\
   -e NOWPAYMENTS_API_KEY='${nowpayments_key}' \\
   -e NOWPAYMENTS_IPN_SECRET='${nowpayments_secret}' \\
   -e NOWPAYMENTS_SANDBOX='${nowpayments_sandbox_flag}' \\
+  -e BREVO_API_KEY='${brevo_key}' \\
+  -e BREVO_FROM_EMAIL='${brevo_from}' \\
+  -e BREVO_FROM_NAME='${brevo_name}' \\
   -e SESSION_COOKIE_SECURE=1 \\
   -e DATABASE_URL='${db_url}' \\
   -e REDIS_URL='${redis_url}' \\
