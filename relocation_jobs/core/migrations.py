@@ -317,29 +317,17 @@ _EXPIRED_WANT_TO_APPLY_DOC = (
 )
 
 
-_BUNDLED_DOC_FOLDERS = ("product", "business", "marketing", "tech")
 _TEAM_DOC_PAGES = Path(__file__).resolve().parent.parent / "team_docs" / "pages"
-
-
-def _markdown_h1(path: Path) -> str:
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# "):
-            return stripped[2:].strip()
-    return ""
 
 
 def _sync_bundled_team_docs(conn) -> None:
     # ponytail: insert-if-missing; edit the row in Admin Docs after the file has already been stored
-    for folder in _BUNDLED_DOC_FOLDERS:
-        directory = _TEAM_DOC_PAGES / folder
-        if not directory.is_dir():
-            continue
+    for directory in sorted(p for p in _TEAM_DOC_PAGES.iterdir() if p.is_dir()):
         for path in sorted(directory.glob("*.md")):
-            title = _markdown_h1(path)
+            title = next((ln.strip()[2:].strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip().startswith("# ")), "")
             if not title:
                 continue
-            _seed_team_doc(conn, folder=folder, slug=path.stem, title=title, path=path)
+            _seed_team_doc(conn, folder=directory.name, slug=path.stem, title=title, path=path)
 
 
 def _seed_team_doc(conn, *, folder: str, slug: str, title: str, path: Path) -> None:
