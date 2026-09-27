@@ -366,22 +366,18 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "replacement_job_key": candidate["idempotency_key"],
         },
     )
-    if not spent["spent"] or spent["deduplicated"]:
-        if spent["deduplicated"]:
-            reason = "already_counted"
-        else:
-            reason = "credits_exhausted"
-            broadcast_repo.revert_assignment_consumed(
-                user_id,
-                country=event.country,
-                company_name=event.company_name,
-                job_key=key,
-                period_key=period,
-            )
+    if not spent["spent"]:
+        broadcast_repo.revert_assignment_consumed(
+            user_id,
+            country=event.country,
+            company_name=event.company_name,
+            job_key=key,
+            period_key=period,
+        )
         return {
             "expanded": False,
             "consumed": False,
-            "reason": reason,
+            "reason": "credits_exhausted",
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
     try:

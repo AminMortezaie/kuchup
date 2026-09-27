@@ -197,6 +197,47 @@ def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch)
     assert credit_balance(uid).total == 29
 
 
+def test_retry_after_failed_enqueue_completes_with_dedup_spend(db, monkeypatch):
+    user = create_user(
+        "broadcast-retry-dedup",
+        email="retry-dedup@example.com",
+        google_sub="sub-retry-dedup",
+    )
+    uid = int(user["id"])
+    jobs = [_job(i) for i in range(1, 5)]
+    period = repo.current_period_key()
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs, active_target=3, period_key=period,
+    )
+    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
+    enqueue_calls: list[int] = []
+
+    def enqueue(*args, **kwargs):
+        enqueue_calls.append(1)
+        if len(enqueue_calls) == 1:
+            raise RuntimeError("writer down")
+        return {"queued": True, "synced": False}
+
+    monkeypatch.setattr(broadcast_service, "enqueue_replace_assignment", enqueue)
+    event = RevealEvent(
+        country="germany",
+        company_name="Acme",
+        kind="seen",
+        job_url=jobs[0]["url"],
+        job_key=jobs[0]["idempotency_key"],
+        job_title=jobs[0]["title"],
+    )
+    first = broadcast_service.record_touch_and_maybe_reveal(uid, event)
+    assert first["reason"] == "replacement_assignment_failed"
+    assert first["expanded"] is False
+    assert repo.consumed_count(uid, period_key=period) == 0
+    second = broadcast_service.record_touch_and_maybe_reveal(uid, event)
+    assert second["expanded"] is True
+    assert second["credits_spent"] == 1
+    assert repo.consumed_count(uid, period_key=period) == 1
+    assert len(enqueue_calls) == 2
+
+
 def test_no_replacement_does_not_consume_assignment(db, monkeypatch):
     user = create_user(
         "broadcast-no-consume",
