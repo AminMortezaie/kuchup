@@ -1,0 +1,2 @@
+create a new crud to append on admin docs with admin authorize.
+and without making migration on each doc.

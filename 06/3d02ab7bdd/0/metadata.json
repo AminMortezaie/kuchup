@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "063d02ab7bdd",
+  "session_id": "11180604-473b-4620-9f7b-25580db57ba9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-27T16:17:40.693155Z",
+  "branch": "admin-docs-append",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/core/migrations.py",
+    "relocation_jobs/static/app-shell.css",
+    "relocation_jobs/static/js/admin-docs.js",
+    "relocation_jobs/team_docs/pages/tech/ops-agent-merge-ram.md",
+    "relocation_jobs/team_docs/service.py",
+    "relocation_jobs/web/routes/team_docs.py",
+    "tests/helpers/route_manifest.py",
+    "tests/web/test_admin_team_docs.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high-fast",
+  "turn_id": "30745bc1507f",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 134502,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5732096,
+    "output_tokens": 35153,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-27T16:17:40.665816Z",
+    "agent_lines": 183,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 183,
+    "total_lines_changed": 183,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 77,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "relocation_jobs/core/migrations.py": 19,
+        "relocation_jobs/team_docs/pages/ops-agent-merge-ram.md": 46,
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 202,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
