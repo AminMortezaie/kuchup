@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 DEFAULT_CONCURRENCY = 16
 MAX_CONCURRENCY = 16
 
@@ -83,7 +85,6 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "ZooStation":          ("hirehive",      "https://zoostation-bv.hirehive.com"),
     "arculus":               ("greenhouse",    "https://boards.greenhouse.io/arculus"),
     "Blinkist":              ("greenhouse",    "https://boards.greenhouse.io/blinkslabgmbh"),
-    "Highsnobiety":          ("teamtailor",    "KgRa_9irgDNXSf7nuil0A_ySurtx4Xgw0OGFvkFb"),
     "justDice":              ("ashby",         "https://jobs.ashbyhq.com/justDice"),
     "justtrack":             ("ashby",         "https://jobs.ashbyhq.com/justtrack"),
     "movingimage":           ("movingimage",   "https://www.movingimage.com/careers/"),
@@ -94,7 +95,6 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "Project A Ventures":    ("project_a",     "https://www.project-a.vc/careers"),
     "Solvians":              ("bamboohr",      "https://wsd.bamboohr.com/careers/list"),
     "Taxfix":                ("ashby",         "https://jobs.ashbyhq.com/taxfix.com"),
-    "ToolTime":              ("teamtailor",    "ot2xtYSXyjp5WG59fCbHpro2vAcLiljIDNfSfqps"),
     "Vimcar":                ("workable",      "https://apply.workable.com/shiftmove/"),
     "Deutsche Boerse":       ("job_shop",      "https://careers.deutsche-boerse.com/"),
     "Redcare - Dusseldorf":  ("smartrecruiters", "https://api.smartrecruiters.com/v1/companies/Redcare-Pharmacy/postings"),
@@ -103,6 +103,13 @@ KNOWN_ATS: dict[str, tuple[str, str]] = {
     "idealo Internet":       ("recruitee",     "https://jobs.idealo.com/"),
     "Tabby":                 ("pinpointhq",    "https://tabby.pinpointhq.com/postings.json"),
 }
+
+_highsnobiety = (os.environ.get("ATS_TEAMTAILOR_KEY_HIGHSNOBIETY") or "").strip()
+_tooltime = (os.environ.get("ATS_TEAMTAILOR_KEY_TOOLTIME") or "").strip()
+if _highsnobiety:
+    KNOWN_ATS["Highsnobiety"] = ("teamtailor", _highsnobiety)
+if _tooltime:
+    KNOWN_ATS["ToolTime"] = ("teamtailor", _tooltime)
 
 FORCE_KNOWN_ATS = frozenset({
     "bol", "adjoe",

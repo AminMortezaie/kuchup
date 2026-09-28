@@ -189,7 +189,7 @@ def test_reset_after_fork_does_not_close_inherited_pool(monkeypatch):
 
 
 def test_gunicorn_conf_workers_and_post_fork():
-    assert gunicorn_conf.workers == 2
+    assert gunicorn_conf.workers == 1
     assert gunicorn_conf.threads == 8
     assert gunicorn_conf.preload_app is False
     assert callable(gunicorn_conf.post_fork)
@@ -205,8 +205,8 @@ def test_post_fork_hook_reinitializes_pool(monkeypatch):
     assert called == ["reset"]
 
 
-def test_docker_entrypoint_uses_two_gunicorn_workers():
+def test_docker_entrypoint_uses_one_gunicorn_worker():
     text = Path(PROJECT_ROOT / "docker-entrypoint.sh").read_text()
-    assert "--workers 2" in text
-    assert "--workers 1" not in text
+    assert "--workers 1" in text
+    assert "MALLOC_ARENA_MAX" in text
     assert "--config python:relocation_jobs.web.gunicorn_conf" in text

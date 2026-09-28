@@ -3,7 +3,7 @@
 #
 # Usage:
 #   ./scripts/ec2_app_deploy.sh sync              # rsync repo to EC2
-#   ./scripts/ec2_app_deploy.sh deploy            # sync + build (if needed) + run
+#   ./scripts/ec2_app_deploy.sh deploy            # sync + kill app containers + build (if needed) + run
 #   ./scripts/ec2_app_deploy.sh deploy --force    # rebuild both images even if hashes match
 #   ./scripts/ec2_app_deploy.sh prune             # free dangling images + trim builder cache
 #   ./scripts/ec2_app_deploy.sh open-sg           # open HTTP/HTTPS on security group (manual)
@@ -613,6 +613,8 @@ cmd_deploy() {
   cmd_sync
   # Free leftover dangling images once before builds. Never wipe BuildKit cache.
   remote_docker_prune "" "before builds"
+  log "Killing app containers before the image build..."
+  ssh_cmd "docker rm -f ${PANEL_CONTAINER} ${MCP_CONTAINER} relocation-fetch-merge ${WORKER_CONTAINER} ${PLAYWRIGHT_WORKER_CONTAINER} ${PROPAGATOR_CONTAINER} ${CADDY_CONTAINER} ${OPS_AGENT_CONTAINER} relocation-alloy >/dev/null 2>&1 || true"
 
   panel_hash="$(remote_image_hash panel)"
   if image_needs_rebuild panel "$PANEL_IMAGE" "$panel_hash"; then
@@ -726,6 +728,7 @@ docker rm -f relocation-fetch-merge 2>/dev/null || true
 docker run -d --name relocation-fetch-merge --restart unless-stopped \\
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \\
   -e DATABASE_URL='${db_url}' \\
+  -e MALLOC_ARENA_MAX=2 \\
   -e FETCH_MERGE_POLL_SECONDS=2 \\
   --entrypoint python3 \\
   ${PANEL_IMAGE} -m relocation_jobs.fetch.merge_consumer

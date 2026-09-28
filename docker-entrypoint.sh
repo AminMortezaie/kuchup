@@ -1,5 +1,7 @@
 #!/usr/bin/sh
 set -e
+: "${MALLOC_ARENA_MAX:=2}"
+export MALLOC_ARENA_MAX
 python3 -c "
 from relocation_jobs.db import init_db
 from relocation_jobs.catalog.repo import catalog_has_data
@@ -11,7 +13,7 @@ else:
 "
 exec gunicorn relocation_jobs.web.server:app \
   --bind "0.0.0.0:${PORT:-10000}" \
-  --workers 2 \
+  --workers 1 \
   --threads 8 \
   --timeout 600 \
   --config python:relocation_jobs.web.gunicorn_conf \

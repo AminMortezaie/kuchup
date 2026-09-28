@@ -158,7 +158,7 @@ async def test_merge_pass_runs_companies_together(monkeypatch):
     )
     processed = await run_merge_pass()
     assert processed == 8
-    assert peak > 1
+    assert peak == 2
 
 
 def test_prefetch_skips_when_go_is_missing(monkeypatch):

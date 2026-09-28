@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-workers = 2
+# ponytail: one worker on the 2GB host; raise if the box gets more RAM
+workers = 1
 threads = 8
 timeout = 600
 accesslog = "-"

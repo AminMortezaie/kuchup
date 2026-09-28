@@ -198,7 +198,7 @@ async def run_merge_pass(*, limit: int = 500, enqueue: bool = True) -> int:
     if not rows:
         return 0
     prefetch_descriptions(rows)
-    workers = max(1, min(8, len(rows)))
+    workers = max(1, min(2, len(rows)))
     enrich_concurrency = max(1, min(4, workers))
     slot = asyncio.Semaphore(workers)
     processed = 0

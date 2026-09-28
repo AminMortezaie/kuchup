@@ -71,6 +71,24 @@ def test_memory_capped_containers():
     assert "--restart unless-stopped" in ops_agent
 
 
+def test_deploy_kills_app_containers_before_image_build():
+    text = Path("scripts/ec2_app_deploy.sh").read_text(encoding="utf-8")
+    stop_at = text.index("docker rm -f ${PANEL_CONTAINER}")
+    build_at = text.index("Building ${PANEL_IMAGE}")
+    assert stop_at < build_at
+    line = text[stop_at:text.index("\n", stop_at)]
+    for name in (
+        "${PANEL_CONTAINER}",
+        "${MCP_CONTAINER}",
+        "relocation-fetch-merge",
+        "${WORKER_CONTAINER}",
+        "${CADDY_CONTAINER}",
+    ):
+        assert name in line
+    assert " pg " not in f" {line} "
+    assert "relocation-redis" not in line
+
+
 def test_playwright_worker_dockerfile_installs_chromium():
     text = Path("Dockerfile.ec2-worker-playwright").read_text(encoding="utf-8")
     assert "playwright install" in text
