@@ -29,13 +29,7 @@ export async function loadConfig() {
 }
 
 export async function loadCountries() {
-  let countries = await fetchCountries();
-  const user = state.authState?.user || {};
-  const plan = state.authState?.entitlements?.plan || user.plan || "free";
-  if (plan === "free" && !user.is_admin) {
-    const allowed = new Set(["germany", "netherlands"]);
-    countries = countries.filter((c) => allowed.has(c.id));
-  }
+  const countries = await fetchCountries();
   const sel = $("country");
   sel.innerHTML = countries.map((c) =>
     `<option value="${c.id}">${c.label}</option>`

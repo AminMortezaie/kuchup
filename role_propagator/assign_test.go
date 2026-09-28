@@ -4,10 +4,12 @@ import (
 	"testing"
 )
 
-func TestFilterFreeBoardCountries(t *testing.T) {
-	got := filterFreeBoardCountries([]string{"armenia", "germany", "uk", "netherlands"})
-	if len(got) != 2 || got[0] != "germany" || got[1] != "netherlands" {
-		t.Fatalf("got %#v", got)
+func TestFreeBoardCountryKeys(t *testing.T) {
+	if !freeBoardCountryKeys["germany"] || !freeBoardCountryKeys["netherlands"] {
+		t.Fatalf("missing free board countries: %#v", freeBoardCountryKeys)
+	}
+	if freeBoardCountryKeys["armenia"] || freeBoardCountryKeys["uk"] {
+		t.Fatalf("unexpected free board countries: %#v", freeBoardCountryKeys)
 	}
 }
 
