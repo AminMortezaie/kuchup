@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "2a123c3a4a89",
+  "strategy": "manual-commit",
+  "branch": "fix/free-board-germany-netherlands",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "relocation_jobs/static/js/data.js",
+    "role_propagator/assign_test.go",
+    "role_propagator/run.go",
+    "role_propagator/store.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2a/123c3a4a89/0/metadata.json",
+      "transcript": "/2a/123c3a4a89/0/full.jsonl",
+      "compact_transcript": "/2a/123c3a4a89/0/transcript.jsonl",
+      "content_hash": "/2a/123c3a4a89/0/content_hash.txt",
+      "prompt": "/2a/123c3a4a89/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 483443,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 738304,
+    "output_tokens": 3317,
+    "api_call_count": 1
+  }
+}

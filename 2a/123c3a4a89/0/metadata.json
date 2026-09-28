@@ -1,0 +1,115 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "2a123c3a4a89",
+  "session_id": "47eb8b65-bc98-463e-a984-da0a64370da7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-28T13:58:34.85207Z",
+  "branch": "fix/free-board-germany-netherlands",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "relocation_jobs/static/js/data.js",
+    "role_propagator/assign_test.go",
+    "role_propagator/run.go",
+    "role_propagator/store.go"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "e58015613bac",
+  "checkpoint_transcript_start": 87,
+  "transcript_lines_at_start": 87,
+  "compact_transcript_start": 15,
+  "token_usage": {
+    "input_tokens": 483443,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 738304,
+    "output_tokens": 3317,
+    "api_call_count": 1
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-27T21:20:04.818569Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "72dac0af8fac",
+      "timestamp": "2026-09-27T21:20:04.818569Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-28T13:54:37.486137Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "7dc6181118c8",
+      "timestamp": "2026-09-28T13:54:37.486137Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 7,
+    "context_tokens": 237344,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-28T13:58:34.831755Z",
+    "agent_lines": 26,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 26,
+    "total_lines_changed": 28,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 14,
+      "agent_lines_removed": 22,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
