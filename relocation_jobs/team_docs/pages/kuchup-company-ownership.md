@@ -18,10 +18,11 @@ On a Kuchup company, only an admin may:
 
 - Rename the company (`POST` or `PATCH /api/companies/name`)
 - Edit the careers / ATS URL (`POST` or `PATCH /api/companies/careers`)
+- Set or change location tags (`POST` or `PATCH /api/companies/city`)
 - Refresh jobs (`POST /api/companies/fetch`)
 - Remove the company (`POST /api/companies/remove` or `DELETE /api/companies`)
 
-A signed-in non-admin gets `403` with `Only an admin can change a Kuchup company`. The board company menu hides those four actions when `owned_by_kuchup` is set and `user.is_admin` is false.
+A signed-in non-admin gets `403` with `Only an admin can change a Kuchup company`. The board company menu hides rename / careers / refresh / remove when `owned_by_kuchup` is set and `user.is_admin` is false. The location chip is disabled for the same users.
 
 ## Add company
 
@@ -33,6 +34,6 @@ The MCP `add_company` tool still requires a careers URL and creates a Kuchup com
 
 ## Later: user-owned companies
 
-Not built yet. When the dashboard is public, a user should be able to rename, edit the careers URL, refresh, and delete companies they added. They must still be unable to do that on Kuchup companies unless they are an admin.
+Not built yet. When the dashboard is public, a user should be able to rename, edit the careers URL, set locations, refresh, and delete companies they added. They must still be unable to do that on Kuchup companies unless they are an admin.
 
-`owned_by_kuchup = 0` is the extension point. A later change can record which user added the row and allow those four actions only for that user. This version does not add that check: any signed-in user can still call the four actions on a row with `owned_by_kuchup = 0`.
+`owned_by_kuchup = 0` is the extension point. A later change can record which user added the row and allow those actions only for that user. This version does not add that check: any signed-in user can still call those actions on a row with `owned_by_kuchup = 0`.

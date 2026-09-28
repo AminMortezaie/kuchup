@@ -266,6 +266,10 @@ def register(app):
         if not company:
             return jsonify({"error": "company is required"}), 400
 
+        denied = _reject_kuchup_edit(country, company)
+        if denied is not None:
+            return denied
+
         try:
             company = deps.resolve_company_name(country, company)
             result = deps.update_company_city(

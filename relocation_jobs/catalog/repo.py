@@ -16,10 +16,10 @@ from relocation_jobs.catalog.cache import invalidate_country_cache
 from relocation_jobs.catalog.citizenship import citizenship_code_for_write
 from relocation_jobs.catalog.serialize import (
     cities_json_from_company,
+    company_row_to_dict,
     job_locations_json,
     json_sources,
     locations_json_from_company,
-    parse_sources,
 )
 from relocation_jobs.core.slug import public_job_slug_base
 from relocation_jobs.roles.match import job_is_default_match
@@ -236,35 +236,10 @@ def company_owned_by_kuchup(company: dict) -> bool:
 
 
 def _company_row(row: dict, jobs: list[dict]) -> dict:
-    sources = parse_sources(row.get("sources_json"))
-    kind = normalize_catalog_kind(row.get("catalog_kind"))
-    if not row.get("catalog_kind"):
-        kind = catalog_kind_for_write(
-            country_key=row.get("country"),
-            ats_type=row.get("ats_type"),
-            sources=sources,
-        )
-    return {
-        "name": row["name"],
-        "city": row.get("city") or "",
-        "cities": [],
-        "locations": [],
-        "size": row.get("size") or "",
-        "careers_url": row.get("careers_url") or "",
-        "ats_type": row.get("ats_type") or "",
-        "ats_url": row.get("ats_url") or "",
-        "fetch_problem": bool(row.get("fetch_problem")),
-        "fetch_problem_date": row.get("fetch_problem_date") or "",
-        "fetch_ok": bool(row.get("fetch_ok")),
-        "fetch_ok_date": row.get("fetch_ok_date") or "",
-        "added": row.get("added") or "",
-        "updated": row.get("updated") or "",
-        "sources": sources,
-        "catalog_kind": kind,
-        "owned_by_kuchup": company_owned_by_kuchup(row),
-        "citizenship_required": (row.get("citizenship_required") or "").strip().upper(),
-        "matching_jobs": jobs,
-    }
+    company = company_row_to_dict(row, jobs)
+    company["owned_by_kuchup"] = company_owned_by_kuchup(row)
+    company["citizenship_required"] = (row.get("citizenship_required") or "").strip().upper()
+    return company
 
 
 def _load_country_from_db(country_key: str) -> dict | None:

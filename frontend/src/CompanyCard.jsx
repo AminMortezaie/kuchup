@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { companyWorkspacePath } from "./companyWorkspace";
-import { companyActivityTs, formatActivityBadge } from "./format";
+import { formatActivityBadge } from "./format";
 import { sortJobsForDisplay } from "./sort";
 import JobCard from "./JobCard";
 
@@ -116,7 +116,7 @@ function CompanyCard({ company, ui }) {
   const cityDisplay = formatCityLabels(cityLabels, { expanded: citiesExpanded });
   const locationPayload = Array.isArray(company.locations) && company.locations.length
     ? company.locations
-    : cityLabels.map((city) => ({ city }));
+    : cityLabels.map((city) => ({ country: company.country, city }));
   const notForMeJobs = company.not_for_me_jobs || company.hidden_jobs || [];
   const notForMeCount = notForMeJobs.length;
   const rejectedJobs = sortJobsForDisplay(company.rejected_jobs || []);
@@ -125,7 +125,6 @@ function CompanyCard({ company, ui }) {
   const showingRejected = showRejectedSet.has(keyStr) || ui.positionRejectedOnly;
   const isFetching = ui.fetchingCompanyKey === keyStr;
   const catalogLocked = kuchupCatalogLocked(company, ui);
-  const countLabel = company.job_count === 1 ? "1 role" : `${company.job_count} roles`;
   const appliedCount = company.positions_applied_all ?? company.positions_applied ?? 0;
   const lastApplied = (company.company_applied_date || "").trim();
   const openJobs = sortJobsForDisplay(company.jobs || []);
@@ -218,7 +217,8 @@ function CompanyCard({ company, ui }) {
                 data-company={company.name}
                 data-locations={JSON.stringify(locationPayload)}
                 data-has-cities={cityLabels.length ? "true" : "false"}
-                title="Set or change company locations"
+                title={catalogLocked ? "Only an admin can change Kuchup company locations" : "Set or change company locations"}
+                disabled={catalogLocked}
               >
                 {cityDisplay.text}
               </button>
@@ -243,10 +243,6 @@ function CompanyCard({ company, ui }) {
               ) : null}
             </div>
             <span>{company.country_label}</span>
-            <span>{countLabel}</span>
-            <span className="company-activity">
-              {formatActivityBadge(companyActivityTs(company))}
-            </span>
             {tailoredCount > 0 ? (
               <a className="company-cv-summary" href={workspaceHref} title="View tailored CVs and cover letters">
                 {tailoredCount} tailored PDF{tailoredCount === 1 ? "" : "s"}

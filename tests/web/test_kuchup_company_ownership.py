@@ -58,7 +58,11 @@ def test_non_admin_blocked_on_kuchup_company(v2_client, test_user, seeded_catalo
     )
     refresh = v2_client.post("/api/companies/fetch", json=body)
     remove = v2_client.post("/api/companies/remove", json=body)
-    for response in (rename, careers, refresh, remove):
+    city = v2_client.post(
+        "/api/companies/city",
+        json={**body, "locations": [{"country": "uk", "city": "London"}]},
+    )
+    for response in (rename, careers, refresh, remove, city):
         assert response.status_code == 403
         assert response.get_json()["error"] == "Only an admin can change a Kuchup company"
     stored = get_company("uk", "Acme Backend Ltd")
@@ -117,6 +121,16 @@ def test_admin_can_edit_kuchup_company(v2_auth_client, db, monkeypatch):
         )
         assert refresh.status_code == 200
         assert started == ["Ownership Admin Renamed"]
+        city = v2_auth_client.post(
+            "/api/companies/city",
+            json={
+                "country": "uk",
+                "company": "Ownership Admin Renamed",
+                "locations": [{"country": "uk", "city": "London"}],
+            },
+        )
+        assert city.status_code == 200
+        assert "london" in (get_company("uk", "Ownership Admin Renamed").get("city") or "").lower()
         removed = v2_auth_client.post(
             "/api/companies/remove",
             json={"country": "uk", "company": "Ownership Admin Renamed"},
@@ -193,6 +207,7 @@ def test_panel_ui_gates_match_server():
     html = (root / "relocation_jobs/static/index.html").read_text(encoding="utf-8")
     bundle = (root / "relocation_jobs/static/dist/board.js").read_text(encoding="utf-8")
     assert "kuchupCatalogLocked" in card
+    assert "disabled={catalogLocked}" in card
     assert "isAdmin: Boolean(state.authState?.user?.is_admin)" in board_view
     assert "syncAddCompanyCatalogFields" in dialogs
     assert 'id="addCompanyUrlField"' in html
