@@ -14,6 +14,8 @@ from relocation_jobs.shared.board_contract import (
     countries_for_kind,
     is_remote_country_key,
 )
+from relocation_jobs.users.entitlements import free_board_countries, plan_is_full_access
+from relocation_jobs.users.repo import get_user_by_id
 from relocation_jobs.web import deps
 
 
@@ -37,7 +39,12 @@ def register(app):
     @app.get("/api/countries")
     @login_required
     def api_countries():
-        return jsonify(countries_for_kind(CATALOG_KIND_RELOCATION, all_country_labels()))
+        countries = countries_for_kind(CATALOG_KIND_RELOCATION, all_country_labels())
+        user = get_user_by_id(g.user_id)
+        if user and not plan_is_full_access(user.get("plan"), user_id=int(user["id"])):
+            allowed = set(free_board_countries())
+            countries = [row for row in countries if row.get("id") in allowed]
+        return jsonify(countries)
 
     @app.post("/api/countries")
     @login_required

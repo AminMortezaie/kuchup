@@ -41,9 +41,10 @@ export async function loadCountries() {
   if (pick) {
     sel.value = pick;
     if (fromUrl) localStorage.setItem(panelStorageKey("country"), fromUrl);
+  } else if (countries.some((c) => c.id === "all")) {
+    sel.value = "all";
   } else {
-    const first = countries.find((c) => c.id !== "all");
-    if (first) sel.value = first.id;
+    sel.value = countries[0]?.id || "";
   }
   const q = params.get("q");
   const search = $("search");

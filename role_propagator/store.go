@@ -29,6 +29,11 @@ type UserRow struct {
 	IsAdmin  bool
 }
 
+var freeBoardCountryKeys = map[string]bool{
+	"germany":     true,
+	"netherlands": true,
+}
+
 func envInt(key string, fallback int) int {
 	raw := strings.TrimSpace(os.Getenv(key))
 	if raw == "" {

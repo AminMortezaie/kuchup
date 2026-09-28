@@ -142,6 +142,15 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	if err != nil {
 		return err
 	}
+	if !user.Unlimited() {
+		filtered := make([]string, 0, len(countries))
+		for _, key := range countries {
+			if freeBoardCountryKeys[key] {
+				filtered = append(filtered, key)
+			}
+		}
+		countries = filtered
+	}
 	candidates, err := store.ListCandidates(ctx, countries)
 	if err != nil {
 		return err

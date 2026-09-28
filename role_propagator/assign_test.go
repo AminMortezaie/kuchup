@@ -4,6 +4,15 @@ import (
 	"testing"
 )
 
+func TestFreeBoardCountryKeys(t *testing.T) {
+	if !freeBoardCountryKeys["germany"] || !freeBoardCountryKeys["netherlands"] {
+		t.Fatalf("missing free board countries: %#v", freeBoardCountryKeys)
+	}
+	if freeBoardCountryKeys["armenia"] || freeBoardCountryKeys["uk"] {
+		t.Fatalf("unexpected free board countries: %#v", freeBoardCountryKeys)
+	}
+}
+
 func TestReconcileKeepsStickyWhenNewerCompaniesAppear(t *testing.T) {
 	cap := 2
 	rows := ReconcileSticky(
