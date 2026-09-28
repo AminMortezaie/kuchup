@@ -175,7 +175,7 @@ def _go_country_fetch_worker(
         fail(f"Go fetch exited {code}")
         return
     if go_results.run_merge_complete(run_id):
-        enqueue_country_opportunity_refresh(country_key)
+        enqueue_country_opportunity_refresh(country_key, fetch_run_id=run_id)
 
 
 def _begin_country_run(
@@ -260,7 +260,7 @@ def _company_fetch_worker(
             done_line=result_message or "Finished (exit 0)",
         )
     if exit_code == 0 and not cancelled:
-        enqueue_country_opportunity_refresh(country_key)
+        enqueue_country_opportunity_refresh(country_key, fetch_run_id=run_id)
 
 
 def start_company_fetch(

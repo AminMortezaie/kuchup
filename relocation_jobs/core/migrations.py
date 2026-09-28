@@ -196,7 +196,60 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
     run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
     run_migration_once(conn, "ops_metric_samples_v1", _ensure_ops_metric_samples_table)
+    run_migration_once(conn, "web_push_notifications_v1", _web_push_notifications_v1)
     _sync_bundled_team_docs(conn)
+
+
+def _web_push_notifications_v1(conn) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS web_push_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            endpoint TEXT NOT NULL,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (endpoint)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_web_push_subscriptions_user
+            ON web_push_subscriptions(user_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fetch_wave_new_jobs (
+            id SERIAL PRIMARY KEY,
+            fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+            country TEXT NOT NULL,
+            company_name TEXT NOT NULL,
+            job_key TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE (fetch_run_id, country, company_name, job_key)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_fetch_wave_new_jobs_run
+            ON fetch_wave_new_jobs(fetch_run_id)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fetch_wave_push_sent (
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            fetch_run_id INTEGER NOT NULL REFERENCES fetch_runs(id) ON DELETE CASCADE,
+            sent_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, fetch_run_id)
+        )
+        """
+    )
 
 
 def _ensure_ops_metric_samples_table(conn) -> None:

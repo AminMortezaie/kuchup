@@ -2,6 +2,7 @@
 
 import { setOnUnauthorized, state } from "./state.js";
 import { bindPanelAuth, showLogin, refreshAuth, setAdminNavVisible } from "./auth.js";
+import { initPushNotifications } from "./push-notifications.js";
 import { loadConfig, loadCountries, loadAtsTypes, loadBoardWithLocations, showJobsLoading, setLoadingProgress, finishLoadingProgress } from "./data.js";
 import { beginScreenLoad } from "./screen-loader.js";
 import { bindDialogEvents } from "./dialogs.js";
@@ -70,6 +71,7 @@ async function init() {
 
   const ok = await refreshAuth();
   if (!ok) return;
+  initPushNotifications().catch(() => {});
   const params = new URLSearchParams(window.location.search);
   const checkoutState = params.get("credits") || params.get("upgrade");
   if (params.has("credits") || params.has("upgrade")) {

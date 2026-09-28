@@ -1,11 +1,13 @@
 package rolepropagator
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -21,6 +23,7 @@ type message struct {
 	Country      string `json:"country"`
 	CompanyName  string `json:"company_name"`
 	SourceJobKey string `json:"source_job_key"`
+	FetchRunID   int    `json:"fetch_run_id"`
 }
 
 func Main() {
@@ -55,7 +58,7 @@ func Main() {
 			log.Fatal(err)
 		}
 	case strings.TrimSpace(*country) != "":
-		if err := reconcileCountry(ctx, store, *country); err != nil {
+		if err := reconcileCountry(ctx, store, *country, 0); err != nil {
 			log.Fatal(err)
 		}
 	default:
@@ -125,7 +128,7 @@ func handle(ctx context.Context, store *Store, msg message) error {
 	case "user":
 		return reconcileUser(ctx, store, msg.UserID)
 	case "country":
-		return reconcileCountry(ctx, store, msg.Country)
+		return reconcileCountry(ctx, store, msg.Country, msg.FetchRunID)
 	case "replace":
 		return reconcileReplace(ctx, store, msg.UserID, msg.Country, msg.CompanyName, msg.SourceJobKey)
 	default:
@@ -202,7 +205,7 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	return nil
 }
 
-func reconcileCountry(ctx context.Context, store *Store, country string) error {
+func reconcileCountry(ctx context.Context, store *Store, country string, fetchRunID int) error {
 	ids, err := store.UserIDsForCountry(ctx, country)
 	if err != nil {
 		return err
@@ -212,7 +215,44 @@ func reconcileCountry(ctx context.Context, store *Store, country string) error {
 			log.Printf("user %d: %v", id, err)
 		}
 	}
+	notifyAfterCountryWave(ctx, country, fetchRunID)
 	return nil
+}
+
+func notifyAfterCountryWave(ctx context.Context, country string, fetchRunID int) {
+	if fetchRunID <= 0 {
+		return
+	}
+	url := strings.TrimSpace(os.Getenv("PANEL_PUSH_NOTIFY_URL"))
+	secret := strings.TrimSpace(os.Getenv("PANEL_PUSH_NOTIFY_SECRET"))
+	if url == "" || secret == "" {
+		return
+	}
+	payload, err := json.Marshal(map[string]any{
+		"country":      strings.ToLower(strings.TrimSpace(country)),
+		"fetch_run_id": fetchRunID,
+	})
+	if err != nil {
+		log.Printf("push notify marshal: %v", err)
+		return
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+	if err != nil {
+		log.Printf("push notify request: %v", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Push-Notify-Secret", secret)
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("push notify post: %v", err)
+		return
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		log.Printf("push notify status=%d country=%s fetch_run_id=%d", resp.StatusCode, country, fetchRunID)
+	}
 }
 
 func reconcileReplace(ctx context.Context, store *Store, userID int, country, company, _ string) error {
