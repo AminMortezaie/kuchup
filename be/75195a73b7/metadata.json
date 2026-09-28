@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "be75195a73b7",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 11,
+  "files_touched": [
+    ".env.example",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/broadcast/repo.py",
+    "relocation_jobs/broadcast/service.py",
+    "relocation_jobs/core/auth.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/company.js",
+    "relocation_jobs/static/js/main.js",
+    "relocation_jobs/users/repo.py",
+    "role_propagator/run.go",
+    "role_propagator/store.go",
+    "tests/conftest.py",
+    "tests/test_broadcast_capacity.py",
+    "tests/test_google_auth.py",
+    "tests/web/test_jobs_api.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/be/75195a73b7/0/metadata.json",
+      "transcript": "/be/75195a73b7/0/full.jsonl",
+      "compact_transcript": "/be/75195a73b7/0/transcript.jsonl",
+      "content_hash": "/be/75195a73b7/0/content_hash.txt",
+      "prompt": "/be/75195a73b7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 530211,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 15927168,
+    "output_tokens": 94051,
+    "api_call_count": 9
+  }
+}

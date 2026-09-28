@@ -1,0 +1,250 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "be75195a73b7",
+  "session_id": "47eb8b65-bc98-463e-a984-da0a64370da7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-28T16:25:01.663484Z",
+  "branch": "main",
+  "checkpoints_count": 11,
+  "save_step_count": 10,
+  "files_touched": [
+    ".env.example",
+    "frontend/src/CompanyCard.jsx",
+    "relocation_jobs/broadcast/repo.py",
+    "relocation_jobs/broadcast/service.py",
+    "relocation_jobs/core/auth.py",
+    "relocation_jobs/static/dist/board.js",
+    "relocation_jobs/static/js/api.js",
+    "relocation_jobs/static/js/company.js",
+    "relocation_jobs/static/js/main.js",
+    "relocation_jobs/users/repo.py",
+    "role_propagator/run.go",
+    "role_propagator/store.go",
+    "tests/conftest.py",
+    "tests/test_broadcast_capacity.py",
+    "tests/test_google_auth.py",
+    "tests/web/test_jobs_api.py"
+  ],
+  "agent": "Cursor",
+  "model": "default",
+  "turn_id": "ee697255b52b",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 530211,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 15927168,
+    "output_tokens": 94051,
+    "api_call_count": 9
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-27T21:20:04.818569Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "72dac0af8fac",
+      "timestamp": "2026-09-27T21:20:04.818569Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-28T13:54:37.486137Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "7dc6181118c8",
+      "timestamp": "2026-09-28T13:54:37.486137Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-28T15:30:31.88512Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "f5f5115e7021",
+      "timestamp": "2026-09-28T15:30:31.88512Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-28T15:57:47.122595Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "0d143a753932",
+      "timestamp": "2026-09-28T15:57:47.122595Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "duration_ms": 65763210,
+    "turn_count": 18,
+    "context_tokens": 251891,
+    "context_window_size": 256000
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-28T16:25:01.60714Z",
+    "agent_lines": 712,
+    "agent_removed": 55,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 712,
+    "total_lines_changed": 767,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 95,
+      "agent_lines_removed": 6,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 231,
+      "agent_lines_removed": 7,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 313,
+      "agent_lines_removed": 22,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 405,
+      "agent_lines_removed": 25,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 405,
+      "agent_lines_removed": 25,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 360,
+      "agent_lines_removed": 25,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 504,
+      "agent_lines_removed": 71,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 504,
+      "agent_lines_removed": 71,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 399,
+      "agent_lines_removed": 104,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}
