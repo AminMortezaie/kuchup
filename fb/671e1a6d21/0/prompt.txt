@@ -1,0 +1,138 @@
+why every new users join kuchup we should them default on Armenia country without any jobs?
+
+this is a big bug on engaging users, find the problem and fix it
+
+---
+
+the free users should just see germany and netherlands positions and country not all countries
+
+---
+
+/ponytail-review
+
+---
+
+apply the changes and create a new pr
+
+---
+
+on front-end of panel i see that other countries are showing again.
+find the problem there.
+
+---
+
+/ponytail-review
+
+---
+
+apply the changes
+
+---
+
+commit
+
+---
+
+it didn't apply the changes.
+
+run on localhost and we will check till fix this feature.
+
+---
+
+add this user and password as a free user and make it feature flag on the env to when we wanted to work on free plan board we can do it and if we wanted to work on full panel use this email we have.
+
+user: aminmortezaie1998@gmail.com
+pass: Amin4416
+
+---
+
+ok first thing is adding new role, if you see the commits you can see that we have implemented a feature before that free users can add a new role using their role, but it's not working now.
+
+find the problem and fix it now, i will review it
+
+---
+
+ok where can i add a new role there is no button to get a new role for a company.
+
+---
+
+I've unlocked but did not show on board.
+
+---
+
+/ponytail-review
+
+---
+
+apply the changes
+
+---
+
+it's not working
+
+---
+
+/ponytail-review
+
+---
+
+apply changes
+
+---
+
+QA the tests and if it's okay commit on main by hotfix
+
+---
+
+tests are failing
+
+---
+
+run tests are main
+
+---
+
+the ip is not whitelisted add it and deploy on server
+
+---
+
+how to ssh to aws
+
+---
+
+how to docker prune dead images
+
+---
+
+remove this roles count from company also 2026-09-27 19:52 the last fetch time.
+also for users except grandfather users can edit the company locations.
+
+---
+
+/ponytail-review
+
+---
+
+apply the changes
+
+---
+
+check it's not applied correctly what we requested.
+
+---
+
+brother, we should have permitted users except admins to change the kuchup companies location.
+but it did not applied on localhost.
+
+---
+
+do u understand what i'm saying?
+just admins can set or change the location of kuchup companies
+
+---
+
+/ponytail-review
+
+---
+
+apply
