@@ -52,8 +52,7 @@ def test_free_user_jobs_list_caps_positions(client, db, seeded_catalog_v2):
     assert acme["jobs_hidden_count"] == 2
 
 
-def test_free_user_unlock_role_spends_credit(client, db, seeded_catalog_v2, monkeypatch):
-    from relocation_jobs.broadcast import service as broadcast_service
+def test_free_user_unlock_role_spends_credit(client, db, seeded_catalog_v2):
     from relocation_jobs.credits.service import credit_balance
     from relocation_jobs.users.repo import create_user
     from tests.helpers.seed import append_matching_jobs, ensure_company_assignments, seed_free_assignments
@@ -102,11 +101,6 @@ def test_free_user_unlock_role_spends_credit(client, db, seeded_catalog_v2, monk
     job = company["jobs"][0]
     credit_balance(uid)
     before = credit_balance(uid).total
-    monkeypatch.setattr(
-        broadcast_service,
-        "enqueue_replace_assignment",
-        lambda *args, **kwargs: {"queued": True, "synced": False},
-    )
     resp = client.post(
         "/api/jobs/unlock-role",
         json={

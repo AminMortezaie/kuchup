@@ -20,6 +20,9 @@ _SESSION_ENV_KEYS = (
     "PANEL_SECRET_KEY",
     "PANEL_ALLOW_REGISTER",
     "PANEL_SCRAPE_ENABLED",
+    "PANEL_DEV_BOARD",
+    "PANEL_DEV_FREE_EMAIL",
+    "PANEL_DEV_FREE_PASSWORD",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
 )
@@ -48,6 +51,9 @@ def _session_env():
         "PANEL_SECRET_KEY": "test-secret-key-fixed",
         "PANEL_ALLOW_REGISTER": "1",
         "PANEL_SCRAPE_ENABLED": "0",
+        "PANEL_DEV_BOARD": "full",
+        "PANEL_DEV_FREE_EMAIL": "",
+        "PANEL_DEV_FREE_PASSWORD": "",
         "GOOGLE_CLIENT_ID": "test-google-client-id",
         "GOOGLE_CLIENT_SECRET": "test-google-client-secret",
     }

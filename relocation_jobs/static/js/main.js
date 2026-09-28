@@ -18,7 +18,8 @@ import { applyPanelChrome } from "./panel-mode.js";
 import { initAppShell } from "./app-shell.js";
 import { openCreditsDialog } from "./credits.js";
 import { appendCompanyRoles } from "./job-board.js";
-import { fetchCompanyRoles } from "./api.js";
+import { fetchCompanyRoles, unlockNextMatchedRole } from "./api.js";
+import { loadJobs } from "./data.js";
 import {
   loadCollapsedCompanies,
   loadShowNotForMeCompanies,
@@ -35,6 +36,8 @@ window.relocationJobs.closePanelPopovers = closePanelPopovers;
 window.relocationJobs.toast = toast;
 window.relocationJobs.appendCompanyRoles = appendCompanyRoles;
 window.relocationJobs.fetchCompanyRoles = fetchCompanyRoles;
+window.relocationJobs.unlockNextMatchedRole = unlockNextMatchedRole;
+window.relocationJobs.loadJobs = loadJobs;
 
 async function init() {
   setOnUnauthorized(() => showLogin("session"));

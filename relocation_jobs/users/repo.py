@@ -426,6 +426,17 @@ def set_user_admin(user_id: int, is_admin: bool) -> None:
         )
 
 
+def set_user_password_hash(user_id: int, password_hash: str) -> None:
+    hashed = (password_hash or "").strip()
+    if not hashed:
+        raise ValueError("Password hash is required")
+    with db_transaction() as conn:
+        conn.execute(
+            "UPDATE users SET password_hash = %s WHERE id = %s",
+            (hashed, user_id),
+        )
+
+
 def update_user_plan(user_id: int, plan: str) -> bool:
     now = _utc_now()
     with db_transaction() as conn:

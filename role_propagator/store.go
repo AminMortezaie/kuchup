@@ -253,6 +253,7 @@ func (s *Store) ListJobs(ctx context.Context, country, company string) ([]Job, e
 		FROM companies c
 		JOIN matching_jobs mj ON mj.company_id = c.id
 			AND mj.matches_default_filter = 1
+			AND (mj.closed_at IS NULL OR mj.closed_at = '')
 		WHERE c.country = $1 AND lower(c.name) = lower($2)
 		ORDER BY mj.fetched DESC, mj.title ASC
 	`, strings.ToLower(strings.TrimSpace(country)), strings.TrimSpace(company))
@@ -270,6 +271,45 @@ func (s *Store) ListJobs(ctx context.Context, country, company string) ([]Job, e
 		j.URL = strings.TrimSpace(j.URL)
 		j.Title = strings.TrimSpace(j.Title)
 		out = append(out, j)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) DismissedJobKeys(ctx context.Context, userID int, country, company string) (map[string]bool, error) {
+	out := map[string]bool{}
+	rows, err := s.conn.Query(ctx, `
+		SELECT COALESCE(mj.idempotency_key, '')
+		FROM job_tracking jt
+		JOIN companies c
+			ON c.country = jt.country
+			AND lower(c.name) = lower(jt.company_name)
+		JOIN matching_jobs mj
+			ON mj.company_id = c.id
+			AND mj.url = jt.job_url
+		WHERE jt.user_id = $1
+			AND jt.country = $2
+			AND lower(jt.company_name) = lower($3)
+			AND (
+				COALESCE(jt.rejected, 0) = 1
+				OR COALESCE(jt.not_for_me, 0) = 1
+				OR COALESCE(jt.applied, 0) = 1
+				OR COALESCE(jt.looking_to_apply, 0) = 1
+				OR COALESCE(jt.pinned, 0) = 1
+			)
+	`, userID, strings.ToLower(strings.TrimSpace(country)), strings.TrimSpace(company))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		key = strings.TrimSpace(key)
+		if key != "" {
+			out[key] = true
+		}
 	}
 	return out, rows.Err()
 }

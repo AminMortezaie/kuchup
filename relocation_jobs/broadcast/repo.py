@@ -116,6 +116,47 @@ def mark_assignment_consumed(
     return True
 
 
+def insert_assignment(
+    user_id: int,
+    *,
+    country: str,
+    company_name: str,
+    job_key: str,
+    job_url: str,
+    job_title: str,
+    period_key: str | None = None,
+) -> bool:
+    period = period_key or current_period_key()
+    country_key = country.strip().lower()
+    name = company_name.strip()
+    key = job_key.strip()
+    if not key:
+        return False
+    now = _utc_now()
+    with db_transaction() as conn:
+        row = conn.execute(
+            """
+            INSERT INTO position_broadcast_assignments (
+                user_id, period_key, country, company_name, job_key,
+                job_url, job_title, assigned_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+            RETURNING job_key
+            """,
+            (
+                user_id,
+                period,
+                country_key,
+                name,
+                key,
+                (job_url or "").strip(),
+                (job_title or "").strip(),
+                now,
+            ),
+        ).fetchone()
+    return bool(row)
+
+
 def revert_assignment_consumed(
     user_id: int,
     *,

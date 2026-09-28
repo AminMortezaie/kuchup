@@ -106,6 +106,7 @@ def test_login_or_register_google_respects_allow_register(db, monkeypatch):
 
 def test_auth_disabled_auto_logins_admin_on_localhost(client, db, monkeypatch):
     monkeypatch.setenv("PANEL_AUTH_DISABLED", "1")
+    monkeypatch.setenv("PANEL_DEV_BOARD", "full")
     monkeypatch.setenv("PANEL_ADMIN_EMAILS", "admin@example.com")
     monkeypatch.setattr(
         "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
@@ -116,6 +117,25 @@ def test_auth_disabled_auto_logins_admin_on_localhost(client, db, monkeypatch):
     assert body["user"]["email"] == "admin@example.com"
     assert body["user"]["is_admin"] is True
     assert not get_user_by_email("admin@example.com").get("last_login_at")
+
+
+def test_auth_disabled_free_board_auto_logins_free_user(client, db, monkeypatch):
+    monkeypatch.setenv("PANEL_AUTH_DISABLED", "1")
+    monkeypatch.setenv("PANEL_DEV_BOARD", "free")
+    monkeypatch.setenv("PANEL_DEV_FREE_EMAIL", "freeboard@example.com")
+    monkeypatch.setenv("PANEL_DEV_FREE_PASSWORD", "free-board-secret")
+    monkeypatch.setenv("PANEL_ADMIN_EMAILS", "admin@example.com")
+    monkeypatch.setattr(
+        "relocation_jobs.core.auth.enqueue_user_opportunity_refresh",
+        lambda uid: {"queued": False, "synced": False, "user_id": uid},
+    )
+    body = client.get("/api/auth/status").get_json()
+    assert body["authenticated"] is True
+    assert body["user"]["email"] == "freeboard@example.com"
+    assert body["user"]["is_admin"] is False
+    assert body["user"]["plan"] == "free"
+    countries = client.get("/api/countries").get_json()
+    assert {row["id"] for row in countries} == {"germany", "netherlands"}
 
 
 def test_auth_disabled_ignored_off_localhost(client, db, monkeypatch):

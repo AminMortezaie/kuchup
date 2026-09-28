@@ -8,8 +8,8 @@ from relocation_jobs.broadcast.types import (
     PositionAssignment,
     RevealEvent,
 )
-from relocation_jobs.async_jobs.enqueue import enqueue_replace_assignment
 from relocation_jobs.catalog.repo import get_company, list_jobs_for_company_keys
+from relocation_jobs.catalog.service import job_is_closed
 from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.core.job_identity import job_idempotency_key, normalize_job_url
 from relocation_jobs.credits.policy import operation_cost
@@ -95,7 +95,7 @@ def _raw_jobs(country: str, company_name: str) -> list[dict]:
     company = get_company(country, company_name) or {}
     return [
         job for job in (company.get("matching_jobs") or [])
-        if job_is_default_match(job)
+        if job_is_default_match(job) and not job_is_closed(job)
     ]
 
 
@@ -112,7 +112,7 @@ def _current_catalog_assignment_keys(companies: list[dict]) -> set[tuple[str, st
         (*company_key, (job.get("idempotency_key") or "").strip())
         for company_key, jobs in jobs_by_company.items()
         for job in jobs
-        if (job.get("idempotency_key") or "").strip()
+        if (job.get("idempotency_key") or "").strip() and not job_is_closed(job)
     }
 
 
@@ -122,13 +122,46 @@ def apply_capacity_to_board_page(user_id: int, companies: list[dict]) -> list[di
     current_assignment_keys = set()
     if limits.jobs_per_company is not None:
         current_assignment_keys = _current_catalog_assignment_keys(companies)
-    return apply_capacity_to_companies(
+    capped = apply_capacity_to_companies(
         companies,
         limits=limits,
         assignments=assignments,
         current_assignment_keys=current_assignment_keys,
         bypass=limits.unlimited,
     )
+    if limits.unlimited:
+        return capped
+    return _prioritize_fresh_assignments(capped, assignments)
+
+
+def _prioritize_fresh_assignments(
+    companies: list[dict],
+    assignments: list[PositionAssignment],
+) -> list[dict]:
+    latest: dict[tuple[str, str, str], str] = {}
+    for assignment in assignments:
+        key = (
+            (assignment.country or "").strip().lower(),
+            (assignment.company_name or "").strip().lower(),
+            (assignment.job_key or "").strip(),
+        )
+        if key[2] and (assignment.assigned_at or "") >= latest.get(key, ""):
+            latest[key] = assignment.assigned_at or ""
+    for company in companies:
+        country = (company.get("country") or "").strip().lower()
+        name = (company.get("name") or "").strip().lower()
+        company["jobs"] = sorted(
+            company.get("jobs") or [],
+            key=lambda job: (
+                0 if job.get("listing_unavailable") else 1,
+                latest.get(
+                    (country, name, (job.get("idempotency_key") or "").strip()),
+                    "",
+                ),
+            ),
+            reverse=True,
+        )
+    return companies
 
 
 def _job_identity_key(job: dict) -> str:
@@ -148,6 +181,8 @@ def _engaged_job_keys(
     country: str,
     company_name: str,
     jobs: list[dict],
+    *,
+    include_not_for_me: bool = False,
 ) -> set[str]:
     tracking = load_job_tracking(user_id, country=country)
     by_url = {
@@ -158,6 +193,12 @@ def _engaged_job_keys(
     keys: set[str] = set()
     for job in jobs:
         track = by_url.get(normalize_job_url(job.get("url") or ""), {})
+        if track.get("not_for_me"):
+            if include_not_for_me:
+                key = _job_identity_key(job)
+                if key:
+                    keys.add(key)
+            continue
         if not _track_is_engaged(track):
             continue
         key = _job_identity_key(job)
@@ -251,14 +292,18 @@ def import_month_usage(user_id: int, period: str | None = None) -> None:
 def _replacement_candidate(
     jobs: list[dict],
     assignments: list[PositionAssignment],
+    *,
+    blocked_keys: set[str] | None = None,
 ) -> dict | None:
     assigned_keys = {assignment.job_key for assignment in assignments}
+    blocked = blocked_keys or set()
     return next(
         (
             job
             for job in jobs
             if (job.get("idempotency_key") or "").strip()
             and (job.get("idempotency_key") or "").strip() not in assigned_keys
+            and (job.get("idempotency_key") or "").strip() not in blocked
         ),
         None,
     )
@@ -321,7 +366,13 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
     jobs = _raw_jobs(event.country, event.company_name)
-    candidate = _replacement_candidate(jobs, assignments)
+    candidate = _replacement_candidate(
+        jobs,
+        assignments,
+        blocked_keys=_engaged_job_keys(
+            user_id, event.country, event.company_name, jobs, include_not_for_me=True,
+        ),
+    )
     if candidate is None:
         return {
             "expanded": False,
@@ -380,14 +431,16 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "reason": "credits_exhausted",
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
-    try:
-        queued = enqueue_replace_assignment(
-            user_id,
-            country=event.country,
-            company_name=event.company_name,
-            source_job_key=key,
-        )
-    except RuntimeError:
+    inserted = broadcast_repo.insert_assignment(
+        user_id,
+        country=event.country,
+        company_name=event.company_name,
+        job_key=(candidate.get("idempotency_key") or "").strip(),
+        job_url=(candidate.get("url") or "").strip(),
+        job_title=(candidate.get("title") or "").strip(),
+        period_key=period,
+    )
+    if not inserted:
         _rollback_unlock(
             user_id,
             period=period,
@@ -402,21 +455,10 @@ def record_touch_and_maybe_reveal(user_id: int, event: RevealEvent) -> dict:
             "reason": "replacement_assignment_failed",
             "capacity": capacity_meta_for_user(user_id).as_dict(),
         }
-    replacement_revealed = bool(queued.get("queued") or queued.get("synced"))
-    if not replacement_revealed:
-        _rollback_unlock(
-            user_id,
-            period=period,
-            country=event.country,
-            company_name=event.company_name,
-            job_key=key,
-            spend_key=spend_key,
-        )
     return {
-        "expanded": replacement_revealed,
-        "consumed": replacement_revealed,
-        "credits_spent": 1 if replacement_revealed else 0,
-        "queued": bool(queued.get("queued")),
+        "expanded": True,
+        "consumed": True,
+        "credits_spent": 1,
         "position_period": period,
         "capacity": capacity_meta_for_user(user_id).as_dict(),
     }

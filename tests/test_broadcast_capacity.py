@@ -163,6 +163,67 @@ def test_filtered_assigned_role_is_not_mislabeled_as_removed():
     assert result[0]["jobs"] == []
 
 
+def test_raw_jobs_skips_closed_roles(db, monkeypatch):
+    from relocation_jobs.broadcast import service as broadcast_service
+
+    open_job = {
+        "idempotency_key": "open-1",
+        "url": "https://example.com/open",
+        "title": "Open",
+        "closed_at": "",
+        "matches_default_filter": 1,
+    }
+    closed_job = {
+        "idempotency_key": "closed-1",
+        "url": "https://example.com/closed",
+        "title": "Closed",
+        "closed_at": "2026-09-18T00:00:00+00:00",
+        "matches_default_filter": 1,
+    }
+    monkeypatch.setattr(
+        broadcast_service,
+        "get_company",
+        lambda country, company: {"matching_jobs": [open_job, closed_job]},
+    )
+    jobs = broadcast_service._raw_jobs("germany", "Acme")
+    assert [job["idempotency_key"] for job in jobs] == ["open-1"]
+
+
+def test_no_replacement_when_only_dismissed_jobs_remain(db, monkeypatch):
+    from relocation_jobs.positions import repo as positions_repo
+
+    user = create_user(
+        "broadcast-only-dismissed",
+        email="only-dismissed@example.com",
+        google_sub="sub-only-dismissed",
+    )
+    uid = int(user["id"])
+    jobs = [_job(i) for i in range(1, 5)]
+    period = repo.current_period_key()
+    ensure_company_assignments(
+        uid, "germany", "Acme", jobs[:3], active_target=3, period_key=period,
+    )
+    positions_repo.set_rejected(
+        uid, "germany", "Acme", jobs[3]["url"], True, job_title=jobs[3]["title"],
+    )
+    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
+    before = credit_balance(uid).total
+    result = broadcast_service.record_touch_and_maybe_reveal(
+        uid,
+        RevealEvent(
+            country="germany",
+            company_name="Acme",
+            kind="seen",
+            job_url=jobs[0]["url"],
+            job_key=jobs[0]["idempotency_key"],
+            job_title=jobs[0]["title"],
+        ),
+    )
+    assert result["reason"] == "no_replacement"
+    assert not result.get("credits_spent")
+    assert credit_balance(uid).total == before
+
+
 def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch):
     user = create_user(
         "broadcast-wallet",
@@ -176,11 +237,6 @@ def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch)
         uid, "germany", "Acme", jobs, active_target=3, period_key=period,
     )
     monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
-    monkeypatch.setattr(
-        broadcast_service,
-        "enqueue_replace_assignment",
-        lambda *args, **kwargs: {"queued": True, "synced": False},
-    )
     event = RevealEvent(
         country="germany",
         company_name="Acme",
@@ -193,49 +249,9 @@ def test_action_spends_credit_only_when_replacement_is_assigned(db, monkeypatch)
     duplicate = broadcast_service.record_touch_and_maybe_reveal(uid, event)
     assert first["expanded"] is True
     assert first["credits_spent"] == 1
+    assert any(a.job_key == jobs[3]["idempotency_key"] for a in repo.list_assignments(uid))
     assert duplicate["reason"] == "already_counted"
     assert credit_balance(uid).total == 29
-
-
-def test_retry_after_failed_enqueue_completes_with_dedup_spend(db, monkeypatch):
-    user = create_user(
-        "broadcast-retry-dedup",
-        email="retry-dedup@example.com",
-        google_sub="sub-retry-dedup",
-    )
-    uid = int(user["id"])
-    jobs = [_job(i) for i in range(1, 5)]
-    period = repo.current_period_key()
-    ensure_company_assignments(
-        uid, "germany", "Acme", jobs, active_target=3, period_key=period,
-    )
-    monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
-    enqueue_calls: list[int] = []
-
-    def enqueue(*args, **kwargs):
-        enqueue_calls.append(1)
-        if len(enqueue_calls) == 1:
-            raise RuntimeError("writer down")
-        return {"queued": True, "synced": False}
-
-    monkeypatch.setattr(broadcast_service, "enqueue_replace_assignment", enqueue)
-    event = RevealEvent(
-        country="germany",
-        company_name="Acme",
-        kind="seen",
-        job_url=jobs[0]["url"],
-        job_key=jobs[0]["idempotency_key"],
-        job_title=jobs[0]["title"],
-    )
-    first = broadcast_service.record_touch_and_maybe_reveal(uid, event)
-    assert first["reason"] == "replacement_assignment_failed"
-    assert first["expanded"] is False
-    assert repo.consumed_count(uid, period_key=period) == 0
-    second = broadcast_service.record_touch_and_maybe_reveal(uid, event)
-    assert second["expanded"] is True
-    assert second["credits_spent"] == 1
-    assert repo.consumed_count(uid, period_key=period) == 1
-    assert len(enqueue_calls) == 2
 
 
 def test_no_replacement_does_not_consume_assignment(db, monkeypatch):
@@ -287,11 +303,6 @@ def test_insufficient_credits_does_not_consume_assignment(db, monkeypatch):
             idempotency_key=f"drain-consume:{index}",
         )
     monkeypatch.setattr(broadcast_service, "_raw_jobs", lambda country, company: jobs)
-    monkeypatch.setattr(
-        broadcast_service,
-        "enqueue_replace_assignment",
-        lambda *args, **kwargs: {"queued": True, "synced": False},
-    )
     result = broadcast_service.record_touch_and_maybe_reveal(
         uid,
         RevealEvent(

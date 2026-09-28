@@ -580,6 +580,30 @@ export async function fetchCompanyRoles({ country, company, offset = 0 } = {}) {
   return data;
 }
 
+export async function unlockNextMatchedRole({ country, company, url, idempotencyKey = "", title = "" } = {}) {
+  const res = await apiFetch("/api/jobs/unlock-role", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      country,
+      company,
+      url,
+      idempotency_key: idempotencyKey,
+      title,
+    }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) {
+    const msg = data.error || "Could not unlock the next role";
+    toast(msg);
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
 export function jobsQueryParams() {
   const country = document.getElementById("country").value;
   const atsEl = document.getElementById("ats");

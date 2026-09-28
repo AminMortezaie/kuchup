@@ -189,7 +189,7 @@ function renderUpgradeHint() {
   }
   const noun = hidden === 1 ? "role" : "roles";
   el.hidden = false;
-  el.innerHTML = `+${hidden} more ${noun} waiting. A new role costs 1 credit after you act on a shown role. <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.`;
+  el.innerHTML = `+${hidden} more ${noun} waiting. Unlock the next matched role for 1 credit from the board, or act on a shown role. <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.`;
 }
 
 function positionItemHtml(position) {

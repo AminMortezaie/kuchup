@@ -29,6 +29,8 @@ from relocation_jobs.users.repo import (
     set_user_admin,
     set_user_email_confirmed,
     set_user_last_login_at,
+    set_user_password_hash,
+    update_user_plan,
     user_count,
 )
 
@@ -86,9 +88,34 @@ def auth_disabled() -> bool:
     return host in ("127.0.0.1", "localhost")
 
 
-def ensure_dev_login() -> None:
-    if not auth_disabled() or current_user_id():
-        return
+def _ensure_dev_free_user(email: str, password: str) -> dict:
+    creds = get_user_credentials_by_email(email)
+    user = get_user_by_email(email)
+    if user is None:
+        user = create_password_user(
+            email=email,
+            password_hash=generate_password_hash(password),
+            display_name=email.split("@", 1)[0],
+            plan="free",
+            is_admin=False,
+        )
+        set_user_email_confirmed(int(user["id"]))
+        _bootstrap_signed_in_user(int(user["id"]))
+        return get_user_by_id(int(user["id"])) or user
+    uid = int(user["id"])
+    if (user.get("plan") or "").strip().lower() != "free":
+        update_user_plan(uid, "free")
+    if user.get("is_admin"):
+        set_user_admin(uid, False)
+    stored = (creds or {}).get("password_hash") or ""
+    if not stored or not check_password_hash(stored, password):
+        set_user_password_hash(uid, generate_password_hash(password))
+    if password_user_needs_email_confirm(creds):
+        set_user_email_confirmed(uid)
+    return get_user_by_id(uid) or user
+
+
+def _ensure_dev_admin_user() -> dict:
     raw = os.environ.get("PANEL_ADMIN_EMAILS", "")
     email = next((part.strip().lower() for part in raw.split(",") if part.strip()), "admin@localhost")
     user = get_user_by_email(email)
@@ -99,12 +126,26 @@ def ensure_dev_login() -> None:
             email=email,
             google_sub=f"local-dev-{email}",
         )
-        opportunities_repo.ensure_user_preferences_row(int(user["id"]))
-        import_month_usage(int(user["id"]))
-        enqueue_user_opportunity_refresh(int(user["id"]))
+        _bootstrap_signed_in_user(int(user["id"]))
     elif not is_user_admin(int(user["id"])):
         set_user_admin(int(user["id"]), True)
         user = get_user_by_id(int(user["id"])) or user
+    return user
+
+
+def ensure_dev_login() -> None:
+    if not auth_disabled():
+        return
+    if (os.environ.get("PANEL_DEV_BOARD") or "full").strip().lower() == "free":
+        email = (os.environ.get("PANEL_DEV_FREE_EMAIL") or "").strip().lower()
+        password = os.environ.get("PANEL_DEV_FREE_PASSWORD") or ""
+        if not email or "@" not in email or len(password) < 8:
+            return
+        user = _ensure_dev_free_user(email, password)
+    else:
+        user = _ensure_dev_admin_user()
+    if current_user_id() == int(user["id"]):
+        return
     login_user(int(user["id"]), user["username"])
 
 

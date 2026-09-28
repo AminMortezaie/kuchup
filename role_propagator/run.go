@@ -133,6 +133,12 @@ func handle(ctx context.Context, store *Store, msg message) error {
 	}
 }
 
+func mergeDismissed(assigned, dismissed map[string]bool) {
+	for key := range dismissed {
+		assigned[key] = true
+	}
+}
+
 func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	user, err := store.LoadUser(ctx, userID)
 	if err != nil {
@@ -182,6 +188,11 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 		if err != nil {
 			return err
 		}
+		dismissed, err := store.DismissedJobKeys(ctx, userID, slot.Country, slot.CompanyName)
+		if err != nil {
+			return err
+		}
+		mergeDismissed(assigned, dismissed)
 		for _, job := range PickJobs(jobs, assigned, consumed, perCompany) {
 			if err := store.InsertAssignment(ctx, userID, period, slot.Country, slot.CompanyName, job); err != nil {
 				return err
@@ -220,6 +231,11 @@ func reconcileReplace(ctx context.Context, store *Store, userID int, country, co
 	if err != nil {
 		return err
 	}
+	dismissed, err := store.DismissedJobKeys(ctx, userID, country, company)
+	if err != nil {
+		return err
+	}
+	mergeDismissed(assigned, dismissed)
 	job := PickReplacement(jobs, assigned)
 	if job == nil {
 		return fmt.Errorf("no replacement for user %d %s/%s", userID, country, company)

@@ -99,6 +99,7 @@ function emptyMessage(company, ui) {
 function CompanyCard({ company, ui }) {
   const [citiesExpanded, setCitiesExpanded] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
   const keyStr = companyKey(company);
   const collapsedSet = new Set(ui.collapsed || []);
   const showNotForMeSet = new Set(ui.showNotForMe || []);
@@ -161,6 +162,35 @@ function CompanyCard({ company, ui }) {
       /* toast already shown by fetchCompanyRoles */
     } finally {
       setLoadingMore(false);
+    }
+  };
+
+  const unlockNextRole = async () => {
+    const api = window.relocationJobs;
+    const source = openJobs.find((job) => !job.broadcast_consumed) || openJobs[0];
+    if (!api?.unlockNextMatchedRole || !source) return;
+    setUnlocking(true);
+    try {
+      const data = await api.unlockNextMatchedRole({
+        country: company.country,
+        company: company.name,
+        url: source.url,
+        idempotencyKey: source.idempotency_key || "",
+        title: source.title || "",
+      });
+      if (data?.reveal?.expanded) {
+        api.toast?.("One new matched role unlocked for this company");
+      }
+      await api.loadJobs?.({
+        preserveContent: true,
+        noOverlay: true,
+        enterAnimation: false,
+        stableOrder: true,
+      });
+    } catch {
+      /* toast already shown by unlockNextMatchedRole */
+    } finally {
+      setUnlocking(false);
     }
   };
 
@@ -401,9 +431,19 @@ function CompanyCard({ company, ui }) {
           <div className="position-card position-card-upgrade">
             <p className="empty-hint text-sm">
               +{company.jobs_hidden_count} more role{company.jobs_hidden_count === 1 ? "" : "s"}
-              {" "}waiting. A new role costs 1 credit after you act on a shown role.{" "}
-              <a href="/panel?credits=1">Add credits</a> or <a href="/pricing">see Full Access</a>.
+              {" "}waiting. Unlock the next matched role for 1 credit, or act on a shown role.
             </p>
+            {openJobs.length > 0 ? (
+              <button
+                type="button"
+                className="expand-roles-btn"
+                onClick={unlockNextRole}
+                disabled={unlocking}
+                title="Spend 1 credit to unlock the next matched role"
+              >
+                {unlocking ? "Unlocking…" : "Unlock next role · 1 credit"}
+              </button>
+            ) : null}
           </div>
         ) : null}
         {!isCollapsed && moreCount > 0 ? (
