@@ -6,7 +6,6 @@ import os
 from typing import Any
 
 _OPPORTUNITY_REFRESH_ENV = "SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL"
-_JOB_NOTIFY_ENV = "SQS_JOB_NOTIFY_QUEUE_URL"
 
 
 def queue_url_from_env(env_key: str) -> str:
@@ -15,10 +14,6 @@ def queue_url_from_env(env_key: str) -> str:
 
 def opportunity_refresh_queue_url() -> str:
     return queue_url_from_env(_OPPORTUNITY_REFRESH_ENV)
-
-
-def job_notify_queue_url() -> str:
-    return queue_url_from_env(_JOB_NOTIFY_ENV)
 
 
 def sqs_enabled_for(env_key: str) -> bool:

@@ -41,7 +41,8 @@ func (s *Store) Close(ctx context.Context) {
 	_ = s.conn.Close(ctx)
 }
 
-func (s *Store) CountWaveJobsForUser(ctx context.Context, userID, fetchRunID int) (int, error) {
+func (s *Store) CountWaveJobsForUser(ctx context.Context, userID int, country string, fetchRunID int) (int, error) {
+	country = strings.ToLower(strings.TrimSpace(country))
 	var n int
 	err := s.conn.QueryRow(ctx, `
 		SELECT COUNT(DISTINCT w.job_key)
@@ -51,7 +52,8 @@ func (s *Store) CountWaveJobsForUser(ctx context.Context, userID, fetchRunID int
 		 AND uo.country = w.country
 		 AND lower(uo.company_name) = lower(w.company_name)
 		WHERE w.fetch_run_id = $2
-	`, userID, fetchRunID).Scan(&n)
+		  AND w.country = $3
+	`, userID, fetchRunID, country).Scan(&n)
 	return n, err
 }
 
@@ -75,6 +77,7 @@ func (s *Store) MarkWaveNotified(ctx context.Context, userID, fetchRunID int) er
 	_, err := s.conn.Exec(ctx, `
 		INSERT INTO fetch_wave_push_sent (user_id, fetch_run_id, sent_at)
 		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, fetch_run_id) DO NOTHING
 	`, userID, fetchRunID, now)
 	return err
 }

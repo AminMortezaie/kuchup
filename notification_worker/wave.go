@@ -38,7 +38,7 @@ func ProcessCountryWave(ctx context.Context, store *Store, country string, fetch
 }
 
 func notifyUserWave(ctx context.Context, store *Store, user NotifyUser, country string, fetchRunID int) error {
-	count, err := store.CountWaveJobsForUser(ctx, user.ID, fetchRunID)
+	count, err := store.CountWaveJobsForUser(ctx, user.ID, country, fetchRunID)
 	if err != nil {
 		return err
 	}
