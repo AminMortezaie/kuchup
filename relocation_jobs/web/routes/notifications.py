@@ -1,23 +1,10 @@
 from __future__ import annotations
 
-import hmac
-import os
-
 from flask import g, jsonify, request
 
 from relocation_jobs.core.auth import login_required
 from relocation_jobs.notifications import send as push_send
 from relocation_jobs.notifications import service as notifications_service
-
-
-def _internal_secret_ok() -> bool:
-    expected = (os.environ.get("PANEL_PUSH_NOTIFY_SECRET") or "").strip()
-    if not expected:
-        return False
-    got = (request.headers.get("X-Push-Notify-Secret") or "").strip()
-    if not got:
-        return False
-    return hmac.compare_digest(got, expected)
 
 
 def register(app):
@@ -47,22 +34,3 @@ def register(app):
         body = request.get_json(silent=True) or {}
         removed = notifications_service.remove_subscription(g.user_id, body)
         return jsonify({"ok": True, "removed": removed})
-
-    @app.post("/api/internal/notifications/after-country-wave")
-    def api_internal_after_country_wave():
-        if not _internal_secret_ok():
-            return jsonify({"error": "Forbidden"}), 403
-        body = request.get_json(silent=True) or {}
-        country = (body.get("country") or "").strip().lower()
-        fetch_run_id = body.get("fetch_run_id")
-        try:
-            run_id = int(fetch_run_id)
-        except (TypeError, ValueError):
-            return jsonify({"error": "fetch_run_id required"}), 400
-        if not country:
-            return jsonify({"error": "country required"}), 400
-        result = notifications_service.send_after_country_wave(
-            country=country,
-            fetch_run_id=run_id,
-        )
-        return jsonify({"ok": True, **result})

@@ -9,7 +9,6 @@ from relocation_jobs.async_jobs.types import (
     ReconcileUserOpportunities,
     ReplaceAssignment,
 )
-from relocation_jobs.notifications import service as notifications_service
 from relocation_jobs.core.sqs_client import (
     opportunity_refresh_queue_url,
     send_json_message,
@@ -23,7 +22,7 @@ def _propagator_bin() -> str:
     return (os.environ.get(_BIN_ENV) or "").strip()
 
 
-def _run_bin(args: list[str], *, message: JobMessage | None = None) -> dict:
+def _run_bin(args: list[str]) -> dict:
     completed = subprocess.run(
         [_propagator_bin(), *args],
         check=False,
@@ -33,11 +32,6 @@ def _run_bin(args: list[str], *, message: JobMessage | None = None) -> dict:
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout or "role-propagator failed").strip()
         raise RuntimeError(detail)
-    if isinstance(message, ReconcileCountryOpportunities) and int(message.fetch_run_id or 0) > 0:
-        notifications_service.send_after_country_wave(
-            country=message.country,
-            fetch_run_id=int(message.fetch_run_id),
-        )
     return {"queued": False, "synced": True}
 
 
@@ -45,7 +39,11 @@ def _bin_args(message: JobMessage) -> list[str]:
     if isinstance(message, ReconcileUserOpportunities):
         return ["--user", str(int(message.user_id))]
     if isinstance(message, ReconcileCountryOpportunities):
-        return ["--country", (message.country or "").strip().lower()]
+        args = ["--country", (message.country or "").strip().lower()]
+        run_id = int(message.fetch_run_id or 0)
+        if run_id > 0:
+            args.extend(["--fetch-run-id", str(run_id)])
+        return args
     return [
         "--replace",
         "--user",
@@ -68,7 +66,7 @@ def enqueue(message: JobMessage) -> dict:
         raise RuntimeError(
             "assignment writer missing: set SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL or ROLE_PROPAGATOR_BIN"
         )
-    ran = _run_bin(_bin_args(message), message=message)
+    ran = _run_bin(_bin_args(message))
     return {**ran, **payload}
 
 

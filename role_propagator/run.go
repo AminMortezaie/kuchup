@@ -1,13 +1,11 @@
 package rolepropagator
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -33,6 +31,7 @@ func Main() {
 	replace := flag.Bool("replace", false, "insert one replacement assignment")
 	company := flag.String("company", "", "company for --replace")
 	sourceKey := flag.String("source-job-key", "", "consumed job key for --replace")
+	fetchRunID := flag.Int("fetch-run-id", 0, "fetch run id for country notify enqueue")
 	wait := flag.Int("wait-seconds", 10, "SQS long-poll wait")
 	maxMsg := flag.Int("max-messages", 5, "SQS receive batch size")
 	sleep := flag.Float64("sleep-seconds", 1, "sleep between polls")
@@ -58,7 +57,7 @@ func Main() {
 			log.Fatal(err)
 		}
 	case strings.TrimSpace(*country) != "":
-		if err := reconcileCountry(ctx, store, *country, 0); err != nil {
+		if err := reconcileCountry(ctx, store, *country, *fetchRunID); err != nil {
 			log.Fatal(err)
 		}
 	default:
@@ -215,44 +214,8 @@ func reconcileCountry(ctx context.Context, store *Store, country string, fetchRu
 			log.Printf("user %d: %v", id, err)
 		}
 	}
-	notifyAfterCountryWave(ctx, country, fetchRunID)
+	enqueueNotifyCountryWave(ctx, country, fetchRunID)
 	return nil
-}
-
-func notifyAfterCountryWave(ctx context.Context, country string, fetchRunID int) {
-	if fetchRunID <= 0 {
-		return
-	}
-	url := strings.TrimSpace(os.Getenv("PANEL_PUSH_NOTIFY_URL"))
-	secret := strings.TrimSpace(os.Getenv("PANEL_PUSH_NOTIFY_SECRET"))
-	if url == "" || secret == "" {
-		return
-	}
-	payload, err := json.Marshal(map[string]any{
-		"country":      strings.ToLower(strings.TrimSpace(country)),
-		"fetch_run_id": fetchRunID,
-	})
-	if err != nil {
-		log.Printf("push notify marshal: %v", err)
-		return
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
-	if err != nil {
-		log.Printf("push notify request: %v", err)
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Push-Notify-Secret", secret)
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("push notify post: %v", err)
-		return
-	}
-	_ = resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		log.Printf("push notify status=%d country=%s fetch_run_id=%d", resp.StatusCode, country, fetchRunID)
-	}
 }
 
 func reconcileReplace(ctx context.Context, store *Store, userID int, country, company, _ string) error {
