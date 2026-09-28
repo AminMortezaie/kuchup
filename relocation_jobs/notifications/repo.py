@@ -119,6 +119,18 @@ def count_wave_jobs_for_user(user_id: int, fetch_run_id: int) -> int:
     return int((row or {}).get("n") or 0)
 
 
+def push_wave_already_sent(user_id: int, fetch_run_id: int) -> bool:
+    with db_read() as conn:
+        row = conn.execute(
+            """
+            SELECT 1 FROM fetch_wave_push_sent
+            WHERE user_id = %s AND fetch_run_id = %s
+            """,
+            (int(user_id), int(fetch_run_id)),
+        ).fetchone()
+    return row is not None
+
+
 def claim_push_sent(user_id: int, fetch_run_id: int) -> bool:
     now = _utc_now()
     with db_transaction() as conn:
@@ -141,13 +153,15 @@ def claim_push_sent(user_id: int, fetch_run_id: int) -> bool:
     return True
 
 
-def list_full_plan_user_ids() -> list[int]:
+def list_full_plan_subscribed_user_ids() -> list[int]:
     with db_read() as conn:
         rows = conn.execute(
             """
-            SELECT id FROM users
-            WHERE lower(COALESCE(plan, 'free')) IN ('full', 'grandfathered')
-            ORDER BY id ASC
+            SELECT DISTINCT u.id AS id
+            FROM users u
+            INNER JOIN web_push_subscriptions s ON s.user_id = u.id
+            WHERE lower(COALESCE(u.plan, 'free')) IN ('full', 'grandfathered')
+            ORDER BY u.id ASC
             """
         ).fetchall()
     return [int(row["id"]) for row in rows]

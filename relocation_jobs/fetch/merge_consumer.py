@@ -19,6 +19,7 @@ from relocation_jobs.fetch.client import make_fetch_client
 from relocation_jobs.fetch import service as fetch_service
 from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
+from relocation_jobs.scrape.aggregator_sync import is_aggregator_ats
 from relocation_jobs.scrape.company import _mark_fetch_failed, process_company
 from relocation_jobs.scrape.enrich import enrich_jobs
 from relocation_jobs.scrape.filter import filter_relevant_jobs
@@ -61,7 +62,9 @@ async def _merge_ok_or_empty(
         fetch_run_id=fetch_run_id,
     )
 
-    def on_company_result(company_name: str, _count: int, slim_jobs: list[dict]) -> None:
+    def on_company_result(company_name: str, new_count: int, slim_jobs: list[dict]) -> None:
+        if new_count <= 0 or is_aggregator_ats(company.get("ats_type")):
+            return
         notifications_service.record_fetch_wave_jobs(
             fetch_run_id,
             country_key,

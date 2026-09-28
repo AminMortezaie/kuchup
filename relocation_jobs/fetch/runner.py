@@ -174,6 +174,7 @@ def _go_country_fetch_worker(
     if code != 0:
         fail(f"Go fetch exited {code}")
         return
+    # New job keys for push are recorded in merge_consumer during HTTP merge, not here.
     if go_results.run_merge_complete(run_id):
         enqueue_country_opportunity_refresh(country_key, fetch_run_id=run_id)
 

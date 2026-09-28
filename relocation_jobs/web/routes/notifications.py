@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import os
 
 from flask import g, jsonify, request
@@ -14,7 +15,9 @@ def _internal_secret_ok() -> bool:
     if not expected:
         return False
     got = (request.headers.get("X-Push-Notify-Secret") or "").strip()
-    return got == expected
+    if not got:
+        return False
+    return hmac.compare_digest(got, expected)
 
 
 def register(app):

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 
 from relocation_jobs.core.job_identity import job_idempotency_key
-from relocation_jobs.notifications import copy as notification_copy
 from relocation_jobs.notifications import repo as notifications_repo
 from relocation_jobs.notifications import send as push_send
 from relocation_jobs.users.entitlements import normalize_plan
@@ -12,6 +11,13 @@ from relocation_jobs.users.repo import get_user_by_id
 LOGGER = logging.getLogger(__name__)
 
 _PUSH_TITLE = "Kuchup"
+
+
+def new_jobs_notification_body(count: int) -> str:
+    n = int(count)
+    if n == 1:
+        return "1 new job found!"
+    return f"{n} new jobs found!"
 
 
 def plan_eligible_for_push(plan: str | None) -> bool:
@@ -60,21 +66,22 @@ def send_after_country_wave(*, country: str, fetch_run_id: int) -> dict:
     notified = 0
     skipped_zero = 0
     skipped_claim = 0
-    for user_id in notifications_repo.list_full_plan_user_ids():
+    for user_id in notifications_repo.list_full_plan_subscribed_user_ids():
         count = notifications_repo.count_wave_jobs_for_user(user_id, run_id)
         if count <= 0:
             skipped_zero += 1
             continue
-        if not notifications_repo.claim_push_sent(user_id, run_id):
+        if notifications_repo.push_wave_already_sent(user_id, run_id):
             skipped_claim += 1
             continue
-        body = notification_copy.new_jobs_notification_body(count)
+        body = new_jobs_notification_body(count)
         result = push_send.send_user_notification(
             user_id,
             title=_PUSH_TITLE,
             body=body,
         )
         if result["sent"] > 0:
+            notifications_repo.claim_push_sent(user_id, run_id)
             notified += 1
         LOGGER.info(
             "web_push_wave country=%s fetch_run_id=%s user_id=%s count=%s sent=%s",
