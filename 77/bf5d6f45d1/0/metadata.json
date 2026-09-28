@@ -1,0 +1,185 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "77bf5d6f45d1",
+  "session_id": "466b4adc-aa3c-47db-80b3-d29b5d72b2f9",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-28T13:39:04.419668Z",
+  "branch": "main",
+  "checkpoints_count": 6,
+  "save_step_count": 6,
+  "files_touched": [
+    ".env.example",
+    "docker-entrypoint.sh",
+    "relocation_jobs/core/ats_constants.py",
+    "relocation_jobs/fetch/merge_consumer.py",
+    "relocation_jobs/web/gunicorn_conf.py",
+    "scripts/ec2_app_deploy.sh",
+    "tests/core/test_db_pool.py",
+    "tests/fetch/test_merge_consumer.py",
+    "tests/ops/test_worker_dockerfiles.py"
+  ],
+  "agent": "Cursor",
+  "model": "grok-4.7-high",
+  "turn_id": "d96ee22ed5cc",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 406929,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5993600,
+    "output_tokens": 79379,
+    "api_call_count": 5
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-cursor-ponytail-review-2026-09-28T13:29:03.785395Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "ponytail-review"
+      },
+      "source": {
+        "agent": "cursor",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "698d7658377f",
+      "timestamp": "2026-09-28T13:29:03.785395Z",
+      "native": {
+        "command": "/ponytail-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/ponytail-review",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-28T13:39:04.407618Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 49,
+    "total_committed": 0,
+    "total_lines_changed": 49,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 307,
+      "user_lines_removed": 125,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env.example": 47,
+        "relocation_jobs/core/ats_constants.py": 121,
+        "relocation_jobs/core/ats_detection.py": 43,
+        "relocation_jobs/scrape/aggregator_seeds.py": 10,
+        "relocation_jobs/scrape/ats_resolve.py": 2,
+        "relocation_jobs/scrape/boards/ashby.py": 2,
+        "relocation_jobs/scrape/boards/bol.py": 5,
+        "relocation_jobs/scrape/boards/deel.py": 2,
+        "relocation_jobs/scrape/boards/greenhouse.py": 6,
+        "relocation_jobs/scrape/boards/hibob.py": 2,
+        "relocation_jobs/scrape/boards/http_sync.py": 10,
+        "relocation_jobs/scrape/boards/job_shop.py": 1,
+        "relocation_jobs/scrape/boards/joblet.py": 7,
+        "relocation_jobs/scrape/boards/join.py": 3,
+        "relocation_jobs/scrape/boards/kake.py": 2,
+        "relocation_jobs/scrape/boards/lever.py": 2,
+        "relocation_jobs/scrape/boards/personio.py": 2,
+        "relocation_jobs/scrape/boards/pinpointhq.py": 2,
+        "relocation_jobs/scrape/boards/recruitee.py": 9,
+        "relocation_jobs/scrape/boards/remotedxb.py": 4,
+        "relocation_jobs/scrape/boards/remoteok.py": 3,
+        "relocation_jobs/scrape/boards/smartrecruiters.py": 2,
+        "relocation_jobs/scrape/boards/teamtailor.py": 3,
+        "relocation_jobs/scrape/boards/workable.py": 3,
+        "relocation_jobs/scrape/listing_status.py": 2,
+        "scripts/.claude/settings.local.json": 12
+      },
+      "user_removed_per_file": {
+        "relocation_jobs/core/ats_constants.py": 49,
+        "relocation_jobs/core/ats_detection.py": 21,
+        "relocation_jobs/scrape/aggregator_seeds.py": 4,
+        "relocation_jobs/scrape/ats_resolve.py": 2,
+        "relocation_jobs/scrape/boards/ashby.py": 1,
+        "relocation_jobs/scrape/boards/bol.py": 5,
+        "relocation_jobs/scrape/boards/deel.py": 1,
+        "relocation_jobs/scrape/boards/greenhouse.py": 2,
+        "relocation_jobs/scrape/boards/hibob.py": 1,
+        "relocation_jobs/scrape/boards/http_sync.py": 5,
+        "relocation_jobs/scrape/boards/job_shop.py": 2,
+        "relocation_jobs/scrape/boards/joblet.py": 5,
+        "relocation_jobs/scrape/boards/join.py": 2,
+        "relocation_jobs/scrape/boards/kake.py": 2,
+        "relocation_jobs/scrape/boards/lever.py": 1,
+        "relocation_jobs/scrape/boards/personio.py": 1,
+        "relocation_jobs/scrape/boards/pinpointhq.py": 1,
+        "relocation_jobs/scrape/boards/recruitee.py": 6,
+        "relocation_jobs/scrape/boards/remotedxb.py": 4,
+        "relocation_jobs/scrape/boards/remoteok.py": 4,
+        "relocation_jobs/scrape/boards/smartrecruiters.py": 1,
+        "relocation_jobs/scrape/boards/teamtailor.py": 2,
+        "relocation_jobs/scrape/boards/workable.py": 2,
+        "relocation_jobs/scrape/listing_status.py": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 295,
+      "agent_lines_removed": 125,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 308,
+      "agent_lines_removed": 133,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 349,
+      "agent_lines_removed": 134,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 349,
+      "agent_lines_removed": 134,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 12,
+      "user_lines_removed": 0,
+      "agent_lines_added": 46,
+      "agent_lines_removed": 11,
+      "user_added_per_file": {
+        "scripts/.claude/settings.local.json": 12
+      }
+    }
+  ]
+}

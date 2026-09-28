@@ -1,0 +1,29 @@
+I don't know why my ram is too low, and about 400mb available, i've attached my images here and find the real issue.
+
+---
+
+fix it
+
+---
+
+why is this happening?
+
+i think we need to put change on the @scripts/ec2_app_deploy.sh to stop all containers and then redeploy to not happen this again.
+
+we need to kill the processes completely and panel might be done in some seconds or minutes and then it will go up fresh and not happen this again.
+
+---
+
+/ponytail-review
+
+---
+
+apply this changes
+
+---
+
+ok now commit it using hotfix commit.
+
+---
+
+ok now commit it using hotfix commit on main
