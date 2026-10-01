@@ -163,20 +163,16 @@ def job_apply_url(job: dict, site: str = SITE) -> str:
     return f"{site.rstrip('/')}/jobs/{slug}"
 
 
-def hiring_organization_json_ld(job: dict) -> dict:
-    company = (job.get("company_name") or "").strip() or "Employer"
-    org: dict = {"@type": "Organization", "name": company}
-    careers = (job.get("careers_url") or "").strip()
-    if careers:
-        org["sameAs"] = careers
-    return org
-
-
 def job_posting_json_ld(job: dict) -> dict:
     slug = (job.get("public_slug") or "").strip()
     page_url = job_apply_url(job)
     posted = iso_date(job.get("fetched") or job.get("last_seen") or "")
     country = iso_country_code(job.get("country") or "")
+    company = (job.get("company_name") or "").strip() or "Employer"
+    hiring_org: dict = {"@type": "Organization", "name": company}
+    careers = (job.get("careers_url") or "").strip()
+    if careers:
+        hiring_org["sameAs"] = careers
     return {
         "@context": "https://schema.org/",
         "@type": "JobPosting",
@@ -190,7 +186,7 @@ def job_posting_json_ld(job: dict) -> dict:
         "datePosted": posted,
         "validThrough": valid_through_date(posted, job.get("closed_at") or ""),
         "employmentType": "FULL_TIME",
-        "hiringOrganization": hiring_organization_json_ld(job),
+        "hiringOrganization": hiring_org,
         "jobLocation": {
             "@type": "Place",
             "address": {

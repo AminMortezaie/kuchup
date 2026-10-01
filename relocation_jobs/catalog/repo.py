@@ -855,23 +855,6 @@ def _public_relocation_job_clause() -> tuple[str, tuple]:
     return sql, (CATALOG_KIND_REMOTE, *remote_keys, "%remote%")
 
 
-def list_active_public_job_sitemap_entries() -> list[dict]:
-    where_sql, where_params = _public_relocation_job_clause()
-    with db_read() as conn:
-        rows = conn.execute(
-            f"""
-            SELECT j.id, j.public_slug, j.last_seen, j.fetched, j.description_text,
-                   j.visa_sponsorship
-            FROM matching_jobs j
-            JOIN companies c ON c.id = j.company_id
-            WHERE {where_sql}
-            ORDER BY COALESCE(NULLIF(j.last_seen, ''), j.fetched) DESC, j.public_slug
-            """,
-            where_params,
-        ).fetchall()
-    return [_job_row(row) for row in rows]
-
-
 def list_active_public_jobs() -> list[dict]:
     where_sql, where_params = _public_relocation_job_clause()
     with db_read() as conn:
