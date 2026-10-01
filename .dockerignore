@@ -5,6 +5,7 @@ __pycache__/
 aws-postgres.env
 *.pem
 data/
+target/
 .git/
 .idea/
 .cursor/

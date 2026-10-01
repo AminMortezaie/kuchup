@@ -184,3 +184,29 @@ def test_prefetch_skips_when_go_is_missing(monkeypatch):
         "jobs": [{"url": "https://boards.example/acme/1"}],
     }]
     merge_consumer.prefetch_descriptions(rows)
+
+
+def test_prefetch_skips_exec_format_error(monkeypatch):
+    from relocation_jobs.fetch import merge_consumer
+
+    monkeypatch.setattr(
+        merge_consumer,
+        "matched_jobs_missing_text",
+        lambda jobs: jobs,
+    )
+    monkeypatch.setattr(
+        "relocation_jobs.fetch.runner.fetch_scheduler_bin",
+        lambda: "/app/target/fetch-scheduler",
+    )
+
+    def boom(*_args, **_kwargs):
+        raise OSError(8, "Exec format error")
+
+    monkeypatch.setattr(merge_consumer.subprocess, "run", boom)
+    rows = [{
+        "status": "ok",
+        "ats_type": "greenhouse",
+        "ats_url": "https://boards.example/acme",
+        "jobs": [{"url": "https://boards.example/acme/1"}],
+    }]
+    merge_consumer.prefetch_descriptions(rows)

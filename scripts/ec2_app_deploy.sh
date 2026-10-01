@@ -126,6 +126,7 @@ rsync_cmd() {
       --exclude 'homepage/out/' \
       --exclude '.entire/' \
       --exclude 'data/' \
+      --exclude 'target/' \
       --exclude '/dist/' \
       --exclude '__pycache__/' \
       --exclude '.env' \
@@ -150,6 +151,7 @@ rsync_cmd() {
     --exclude 'homepage/out/' \
     --exclude '.entire/' \
     --exclude 'data/' \
+    --exclude 'target/' \
     --exclude '/dist/' \
     --exclude '__pycache__/' \
     --exclude '.env' \
@@ -730,6 +732,10 @@ docker run -d --name relocation-fetch-merge --restart unless-stopped \\
   -e DATABASE_URL='${db_url}' \\
   -e MALLOC_ARENA_MAX=2 \\
   -e FETCH_MERGE_POLL_SECONDS=2 \\
+  -e AWS_REGION='${aws_region}' \\
+  -e SQS_USER_OPPORTUNITY_REFRESH_QUEUE_URL='${sqs_url}' \\
+  -e AWS_ACCESS_KEY_ID='${aws_key}' \\
+  -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   --entrypoint python3 \\
   ${PANEL_IMAGE} -m relocation_jobs.fetch.merge_consumer
 EOF
@@ -809,6 +815,18 @@ docker run -d --name ${WORKER_CONTAINER} --restart unless-stopped \\
   -e AWS_ACCESS_KEY_ID='${aws_key}' \\
   -e AWS_SECRET_ACCESS_KEY='${aws_secret}' \\
   ${WORKER_IMAGE}
+EOF
+
+  log "Install Linux fetch-scheduler into merge (describe prefetch)..."
+  ssh_cmd bash -s <<EOF
+set -euo pipefail
+cid=\$(docker create ${WORKER_IMAGE})
+docker cp "\$cid:/fetch-scheduler" /tmp/fetch-scheduler.linux
+docker rm "\$cid" >/dev/null
+docker exec relocation-fetch-merge mkdir -p /app/target
+docker cp /tmp/fetch-scheduler.linux relocation-fetch-merge:/app/target/fetch-scheduler
+docker exec relocation-fetch-merge chmod +x /app/target/fetch-scheduler
+rm -f /tmp/fetch-scheduler.linux
 EOF
 
   start_playwright_worker_container "${db_url}" "${admin_emails_value}" "${sqs_url}" "${aws_region}" "${aws_key}" "${aws_secret}"

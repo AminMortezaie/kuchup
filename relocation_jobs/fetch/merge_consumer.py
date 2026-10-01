@@ -155,17 +155,17 @@ def prefetch_descriptions(rows: list[dict]) -> None:
 
     try:
         bin_path = fetch_scheduler_bin()
+        proc = subprocess.run(
+            [bin_path, "describe"],
+            input=json.dumps(wanted),
+            text=True,
+            capture_output=True,
+            timeout=180,
+            check=False,
+        )
     except (OSError, subprocess.CalledProcessError) as exc:
         LOGGER.error("describe skipped: %s", exc)
         return
-    proc = subprocess.run(
-        [bin_path, "describe"],
-        input=json.dumps(wanted),
-        text=True,
-        capture_output=True,
-        timeout=180,
-        check=False,
-    )
     if proc.returncode != 0:
         LOGGER.error("describe failed: %s", (proc.stderr or "").strip())
         return
