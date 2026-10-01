@@ -123,6 +123,10 @@ def test_jobs_sitemap_lists_only_active_visa_slugs(v2_client, seeded_catalog_v2)
     assert f"/jobs/{job['public_slug']}" in body
     assert "<lastmod>" in body
     assert "<loc>https://kuchup.com/jobs</loc>" not in body
+    hub = v2_client.get("/jobs").get_data(as_text=True)
+    sitemap_locs = re.findall(r"<loc>https://kuchup.com/jobs/[^<]+</loc>", body)
+    hub_links = re.findall(r'href="/jobs/[^"]+"', hub)
+    assert len(sitemap_locs) == len(hub_links)
     company = get_company("uk", "Acme Backend Ltd")
     other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
     assert other.get("public_slug")
@@ -476,7 +480,7 @@ def test_slug_collision_canonical_noindex_and_sitemap_keeps_one(v2_client, seede
 
     sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
     assert f"https://kuchup.com/jobs/{primary}</loc>" in sitemap
-    assert f"https://kuchup.com/jobs/{alternate}</loc>" not in sitemap
+    assert f"https://kuchup.com/jobs/{alternate}</loc>" in sitemap
     hub = v2_client.get("/jobs").get_data(as_text=True)
     assert f"/jobs/{primary}" in hub
     assert f"/jobs/{alternate}" in hub

@@ -32,8 +32,8 @@ const LOGO = `${SITE}/static/icons/kuchup-bird.png`;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    template: "%s | Relocation Jobs",
-    default: "Relocation Jobs | Visa-Sponsored Software Roles in Europe",
+    template: "%s | Kuchup",
+    default: "Kuchup | Visa-Sponsored Software Roles in Europe",
   },
   description:
     "Find visa-sponsored software jobs in Europe. Search relocation-friendly roles in Germany, Netherlands, UK, Portugal, and Ireland — then track and tailor applications.",
@@ -45,11 +45,11 @@ export const metadata: Metadata = {
     apple: [{ url: "/static/icons/apple-touch-icon.png" }],
   },
   openGraph: {
-    title: "Relocation Jobs",
+    title: "Kuchup",
     description:
       "Find visa-sponsored engineering roles in Europe — before they're gone.",
     url: `${SITE}/`,
-    siteName: "Relocation Jobs",
+    siteName: "Kuchup",
     type: "website",
     locale: "en_GB",
     images: [
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Relocation Jobs",
+    title: "Kuchup",
     description:
       "Find visa-sponsored engineering roles in Europe — before they're gone.",
     images: [OG_IMAGE],
@@ -84,8 +84,8 @@ export default function RootLayout({
     "@graph": [
       {
         "@type": "Organization",
-        name: "Relocation Jobs",
-        alternateName: "KUCHUP",
+        name: "Kuchup",
+        alternateName: ["KUCHUP", "Relocation Jobs"],
         url: `${SITE}/`,
         logo: LOGO,
         description:
@@ -94,7 +94,7 @@ export default function RootLayout({
       },
       {
         "@type": "WebSite",
-        name: "Relocation Jobs",
+        name: "Kuchup",
         url: `${SITE}/`,
         description:
           "Find visa-sponsored software engineering roles in Germany, Netherlands, UK, Portugal, and Ireland.",

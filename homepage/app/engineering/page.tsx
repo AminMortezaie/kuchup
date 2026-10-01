@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: "/engineering" },
   openGraph: {
-    title: `${TITLE} | Relocation Jobs`,
+    title: `${TITLE} | Kuchup`,
     description: DESCRIPTION,
     url: CANONICAL,
-    siteName: "Relocation Jobs",
+    siteName: "Kuchup",
     type: "website",
     images: [
       {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${TITLE} | Relocation Jobs`,
+    title: `${TITLE} | Kuchup`,
     description: DESCRIPTION,
     images: [OG_IMAGE],
   },

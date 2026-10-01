@@ -24,6 +24,28 @@ def test_legacy_preview_path_redirects_to_root(v2_client, seeded_catalog_v2):
     assert resp.headers["Location"].endswith("/")
 
 
+def test_marketing_trailing_slash_redirects(v2_client, monkeypatch, tmp_path):
+    from relocation_jobs.web import server as web_server
+
+    html_dir = tmp_path / "homepage"
+    html_dir.mkdir()
+    for name in ("pricing", "mcp", "how-it-works"):
+        (html_dir / f"{name}.html").write_text(f"<html>{name}</html>", encoding="utf-8")
+    monkeypatch.setattr(web_server, "HOMEPAGE_STATIC", html_dir)
+
+    for path in ("/pricing/", "/mcp/", "/how-it-works/"):
+        resp = v2_client.get(path, follow_redirects=False)
+        assert resp.status_code == 301
+        assert resp.headers["Location"] == path.rstrip("/")
+
+
+def test_www_host_redirects_to_apex(v2_client, seeded_catalog_v2):
+    del seeded_catalog_v2
+    resp = v2_client.get("/pricing", follow_redirects=False, headers={"Host": "www.kuchup.com"})
+    assert resp.status_code == 301
+    assert resp.headers["Location"] == "https://kuchup.com/pricing"
+
+
 def test_legacy_app_path_redirects_to_panel(v2_client, seeded_catalog_v2):
     del seeded_catalog_v2
     resp = v2_client.get("/app", follow_redirects=False)

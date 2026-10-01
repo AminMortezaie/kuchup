@@ -46,10 +46,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: post.description,
     alternates: { canonical: path },
     openGraph: {
-      title: `${post.title} | Relocation Jobs`,
+      title: `${post.title} | Kuchup`,
       description: post.description,
       url,
-      siteName: "Relocation Jobs",
+      siteName: "Kuchup",
       type: "article",
       publishedTime: post.datePublished,
       modifiedTime: post.dateModified,
@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: `${post.title} | Relocation Jobs`,
+      title: `${post.title} | Kuchup`,
       description: post.description,
       images: [OG_IMAGE],
     },
@@ -100,7 +100,7 @@ export default async function EngineeringPostPage({ params }: PageProps) {
         },
         publisher: {
           "@type": "Organization",
-          name: "Relocation Jobs",
+          name: "Kuchup",
           alternateName: "KUCHUP",
           url: `${SITE}/`,
           logo: {

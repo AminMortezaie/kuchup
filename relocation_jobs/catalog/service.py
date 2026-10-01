@@ -8,6 +8,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from bs4 import BeautifulSoup
 
+from relocation_jobs.catalog.repo import list_active_public_jobs
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.slug import slug_from_name
 from relocation_jobs.scrape.descriptions import format_job_description, visa_sponsorship_denied
@@ -69,6 +70,11 @@ def collision_slug_prefix(job: dict) -> str | None:
     if slug.endswith(suffix) and len(slug) > len(suffix):
         return slug[: -len(suffix)]
     return None
+
+
+def public_jobs_hub_jobs(jobs: list[dict] | None = None) -> list[dict]:
+    rows = list_active_public_jobs() if jobs is None else jobs
+    return [job for job in rows if job_claims_visa_sponsorship(job)]
 
 
 def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
@@ -157,6 +163,15 @@ def job_apply_url(job: dict, site: str = SITE) -> str:
     return f"{site.rstrip('/')}/jobs/{slug}"
 
 
+def hiring_organization_json_ld(job: dict) -> dict:
+    company = (job.get("company_name") or "").strip() or "Employer"
+    org: dict = {"@type": "Organization", "name": company}
+    careers = (job.get("careers_url") or "").strip()
+    if careers:
+        org["sameAs"] = careers
+    return org
+
+
 def job_posting_json_ld(job: dict) -> dict:
     slug = (job.get("public_slug") or "").strip()
     page_url = job_apply_url(job)
@@ -175,12 +190,7 @@ def job_posting_json_ld(job: dict) -> dict:
         "datePosted": posted,
         "validThrough": valid_through_date(posted, job.get("closed_at") or ""),
         "employmentType": "FULL_TIME",
-        "hiringOrganization": {
-            "@type": "Organization",
-            "name": "Kuchup",
-            "sameAs": SITE,
-            "logo": LOGO_URL,
-        },
+        "hiringOrganization": hiring_organization_json_ld(job),
         "jobLocation": {
             "@type": "Place",
             "address": {

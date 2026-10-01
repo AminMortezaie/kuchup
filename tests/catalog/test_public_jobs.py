@@ -100,13 +100,14 @@ def test_merge_persists_closed_at(seeded_catalog_v2):
     assert reopened["closed_at"] == ""
 
 
-def test_job_posting_json_ld_uses_kuchup_hiring_org(seeded_catalog_v2):
+def test_job_posting_json_ld_uses_employer_hiring_org(seeded_catalog_v2):
     job = _visa_job(seeded_catalog_v2)
     found = get_public_job_by_slug(job["public_slug"])
     assert found is not None
     payload = job_posting_json_ld(found)
     assert payload["@type"] == "JobPosting"
-    assert payload["hiringOrganization"]["name"] == "Kuchup"
+    assert payload["hiringOrganization"]["name"] == "Acme Backend Ltd"
+    assert payload["identifier"]["name"] == "Kuchup"
     assert payload["title"].endswith("(Visa Sponsorship)")
     assert "Acme Backend Ltd" in payload["title"]
     assert payload["jobLocation"]["address"]["addressCountry"] == "GB"

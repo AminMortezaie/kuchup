@@ -217,6 +217,8 @@ def _job_row_with_context(row) -> dict:
         job["country"] = data["country"]
     if data.get("city"):
         job["city"] = data["city"]
+    if data.get("careers_url"):
+        job["careers_url"] = data["careers_url"]
     return job
 
 
@@ -820,7 +822,7 @@ def get_public_job_by_slug(slug: str) -> dict | None:
             SELECT j.id, j.title, j.url, j.fetched, j.last_seen, j.idempotency_key,
                    j.visa_sponsorship, j.location, j.locations_json, j.description_text,
                    j.public_slug, j.closed_at,
-                   c.name AS company_name, c.country, c.city
+                   c.name AS company_name, c.country, c.city, c.careers_url
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
             WHERE j.public_slug = %s
