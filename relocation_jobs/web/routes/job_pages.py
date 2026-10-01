@@ -8,7 +8,6 @@ from flask import Response, redirect, render_template, request, send_from_direct
 
 from relocation_jobs.catalog.repo import (
     get_public_job_by_slug,
-    list_active_public_job_sitemap_entries,
     list_active_public_jobs,
 )
 from relocation_jobs.catalog.service import (
@@ -26,6 +25,7 @@ from relocation_jobs.catalog.service import (
     job_posting_json_ld_text,
     job_posting_title,
     linkedin_jobs_xml_text,
+    public_jobs_hub_jobs,
     public_jobs_item_list_json_ld,
     public_sitemap_jobs,
 )
@@ -225,7 +225,7 @@ def _jobs_hub_groups(jobs: list[dict], country: str) -> list[dict]:
 
 def _jobs_hub_context() -> dict:
     country = _requested_country()
-    jobs = [j for j in list_active_public_jobs() if job_claims_visa_sponsorship(j)]
+    jobs = public_jobs_hub_jobs()
     groups = _jobs_hub_groups(jobs, country)
     listed = [job for group in groups for job in group["jobs"]]
     site = _public_site_url()
@@ -310,7 +310,7 @@ def register(app):
     def sitemap_jobs_xml():
         public_site_url = _public_site_url()
         entries: list[str] = []
-        for row in public_sitemap_jobs(list_active_public_job_sitemap_entries()):
+        for row in public_jobs_hub_jobs():
             slug = (row.get("public_slug") or "").strip()
             loc = f"{public_site_url}/jobs/{escape(slug)}"
             lastmod = _xml_lastmod(row)

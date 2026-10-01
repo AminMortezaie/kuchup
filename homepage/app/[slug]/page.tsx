@@ -44,10 +44,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical: path },
     openGraph: {
-      title: `${title} | Relocation Jobs`,
+      title: `${title} | Kuchup`,
       description,
       url: `https://kuchup.com${path}`,
-      siteName: "Relocation Jobs",
+      siteName: "Kuchup",
       type: "website",
       images: [
         {
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | Relocation Jobs`,
+      title: `${title} | Kuchup`,
       description,
       images: ["https://kuchup.com/og-default.png"],
     },

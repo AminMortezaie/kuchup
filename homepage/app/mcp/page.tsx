@@ -71,11 +71,11 @@ export const metadata: Metadata = {
     "Connect Kuchup MCP to Claude or Cursor to tailor CVs for visa-sponsored software roles — gated reframe, workspace PDFs, no auto-apply.",
   alternates: { canonical: "/mcp" },
   openGraph: {
-    title: "MCP for Claude and Cursor | Relocation Jobs",
+    title: "MCP for Claude and Cursor | Kuchup",
     description:
       "Queue roles, reframe your CV with approval checkpoints, and render PDFs in Kuchup via Claude or Cursor MCP.",
     url: "https://kuchup.com/mcp",
-    siteName: "Relocation Jobs",
+    siteName: "Kuchup",
     type: "website",
     images: [
       {
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MCP for Claude and Cursor | Relocation Jobs",
+    title: "MCP for Claude and Cursor | Kuchup",
     description:
       "Queue roles, reframe your CV with approval checkpoints, and render PDFs in Kuchup via Claude or Cursor MCP.",
     images: ["https://kuchup.com/og-default.png"],

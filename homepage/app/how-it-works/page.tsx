@@ -28,11 +28,11 @@ export const metadata: Metadata = {
     "How Kuchup finds visa-sponsored software jobs in Europe: public preview from company career pages, signed-in board tracking, and Claude/Cursor MCP for per-role CV prep.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How Kuchup finds visa-sponsored software jobs in Europe | Relocation Jobs",
+    title: "How Kuchup finds visa-sponsored software jobs in Europe | Kuchup",
     description:
       "See visa-sponsored software jobs from employer career pages, then sign in to track applications and prepare CVs with MCP.",
     url: "https://kuchup.com/how-it-works",
-    siteName: "Relocation Jobs",
+    siteName: "Kuchup",
     type: "website",
     images: [
       {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How Kuchup finds visa-sponsored software jobs in Europe | Relocation Jobs",
+    title: "How Kuchup finds visa-sponsored software jobs in Europe | Kuchup",
     description:
       "See visa-sponsored software jobs from employer career pages, then sign in to track applications and prepare CVs with MCP.",
     images: ["https://kuchup.com/og-default.png"],

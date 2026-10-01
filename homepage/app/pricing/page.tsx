@@ -9,11 +9,11 @@ export const metadata: Metadata = {
     "Start with 30 monthly credits, add non-expiring credit packs when needed, or unlock Full Access for $29 one-time.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Pricing | Relocation Jobs",
+    title: "Pricing | Kuchup",
     description:
       "Free includes 30 monthly credits. Purchased credit packs never expire. Full Access is $29 one-time.",
     url: "https://kuchup.com/pricing",
-    siteName: "Relocation Jobs",
+    siteName: "Kuchup",
     type: "website",
     images: [
       {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pricing | Relocation Jobs",
+    title: "Pricing | Kuchup",
     description:
       "Free includes 30 monthly credits. Purchased credit packs never expire. Full Access is $29 one-time.",
     images: ["https://kuchup.com/og-default.png"],

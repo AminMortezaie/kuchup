@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from email.utils import formatdate
 from functools import cache
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import Flask, Response, redirect, request, send_from_directory
 from dotenv import load_dotenv
@@ -50,6 +51,30 @@ PRIVATE_ROBOTS_DISALLOW = (
 
 def _public_site_url() -> str:
     return (os.environ.get("PUBLIC_SITE_URL") or "https://kuchup.com").strip().rstrip("/")
+
+
+def _canonical_site_host() -> str:
+    host = (urlparse(_public_site_url()).hostname or "kuchup.com").lower()
+    return host.lstrip(".")
+
+
+def _canonical_url_redirect():
+    if request.endpoint == "static":
+        return None
+    canonical_host = _canonical_site_host()
+    req_host = (request.host or "").split(":", 1)[0].lower()
+    path = request.path
+    trimmed = path != "/" and path.endswith("/")
+    if trimmed:
+        path = path.rstrip("/")
+    www = req_host == f"www.{canonical_host}"
+    if not www and not trimmed:
+        return None
+    qs = f"?{request.query_string.decode()}" if request.query_string else ""
+    if www:
+        scheme = urlparse(_public_site_url()).scheme or "https"
+        return redirect(f"{scheme}://{canonical_host}{path}{qs}", code=301)
+    return redirect(f"{path}{qs}", code=301)
 
 
 def _country_marketing_path(country_key: str) -> str:
@@ -197,6 +222,9 @@ def bootstrap_app() -> None:
 def _ensure_bootstrapped():
     if request.endpoint == "static":
         return
+    blocked = _canonical_url_redirect()
+    if blocked is not None:
+        return blocked
     bootstrap_app()
     ensure_dev_login()
 
@@ -377,6 +405,8 @@ def llms_txt():
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
+    from relocation_jobs.catalog.service import iso_date, public_jobs_hub_jobs
+
     public_site_url = _public_site_url()
     entries: list[str] = []
     for path in public_marketing_paths():
@@ -386,7 +416,15 @@ def sitemap_xml():
             lines.append(f"    <lastmod>{lastmod}</lastmod>")
         lines.append("  </url>")
         entries.append("\n".join(lines))
-    jobs_hub = [f"  <url>", f"    <loc>{public_site_url}/jobs</loc>", "  </url>"]
+    hub_jobs = public_jobs_hub_jobs()
+    jobs_lastmod = max(
+        (iso_date(job.get("last_seen") or job.get("fetched") or "") for job in hub_jobs),
+        default="",
+    )
+    jobs_hub = [f"  <url>", f"    <loc>{public_site_url}/jobs</loc>"]
+    if jobs_lastmod:
+        jobs_hub.append(f"    <lastmod>{jobs_lastmod}</lastmod>")
+    jobs_hub.append("  </url>")
     entries.append("\n".join(jobs_hub))
     body = "\n".join((
         '<?xml version="1.0" encoding="UTF-8"?>',
