@@ -1,0 +1,5 @@
+we're not getting any new jobs, investigate in server logs and find the issue.
+
+---
+
+yes sure fix this problem cause it's made the production of fetch working fail

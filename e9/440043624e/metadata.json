@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "e9440043624e",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".dockerignore",
+    "relocation_jobs/fetch/merge_consumer.py",
+    "scripts/ec2_app_deploy.sh",
+    "tests/fetch/test_merge_consumer.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e9/440043624e/0/metadata.json",
+      "transcript": "/e9/440043624e/0/full.jsonl",
+      "compact_transcript": "/e9/440043624e/0/transcript.jsonl",
+      "content_hash": "/e9/440043624e/0/content_hash.txt",
+      "prompt": "/e9/440043624e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 193338,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3155328,
+    "output_tokens": 23677,
+    "api_call_count": 2
+  }
+}
