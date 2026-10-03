@@ -21,6 +21,7 @@ type message struct {
 	Country      string `json:"country"`
 	CompanyName  string `json:"company_name"`
 	SourceJobKey string `json:"source_job_key"`
+	FetchRunID   int    `json:"fetch_run_id"`
 }
 
 func Main() {
@@ -30,6 +31,7 @@ func Main() {
 	replace := flag.Bool("replace", false, "insert one replacement assignment")
 	company := flag.String("company", "", "company for --replace")
 	sourceKey := flag.String("source-job-key", "", "consumed job key for --replace")
+	fetchRunID := flag.Int("fetch-run-id", 0, "fetch run id for country notify enqueue")
 	wait := flag.Int("wait-seconds", 10, "SQS long-poll wait")
 	maxMsg := flag.Int("max-messages", 5, "SQS receive batch size")
 	sleep := flag.Float64("sleep-seconds", 1, "sleep between polls")
@@ -55,7 +57,7 @@ func Main() {
 			log.Fatal(err)
 		}
 	case strings.TrimSpace(*country) != "":
-		if err := reconcileCountry(ctx, store, *country); err != nil {
+		if err := reconcileCountry(ctx, store, *country, *fetchRunID); err != nil {
 			log.Fatal(err)
 		}
 	default:
@@ -125,7 +127,7 @@ func handle(ctx context.Context, store *Store, msg message) error {
 	case "user":
 		return reconcileUser(ctx, store, msg.UserID)
 	case "country":
-		return reconcileCountry(ctx, store, msg.Country)
+		return reconcileCountry(ctx, store, msg.Country, msg.FetchRunID)
 	case "replace":
 		return reconcileReplace(ctx, store, msg.UserID, msg.Country, msg.CompanyName, msg.SourceJobKey)
 	default:
@@ -202,7 +204,7 @@ func reconcileUser(ctx context.Context, store *Store, userID int) error {
 	return nil
 }
 
-func reconcileCountry(ctx context.Context, store *Store, country string) error {
+func reconcileCountry(ctx context.Context, store *Store, country string, fetchRunID int) error {
 	ids, err := store.UserIDsForCountry(ctx, country)
 	if err != nil {
 		return err
@@ -212,6 +214,7 @@ func reconcileCountry(ctx context.Context, store *Store, country string) error {
 			log.Printf("user %d: %v", id, err)
 		}
 	}
+	enqueueNotifyCountryWave(ctx, country, fetchRunID)
 	return nil
 }
 

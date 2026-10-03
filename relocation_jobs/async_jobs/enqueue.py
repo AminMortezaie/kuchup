@@ -39,7 +39,11 @@ def _bin_args(message: JobMessage) -> list[str]:
     if isinstance(message, ReconcileUserOpportunities):
         return ["--user", str(int(message.user_id))]
     if isinstance(message, ReconcileCountryOpportunities):
-        return ["--country", (message.country or "").strip().lower()]
+        args = ["--country", (message.country or "").strip().lower()]
+        run_id = int(message.fetch_run_id or 0)
+        if run_id > 0:
+            args.extend(["--fetch-run-id", str(run_id)])
+        return args
     return [
         "--replace",
         "--user",
@@ -70,8 +74,13 @@ def enqueue_user_opportunity_refresh(user_id: int) -> dict:
     return enqueue(ReconcileUserOpportunities(user_id=int(user_id)))
 
 
-def enqueue_country_opportunity_refresh(country: str) -> dict:
-    return enqueue(ReconcileCountryOpportunities(country=country))
+def enqueue_country_opportunity_refresh(country: str, *, fetch_run_id: int = 0) -> dict:
+    return enqueue(
+        ReconcileCountryOpportunities(
+            country=country,
+            fetch_run_id=int(fetch_run_id or 0),
+        )
+    )
 
 
 def enqueue_replace_assignment(

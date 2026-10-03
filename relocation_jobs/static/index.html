@@ -667,7 +667,9 @@
   <script type="module" src="/static/js/main.js?v=137"></script>
   <script>
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js"));
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      });
     }
   </script>
 </body>

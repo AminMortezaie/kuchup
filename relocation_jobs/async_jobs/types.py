@@ -19,12 +19,17 @@ class ReconcileUserOpportunities:
 @dataclass(frozen=True)
 class ReconcileCountryOpportunities:
     country: str
+    fetch_run_id: int = 0
 
     def to_payload(self) -> dict:
-        return {
+        payload = {
             "type": MSG_RECONCILE_COUNTRY,
             "country": (self.country or "").strip().lower(),
         }
+        run_id = int(self.fetch_run_id or 0)
+        if run_id > 0:
+            payload["fetch_run_id"] = run_id
+        return payload
 
 
 @dataclass(frozen=True)

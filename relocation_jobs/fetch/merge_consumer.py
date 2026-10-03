@@ -8,6 +8,7 @@ import subprocess
 import time
 
 from relocation_jobs.async_jobs.enqueue import enqueue_country_opportunity_refresh
+from relocation_jobs.notifications import service as notifications_service
 from relocation_jobs.catalog.repo import get_company, sync_company_board_to_catalog
 from relocation_jobs.core.ats_constants import MAX_CONCURRENCY
 from relocation_jobs.core.log import configure_logging
@@ -18,6 +19,7 @@ from relocation_jobs.fetch.client import make_fetch_client
 from relocation_jobs.fetch import service as fetch_service
 from relocation_jobs.roles.match import job_is_default_match
 from relocation_jobs.roles.service import annotate_listings, default_keyword_lists
+from relocation_jobs.scrape.aggregator_sync import is_aggregator_ats
 from relocation_jobs.scrape.company import _mark_fetch_failed, process_company
 from relocation_jobs.scrape.enrich import enrich_jobs
 from relocation_jobs.scrape.filter import filter_relevant_jobs
@@ -53,11 +55,23 @@ async def _merge_ok_or_empty(
     async def fetch_board(_client, _company, **_kwargs) -> list[dict]:
         return raw_jobs
 
+    fetch_run_id = int(row["fetch_run_id"])
     attempt_id = fetch_service.start_company_attempt(
         company,
         country_key=country_key,
-        fetch_run_id=int(row["fetch_run_id"]),
+        fetch_run_id=fetch_run_id,
     )
+
+    def on_company_result(company_name: str, new_count: int, slim_jobs: list[dict]) -> None:
+        if new_count <= 0 or is_aggregator_ats(company.get("ats_type")):
+            return
+        notifications_service.record_fetch_wave_jobs(
+            fetch_run_id,
+            country_key,
+            company_name,
+            slim_jobs,
+        )
+
     try:
         msg, new_count = await process_company(
             client,
@@ -69,6 +83,7 @@ async def _merge_ok_or_empty(
             sync_board=persist_board,
             enrich_concurrency=enrich_concurrency,
             catalog_country=country_key,
+            on_company_result=on_company_result,
         )
     except Exception as exc:
         fetch_service.finish_company_attempt(
@@ -229,7 +244,7 @@ async def run_merge_pass(*, limit: int = 500, enqueue: bool = True) -> int:
     if enqueue:
         for run_id, country in countries.items():
             if go_results.run_merge_complete(run_id):
-                enqueue_country_opportunity_refresh(country)
+                enqueue_country_opportunity_refresh(country, fetch_run_id=run_id)
     return processed
 
 

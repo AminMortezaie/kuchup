@@ -361,6 +361,15 @@ def homepage_brand_assets(asset_path):
     return resp
 
 
+@app.route("/sw.js")
+def service_worker():
+    resp = send_from_directory(STATIC, "sw.js")
+    resp.headers["Content-Type"] = "application/javascript; charset=utf-8"
+    resp.headers["Service-Worker-Allowed"] = "/"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.route("/panel")
 @app.route("/remote")
 def panel_page():
