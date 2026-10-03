@@ -77,6 +77,11 @@ def public_jobs_hub_jobs(jobs: list[dict] | None = None) -> list[dict]:
     return [job for job in rows if job_claims_visa_sponsorship(job)]
 
 
+def public_jobs_sitemap_rows(jobs: list[dict] | None = None) -> list[dict]:
+    rows = list_active_public_jobs() if jobs is None else jobs
+    return public_sitemap_jobs(rows)
+
+
 def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:
     slugs = {
         (job.get("public_slug") or "").strip()

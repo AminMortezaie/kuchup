@@ -27,6 +27,7 @@ from relocation_jobs.catalog.service import (
     linkedin_jobs_xml_text,
     public_jobs_hub_jobs,
     public_jobs_item_list_json_ld,
+    public_jobs_sitemap_rows,
     public_sitemap_jobs,
 )
 from relocation_jobs.core.auth import current_user_id, current_username
@@ -151,13 +152,14 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
 def _job_page_response(job: dict, *, save_blocked: bool = False) -> Response:
     signed_in = current_user_id() is not None
     closed = job_is_closed(job)
-    html = render_template(
-        "job_posting.html",
-        **_job_page_context(job, signed_in=signed_in, save_blocked=save_blocked),
-    )
+    ctx = _job_page_context(job, signed_in=signed_in, save_blocked=save_blocked)
+    html = render_template("job_posting.html", **ctx)
+    indexable = ctx["indexable"]
     resp = Response(html, status=410 if closed else 200, mimetype="text/html")
     private = closed or signed_in or save_blocked
     resp.headers["Cache-Control"] = "no-store" if private else JOB_PAGE_CACHE
+    if not indexable:
+        resp.headers["X-Robots-Tag"] = "noindex"
     return resp
 
 
@@ -310,7 +312,7 @@ def register(app):
     def sitemap_jobs_xml():
         public_site_url = _public_site_url()
         entries: list[str] = []
-        for row in public_jobs_hub_jobs():
+        for row in public_jobs_sitemap_rows():
             slug = (row.get("public_slug") or "").strip()
             loc = f"{public_site_url}/jobs/{escape(slug)}"
             lastmod = _xml_lastmod(row)
