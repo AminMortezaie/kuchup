@@ -378,7 +378,8 @@ def list_looking_to_apply_jobs(
         user_id=user_id,
         country=country,
         include_row=lambda row: bool(row.get("looking_to_apply")),
-        sort_key=lambda item: (item.company.lower(), item.title.lower(), item.url),
+        sort_key=lambda item: (item.looking_to_apply_date or "").strip(),
+        sort_reverse=True,
     )
 
 
@@ -388,6 +389,7 @@ def _list_tracked_application_items(
     country: str | None = None,
     include_row,
     sort_key,
+    sort_reverse: bool = False,
 ) -> list[ApplicationQueueItem]:
     uid = user_id if user_id is not None else resolve_user_id()
     scope = (country or "").strip().lower() or None
@@ -414,10 +416,11 @@ def _list_tracked_application_items(
             idempotency_key=idem_key,
             pinned=bool(row.get("pinned")),
             looking_to_apply=bool(row.get("looking_to_apply")),
+            looking_to_apply_date=(row.get("looking_to_apply_date") or "").strip(),
             ats_score=row.get("ats_score"),
         ))
 
-    items.sort(key=sort_key)
+    items.sort(key=sort_key, reverse=sort_reverse)
     return items
 
 
