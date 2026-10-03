@@ -12,11 +12,6 @@ from relocation_jobs.catalog.repo import list_active_public_jobs
 from relocation_jobs.core.location_tags import country_label
 from relocation_jobs.core.slug import slug_from_name
 from relocation_jobs.scrape.descriptions import format_job_description, visa_sponsorship_denied
-from relocation_jobs.shared.board_contract import (
-    CATALOG_KIND_REMOTE,
-    REMOTE_COUNTRY_KEYS,
-    normalize_catalog_kind,
-)
 
 COUNTRY_ISO = {
     "germany": "DE",
@@ -85,26 +80,6 @@ def public_jobs_hub_jobs(jobs: list[dict] | None = None) -> list[dict]:
 def public_jobs_sitemap_rows(jobs: list[dict] | None = None) -> list[dict]:
     rows = list_active_public_jobs() if jobs is None else jobs
     return public_sitemap_jobs(rows)
-
-
-def job_in_active_public_catalog(job: dict) -> bool:
-    if job_is_closed(job):
-        return False
-    if job.get("visa_sponsorship") is not True:
-        return False
-    if not (job.get("public_slug") or "").strip():
-        return False
-    raw = job.get("matches_default_filter")
-    if raw not in (None, "") and not bool(int(raw)):
-        return False
-    country = (job.get("country") or "").strip().lower()
-    if country in REMOTE_COUNTRY_KEYS:
-        return False
-    if normalize_catalog_kind((job.get("catalog_kind") or "").strip()) == CATALOG_KIND_REMOTE:
-        return False
-    if "remote" in (job.get("location") or "").lower():
-        return False
-    return True
 
 
 def public_sitemap_jobs(jobs: list[dict]) -> list[dict]:

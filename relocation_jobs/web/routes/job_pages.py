@@ -19,7 +19,6 @@ from relocation_jobs.catalog.service import (
     job_claims_visa_sponsorship,
     job_description_html,
     job_is_closed,
-    job_in_active_public_catalog,
     job_is_public_listing,
     job_locality,
     job_location_label,
@@ -125,11 +124,7 @@ def _job_page_context(job: dict, *, signed_in: bool, save_blocked: bool = False)
     country = (job.get("country") or "").strip().lower()
     closed = job_is_closed(job)
     visa = job_claims_visa_sponsorship(job)
-    indexable = (
-        job_in_active_public_catalog(job)
-        and visa
-        and slug == canonical_slug
-    )
+    indexable = (not closed) and visa and slug == canonical_slug
     cta = {} if closed else _primary_cta(job, signed_in=signed_in)
     return {
         "job": job,
