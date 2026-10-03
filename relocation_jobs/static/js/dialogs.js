@@ -499,7 +499,7 @@ export function openAddCompanyDialog() {
   $("addCompanyDialog").setAttribute("aria-hidden", "false");
   $("addCompanyName").focus();
 
-  queueMicrotask(() => {
+  setTimeout(() => {
     populateAddCompanyCountryPicker();
     const panelCountry = $("country").value;
     if (panelCountry && panelCountry !== "all") {
@@ -509,7 +509,7 @@ export function openAddCompanyDialog() {
     }
     updateAddCompanyAtsSummary();
     void populateAddCompanyAtsPicker();
-  });
+  }, 0);
 }
 
 export function closeAddCompanyDialog() {

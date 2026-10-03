@@ -19,5 +19,6 @@ def test_panel_and_add_company_dialog_keep_shell_and_input_responsive():
     assert "noOverlay: true" in data_js
 
     assert "isAddCompanyLocationsPanelOpen" in dialogs
-    assert "queueMicrotask" in dialogs
+    assert "setTimeout(() => {" in dialogs
+    assert "void populateAddCompanyAtsPicker();" in dialogs
     assert "debounce(() => renderAddCompanyLocationOptions()" in dialogs
