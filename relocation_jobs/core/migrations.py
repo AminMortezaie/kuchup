@@ -195,6 +195,7 @@ def _migrate_schema(conn) -> None:
     run_migration_once(conn, "team_docs_expired_want_to_apply_v1", _seed_expired_want_to_apply_doc)
     run_migration_once(conn, "mcp_agent_skills_v1", _mcp_agent_skills_v1)
     run_migration_once(conn, "mcp_agent_skills_tailor_body_v2", _mcp_agent_skills_tailor_body_v2)
+    run_migration_once(conn, "mcp_agent_skills_tailor_body_v3", _mcp_agent_skills_tailor_body_v3)
     run_migration_once(conn, "ops_metric_samples_v1", _ensure_ops_metric_samples_table)
     _sync_bundled_team_docs(conn)
 
@@ -269,8 +270,8 @@ def _mcp_agent_skills_v1(conn) -> None:
         slug="tailor",
         title="Tailor one CV (batch reframe)",
         summary=(
-            "Batch playbook: resolve job via queue/context, run reframe phases 1–4 + anti-AI, "
-            "then save_tailored_tex after user acceptance."
+            "Batch playbook: resolve job, phases 1–4 + anti-AI, mandatory 16-competitor arena, "
+            "Mr Adib/Reels standards, then save_tailored_tex after user acceptance."
         ),
         path=_MCP_AGENT_SKILL_TAILOR,
     )
@@ -291,6 +292,25 @@ def _upsert_mcp_agent_skill_body(conn, *, slug: str, path: Path) -> None:
 
 def _mcp_agent_skills_tailor_body_v2(conn) -> None:
     _upsert_mcp_agent_skill_body(conn, slug="tailor", path=_MCP_AGENT_SKILL_TAILOR)
+
+
+def _mcp_agent_skills_tailor_body_v3(conn) -> None:
+    _upsert_mcp_agent_skill_body(conn, slug="tailor", path=_MCP_AGENT_SKILL_TAILOR)
+    conn.execute(
+        """
+        UPDATE mcp_agent_skills
+        SET summary = %s, updated_at = %s
+        WHERE slug = %s
+        """,
+        (
+            (
+                "Batch playbook: resolve job, phases 1–4 + anti-AI, mandatory 16-competitor arena, "
+                "Mr Adib/Reels standards, then save_tailored_tex after user acceptance."
+            ),
+            _utc_now(),
+            "tailor",
+        ),
+    )
 
 
 _KUCHUP_OWNERSHIP_DOC = (

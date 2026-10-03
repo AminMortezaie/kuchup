@@ -17,6 +17,7 @@ def test_tailor_skill_seeded():
     assert tailor.title
     assert tailor.summary
     assert "save_tailored_tex" in tailor.summary
+    assert "arena" in tailor.summary.lower()
 
 
 def test_get_agent_skill_tailor_body():
@@ -37,6 +38,9 @@ def test_get_agent_skill_tailor_body():
         "get_reframe_pipeline",
         "save_tailored_tex",
         "validate_tex",
+        "16-competitor",
+        "102-point",
+        "Go Concurrency",
     ):
         assert needle in skill.body
 
