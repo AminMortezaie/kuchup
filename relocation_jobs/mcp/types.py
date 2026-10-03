@@ -107,6 +107,7 @@ class ApplicationQueueItem(BaseSchema):
     idempotency_key: str = ""
     pinned: bool = False
     looking_to_apply: bool = False
+    looking_to_apply_date: str = ""
     ats_score: int | None = None
 
 

@@ -206,12 +206,16 @@ def test_list_application_queue_includes_looking_to_apply(
     )
 
     items = service.list_application_queue(user_id=1, country="uk")
-    assert any(item.url == job["url"] for item in items)
+    matched = [item for item in items if item.url == job["url"]]
+    assert matched
+    assert matched[0].looking_to_apply_date
 
 
 def test_list_looking_to_apply_jobs_includes_pinned(
     v2_auth_client, seeded_catalog_v2, mcp_documents,
 ):
+    from relocation_jobs.core.db import _normalize_url
+
     board = v2_auth_client.get("/api/board?country=uk").get_json()
     co = board["companies"][0]
     first = co["jobs"][0]
@@ -224,12 +228,36 @@ def test_list_looking_to_apply_jobs_includes_pinned(
         "/api/jobs/pin",
         json={"country": "uk", "company": co["name"], "url": second["url"], "pinned": True},
     )
+    v2_auth_client.post(
+        "/api/jobs/looking-to-apply",
+        json={"country": "uk", "company": co["name"], "url": second["url"], "looking_to_apply": True},
+    )
+    with db_transaction() as conn:
+        conn.execute(
+            """
+            UPDATE job_tracking
+            SET looking_to_apply_date = %s
+            WHERE country = %s AND company_name = %s AND job_url = %s
+            """,
+            ("2026-01-01", "uk", co["name"], _normalize_url(first["url"])),
+        )
+        conn.execute(
+            """
+            UPDATE job_tracking
+            SET looking_to_apply_date = %s
+            WHERE country = %s AND company_name = %s AND job_url = %s
+            """,
+            ("2026-09-20", "uk", co["name"], _normalize_url(second["url"])),
+        )
 
     items = service.list_looking_to_apply_jobs(user_id=1, country="uk")
     urls = {item.url for item in items}
     assert first["url"] in urls
     assert second["url"] in urls
     assert all(item.looking_to_apply for item in items)
+    assert all(item.looking_to_apply_date for item in items)
+    lta_urls = [item.url for item in items if item.url in {first["url"], second["url"]}]
+    assert lta_urls == [second["url"], first["url"]]
 
 
 def test_list_application_queue_excludes_applied_even_when_pinned(
