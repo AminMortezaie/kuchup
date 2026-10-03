@@ -133,9 +133,9 @@ export async function loadJobs(options = {}) {
 export async function loadBoardWithLocations(options = {}) {
   if (needsLocationsBeforeBoard()) {
     await loadCities();
-    return loadBoard(options);
+    return loadBoard({ noOverlay: true, ...options });
   }
-  await loadBoard(options);
+  await loadBoard({ noOverlay: true, ...options });
   void loadCities({ deferred: true });
 }
 

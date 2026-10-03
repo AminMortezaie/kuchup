@@ -212,5 +212,5 @@ def test_panel_ui_gates_match_server():
     assert "syncAddCompanyCatalogFields" in dialogs
     assert 'id="addCompanyUrlField"' in html
     assert "board.js?v=23" in html
-    assert "main.js?v=137" in html
+    assert "main.js?v=138" in html
     assert "data-kuchup-lock" in bundle
