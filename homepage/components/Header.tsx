@@ -5,6 +5,8 @@ import { AuthCta, AuthPresence } from "@/components/AuthCta";
 import { BrandLockup } from "@/components/BrandMark";
 
 const NAV_LINKS = [
+  { href: "/jobs", label: "Jobs" },
+  { href: "/engineering", label: "Engineering" },
   { href: "/#product", label: "Product" },
   { href: "/mcp", label: "MCP" },
   { href: "/#countries", label: "Countries" },

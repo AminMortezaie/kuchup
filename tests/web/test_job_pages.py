@@ -113,6 +113,10 @@ def test_closed_job_returns_410(v2_client, seeded_catalog_v2):
     assert "This role has been closed" in body
     assert "/relocation-jobs-uk" in body
     assert "application/ld+json" not in body
+    assert "noindex" in body
+    assert resp.headers.get("X-Robots-Tag") == "noindex"
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{job['public_slug']}</loc>" not in sitemap
 
 
 def test_jobs_sitemap_lists_only_active_visa_slugs(v2_client, seeded_catalog_v2):
@@ -124,9 +128,9 @@ def test_jobs_sitemap_lists_only_active_visa_slugs(v2_client, seeded_catalog_v2)
     assert "<lastmod>" in body
     assert "<loc>https://kuchup.com/jobs</loc>" not in body
     hub = v2_client.get("/jobs").get_data(as_text=True)
-    sitemap_locs = re.findall(r"<loc>https://kuchup.com/jobs/[^<]+</loc>", body)
-    hub_links = re.findall(r'href="/jobs/[^"]+"', hub)
-    assert len(sitemap_locs) == len(hub_links)
+    sitemap_slugs = set(re.findall(r"<loc>https://kuchup.com/jobs/([^<]+)</loc>", body))
+    hub_slugs = set(re.findall(r'href="/jobs/([^"]+)"', hub))
+    assert sitemap_slugs <= hub_slugs
     company = get_company("uk", "Acme Backend Ltd")
     other = next(j for j in company["matching_jobs"] if j["url"] != job["url"])
     assert other.get("public_slug")
@@ -480,13 +484,25 @@ def test_slug_collision_canonical_noindex_and_sitemap_keeps_one(v2_client, seede
 
     sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
     assert f"https://kuchup.com/jobs/{primary}</loc>" in sitemap
-    assert f"https://kuchup.com/jobs/{alternate}</loc>" in sitemap
+    assert f"https://kuchup.com/jobs/{alternate}</loc>" not in sitemap
     hub = v2_client.get("/jobs").get_data(as_text=True)
     assert f"/jobs/{primary}" in hub
     assert f"/jobs/{alternate}" in hub
     feed = v2_client.get("/feeds/linkedin-jobs.xml").get_data(as_text=True)
     assert f"/jobs/{primary}" in feed
     assert f"/jobs/{alternate}" not in feed
+
+
+def test_live_job_stays_indexable_and_in_sitemap(v2_client, seeded_catalog_v2):
+    job = _publish_visa_job(seeded_catalog_v2)
+    resp = v2_client.get(f"/jobs/{job['public_slug']}")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "index, follow" in body
+    assert "application/ld+json" in body
+    assert resp.headers.get("X-Robots-Tag") is None
+    sitemap = v2_client.get("/sitemap-jobs.xml").get_data(as_text=True)
+    assert f"https://kuchup.com/jobs/{job['public_slug']}</loc>" in sitemap
 
 
 def test_sitemap_and_feed_keep_collision_when_base_denies_visa(v2_client, seeded_catalog_v2):

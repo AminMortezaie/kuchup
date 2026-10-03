@@ -821,8 +821,8 @@ def get_public_job_by_slug(slug: str) -> dict | None:
             """
             SELECT j.id, j.title, j.url, j.fetched, j.last_seen, j.idempotency_key,
                    j.visa_sponsorship, j.location, j.locations_json, j.description_text,
-                   j.public_slug, j.closed_at,
-                   c.name AS company_name, c.country, c.city, c.careers_url
+                   j.public_slug, j.closed_at, j.matches_default_filter,
+                   c.name AS company_name, c.country, c.city, c.careers_url, c.catalog_kind
             FROM matching_jobs j
             JOIN companies c ON c.id = j.company_id
             WHERE j.public_slug = %s

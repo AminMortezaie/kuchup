@@ -12,6 +12,12 @@ export function HeroSearch() {
           from company career pages.
         </p>
         <div className="hero-search-links">
+          <a href="/jobs">
+            Browse visa jobs <span aria-hidden="true">→</span>
+          </a>
+          <a href="/engineering">
+            Engineering notes <span aria-hidden="true">→</span>
+          </a>
           <a href="/mcp">
             Claude &amp; Cursor MCP <span aria-hidden="true">→</span>
           </a>
