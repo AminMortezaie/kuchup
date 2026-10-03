@@ -1,7 +1,7 @@
 /** Add-company and edit-careers dialogs. */
 
 import { state } from "./state.js";
-import { $, escapeAttr, escapeHtml, toast } from "./utils.js";
+import { $, escapeAttr, escapeHtml, toast, debounce, SEARCH_DEBOUNCE_MS } from "./utils.js";
 import { addCompany, updateCareersUrl, updateCompanyCity, updateCompanyName, fetchAtsTypes, addCustomLocation, addCustomCountry } from "./api.js";
 import { loadJobs, loadCities, getCachedAtsTypes, loadPickerLocations, invalidatePickerLocationsCache } from "./data.js";
 import { migrateCompanyKeyInState } from "./storage.js";
@@ -361,9 +361,21 @@ function toggleAddCompanyLocationGroup(trigger) {
   panel.hidden = expanded;
 }
 
+function isAddCompanyLocationsPanelOpen() {
+  const item = $("addCompanyLocationsAccordion");
+  if (!item || item.hidden) return false;
+  const trigger = item.querySelector(".add-company-accordion-trigger");
+  return trigger?.getAttribute("aria-expanded") === "true";
+}
+
 function renderAddCompanyLocationOptions() {
   const container = $("addCompanyLocationOptions");
   if (!container) return;
+
+  if (!isAddCompanyLocationsPanelOpen()) {
+    updateAddCompanyLocationsSummary();
+    return;
+  }
 
   const selectedCountries = getAddCompanySelectedCountries();
   if (isAddCompanyCountryAuto() || !selectedCountries.length) {
@@ -477,24 +489,27 @@ function syncAddCompanyCatalogFields() {
 
 export function openAddCompanyDialog() {
   syncAddCompanyCatalogFields();
-  populateAddCompanyCountryPicker();
   $("addCompanyName").value = "";
   $("addCompanyUrl").value = "";
   if ($("addCompanyLocationSearch")) $("addCompanyLocationSearch").value = "";
   if ($("addCompanyAts")) setAddCompanyAts("auto");
   setAddCompanyLocations([]);
   collapseAllAddCompanyAccordions();
-  const panelCountry = $("country").value;
-  if (panelCountry && panelCountry !== "all") {
-    setAddCompanyCountries([panelCountry]);
-  } else {
-    setAddCompanyCountryAuto();
-  }
-  updateAddCompanyAtsSummary();
   $("addCompanyDialog").classList.add("open");
   $("addCompanyDialog").setAttribute("aria-hidden", "false");
   $("addCompanyName").focus();
-  void populateAddCompanyAtsPicker();
+
+  setTimeout(() => {
+    populateAddCompanyCountryPicker();
+    const panelCountry = $("country").value;
+    if (panelCountry && panelCountry !== "all") {
+      setAddCompanyCountries([panelCountry]);
+    } else {
+      setAddCompanyCountryAuto();
+    }
+    updateAddCompanyAtsSummary();
+    void populateAddCompanyAtsPicker();
+  }, 0);
 }
 
 export function closeAddCompanyDialog() {
@@ -1138,7 +1153,10 @@ export function bindDialogEvents() {
   $("addCompanyCountryTrigger")?.addEventListener("click", () => toggleAddCompanyAccordion("addCompanyCountryAccordion"));
   $("addCompanyLocationsTrigger")?.addEventListener("click", () => toggleAddCompanyAccordion("addCompanyLocationsAccordion"));
 
-  $("addCompanyLocationSearch")?.addEventListener("input", () => renderAddCompanyLocationOptions());
+  $("addCompanyLocationSearch")?.addEventListener(
+    "input",
+    debounce(() => renderAddCompanyLocationOptions(), SEARCH_DEBOUNCE_MS),
+  );
 
   $("addCompanyForm")?.addEventListener("click", handleAddCompanyAtsChipClick);
 

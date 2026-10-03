@@ -3,7 +3,6 @@
 import { setOnUnauthorized, state } from "./state.js";
 import { bindPanelAuth, showLogin, refreshAuth, setAdminNavVisible } from "./auth.js";
 import { loadConfig, loadCountries, loadAtsTypes, loadBoardWithLocations, showJobsLoading, setLoadingProgress, finishLoadingProgress } from "./data.js";
-import { beginScreenLoad } from "./screen-loader.js";
 import { bindDialogEvents } from "./dialogs.js";
 import { bindEvents, closePanelPopovers } from "./events.js";
 import { bindFilterBar, refreshFilterBar } from "./filters.js";
@@ -12,7 +11,7 @@ import { registerFetchActions } from "./fetch-actions.js";
 import { publishFetchUi } from "./fetch-ui.js";
 import { goToBoardPage } from "./board.js";
 import { saveWaitingReferral, markJobSeen } from "./api.js";
-import { toast, $ } from "./utils.js";
+import { toast, $, beginTopLoadingProgress } from "./utils.js";
 import { resumeFetchIfRunning, syncFetchStateFromServer } from "./scrape.js";
 import { applyPanelChrome } from "./panel-mode.js";
 import { initAppShell } from "./app-shell.js";
@@ -81,15 +80,15 @@ async function init() {
     void openCreditsDialog();
   }
 
-  beginScreenLoad("Loading panel…");
   showJobsLoading();
+  beginTopLoadingProgress(10);
   setLoadingProgress(10);
   await Promise.all([loadConfig(), loadAtsTypes()]);
   await loadCountries();
   setAdminNavVisible(Boolean(state.authState.user?.is_admin));
   setLoadingProgress(40);
   refreshFilterBar();
-  await loadBoardWithLocations();
+  await loadBoardWithLocations({ noOverlay: true });
   finishLoadingProgress();
   await resumeFetchIfRunning();
   await syncFetchStateFromServer();
